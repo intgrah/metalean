@@ -1,0 +1,28 @@
+name = "metalean"
+version = "0.1.0"
+defaultTargets = ["Metalean"]
+
+[leanOptions]
+autoImplicit = false
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header = false      # temporary
+weak.linter.flexible = false          # temporary
+weak.linter.style.longLine = false    # temporary
+weak.linter.style.multiGoal = false   # temporary
+weak.linter.style.emptyLine = false   # judgements use blank lines 
+
+[[lean_lib]]
+name = "Metalean"
+globs = ["Metalean"]
+
+[[require]]
+scope = "leanprover-community"
+name = "mathlib"
+
+[[lean_exe]]
+name = "metalean"
+root = "Main"
+
+[[lean_exe]]
+name = "metalean-fast"
+root = "MainFast"

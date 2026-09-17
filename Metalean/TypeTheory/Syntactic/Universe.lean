@@ -1,0 +1,263 @@
+module
+
+public import Metalean.TypeTheory.Syntactic.Category
+public import Metalean.TypeTheory.NaturalModel.Defs
+public import Metalean.Quotient
+import Metalean.Strong
+
+@[expose] public noncomputable section
+
+namespace Metalean
+
+open CategoryTheory Opposite TypeTheory TypeTheory.NaturalModel
+
+variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ Γ₁ Γ₂ : CtxCat E ℓ}
+
+@[ext] structure Ty.Repr (Γ : CtxCat E ℓ) where
+  term : Expr ζ ℓ Γ.as.len
+  wf : E[Γ.as.ctx] ⊢ₛ term typ
+
+namespace Ty
+
+instance Repr.setoid (Γ : CtxCat E ℓ) : Setoid (Repr Γ) where
+  r A B := E[Γ.as.ctx] ⊢ₛ A.term ≡ B.term typ
+  iseqv := ⟨fun A => A.wf.isTypeEq, IsTypeEq.symm, IsTypeEq.trans⟩
+
+def Element (Γ : CtxCat E ℓ) := Quotient (Repr.setoid Γ)
+
+def reindex (σ : Γ₂.as ⟶ Γ₁.as) : Element Γ₁ → Element Γ₂ :=
+  Quotient.map
+    (fun A => ⟨RawCtx.expr.map σ.op A.term, A.wf.substitution σ.typed⟩)
+    (fun _ _ h => h.substitution σ.typed)
+
+@[reducible] def functor : (RawCtx E ℓ)ᵒᵖ ⥤ Type where
+  obj Γ := Element ⟨Γ.unop⟩
+  map σ := ↾reindex σ.unop
+  map_id Γ := by
+    apply ConcreteCategory.hom_ext
+    intro A
+    obtain ⟨A⟩ := A
+    exact congrArg (⟦·⟧) (Repr.ext (RawCtx.expr.map_id_apply Γ A.term))
+  map_comp σ₁ σ₂ := by
+    apply ConcreteCategory.hom_ext
+    intro A
+    obtain ⟨A⟩ := A
+    exact congrArg (⟦·⟧) (Repr.ext (RawCtx.expr.map_comp_apply σ₁ σ₂ A.term))
+
+end Ty
+
+@[implicit_reducible] def Ty (E : Env ζ) (ℓ : Nat) : (CtxCat E ℓ)ᵒᵖ ⥤ Type :=
+  (CategoryTheory.Quotient.lift (RawCtx.homRel E ℓ) Ty.functor.rightOp fun _ Γ₁ _ _ h =>
+    Quiver.Hom.unop_inj (ConcreteCategory.hom_ext _ _ fun A => by
+      obtain ⟨A⟩ := A
+      exact Quotient.sound (IsTypeEq.substitution_congr Γ₁.wf h A.wf.isTypeEq))).leftOp
+
+notation:max "Ty_" Γ:max => Functor.obj (Metalean.Ty _ _) (Opposite.op Γ)
+
+namespace Ty
+
+def ofRepr (A : Repr Γ) : Ty_ Γ := ⟦A⟧
+
+@[simp] theorem ofRepr_eq_iff (A B : Repr Γ) :
+    ofRepr A = ofRepr B ↔ E[Γ.as.ctx] ⊢ₛ A.term ≡ B.term typ :=
+  ⟨Quotient.exact, fun h => Quotient.sound h⟩
+
+theorem exists_ofRepr (A : Ty_ Γ) : ∃ T, A = ofRepr T :=
+  have ⟨T, hT⟩ := Quotient.exists_rep A
+  ⟨T, hT.symm⟩
+
+def elim {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
+    (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂) : β :=
+  Quotient.liftFibre A (fun T h => f T h.symm) fun _ _ _ _ => hf _ _ _ _
+
+theorem elim_eq {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
+    (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂)
+    (T : Repr Γ) (h : A = ofRepr T) : elim A f hf = f T h :=
+  Quotient.liftFibre_eq _ _ _ T h.symm
+
+def ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {u : Level ℓ}
+    (ht : E[Γ.ctx] ⊢ₛ t : .sort u) : Ty_ (⟨Γ⟩ : CtxCat E ℓ) :=
+  ofRepr ⟨t, u, ht⟩
+
+theorem ofTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len} {u₁ u₂ : Level ℓ}
+    (ht₁ : E[Γ.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ.ctx] ⊢ₛ t₂ : .sort u₂) :
+    ofTyping Γ ht₁ = ofTyping Γ ht₂ ↔ E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ :=
+  ofRepr_eq_iff _ _
+
+theorem ofTyping_congr {Γ : RawCtx E ℓ} {t₁ t₂ : Expr ζ ℓ Γ.len} {u₁ u₂ : Level ℓ}
+    {ht₁ : E[Γ.ctx] ⊢ₛ t₁ : .sort u₁} {ht₂ : E[Γ.ctx] ⊢ₛ t₂ : .sort u₂} (h : t₁ = t₂) :
+    ofTyping Γ ht₁ = ofTyping Γ ht₂ := by
+  subst h
+  rfl
+
+end Ty
+
+@[simp] theorem Ty.map_ofTyping {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
+    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (σ : Γ₂.as ⟶ Γ₁.as) :
+    (Ty E ℓ).map (RawCtx.toCtx.map σ).op (ofTyping Γ₁.as ht) =
+      ofTyping Γ₂.as (ht.substitution σ.typed) :=
+  rfl
+
+@[ext] structure Tm.Repr (Γ : CtxCat E ℓ) where
+  ty : Expr ζ ℓ Γ.as.len
+  val : Expr ζ ℓ Γ.as.len
+  tyWF : E[Γ.as.ctx] ⊢ₛ ty typ
+  valWF : E[Γ.as.ctx] ⊢ₛ val : ty
+
+namespace Tm
+
+instance Repr.setoid (Γ : CtxCat E ℓ) : Setoid (Repr Γ) where
+  r p q := E[Γ.as.ctx] ⊢ₛ p.ty ≡ q.ty typ ∧ E[Γ.as.ctx] ⊢ₛ p.val ≡ q.val : p.ty
+  iseqv := {
+    refl p := ⟨p.tyWF.isTypeEq, p.valWF⟩
+    symm | ⟨hty, hval⟩ => ⟨hty.symm, hty.convStrong hval.symm⟩
+    trans := fun ⟨hpqTy, hpqVal⟩ ⟨hqrTy, hqrVal⟩ =>
+      ⟨hpqTy.trans hqrTy, hpqVal.trans (hpqTy.symm.convStrong hqrVal)⟩
+    }
+
+def Element (Γ : CtxCat E ℓ) := Quotient (Repr.setoid Γ)
+
+def type : Element Γ → Ty.Element Γ :=
+  Quotient.lift (fun p => Ty.ofRepr ⟨p.ty, p.tyWF⟩)
+    fun _ _ h => (Ty.ofRepr_eq_iff _ _).mpr h.1
+
+def reindex (σ : Γ₂.as ⟶ Γ₁.as) (a : Element Γ₁) : Element Γ₂ :=
+  Quotient.map (sa := Repr.setoid Γ₁) (sb := Repr.setoid Γ₂)
+    (fun p => ⟨RawCtx.expr.map σ.op p.ty, RawCtx.expr.map σ.op p.val,
+      p.tyWF.substitution σ.typed, p.valWF.substitution σ.typed⟩)
+    (fun _ _ ⟨hA, ha⟩ => ⟨hA.substitution σ.typed, ha.substitution σ.typed⟩) a
+
+@[reducible] def functor : (RawCtx E ℓ)ᵒᵖ ⥤ Type where
+  obj Γ := Element ⟨Γ.unop⟩
+  map σ := ↾reindex σ.unop
+  map_id Γ := by
+    ext ⟨ty, val, tyWF, valWF⟩
+    exact congrArg (⟦·⟧) <|
+      Repr.ext (RawCtx.expr.map_id_apply Γ ty) (RawCtx.expr.map_id_apply Γ val)
+  map_comp σ₁ σ₂ := by
+    ext ⟨p⟩
+    exact congrArg (⟦·⟧) <|
+      Repr.ext (RawCtx.expr.map_comp_apply σ₁ σ₂ p.ty)
+        (RawCtx.expr.map_comp_apply σ₁ σ₂ p.val)
+
+end Tm
+
+@[implicit_reducible] def Tm (E : Env ζ) (ℓ : Nat) : (CtxCat E ℓ)ᵒᵖ ⥤ Type :=
+  (CategoryTheory.Quotient.lift (RawCtx.homRel E ℓ) Tm.functor.rightOp fun _ Γ₁ _ _ h => by
+    apply Quiver.Hom.unop_inj
+    ext ⟨p⟩
+    exact Quotient.sound ⟨IsTypeEq.substitution_congr Γ₁.wf h p.tyWF.isTypeEq,
+      DefeqStrong.substitution_congr Γ₁.wf h p.valWF⟩).leftOp
+
+def Tm.typing (E : Env ζ) (ℓ : Nat) : Tm E ℓ ⟶ Ty E ℓ where
+  app _ := ↾Tm.type
+  naturality := by
+    intro ⟨Γ₁⟩ ⟨Γ₂⟩ ⟨σ⟩
+    obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
+    exact ConcreteCategory.hom_ext _ _ fun a => by
+      obtain ⟨p⟩ := a
+      rfl
+
+notation:max "Tm_" Γ:max => Functor.obj (Tm _ _) (Opposite.op Γ)
+
+namespace Tm
+
+@[simp] theorem type_map (σ : Γ₂ ⟶ Γ₁) (n : Tm_ Γ₁) :
+    type ((Tm E ℓ).map σ.op n) = (Ty E ℓ).map σ.op (type n) :=
+  NatTrans.naturality_apply (Tm.typing E ℓ) σ.op n
+
+def label (Γ : RawCtx E ℓ) {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ₛ e : t) : Tm_ (⟨Γ⟩ : CtxCat E ℓ) :=
+  ⟦⟨t, e, he.regular, he⟩⟧
+
+@[simp] theorem type_label {Γ : RawCtx E ℓ} {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ₛ e : t) :
+    type (label Γ he) = Ty.ofRepr ⟨t, he.regular⟩ :=
+  rfl
+
+theorem label_eq_iff {Γ : RawCtx E ℓ} {t₁ e₁ t₂ e₂ : Expr ζ ℓ Γ.len}
+    {he₁ : E[Γ.ctx] ⊢ₛ e₁ : t₁} {he₂ : E[Γ.ctx] ⊢ₛ e₂ : t₂} :
+    label Γ he₁ = label Γ he₂ ↔ E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ ∧ E[Γ.ctx] ⊢ₛ e₁ ≡ e₂ : t₁ :=
+  ⟨Quotient.exact, fun h => Quotient.sound h⟩
+
+theorem label_eq {Γ : RawCtx E ℓ} {t₁ e₁ t₂ e₂ : Expr ζ ℓ Γ.len}
+    {he₁ : E[Γ.ctx] ⊢ₛ e₁ : t₁} {he₂ : E[Γ.ctx] ⊢ₛ e₂ : t₂}
+    (ht : E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ) (he : E[Γ.ctx] ⊢ₛ e₁ ≡ e₂ : t₁) : label Γ he₁ = label Γ he₂ :=
+  label_eq_iff.mpr ⟨ht, he⟩
+
+theorem label_congr {Γ : RawCtx E ℓ} {t₁ t₂ e : Expr ζ ℓ Γ.len} {he : E[Γ.ctx] ⊢ₛ e : t₁}
+    {hb : E[Γ.ctx] ⊢ₛ e : t₂} (ht : t₁ = t₂) : label Γ he = label Γ hb := by
+  subst ht
+  rfl
+
+theorem type_eq_of_mk {n : Tm_ Γ} {T : Ty.Repr Γ} (hn : type n = Ty.ofRepr T)
+    {R : Repr Γ} (hR : ⟦R⟧ = n) : E[Γ.as.ctx] ⊢ₛ R.ty ≡ T.term typ := by
+  subst hR
+  exact (Ty.ofRepr_eq_iff _ _).mp hn
+
+def elim {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
+    (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
+    (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ₛ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ₛ e₂ : T.term),
+      E[Γ.as.ctx] ⊢ₛ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂) : β :=
+  Quotient.liftFibre n (fun R hR => f R.val ((type_eq_of_mk hn hR).convStrong R.valWF))
+    fun _ _ h₁ h₂ => hf _ _ _ _ <|
+      (type_eq_of_mk hn h₁).convStrong (Quotient.exact (h₁.trans h₂.symm)).2
+
+theorem elim_eq {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
+    (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
+    (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ₛ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ₛ e₂ : T.term),
+      E[Γ.as.ctx] ⊢ₛ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂)
+    {e : Expr ζ ℓ Γ.as.len} (he : E[Γ.as.ctx] ⊢ₛ e : T.term) (h : n = label Γ.as he) :
+    elim n T hn f hf = f e he := by
+  subst h
+  exact Quotient.liftFibre_eq _ _ _ (⟨T.term, e, T.wf, he⟩ : Repr Γ) rfl
+
+theorem exists_label (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T) :
+    ∃ e, ∃ he : E[Γ.as.ctx] ⊢ₛ e : T.term, n = label Γ.as he := by
+  obtain ⟨R, hR⟩ := Quotient.exists_rep n
+  have hty := type_eq_of_mk hn hR
+  exact ⟨R.val, hty.convStrong R.valWF,
+    hR.symm.trans (Quotient.sound ⟨hty, R.valWF⟩)⟩
+
+theorem subsingleton_of_prop {P : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
+    (hP : E[Γ₁.as.ctx] ⊢ₛ P : .sort u) (hu : u = .zero) (σ : Γ₂ ⟶ Γ₁) :
+    {n : Tm_ Γ₂ | type n = (Ty E ℓ).map σ.op (Ty.ofTyping Γ₁.as hP)}.Subsingleton := by
+  obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
+  subst hu
+  intro n₁ h₁ n₂ h₂
+  have hPσ := hP.substitution σ.typed
+  have ⟨e₁, he₁, hn₁⟩ := exists_label n₁ ⟨_, _, hPσ⟩ h₁
+  have ⟨e₂, he₂, hn₂⟩ := exists_label n₂ ⟨_, _, hPσ⟩ h₂
+  exact hn₁.trans ((label_eq (.ofDefEq hPσ) (DefeqStrong.proofIrrel hPσ he₁ he₂)).trans hn₂.symm)
+
+def varLabel (Γ : CtxCat E ℓ) (v : Var Γ.as.len) : Tm_ Γ :=
+  label Γ.as (Γ.as.wf.var v)
+
+theorem label_eq_var {Γ : CtxCat E ℓ} {t e : Expr ζ ℓ Γ.as.len} {v : Var Γ.as.len}
+    (he : E[Γ.as.ctx] ⊢ₛ e : t) (h : e = .var v) : label Γ.as he = varLabel Γ v := by
+  subst e
+  exact label_eq (he.var_inv (Or.inl rfl)) he
+
+@[simp] theorem map_label {t e : Expr ζ ℓ Γ₁.as.len} (he : E[Γ₁.as.ctx] ⊢ₛ e : t)
+    (σ : Γ₂.as ⟶ Γ₁.as) :
+    (Tm E ℓ).map (RawCtx.toCtx.map σ).op (label Γ₁.as he) =
+      label Γ₂.as (he.substitution σ.typed) :=
+  rfl
+
+@[simp] theorem map_varLabel (σ : Γ₂.as ⟶ Γ₁.as) (v : Var Γ₁.as.len) :
+    (Tm E ℓ).map (RawCtx.toCtx.map σ).op (varLabel Γ₁ v) = label Γ₂.as (σ.typed v) :=
+  map_label (Γ₁.as.wf.var v) σ
+
+theorem hom_ext (σ₁ σ₂ : Γ₁ ⟶ Γ₂)
+    (h : ∀ v, (Tm E ℓ).map σ₁.op (varLabel Γ₂ v) = (Tm E ℓ).map σ₂.op (varLabel Γ₂ v)) :
+    σ₁ = σ₂ := by
+  obtain ⟨σ₁⟩ := σ₁
+  obtain ⟨σ₂⟩ := σ₂
+  exact (RawCtx.toCtx_map_eq_iff σ₁ σ₂).mpr fun v =>
+    (label_eq_iff.mp ((map_varLabel σ₁ v).symm.trans ((h v).trans (map_varLabel σ₂ v)))).2
+
+def rawBinderVar (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {u : Level ℓ}
+    (ht : E[Γ.ctx] ⊢ₛ t : .sort u) : Tm_ (CtxCat.extension ⟨Γ⟩ ht) :=
+  varLabel (CtxCat.extension ⟨Γ⟩ ht) (Fin.last Γ.len)
+
+end Tm
+
+end Metalean
