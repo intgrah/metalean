@@ -89,14 +89,12 @@ theorem quotientCarrier_mem_sort {n : Nat} {α r : ZFSet} (ha : α ∈ S_ n) :
   match n with
   | 0 => exact squash_mem_truth _
   | k + 1 =>
-    change propSet (k + 1) _ ∈ _
-    rw [propSet_succ]
     exact image_mem_type (mem_type_pred ha) fun _ hx =>
       mem_type_of_mem (powerset_mem_type (mem_type_pred ha))
         (ZFSet.mem_powerset.mpr (equivClosure_subset (subset_type_pred ha) hx))
 
 theorem quotientCarrier_zero {α r : ZFSet} (ha : α ∈ S_ 0) : quotientCarrier 0 α r = α := by
-  rw [quotientCarrier, propSet_zero]
+  rw [quotientCarrier]
   rcases mem_truth.mp ha with rfl | rfl
   · simp [show quotientClasses 0 falsum r = falsum from
       (ZFSet.eq_empty _).mpr fun _ h => by
@@ -116,7 +114,7 @@ theorem quotientCarrier_representation {n : Nat} {α r c : ZFSet}
     rw [quotientCarrier_zero ha] at hc
     exact ⟨c, hc, (quotientMk_zero ha hc).symm⟩
   | k + 1 =>
-    rw [quotientCarrier, propSet_succ] at hc
+    rw [quotientCarrier] at hc
     have ⟨a, hx, hc⟩ := mem_quotient.mp hc
     exact ⟨a, hx, by simpa [quotientMk, quotientClass] using hc⟩
 
@@ -130,7 +128,6 @@ theorem quotientLift_mk {n : Nat} {α r fn a : ZFSet} (ha : α ∈ S_ n)
   match n with
   | 0 => simp [quotientLift, quotientMk_zero ha hx]
   | k + 1 =>
-    simp [quotientLift, quotientMk]
     exact quotientLift_equivClosure (subset_type_pred ha) hx hcompat
 
 theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
@@ -141,12 +138,11 @@ theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
   match n with
   | 0 =>
     rw [quotientCarrier_zero ha] at hc
-    rw [quotientLift, ite_eq_left rfl]
     have h := Aczel.app_mem hf hc
     rwa [app_map hc] at h
   | k + 1 =>
-    rw [quotientCarrier, propSet_succ] at hc
-    rw [quotientLift, ite_eq_right (Nat.succ_ne_zero k)]
+    rw [quotientCarrier] at hc
+    rw [quotientLift]
     have ⟨a, hx, hc⟩ := mem_quotient.mp hc
     rw [hc, quotientLift_equivClosure (subset_type_pred ha) hx hcompat]
     have h := Aczel.app_mem hf hx
@@ -180,10 +176,9 @@ theorem quotientLiftResult_mem {n m : Nat} {equality : ZFSet → ZFSet → ZFSet
     have ⟨a, hx, _⟩ := quotientCarrier_representation ha hc
     have hfx := Aczel.app_mem hf hx
     rw [app_map hx] at hfx
-    rw [quotientLiftResult, propVal_zero, eq_verum_of_mem hb hfx]
+    rw [eq_verum_of_mem hb hfx]
     exact proof_mem_verum
   | k + 1 =>
-    rw [quotientLiftResult, propVal_succ]
     exact quotientLift_mem ha hf (quotientCompat_respects hseparates hb hf hh) hc
 
 theorem quotientLiftResult_mk {n m : Nat} {equality : ZFSet → ZFSet → ZFSet → ZFSet}
@@ -201,7 +196,6 @@ theorem quotientLiftResult_mk {n m : Nat} {equality : ZFSet → ZFSet → ZFSet 
     exact (mem_verum.mp (eq_verum_of_mem hb hleft ▸ hleft)).trans
       (mem_verum.mp (eq_verum_of_mem hb hright ▸ hright)).symm
   | k + 1 =>
-    rw [quotientLiftResult, propVal_succ]
     exact quotientLift_mk ha (quotientCompat_respects hseparates hb hf hh) hx
 
 end Metalean

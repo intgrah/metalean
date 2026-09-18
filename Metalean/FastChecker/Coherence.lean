@@ -33,7 +33,7 @@ theorem SubstRel.lift {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst ζ 
     rcases h w with heq | ⟨T, hT⟩
     · exact .inl (by rw [heq])
     · exact .inr ⟨_, hT.wk A⟩
-  · obtain rfl : v = Fin.last n := Fin.ext (by simp [Fin.last]; omega)
+  · obtain rfl : v = Fin.last n := Fin.ext (by simp; omega)
     exact .inl (by rw [Subst.lift_last, Subst.lift_last])
 
 theorem SubstRel.extend {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst ζ ℓ n m}
@@ -46,7 +46,7 @@ theorem SubstRel.extend {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst �
   · obtain ⟨w, rfl⟩ : ∃ w : Var n, v = w.castSucc := ⟨⟨v.val, hlt⟩, rfl⟩
     rw [Subst.extend_castSucc, Subst.extend_castSucc]
     exact h w
-  · obtain rfl : v = Fin.last n := Fin.ext (by simp [Fin.last]; omega)
+  · obtain rfl : v = Fin.last n := Fin.ext (by simp; omega)
     rw [Subst.extend_last, Subst.extend_last]
     exact .inr ⟨_, hv⟩
 
@@ -107,7 +107,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     cases h₂ with
     | app hf₂ ha₂ =>
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, _, hf', ha', hty₁⟩ := he₁.app_inv (Or.inl rfl)
       have ⟨_, _, hg', hb', _⟩ := he₂.app_inv (Or.inl rfl)
       have hfg := ihf hf₂ hΔ hσ hf' hg'
@@ -121,7 +120,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     cases h₂ with
     | lam ht₂d hb₂d =>
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, hb₁', hchain₁⟩ := he₁.lam_inv (Or.inl rfl) hΔ
       have ⟨_, hb₂', hchain₂⟩ := he₂.lam_inv (Or.inl rfl) hΔ
       have ⟨_, hpi₁⟩ := hchain₁.isType.2
@@ -143,7 +141,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     cases h₂ with
     | forallE ht₂d hb₂d =>
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have hinv₁ := he₁.forallE_inv (Or.inl rfl)
       have hinv₂ := he₂.forallE_inv (Or.inl rfl)
       have ⟨_, ht₁'⟩ := hinv₁.1
@@ -161,7 +158,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     cases h₂ with
     | letE ht₂d hv₂d hb₂d =>
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, ⟨_, hts₁⟩, hv₁, hbody₁, _⟩ := he₁.letE_inv (Or.inl rfl) hΔ
       have ⟨_, ⟨_, hts₂⟩, hv₂, hbody₂, _⟩ := he₂.letE_inv (Or.inl rfl) hΔ
       have hv := ihv hv₂d hΔ hσ hv₁ hv₂
@@ -199,7 +195,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       cases hη.symm.trans hη₂
       obtain rfl := Fin.ext (hs.trans hs₂.symm)
       obtain rfl : _ = _ := funext fun i => (hls' i).unique (hls'₂ i)
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, _, hpsw₁, hisw₁, _⟩ := he₁.ind_inv (Or.inl rfl)
       have ⟨_, _, hpsw₂, hisw₂, _⟩ := he₂.ind_inv (Or.inl rfl)
       have hpsE p := (hpsw₁ p).trans
@@ -216,7 +211,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       obtain rfl := Fin.ext (hs.trans hs₂.symm)
       obtain rfl := Fin.ext (hc.trans hc₂.symm)
       obtain rfl : _ = _ := funext fun i => (hls' i).unique (hls'₂ i)
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have hB := (ho.entryWFStrong ‹Head E.1 (Sig.inductive _)›).block
       have ⟨_, _, _, hpsw₁, hfdsw₁, hrecFdsw₁, hindw₁, _⟩ := he₁.ctor_inv (Or.inl rfl)
       have ⟨_, _, _, hpsw₂, hfdsw₂, hrecFdsw₂, _, _⟩ := he₂.ctor_inv (Or.inl rfl)
@@ -243,7 +237,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       obtain rfl := Fin.ext (hs.trans hs₂.symm)
       obtain rfl : _ = _ := funext fun i => (hls' i).unique (hls'₂ i)
       obtain rfl := hl.unique hl₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have hB := (ho.entryWFStrong ‹Head E.1 (Sig.inductive _)›).block
       have ⟨_, _, _, _, _, hallowed, hpsw₁, hmsw₁, hminsw₁, hisw₁, hmajw₁, hresw₁, _⟩ :=
         he₁.recr_inv (Or.inl rfl)
@@ -268,7 +261,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
       cases hη.symm.trans hη₂
       obtain rfl := hl.unique hl₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨hαt₁, hrt₁⟩ := he₁.quot_formation_inv (Or.inl rfl)
       have ⟨hαt₂, hrt₂⟩ := he₂.quot_formation_inv (Or.inl rfl)
       exact DefeqStrong.retype ho hΔ
@@ -279,7 +271,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
       cases hη.symm.trans hη₂
       obtain rfl := hl.unique hl₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, _, _, hαw₁, hrw₁, haw₁, _⟩ := he₁.quotMk_prem (Or.inl rfl)
       have ⟨_, _, _, hαw₂, hrw₂, haw₂, _⟩ := he₂.quotMk_prem (Or.inl rfl)
       have hleft := DefeqStrong.quotMkDF (η := ‹Head E.1 .quot›) hαw₁ hrw₁ haw₁
@@ -295,7 +286,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       cases hη.symm.trans hη₂
       obtain rfl := hl₁.unique hl₁'
       obtain rfl := hl₂.unique hl₂'
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, _, _, _, _, _, hαw₁, hrw₁, hβw₁, hfw₁, hhw₁, haw₁, _⟩ :=
         he₁.quotLift_prem (Or.inl rfl)
       have ⟨_, _, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, hhw₂, haw₂, _⟩ :=
@@ -315,7 +305,6 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       intro m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
       cases hη.symm.trans hη₂
       obtain rfl := hl.unique hl₂
-      simp only [Expr.subst] at he₁ he₂ ⊢
       have ⟨_, _, _, _, _, hαw₁, hrw₁, hβw₁, hfw₁, haw₁, hresw₁, _⟩ :=
         he₁.quotInd_prem (Or.inl rfl)
       have ⟨_, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, haw₂, _, _⟩ :=

@@ -89,7 +89,7 @@ theorem Shape.rank_cSup {a b : Shape Γ} : (a.cSup b).rank ≤ max a.rank b.rank
     exact Finset.sup_le fun c _ => (ih c).trans (max_le_max (rank_le_sup _ _) (rank_le_sup _ _))
   · exact cSupBot_induction (P := (·.rank ≤ _)) (le_max_left _ _) (le_max_right _ _)
   · rename_i ih
-    simpa [rank, Nat.add_max_add_right] using Nat.add_le_add_right ih 1
+    simpa [rank] using Nat.add_le_add_right ih 1
   · exact cSupBot_induction (P := (·.rank ≤ _)) (le_max_left _ _) (le_max_right _ _)
 
 end Metalean

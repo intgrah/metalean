@@ -50,7 +50,7 @@ theorem pullback_telescope (F : CodeAssignment E ℓ) {n : Nat} (T : Domain Γ�
     have hrest := ih
       (ctorTypeFibreIdeal T (names 0) (F.extend (ctorTypeDomIdeal T) (names 0) (args 0)))
       (Fin.tail names) (Fin.tail args)
-    rw [pullback_ctorTypeFibreIdeal, F.pullback_extend, pullback_ctorTypeDomIdeal] at hrest
+    rw [pullback_ctorTypeFibreIdeal, F.pullback_extend] at hrest
     apply Prod.ext
     · funext i
       refine Fin.cases ?_ (fun j => ?_) i
@@ -111,8 +111,7 @@ theorem telescope_snoc (F : CodeAssignment E ℓ) {n : Nat} (T : Domain Γ₁)
     · rfl
   | succ n ih =>
     rw [telescope, ih]
-    simp [telescope, Fin.tail, Fin.cons_snoc_eq_snoc_cons]
-    exact ⟨⟨rfl, rfl⟩, rfl⟩
+    simpa [Fin.cons_snoc_eq_snoc_cons] using ⟨⟨rfl, rfl⟩, rfl⟩
 
 variable {F G : CodeAssignment E ℓ} {n : Nat}
 

@@ -169,7 +169,7 @@ theorem FEnv.Denotes.get {F : FEnv} {E : Env ζ} {pos : Nat} {fentry : FEntry}
       subst hfe
       refine ⟨.here, by simp [Sigs.lookup, hpos, hE.size], ?_⟩
       exact he.map (target := ⟨_, E.snoc entry⟩) (Env.Prefix.step .refl)
-    · simp only [hpos, ↓reduceIte] at hfe
+    · simp only [hpos] at hfe
       have ⟨η, hη, hden⟩ := ih hfe
       refine ⟨η.there,
         by simp [Sigs.lookup, hη, show pos ≠ ζ.length by rw [← hE.size]; exact hpos], ?_⟩

@@ -49,8 +49,7 @@ theorem ctorTypeGraph_mono {a b : Shape Γ₁} (h : a ≤ b) :
     (pi : Ty.Pair Γ₁ → Ty.Pair Γ₂) (a : Shape Γ₁) :
     (a.map arg pi).ctorTypeGraph = a.ctorTypeGraph.map arg pi := by
   have hnil : (Graph.nil : Graph Γ₁).map arg pi = Graph.nil := by
-    simp only [Graph.map, Graph.nil, Graph.mk.injEq, heq_eq_eq, true_and]
-    exact ⟨funext fun i => i.elim0, funext fun i => i.elim0, funext fun i => i.elim0⟩
+    simpa only [Graph.map, Graph.nil, Graph.mk.injEq, heq_eq_eq, true_and] using ⟨funext fun i => i.elim0, funext fun i => i.elim0, funext fun i => i.elim0⟩
   cases a <;> first | rfl | exact hnil.symm
 
 theorem rank_ctorTypeDom_lt {a : Shape Γ₁} (h : ¬ a.ctorTypeDom = .bot) :
@@ -203,7 +202,6 @@ noncomputable def ctorTypeFibreIdeal (X : Domain Γ₁) (name : Tm_ Γ₁)
     let f := CoherentGraph.single ((Tm E ℓ).map σ.op name) x y
     refine ⟨piGenerator ((Ty.pairPresheaf E ℓ).map σ.op label) ⊥ f,
       ⟨⊥, f, A.bottom σ, fun _ => hxy, le_rfl⟩, ?_⟩
-    rw [mem_application]
     refine ⟨x, hx, .entry ⟨f, ⟨0, Nat.one_pos⟩, ?_, ?_, le_rfl, rfl⟩⟩
     · change ((principalIdeal f.lamGenerator).pullback (𝟙 _)).mem (𝟙 _) f.lamGenerator
       simp

@@ -128,7 +128,7 @@ theorem quotMk_mono (η : Head ζ .quot) (name : Tm_ Γ₁)
     (X : RawValue Γ₁) (σ₁ : Γ₂ ⟶ Γ₁) :
     (quotMk η name X).pullback σ₁ = quotMk η ((Tm E ℓ).map σ₁.op name) (X.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  simp [ΩLower.pullback]
+  simp
 
 theorem quotMk_isDirected (η : Head ζ .quot) (name : Tm_ Γ₁)
     {X : RawValue Γ₁} (hX : X.IsDirected) : (quotMk η name X).IsDirected := by

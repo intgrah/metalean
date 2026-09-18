@@ -98,9 +98,8 @@ noncomputable def rel (code : IndCode Γ₁) : Bool :=
 
 theorem map_comp_hom (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) (code : IndCode Γ₁) :
     code.map ((Tm E ℓ).map (σ₂ ≫ σ₁).op) =
-      (code.map ((Tm E ℓ).map σ₁.op)).map ((Tm E ℓ).map σ₂.op) := by
-  rw [map_map]
-  exact congrArg code.map (funext fun x => (Tm E ℓ).map_comp_apply σ₁.op σ₂.op x)
+      (code.map ((Tm E ℓ).map σ₁.op)).map ((Tm E ℓ).map σ₂.op) :=
+  congrArg code.map (funext fun x => (Tm E ℓ).map_comp_apply σ₁.op σ₂.op x)
 
 end IndCode
 
@@ -121,9 +120,8 @@ def map (arg : (Tm_ Γ₁) → Tm_ Γ₂) (code : QuotCode Γ₁) : QuotCode Γ�
 
 theorem map_comp_hom (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) (code : QuotCode Γ₁) :
     code.map ((Tm E ℓ).map (σ₂ ≫ σ₁).op) =
-      (code.map ((Tm E ℓ).map σ₁.op)).map ((Tm E ℓ).map σ₂.op) := by
-  rw [map_map]
-  exact congrArg code.map (funext fun x => (Tm E ℓ).map_comp_apply σ₁.op σ₂.op x)
+      (code.map ((Tm E ℓ).map σ₁.op)).map ((Tm E ℓ).map σ₂.op) :=
+  congrArg code.map (funext fun x => (Tm E ℓ).map_comp_apply σ₁.op σ₂.op x)
 
 end QuotCode
 
@@ -203,7 +201,7 @@ noncomputable abbrev reindexHom (σ : Γ₂ ⟶ Γ₁) : Shape Γ₁ → Shape �
 
 theorem reindexHom_comp (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) (a : Shape Γ₁) :
     a.reindexHom (σ₂ ≫ σ₁) = (a.reindexHom σ₁).reindexHom σ₂ := by
-  induction a <;> simp_all [reindexHom, map, IndCode.map, QuotCode.map]
+  induction a <;> simp_all [reindexHom, map, QuotCode.map]
 
 @[implicit_reducible] noncomputable def presheaf (E : Env ζ) (ℓ : Nat) : (CtxCat E ℓ)ᵒᵖ ⥤ Type where
   obj Γ₁ := Shape Γ₁.unop
@@ -223,13 +221,13 @@ noncomputable abbrev reindexHom (σ : Γ₂ ⟶ Γ₁) : Graph Γ₁ → Graph �
 @[simp] theorem reindexHom_id (f : Graph Γ₁) : f.reindexHom (𝟙 Γ₁) = f := by
   have h := Shape.reindexHom_id (Γ₁ := Γ₁)
   simp [Shape.reindexHom] at h
-  simp [reindexHom, map, h]
+  simp [map, h]
 
 theorem reindexHom_comp (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) (f : Graph Γ₁) :
     f.reindexHom (σ₂ ≫ σ₁) = (f.reindexHom σ₁).reindexHom σ₂ := by
   have h := Shape.reindexHom_comp σ₁ σ₂
   simp [Shape.reindexHom] at h
-  simp [reindexHom, map, h]
+  simp [map, h]
 
 end Graph
 

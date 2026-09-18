@@ -124,7 +124,6 @@ theorem pullback_rawExtend (F : CodeAssignment E ℓ) (T : RawValue Γ₁)
     (F.rawExtend T n X).pullback σ₁ =
       F.rawExtend (T.pullback σ₁) ((Tm E ℓ).map σ₁.op n) (X.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  rw [ΩLower.presheaf_map_mem, mem_rawExtend, mem_rawExtend]
   simp [← Functor.map_comp_apply, ← op_comp]
 
 theorem pullback_extend (F : CodeAssignment E ℓ) (T : Domain Γ₁)
@@ -176,7 +175,7 @@ theorem rawExtend_eq_map (F : CodeAssignment E ℓ) {T X : RawValue Γ₁} {n : 
         F.eval d ((Tm E ℓ).map σ.op n) (principalIdeal x) = principalIdeal (G.app _ ⟨σ⟩ x)) :
     F.rawExtend T n X = X.map G := by
   ext Γ₂ σ y
-  rw [mem_rawExtend, ΩLower.mem_map]
+  rw [mem_rawExtend]
   constructor
   · intro ⟨c, hc, x, hx, hy⟩
     have ⟨d, _, hcd, hd⟩ := hT σ c hc

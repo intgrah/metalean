@@ -101,12 +101,10 @@ theorem sourceQuery_eq_of_section (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   have ⟨s⟩ := hs
   have htype := s.type_eq
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-  rw [Tm.map_label] at htype
   rw [Equiv.apply_symm_apply] at htype
   change Ty.ofTyping Γ₂.as (he₁.substitution σ.typed).regular.choose_spec =
     (Ty E ℓ).map (RawCtx.toCtx.map σ).op (Ty.ofTyping Γ₁.as ht) at htype
   rw [Ty.map_ofTyping] at htype
-  rw [Tm.map_label, Tm.map_label]
   exact Tm.label_eq ((Ty.ofTyping_eq_iff Γ₂.as _ _).mp htype) (he₁.substitution σ.typed)
 
 theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
@@ -118,8 +116,8 @@ theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
       (CoherentShape.application F ((Tm E ℓ).map σ₁.op (Tm.label Γ₁.as he)) X).val :=
   rawApplication_eq_of_support F X _ ⟨Tm.label Γ₁.as he, label_mem_sourceQuery he, rfl⟩
     fun {_} σ₂ name hname _ _ hy => (hsupport σ₂ name hy).imp_right fun hs => by
-      rw [← Functor.map_comp_apply, ← op_comp]
-      exact sourceQuery_eq_of_section ht he (σ₂ ≫ σ₁) (by simpa [Set.image_image] using hname) hs
+      rw [← Functor.map_comp_apply]
+      exact sourceQuery_eq_of_section ht he (σ₂ ≫ σ₁) (by simpa using hname) hs
 
 theorem rawApplication_singleton_abstraction_eq_body
     (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (C : RawFamily Γ₁)

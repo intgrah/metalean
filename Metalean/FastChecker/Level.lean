@@ -167,7 +167,7 @@ theorem Denotes.eval_eq_zero {fl : FLevel} {l : RawLevel ℓ} (hl : fl.alwaysZer
   | max _ _ ih₁ ih₂ =>
     simp only [alwaysZero, Bool.and_eq_true] at hl
     simp [ih₁ hl.1, ih₂ hl.2]
-  | imax _ _ _ ih₂ => simp [Nat.imax, ih₂ hl]
+  | imax _ _ _ ih₂ => simp [ih₂ hl]
   | param => cases hl
 
 theorem Denotes.interp_eq_zero {fl : FLevel} {l : RawLevel ℓ} (hl : fl.alwaysZero = true) :
@@ -188,8 +188,7 @@ def params (nlevels : Nat) : Array FLevel :=
 
 theorem denotes_params {nlevels : Nat} (i : Fin nlevels) :
     FLevel.Denotes ((params nlevels)[i.val]'(by simp)) (.param i) := by
-  simp only [FLevel.params, Array.getElem_ofFn]
-  exact .param i.isLt
+  simpa [FLevel.params] using .param i.isLt
 
 end FLevel
 

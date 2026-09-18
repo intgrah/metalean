@@ -28,8 +28,7 @@ def indexHom (hB : (E.get η).block.WFStrong E) (h : IndTyping Γ₁ η s ls ps 
   subst := Fin.append Subst.id is
   typed := by
     apply WFTeleStrong.extendFamily (hB.indexTele h.param) (SubstWFStrong.id Γ₁.as.wf)
-    intro i
-    simpa [Inductive.indexType] using h.index i
+    simpa using h.index
 
 def motiveHom (hB : (E.get η).block.WFStrong E) (h : IndTyping Γ₁ η s ls ps is)
     (hmaj : E[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps is) :
@@ -63,9 +62,8 @@ theorem motiveHom_over (hB : (E.get η).block.WFStrong E) (h : IndTyping Γ₁ �
 
 @[simp] theorem motiveHom_major (hB : (E.get η).block.WFStrong E) (h : IndTyping Γ₁ η s ls ps is)
     (hmaj : E[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps is) :
-    (h.motiveHom hB hmaj).subst (Fin.natAdd Γ₁.as.len (Fin.last (ι.nindices s))) = maj := by
-  change Subst.extend (Fin.append Subst.id is) maj (Fin.last _) = maj
-  exact Subst.extend_last _ _
+    (h.motiveHom hB hmaj).subst (Fin.natAdd Γ₁.as.len (Fin.last (ι.nindices s))) = maj :=
+  Subst.extend_last _ _
 
 theorem motiveHom_index_type (hB : (E.get η).block.WFStrong E) (h : IndTyping Γ₁ η s ls ps is)
     (hmaj : E[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps is) (i : Fin (ι.nindices s)) :

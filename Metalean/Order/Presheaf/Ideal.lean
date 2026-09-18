@@ -234,8 +234,7 @@ theorem map_principal (a : R.obj (op X)) :
   ext Y f b
   have h : S.map f.op (F.app (op X) ⟨𝟙 X⟩ a) = F.app (op Y) ⟨f⟩ (R.map f.op a) := by
     simpa using (F.naturality_apply f.op ⟨𝟙 X⟩ a).symm
-  simp only [mem_map, mem_principal, h]
-  exact ⟨fun ⟨c, hc, hb⟩ => hb.trans ((F.app (op Y) ⟨f⟩).hom.monotone hc),
+  simpa [h] using ⟨fun ⟨c, hc, hb⟩ => hb.trans ((F.app (op Y) ⟨f⟩).hom.monotone hc),
     fun hb => ⟨_, le_rfl, hb⟩⟩
 
 @[simp] theorem map_map (I : ΩLower R X)

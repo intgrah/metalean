@@ -35,10 +35,10 @@ theorem Equiv.succ (h : l₁ ≈ l₂) : l₁.succ ≈ l₂.succ :=
   Equiv.of_eval fun ν => congrArg (· + 1) (h.eval ν)
 
 theorem Equiv.max (h₁ : l₁ ≈ l₂) (h₂ : l₃ ≈ l₄) : l₁.max l₃ ≈ l₂.max l₄ :=
-  Equiv.of_eval fun ν => by simp only [eval_max, h₁.eval ν, h₂.eval ν]
+  Equiv.of_eval fun ν => by simp [h₁.eval ν, h₂.eval ν]
 
 theorem Equiv.imax (h₁ : l₁ ≈ l₂) (h₂ : l₃ ≈ l₄) : l₁.imax l₃ ≈ l₂.imax l₄ :=
-  Equiv.of_eval fun ν => by simp only [eval_imax, h₁.eval ν, h₂.eval ν]
+  Equiv.of_eval fun ν => by simp [h₁.eval ν, h₂.eval ν]
 
 instance setoid (ℓ : Nat) : Setoid (RawLevel ℓ) where
   r := (· ≈ ·)

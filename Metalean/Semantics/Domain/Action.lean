@@ -41,7 +41,6 @@ theorem reindex {F : BasisAction Γ₁} {σ₁ : Γ₂ ⟶ Γ₁} {f : CoherentG
   intro i
   have hB' : ((F.app _ (σ₁.op, f.1.names i) (f.input i)).pullback σ₂).mem (𝟙 Γ₃)
       (CoherentShape.reindex σ₂ (f.output i)) := by
-    rw [ΩLower.presheaf_map_mem_id]
     simpa using (F.app _ (σ₁.op, f.1.names i) (f.input i)).natural (𝟙 Γ₂) σ₂ (f.output i) (hf i)
   exact congrArg (fun L : ΩLower (pointedOrder E ℓ) Γ₃ =>
     L.mem (𝟙 Γ₃) (CoherentShape.reindex σ₂ (f.output i)))
@@ -91,8 +90,6 @@ def abstraction (F : BasisAction Γ₁) : ΩLower (pointedOrder E ℓ) Γ₁ whe
 @[simp]
 theorem pullback_abstraction (F : BasisAction Γ₁) (σ : Γ₂ ⟶ Γ₁) :
     F.abstraction.pullback σ = abstraction ((presheaf E ℓ).map σ.op F) := by
-  ext
-  simp [GraphValid]
   rfl
 
 theorem abstraction_isDirected {F : BasisAction Γ₁} (hF : F.IsIdealValued) :
@@ -204,7 +201,7 @@ theorem application_abstraction (F : IdealAction Γ₁) (label : Tm_ Γ₁)
   have hnatural : (F.val.app _ ((𝟙 Γ₁).op, label) X).pullback σ =
       F.val.app _ (σ.op, (Tm E ℓ).map σ.op label) (X.pullback σ) := by
     simpa using (F.app_pullback (𝟙 Γ₁).op σ label X).symm
-  rw [mem_application, ← ΩIdeal.presheaf_map_mem_id (F.val.app _ ((𝟙 Γ₁).op, label) X), hnatural]
+  rw [← ΩIdeal.presheaf_map_mem_id (F.val.app _ ((𝟙 Γ₁).op, label) X), hnatural]
   constructor
   · intro ⟨x, hx, hxy⟩
     exact (F.val.app _ _).hom.monotone
@@ -244,7 +241,7 @@ theorem pullback_application (I X : Domain Γ₁) (label : Tm_ Γ₁) (σ₁ : �
     (application I label X).pullback σ₁ =
       application (I.pullback σ₁) ((Tm E ℓ).map σ₁.op label) (X.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  rw [ΩIdeal.presheaf_map_mem, mem_application, mem_application, ← ΩIdeal.pullback_pullback, op_comp,
+  rw [ΩIdeal.presheaf_map_mem, mem_application, ← ΩIdeal.pullback_pullback, op_comp,
     Functor.map_comp_apply]
   rfl
 

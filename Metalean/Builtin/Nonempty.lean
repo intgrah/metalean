@@ -33,7 +33,7 @@ variable {ζ : Sigs}
   indices _ := .nil
   level := .zero
   ctors | ⟨0, _⟩, ⟨0, _⟩ => {
-    ordinary _ := ⟨.var ⟨0, by simp [sig]⟩,
+    ordinary _ := ⟨.var ⟨0, by simp⟩,
       .param ⟨0, by decide⟩⟩
     recursive f := Fin.elim0 f
     targetIndices := ![]

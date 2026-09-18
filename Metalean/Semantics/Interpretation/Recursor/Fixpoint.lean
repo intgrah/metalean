@@ -184,9 +184,7 @@ theorem recursorWith_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).I
   OrderHom.lfp_induction (p := fun V => ∀ t, (V t).IsFinitary) (recursorStep D interp hd ls)
     (fun _ hV _ t => RawFamily.IsFinitary.ctxLam (hb := recrTele_headRank_lt η ls t) hinterp
       (recursorBody_isFinitary D interp hd ls hinterp hV t))
-    (fun S hS t => by
-      change (⨆ V : S, (V : RecApprox E ℓ ι) t).IsFinitary
-      exact RawFamily.IsFinitary.iSup fun V => hS V.1 V.2 t) s
+    (fun _ hS t => RawFamily.IsFinitary.iSup fun V => hS V.1 V.2 t) s
 
 theorem recursorStep_ωScottContinuous :
     OmegaCompletePartialOrder.ωScottContinuous (recursorStep D interp hd ls) := by

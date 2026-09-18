@@ -45,9 +45,8 @@ noncomputable def indProjection (target : IndHead ζ) (X : RawValue Γ₁) : Raw
 
 theorem indProjection_le (target : IndHead ζ) (X : RawValue Γ₁) :
     X.indProjection target ≤ X := by
-  intro Γ₂ σ y
-  rw [mem_indProjection]
-  exact fun ⟨⟨x, _⟩, hx, hy⟩ => X.lower σ (hy.trans (Shape.indProjection_le target x)) hx
+  intro Γ₂ σ y ⟨⟨x, _⟩, hx, hy⟩
+  exact X.lower σ (hy.trans (Shape.indProjection_le target x)) hx
 
 @[simp] theorem pullback_indProjection (target : IndHead ζ) (X : RawValue Γ₁)
     (σ : Γ₂ ⟶ Γ₁) :
@@ -110,7 +109,6 @@ theorem indProjection_ctor (head : CtorHead ζ) (names : Fin head.arity → Tm_ 
         indProjection ⟨head.η, head.sig.recursiveTarget f⟩
           (Xs (Fin.natAdd head.sig.nfields f))) := by
   ext Γ₂ σ y
-  rw [mem_indProjection, mem_ctor]
   constructor
   · intro ⟨x, ⟨xs, hxs, hx⟩, hy⟩
     exact ⟨_, head.projectFields_rel₂ (R := fun (X : RawValue Γ₁) x => X.mem σ x) hxs

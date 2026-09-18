@@ -33,7 +33,7 @@ noncomputable def ofFin {n : Nat} (args : Fin n → RawFamily Γ₁) : Valuation
         (RawValuation.pushFin (fun _ => ⊥) fun i => (args i).app _ σ₁ ρ).pullback σ₂.unop
     have hbot : RawValuation.pullback (fun _ => ⊥) σ₂.unop = fun _ => ⊥ :=
       funext fun _ => Presheaf.ΩLower.presheaf_map_bot _
-    rw [RawValuation.pullback_pushFin, hbot]
+    rw [RawValuation.pullback_pushFin]
     exact congrArg (RawValuation.pushFin fun _ => ⊥)
       (funext fun i => (args i).naturality_apply σ₂ σ₁ ρ)
 
@@ -75,7 +75,7 @@ theorem tailN_apply (ρ : RawValuation Γ₁) (k j : Nat) : ρ.tailN k j = ρ (j
     funext j
     rw [tailN_apply]
     change (ρ.pushFin fun i => args i.castSucc) (j + k) = ρ j
-    simpa only [tailN_apply] using congrFun (ih fun i => args i.castSucc) j
+    simpa [tailN_apply] using congrFun (ih fun i => args i.castSucc) j
 
 @[simp] theorem pushFin_tailN (ρ : RawValuation Γ₁) (k : Nat) :
     (ρ.tailN k).pushFin (fun i : Var k => ρ i.db) = ρ := by
@@ -84,9 +84,7 @@ theorem tailN_apply (ρ : RawValuation Γ₁) (k j : Nat) : ρ.tailN k j = ρ (j
   | succ k ih =>
     have htail : ρ.tail.tailN k = ρ.tailN (k + 1) :=
       (tailN_tailN ρ 1 k).trans (congrArg ρ.tailN (Nat.add_comm 1 k))
-    rw [pushFin]
-    simp only [Var.db_castSucc, Var.db_last]
-    rw [← htail]
+    simp [pushFin, ← htail]
     change ((ρ.tail.tailN k).pushFin fun i : Var k => ρ.tail i.db).push (ρ 0) = ρ
     rw [ih]
     funext i

@@ -193,7 +193,6 @@ theorem shiftLeft_natLit {kind₁ : ConstKind} {ηAdd : Head ζ (.const kind₁ 
   induction num₂ generalizing num₁ with
   | zero => exact h.zero _ (natLit_typed _ _)
   | succ num₂ ih =>
-    rw [Nat.shiftLeft_succ_inside]
     exact ((h.succ _ _ (natLit_typed _ _) (natLit_typed _ _)).trans
       (natOp₂DF htype (mul_natLit 2 num₁ haddType hadd hmul) (natLit_typed _ _))).trans
       (ih (2 * num₁))
@@ -223,7 +222,6 @@ theorem shiftRight_natLit {kind₁ : ConstKind} {ηDiv : Head ζ (.const kind₁
   induction num₂ with
   | zero => exact h.zero _ (natLit_typed _ _)
   | succ num₂ ih =>
-    rw [Nat.shiftRight_succ]
     exact ((h.succ _ _ (natLit_typed _ _) (natLit_typed _ _)).trans
       (natOp₂DF hdivType ih (natLit_typed _ _))).trans (hdiv _ 2)
 

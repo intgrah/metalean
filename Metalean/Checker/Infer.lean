@@ -365,7 +365,7 @@ partial def kLikeStep (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
       (.ctor η s c ls ps fds recFds) (.ind η s ls ps is)
     have hprop : E[Γ] ⊢ₛ .ind η s ls ps is : .prop := by
       have hind := DefeqStrong.indDF hps fun i => his i
-      rwa [hp, Level.inst_zero] at hind
+      rwa [hp] at hind
     pure ⟨_, WHRed.klike_defeq ho hΓ hprop hmaj hctor he⟩
   | _ => fun _ => throw (.reject .notDefEq)
 

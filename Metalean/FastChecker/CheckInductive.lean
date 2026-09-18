@@ -58,7 +58,7 @@ theorem TeleWFSpec.ofSigma {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → B
       exact ⟨l, hl, hQl⟩
     have ⟨Δ, hΔ, hwf⟩ := ih h₀
     have ⟨l, hl, hQl⟩ := h ts₀.size (by simp)
-    rw [hpre ts₀.size le_rfl, Array.getElem_push_eq, Array.extract_size] at hl
+    rw [hpre ts₀.size le_rfl, Array.extract_size] at hl
     have ⟨t', l', ht', hl', hty⟩ := hl (hS.append hΔ hwf) (by simpa using ht)
     exact ⟨Δ.snoc t', hΔ.snoc (by simpa using ht'), .snoc hwf ⟨⟦l'⟧, hty.defeq, hQ hl' hQl⟩⟩
 
@@ -133,8 +133,7 @@ theorem levelOK_of_levelOKB {E : Env ζ} {L : Literals} {ι : IndSig} {fI : FInd
   intro hI hl
   have ⟨lv, hlv, hlv'⟩ := hI.level
   unfold levelOKB at h
-  rw [FLevel.toRaw_eq_of_denotes hl, FLevel.toRaw_eq_of_denotes hlv] at h
-  simp only [decide_eq_true_eq] at h
+  simp only [FLevel.toRaw_eq_of_denotes hl, FLevel.toRaw_eq_of_denotes hlv, decide_eq_true_eq] at h
   change Level.imax ⟦l'⟧ I.level ≤ I.level
   rw [← hlv']
   exact h

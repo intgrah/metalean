@@ -246,7 +246,7 @@ theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
   have hfields cur : E[Γ] ⊢ₛ fds cur :
       Inductive.IsStructure.projTypeWith (E.get η).block ls ps cur fun previous =>
         fds (previous.castLE cur.isLt.le) := by
-    simpa [Inductive.IsStructure.projTypeWith, Ctor.ordinaryType, Ctor.ordinaryFieldExpr]
+    simpa [Inductive.IsStructure.projTypeWith, Ctor.ordinaryFieldExpr]
       using (hordFd cur).defeqDF (hfds cur)
   have hiota := h.projTerm_ctorStrong hB f fds hΓ hpsu hctor'.right hfields
   have hcongr := h.projTerm_congrStrong hB f hpsu hctor'

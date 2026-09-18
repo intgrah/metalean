@@ -76,8 +76,7 @@ theorem pullback_tail (ρ : RawValuation Γ₁) (σ : Γ₂ ⟶ Γ₁) :
 @[simp]
 theorem replace_zero_push (ρ : RawValuation Γ₁) (I J : RawValue Γ₁) :
     (ρ.push J).replace 0 I = ρ.push I := by
-  funext i
-  cases i <;> simp [replace, push]
+  ext (_ | _) <;> simp!
 
 @[simp]
 theorem push_replace (ρ : RawValuation Γ₁) (i : ℕ) (I J : RawValue Γ₁) :
@@ -304,8 +303,7 @@ noncomputable instance : SupSet (RawAction Γ₁) where
       naturality f σ := ConcreteCategory.hom_ext _ _ fun p => by
         change ⨆ F ∈ S, F.app _ (σ ≫ f, (Tm E ℓ).map f p.1) (p.2.pullback f.unop) =
           (⨆ F ∈ S, F.app _ (σ, p.1) p.2).pullback f.unop
-        simp only [ΩLower.pullback_iSup]
-        exact biSup_congr fun F _ => F.app_pullback σ f.unop p.1 p.2 }
+        simpa only [ΩLower.pullback_iSup] using biSup_congr fun F _ => F.app_pullback σ f.unop p.1 p.2 }
     property X σ label I₁ I₂ h :=
       have hmono : ∀ F ∈ S, F.app X (σ, label) I₁ ≤ F.app X (σ, label) I₂ :=
         fun (F : RawAction Γ₁) _ => F.property X σ label h

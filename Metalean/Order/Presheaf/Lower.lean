@@ -233,7 +233,7 @@ instance : CompleteLattice (Functor.HomObj F (presheaf R) A) :=
 theorem homObj_sSup_app (S : Set (Functor.HomObj F (presheaf R) A)) (X : Cᵒᵖ) (a : A.obj X)
     (x : F.obj X) : (sSup S).app X a x = ⨆ α ∈ S, α.app X a x := by
   change (⨆ α ∈ S, (α.app X a).hom) x = _
-  simp only [OrderHom.iSup_apply]
+  simp
 
 @[simp] theorem homObj_iSup_app (α : ι → Functor.HomObj F (presheaf R) A) (X : Cᵒᵖ)
     (a : A.obj X) (x : F.obj X) : (⨆ i, α i).app X a x = ⨆ i, (α i).app X a x := by

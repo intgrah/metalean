@@ -139,8 +139,7 @@ theorem indProjection_mono (target : IndHead ζ) {a b : Shape Γ} :
     · simp only [indProjection]
       split_ifs
       refine congrArg _ (funext (head.projectFields_rel (fun _ => rfl) fun f hf => ?_))
-      simp only [CtorHead.projectFields_natAdd, hf, ↓reduceIte]
-      exact ih _ _
+      simpa [hf] using ih _ _
     · rfl
   | struct head hstruct fields ih =>
     simp only [indProjection]
@@ -148,8 +147,7 @@ theorem indProjection_mono (target : IndHead ζ) {a b : Shape Γ} :
     · simp only [indProjection]
       split_ifs
       refine congrArg _ (funext (head.projectFields_rel (fun _ => rfl) fun f hf => ?_))
-      simp only [CtorHead.projectFields_natAdd, hf, ↓reduceIte]
-      exact ih _ _
+      simpa [hf] using ih _ _
     · rfl
   | _ => rfl
 

@@ -121,7 +121,7 @@ theorem sectionValue_eq_value (hA : Comprehension (Ty E ℓ) Γ₁ ΓA)
     hom := s.hom
     over := by simpa using s.over
     generic := by simpa using s.generic }
-  simpa [sectionValue, bodySection, s'] using
+  simpa [sectionValue, bodySection] using
     (bodySection hA B σ ρ label I).pullback_extend (𝟙 Γ₂) s'
 
 theorem sectionValue_mono (hA : Comprehension (Ty E ℓ) Γ₁ ΓA)
@@ -240,9 +240,7 @@ theorem sectionValue_iSup_le (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (B : Nat 
   · exact (ΩLower.mem_iSup ..).mpr (Or.inl hy)
   · simp only [iSup_app] at hy
     have ⟨n, hy⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hy
-    refine (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, ?_⟩
-    rw [mem_sectionValue]
-    exact Or.inr ⟨sec, hy⟩
+    exact (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, Or.inr ⟨sec, hy⟩⟩
 
 end RawFamily
 
@@ -296,15 +294,12 @@ theorem IsFinitary.normalizedBody
         (RawFamily.IsFinitary.pullback hC σ) (RawFamily.constant_isFinitary J)
       have hxy : (B.app _ s.hom.op
           ((ρ.replace i I).push (X.app _ (𝟙 Γ₂).op (ρ.replace i I)))).mem (𝟙 Γ₂) y := by
-        dsimp only [X]
-        rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback,
-          Functor.HomObj.functor_map_app]
+        rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback]
         simpa using hy
       have ⟨l, hl, hy⟩ := hB.compose_value hX (𝟙 Γ₂) s.hom i ρ I hxy
       refine ⟨l, hl, Or.inr ⟨s, ?_⟩⟩
-      dsimp only [X] at hy
-      rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback,
-        Functor.HomObj.functor_map_app] at hy
+      dsimp only at hy
+      rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback] at hy
       simpa using hy
   change ΩLower.IsFinitary fun I => RawFamily.sectionValue hA B (𝟙 _ ≫ σ)
     ((ρ.replace i I).pullback (𝟙 _)) label

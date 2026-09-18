@@ -124,7 +124,7 @@ theorem ofFn {a k k' : Nat} (hk : k' = k) (Δ : Ctx E.1 ℓ a (a + k)) (f : Fin 
   | snoc k Δ t ih =>
     rw [Array.ofFn_succ]
     refine .snoc (ih _ fun i => ?_) ?_
-    · simpa [i.isLt.ne] using hent i.castSucc
+    · simpa using hent i.castSucc
     · simpa [Fin.last] using hent (Fin.last k)
 
 theorem append {a b d : Nat} {ts ts' : Array FExpr} {Δ : Ctx E.1 ℓ a b} {Δ' : Ctx E.1 ℓ b d} :

@@ -133,7 +133,7 @@ theorem application_bot (label : Tm_ Γ₁) (X : Domain Γ₁) :
     apply (ΩIdeal.mem_bot σ y).mpr
     apply hy.le_of_outputAtom
     rintro w ⟨f, i, hf, _, _, rfl⟩
-    rw [ΩIdeal.pullback_bot, ΩIdeal.val_mem, ΩIdeal.mem_bot] at hf
+    rw [ΩIdeal.pullback_bot] at hf
     exact le_bot_iff.mpr (CoherentGraph.lamGenerator_le_bot_iff.mp hf i)
   · exact @bot_le (Domain _) _ _ _
 
@@ -149,7 +149,7 @@ theorem IdealAction.abstraction_eq_bottom (B : IdealAction Γ₁)
       have h := hf i
       change (B.val.app _ (σ.op, f.names i) (principalIdeal (CoherentGraph.input ⟨f, hcoh⟩ i))).mem
         (𝟙 Γ₂) (CoherentGraph.output ⟨f, hcoh⟩ i) at h
-      rw [hB, ΩIdeal.mem_bot] at h
+      rw [hB] at h
       exact le_bot_iff.mp h
     exact (ΩIdeal.mem_bot σ y).mpr (hy.trans (CoherentGraph.lamGenerator_le_bot_iff.mpr houtputs))
   · exact @bot_le (Domain _) _ _ _
@@ -185,7 +185,7 @@ theorem rawExtend_bottom_payload {F : CodeAssignment E ℓ} (hF : F.IsPayloadStr
     have hy' := F.eval_mono_payload c _ (Y := ⊥)
       (ΩLower.principal_mono hx) (𝟙 Γ₂) y hy
     change ((F.app _ c).val.app _ ((𝟙 Γ₂).op, _) (⊥ : Domain Γ₂)).mem (𝟙 Γ₂) y at hy'
-    rwa [hF c, ΩIdeal.mem_bot] at hy'
+    rwa [hF c] at hy'
   · intro Γ₂ σ y hy
     exact (F.rawExtend T n ⊥).lower σ ((ΩLower.mem_bot _ _).mp hy) ((F.rawExtend T n ⊥).bottom σ)
 
@@ -214,8 +214,7 @@ theorem indAction_isStrict {F : CodeAssignment E ℓ} (hF : F.IsPayloadStrict)
     · exact (ΩIdeal.mem_bot _ _).mpr hy
     · have hbody : F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (⊥ : Domain Γ₃) hg =
           (⊥ : Domain Γ₃) := by
-        simp only [indBody, projIdeal_bottom, telescope_bottom hF]
-        exact ctorIdeal_bottom _ hg.witness.struct _
+        simpa [indBody, telescope_bottom hF] using ctorIdeal_bottom _ hg.witness.struct _
       rw [ΩIdeal.pullback_bot] at hy
       change (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (⊥ : Domain Γ₃) hg).mem
         (𝟙 Γ₃) y at hy

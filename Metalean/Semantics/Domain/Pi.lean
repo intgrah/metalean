@@ -42,7 +42,6 @@ theorem BasisAction.pullback_pi (label : Ty.Pair Γ₁) (A : ΩLower (pointedOrd
       BasisAction.pi ((Ty.pairPresheaf E ℓ).map σ₁.op label) (A.pullback σ₁)
         ((BasisAction.presheaf E ℓ).map σ₁.op B) := by
   ext Γ₃ σ₂ q
-  rw [ΩLower.presheaf_map_mem, BasisAction.mem_pi, BasisAction.mem_pi]
   change _ ↔ ∃ (a : CoherentShape Γ₃) (f : CoherentGraph Γ₃),
     A.mem (σ₂ ≫ σ₁) a ∧ B.GraphValid (σ₂ ≫ σ₁) f ∧
       q ≤ piGenerator ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label)) a f
@@ -53,7 +52,6 @@ theorem BasisAction.mem_piAtom_pi_iff (label : Ty.Pair Γ₁)
     (A : ΩLower (pointedOrder E ℓ) Γ₁) (B : BasisAction Γ₁) (σ : Γ₂ ⟶ Γ₁)
     (label' : Ty.Pair Γ₂) :
     (BasisAction.pi label A B).mem σ (piAtom label') ↔ label' = (Ty.pairPresheaf E ℓ).map σ.op label := by
-  rw [BasisAction.mem_pi]
   constructor
   · intro ⟨a, f, _, _, hle⟩
     exact (Basis.Le.forallE_inv hle).1

@@ -50,7 +50,6 @@ def extend (F : PartialSection R D) : ΩLower R X where
 theorem pullback_extend (F : PartialSection R D) (f : Y ⟶ X) (s : D.Witness f) :
     F.extend.pullback f = F.value f s := by
   ext Z g a
-  rw [ΩLower.presheaf_map_mem, mem_extend]
   constructor
   · intro
     | .inl ha => exact (F.value f s).lower g ha ((F.value f s).bottom g)

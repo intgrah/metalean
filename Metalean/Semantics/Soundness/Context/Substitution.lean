@@ -60,7 +60,7 @@ theorem pullback (h : SemanticSubstitution σ₁ σ₂ ρ₁ ρ₂) (σ₃ : Γ�
   intro Γ₅ Γ₆ σ₄ r hr σ₅ ρ₃ hσ hag hadm
   rw [RawValuation.pullback_comp] at hag hadm ⊢
   exact h (σ₄ ≫ σ₃) r hr σ₅ ρ₃ (by rw [hσ, Category.assoc]) hag
-    (by simpa only [Category.assoc] using hadm)
+    (by simpa using hadm)
 
 theorem variable_eq (h : SemanticSubstitution σ₁ σ₂ ρ₁ ρ₂)
     (hadm : SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁) ρ₁) : Agrees σ₁ σ₂ ρ₁ ρ₂ := by
@@ -82,7 +82,7 @@ theorem reindex (h : SemanticSubstitution σ₁ σ₂ ρ₁ ρ₂) {r : Γ₄.as
   rw [← Category.assoc]
   refine h σ₄ (r₁ ≫ r) (hr₁.comp hr) σ₅ ρ₄
     (by rw [Functor.map_comp, ← Category.assoc, hσ₅, Category.assoc, hσ]) (hag.comp hr hag₁) ?_
-  simpa only [Functor.map_comp, Category.assoc, ← Category.assoc σ₃, hσ] using hadm
+  simpa [← Category.assoc σ₃, hσ] using hadm
 
 theorem nil (σ₁ : Γ₂.as ⟶ (CtxCat.nil E ℓ).as) (σ₂ : Γ₃ ⟶ Γ₂) (ρ₁ ρ₂ : RawValuation Γ₃) :
     SemanticSubstitution σ₁ σ₂ ρ₁ ρ₂ :=
@@ -144,10 +144,10 @@ theorem snoc {t : Expr ζ ℓ Γ₁.as.len} {e : Expr ζ ℓ Γ₂.as.len} {u : 
     rfl
   | cast v =>
     have hadm' := SourceAdmissible.tail ht hadm
-    rw [Category.assoc, CtxCat.snoc_projection, RawValuation.tail_push] at hadm'
+    rw [Category.assoc, CtxCat.snoc_projection] at hadm'
     change (rawInterpret (piLimit E ℓ) Γ₅ ((σ₁.subst.extend e v.castSucc).subst r.subst)).app _
       σ₄.op ρ₃ = _
-    rw [Subst.extend_castSucc, Var.db_castSucc]
+    simp
     exact htail σ₃ r hr σ₄ ρ₃ hσ hag hadm' v
 
 theorem lift {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
@@ -170,8 +170,7 @@ theorem lift {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx
     have hadm' := SourceAdmissible.tail ht hadm
     change SourceAdmissible (((σ₃ ≫ σ₂) ≫ CtxCat.extensionMap ht σ₁) ≫ CtxCat.rawProjection Γ₁ ht)
       ((ρ₁.pullback σ₃).push ((ρ₂.pullback σ₃) 0)).tail at hadm'
-    rw [Category.assoc, CtxCat.extensionMap_projection ht σ₁, ← Category.assoc,
-      RawValuation.tail_push] at hadm'
+    rw [Category.assoc, CtxCat.extensionMap_projection ht σ₁, RawValuation.tail_push] at hadm'
     change (rawInterpret (piLimit E ℓ) Γ₅ ((σ₁.subst.lift v.castSucc).subst r.subst)).app _
       σ₄.op ρ₃ = _
     rw [Subst.lift_castSucc, Expr.wk_subst, Var.db_castSucc]
@@ -180,9 +179,9 @@ theorem lift {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx
       (by rw [Functor.map_comp, ← Category.assoc, hσ, Category.assoc]; rfl)
       (fun w => by
         have h := hag w.castSucc
-        rw [Var.db_castSucc] at h
+        simp at h
         exact h)
-      (by simpa only [Category.assoc] using hadm') v
+      (by simpa using hadm') v
 
 theorem comp {σ₁ : Γ₂.as ⟶ Γ₁.as} {σ₂ : Γ₃.as ⟶ Γ₂.as} {σ₃ : Γ₄ ⟶ Γ₃}
     {ρ₁ ρ₂ ρ₃ : RawValuation Γ₄}

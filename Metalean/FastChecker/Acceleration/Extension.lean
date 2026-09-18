@@ -43,11 +43,9 @@ theorem NatOpSpec.push {pos : Nat} {f : Nat → Nat → Nat} (h : NatOpSpec L F 
     have ⟨ηOp₀, hop₀, hop⟩ := hE₀.restrict pre h.opBound hηOp
     have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
       (htr.restrict pre) hnat₀ hop₀).envMono pre
-    simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.natType_map, hnat, hop,
-      Tele.map_nil] at hres
+    simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.natType_map, hnat, hop] at hres
     have hwk := hres.wkClosed (Γ := _Γ)
-    simp only [Literals.natOp₂_wkClosed, Literals.natLit_wkClosed, Literals.natType_wkClosed] at hwk
-    exact hwk
+    simpa [Literals.natOp₂_wkClosed, Literals.natLit_wkClosed, Literals.natType_wkClosed] using hwk
 
 theorem BoolOpSpec.push {pos : Nat} {f : Nat → Nat → Bool} (h : BoolOpSpec L F pos f)
     (fe : FEntry) :
@@ -66,11 +64,10 @@ theorem BoolOpSpec.push {pos : Nat} {f : Nat → Nat → Bool} (h : BoolOpSpec L
     have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
       (htr.restrict pre) hnat₀ hbool₀ hop₀).envMono pre
     simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.boolLit_map,
-      Literals.boolType_map, hnat, hbool, hop, Tele.map_nil] at hres
+      Literals.boolType_map, hnat, hbool, hop] at hres
     have hwk := hres.wkClosed (Γ := _Γ)
-    simp only [Literals.natOp₂_wkClosed, Literals.natLit_wkClosed, Literals.boolLit_wkClosed,
-      Literals.boolType_wkClosed] at hwk
-    exact hwk
+    simpa [Literals.natOp₂_wkClosed, Literals.natLit_wkClosed, Literals.boolLit_wkClosed,
+      Literals.boolType_wkClosed] using hwk
 
 def Accel.push (accel : Accel L F) (fe : FEntry) : Accel L (F.push fe) where
   add := accel.add.map fun ⟨h⟩ => ⟨h.push fe⟩

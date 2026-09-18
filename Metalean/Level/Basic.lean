@@ -100,11 +100,7 @@ def instRaw (σ : Param ℓ → Level ℓ₁) : RawLevel ℓ → Level ℓ₁
 private theorem eval_instRaw (σ : Param ℓ → Level ℓ₁) (ν : Param ℓ₁ → Nat)
     (u : RawLevel ℓ) :
     eval ν (instRaw σ u) = u.eval fun p => eval ν (σ p) := by
-  induction u with
-  | zero | param => rfl
-  | succ u ih => simp [instRaw, RawLevel.eval, ih]
-  | max u v ihu ihv => simp [instRaw, RawLevel.eval, ihu, ihv]
-  | imax u v ihu ihv => simp [instRaw, RawLevel.eval, ihu, ihv]
+  induction u <;> simp! [*]
 
 def inst (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) : Level ℓ₁ :=
   Quotient.liftOn u (instRaw σ) fun a b h => ext fun ν => by
@@ -124,7 +120,6 @@ theorem inst_mk_of_hasParam_eq_false (σ : Param ℓ → Level ℓ) {l : RawLeve
   induction l with
   | zero => rfl
   | succ _ ih =>
-    simp [RawLevel.hasParam] at h
     exact congrArg succ (ih h)
   | max _ _ ih₁ ih₂ =>
     simp [RawLevel.hasParam] at h

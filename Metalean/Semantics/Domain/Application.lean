@@ -58,10 +58,8 @@ theorem compatible {I : Domain Γ₁} {label : Tm_ Γ₁} {x y : CoherentShape �
   have ⟨g, j, hg, hjlabel, hjx, hjy⟩ := hy'
   have ⟨c, _, hfc, hgc⟩ := I.property (𝟙 Γ₁) hf hg
   rw [hiy, hjy]
-  have h := compatible_of_le hfc hgc (𝟙 Γ₁) i j (𝟙 Γ₁) (by rw [hilabel.trans hjlabel.symm])
+  exact compatible_of_le hfc hgc (𝟙 Γ₁) i j (𝟙 Γ₁) (by rw [hilabel.trans hjlabel.symm])
     (compatible_of_le hix hjx _)
-  simp at h
-  exact h
 
 end OutputAtom
 
@@ -196,7 +194,6 @@ theorem application_function_finitary (F : Domain Γ₁) {X : Domain Γ₁} (lab
     {y : CoherentShape Γ₁} (hy : (application F label X).mem (𝟙 Γ₁) y) :
     ∃ f, F.mem (𝟙 Γ₁) f ∧ (application (principalIdeal f) label X).mem (𝟙 Γ₁) y := by
   have ⟨x, hx, heval⟩ := hy
-  simp at heval
   have ⟨f, hf, heval⟩ := heval.function_ideal_finitary
   exact ⟨f, hf, x, hx, by simpa using heval⟩
 

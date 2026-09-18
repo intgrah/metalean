@@ -42,9 +42,8 @@ theorem Inductive.paramType_var {k : Nat} {ι : IndSig} {I : Inductive ζ ι}
         (Expr.var ((w.castLE (show p.val ≤ ι.nparams by omega)).castAdd k) :
           Expr ζ ℓ (ι.nparams + k)) :=
     funext fun _ => congrArg Expr.var (Fin.ext rfl)
-  rw [Ctx.get_subst _ _ (p.castAdd k) p.val (by omega) rfl, ← Ctx.entry_instL,
-    hrestrict] at hv
-  simpa [Inductive.paramType, Ctx.entry, Tele.append, Subst.id] using hv
+  rw [Ctx.get_subst _ _ (p.castAdd k) p.val (by omega) rfl, hrestrict] at hv
+  simpa [Inductive.paramType, Subst.id] using hv
 
 theorem SubstWFStrong.wkN {n m k : Nat} {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}
     {Δ : Ctx ζ ℓ m (m + k)} {σ : Subst ζ ℓ n m} :
@@ -86,11 +85,8 @@ theorem recursiveSourceTele_subst {n : Nat} (ps : Fin ι.nparams → Expr ζ ℓ
       ((E.get η).block.ctors s c).recursiveFieldTele η ls
         (fun p => (ps p).wkN (ι.ctors s c).nfields)
         (Expr.boundVars n (ι.ctors s c).nfields 0) := by
-  unfold recursiveSourceTele
   rw [Ctor.recursiveFieldTeleAux_subst]
   erw [Expr.boundVars_subst ps (ι.ctors s c).nfields 0]
-  congr 1
-  funext p
   simp [Subst.id, Expr.subst]
 
 abbrev sourceTelescope :
@@ -222,7 +218,6 @@ theorem CtxCat.ctorFieldTargetHom_projection :
     RawCtx.Hom.teleProjection (fieldTelescopeStrong h s c f) ≫ CtxCat.ctorFieldsProjection h s c =
       CtxCat.ctorFieldTargetHom h s c f := by
   apply RawCtx.Hom.ext
-  funext v
   simp [CtxCat.ctorFieldTargetHom, Expr.wkN_eq_rename]
   rfl
 
@@ -267,8 +262,6 @@ theorem CtorInstance.generic_ih_eq_lam (ms : Fin ι.nsorts → Expr ζ ℓ Γ₁
         ((ι.ctors s c).recursiveArity f) :=
     funext₂ fun s₁ c₁ => CtxCat.ctorFieldTargetHom_param h s c f (mins s₁ c₁)
   rw [hm, hc]
-  simp only [CtorInstance.ih, generic, Inductive.iotaIHs, Ctor.iotaIH, fieldTelescope, fieldIndices,
-    appliedMajor]
   cases ((E.get η).block.ctors s c).recursive f
   rfl
 
@@ -280,7 +273,7 @@ theorem CtorInstance.generic_ihType_eq_pi (ms : Fin ι.nsorts → Expr ζ ℓ Γ
         (Inductive.motiveResult
           ((ms ((ι.ctors s c).recursiveTarget f)).subst (CtxCat.ctorFieldTargetHom h s c f).subst)
           (fieldIndices h s c f) (appliedMajor h s c f)) := by
-  simp only [Ctor.ihTypeWith, CtxCat.ctorFieldTargetHom_param, fieldTelescope, fieldIndices, appliedMajor]
+  simp only [Ctor.ihTypeWith, CtxCat.ctorFieldTargetHom_param, fieldTelescope, fieldIndices]
   cases ((E.get η).block.ctors s c).recursive f
   rfl
 

@@ -62,8 +62,7 @@ theorem reindex (σ : Γ₂ ⟶ Γ₁) (h : QuotEvaluates D η A F Q y) :
     · have hy := (rawApplication ..).natural (𝟙 Γ₁) σ _ hy
       have heq := pullback_rawApplication F
         (D.rawExtend A name (ΩLower.principal (pointedOrder E ℓ) x)) {name} σ
-      rw [D.pullback_rawExtend, ΩLower.presheaf_map_principal, pointedOrder_map, Set.image_singleton] at heq
-      simp only [Quiver.Hom.unop_op] at heq
+      simp [D.pullback_rawExtend] at heq
       rw [← heq]
       simpa using hy
 
@@ -114,7 +113,7 @@ noncomputable def rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (rawQuotLift D η A F Q).pullback σ₁ =
       rawQuotLift D η (A.pullback σ₁) (F.pullback σ₁) (Q.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  simp [ΩLower.pullback]
+  simp
 
 theorem rawQuotLift_isDirected (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     {A F Q : RawValue Γ₁} (hA : A.IsDirected) (hF : F.IsDirected) (hQ : Q.IsDirected) :
@@ -131,7 +130,6 @@ theorem rawQuotLift_quotMk (D : CodeAssignment E ℓ) (η : Head ζ .quot)
   have heq := congrArg (fun V : RawValue Γ₂ => V.mem (𝟙 Γ₂) y) heq
   simp only [ΩLower.pullback, Category.id_comp] at heq
   rw [heq]
-  simp only [mem_rawQuotLift, RawValue.pullback_quotMk]
   constructor
   · intro h
     cases h with
@@ -175,7 +173,7 @@ noncomputable def rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) : Raw
     have h := (rawApplication (F.pullback σ₁) {n | Tm.type n = (Ty E ℓ).map σ₁.op C} ⊥).natural
       (𝟙 _) σ₂ y h
     rw [Category.comp_id, ← ΩLower.presheaf_map_mem_id, pullback_rawApplication,
-      ΩLower.pullback_pullback, ΩLower.presheaf_map_bot] at h
+      ΩLower.pullback_pullback] at h
     refine rawApplication_mono (fun _ _ h => h) ?_ (fun _ _ h => h) _ _ h
     rintro _ ⟨n, hn, rfl⟩
     change Tm.type ((Tm E ℓ).map σ₂.op n) = _
@@ -192,8 +190,7 @@ noncomputable def rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) : Raw
     (rawProofApplication C F).pullback σ₁ =
       rawProofApplication ((Ty E ℓ).map σ₁.op C) (F.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  simp only [ΩLower.presheaf_map_mem, mem_rawProofApplication, ΩLower.pullback_pullback,
-    ← Functor.map_comp_apply, ← op_comp]
+  simp
 
 end ProofElimination
 
@@ -237,7 +234,7 @@ theorem subst (h : QuotTyping Γ₁ u α r) (σ : Γ₂.as ⟶ Γ₁.as) :
 
 theorem code_map (h : QuotTyping Γ₁ u α r) (η : Head ζ .quot) (σ : Γ₂.as ⟶ Γ₁.as) :
     (h.code η).map ((Tm E ℓ).map (RawCtx.toCtx.map σ).op) = (h.subst σ).code η := by
-  simp only [code, QuotCode.map, Tm.map_label]
+  simp only [QuotCode.map]
   congr 1
   exact Tm.label_congr (by simp)
 
@@ -338,7 +335,7 @@ theorem proofApplication_isDirected {C : Ty_ Γ₁}
     (rawProofApplication ((Ty E ℓ).map σ.op C) (F.app _ σ.op ρ)).IsDirected := by
   intro Γ₃ σ₂
   refine rawApplication_isDirected ?_ (hF.pullback σ₂) ΩLower.isDirected_bot (𝟙 _)
-  rw [← Functor.map_comp_apply, ← op_comp]
+  rw [← Functor.map_comp_apply]
   exact hC (σ₂ ≫ σ)
 
 theorem proofApplication_eq {C : Ty_ Γ₁}
@@ -352,7 +349,7 @@ theorem proofApplication_eq {C : Ty_ Γ₁}
   ext Γ₃ σ₂ y
   have hQ : {n : Tm_ Γ₃ | Tm.type n = (Ty E ℓ).map σ₂.op ((Ty E ℓ).map σ.op C)} =
       {(Tm E ℓ).map σ₂.op ((Tm E ℓ).map σ.op name)} := by
-    rw [← Functor.map_comp_apply, ← op_comp]
+    rw [← Functor.map_comp_apply]
     refine (hC (σ₂ ≫ σ)).eq_singleton_of_mem ?_
     change Tm.type ((Tm E ℓ).map σ₂.op ((Tm E ℓ).map σ.op name)) = _
     rw [Tm.type_map, Tm.type_map, hname, ← Functor.map_comp_apply, ← op_comp]
