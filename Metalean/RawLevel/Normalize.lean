@@ -143,9 +143,7 @@ theorem natMax_def (a b : Nat) : Nat.max a b = if a ≤ b then b else a := rfl
 
 @[simp] theorem evalMax_append (ls₁ ls₂ : List (RawLevel ℓ)) :
     evalMax ν (ls₁ ++ ls₂) = Nat.max (evalMax ν ls₁) (evalMax ν ls₂) := by
-  induction ls₁ with
-  | nil => simp
-  | cons l ls ih => simp only [List.cons_append, evalMax_cons, ih, Nat.max_assoc]
+  induction ls₁ <;> simp [*]
 
 theorem le_evalMax {l : RawLevel ℓ} {ls : List (RawLevel ℓ)} :
     l ∈ ls →
@@ -379,7 +377,7 @@ theorem normalizeAux_spec (l : RawLevel ℓ) :
     exact ⟨h, hargs _ (h 0)⟩
   | imax l₁ l₂ ih₁ ih₂ =>
     have h k : eval ν (normalizeAux k (l₁.imax l₂)) = eval ν (l₁.imax l₂) + k := by
-      rw [normalizeAux, eval_succN, eval_mkIMax, ih₁.1, ih₂.1, eval_imax]
+      rw [normalizeAux, eval_succN, eval_mkIMax, ih₁.1, ih₂.1]
       rfl
     rw [normArgs.eq_def]
     exact ⟨h, hargs _ (h 0)⟩
@@ -397,7 +395,7 @@ theorem normalizeAux_spec (l : RawLevel ℓ) :
     refine ⟨fun k => ?_, ?_⟩
     · rw [normalizeAux, eval_mkMaxList, evalMax_map_succN ν k (hmerge.2 (hdrop.2 hsortne)),
         hmerge.1, hdrop.1, evalMax_perm ν hsort, evalMax_append, ih₁.2.1, ih₂.2.1, eval_max]
-    · rw [normArgs, evalMax_append, ih₁.2.1, ih₂.2.1, eval_max]
+    · rw [normArgs, evalMax_append, ih₁.2.1, ih₂.2.1]
       exact ⟨rfl, by simp [ih₁.2.2]⟩
 
 theorem normalize_equiv (l : RawLevel ℓ) : normalize l ≈ l :=

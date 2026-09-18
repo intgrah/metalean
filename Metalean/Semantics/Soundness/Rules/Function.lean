@@ -54,7 +54,7 @@ theorem binder_body (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality
   have htail : SemanticSubstitution σ₁
       (s.hom ≫ CtxCat.rawProjection Γ₂ (ht.substitution σ₁.typed))
       (ρs.pullback σ₃) ((ρt.pullback σ₃).push J.val).tail := by
-    rw [s.over, RawValuation.tail_push]
+    rw [s.over]
     exact hσ₁.pullback σ₃
   have htest := SemanticSubstitution.lift ht σ₁ s.hom (ρs.pullback σ₃)
     ((ρt.pullback σ₃).push J.val) htail
@@ -133,13 +133,13 @@ theorem HasIdeality.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht�
     (htI : HasIdeality Γ₁ t₁) (htI' : HasIdeality (CtxCat.extension Γ₁ ht₁) t₁') :
     HasIdeality Γ₁ (.forallE t₁ t₁') := by
   intro Γ₂ σ ρ hρ
-  rw [rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁', RawFamily.pi_value]
+  rw [rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁']
   exact rawPi_isDirected _ _ (htI σ ρ hρ) (bodyAction ht₁ htI htI' σ ρ hρ)
 
 theorem HasIdeality.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (htI : HasIdeality Γ₁ t₁)
     (heI' : HasIdeality (CtxCat.extension Γ₁ ht₁) e₁') : HasIdeality Γ₁ (.lam t₁ e₁') := by
   intro Γ₂ σ ρ hρ
-  rw [rawInterpret_lam (piLimit E ℓ) ht₁, RawFamily.abstraction_value]
+  rw [rawInterpret_lam (piLimit E ℓ) ht₁]
   exact RawAction.abstraction_isDirected _ (bodyAction ht₁ htI heI' σ ρ hρ)
 
 theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
@@ -147,8 +147,7 @@ theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
     (htI : HasIdeality Γ₁ t₁) (htsort' : HasFixedness (CtxCat.extension Γ₁ ht₁) t₁' (.sort v)) :
     HasFixedness Γ₁ (.forallE t₁ t₁') (.sort (.imax u v)) := by
   intro Γ₂ _ σ₁ ρ hρ
-  rw [rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁', RawFamily.pi_value, rawInterpret_sort,
-    RawFamily.sort_value]
+  rw [rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁', rawInterpret_sort]
   refine le_antisymm (by exact piLimit_rawExtend_sort_le _ _) fun Γ₃ σ₂ y hy => ?_
   have ⟨a, ⟨f, hcoh⟩, _, hf, hy'⟩ := (BasisAction.mem_pi _ _ _ _ _).mp hy
   refine (mem_piLimit_rawExtend_sort_iff _ _ _ _ _).mpr ⟨hy, ?_⟩
@@ -172,10 +171,10 @@ theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
       · intro Γ₄ σ₃ z hz
         exact S.support (piLimit_rawExtend_sort_le v _ σ₃ z hz)
       · intro Γ₄ σ₃ s
-        rw [(piLimit E ℓ).pullback_rawExtend, ΩLower.presheaf_map_principal, S.pullback_extend σ₃ s]
+        rw [(piLimit E ℓ).pullback_rawExtend, S.pullback_extend σ₃ s]
         have h := htsort' ht₁' s.hom _
           ((hρ.pullback σ₂).push_fixed_pullback ht₁ htI J hJ σ₃ s)
-        rw [rawInterpret_sort, RawFamily.sort_value] at h
+        rw [rawInterpret_sort] at h
         exact Eq.trans (ΩLower.ext fun σ z => (mem_piLimit_rawExtend_sort_iff v _ _ σ z).trans
           (mem_piLimit_rawExtend_sort_iff v _ _ σ z).symm) h
     have hmem := hf i
@@ -226,8 +225,6 @@ theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
         over := (Raw.ContextSection.ofTyping ht₁ σ harg).over
         generic := ((Raw.ContextSection.ofTyping ht₁ σ harg).generic).trans hmeq.symm }
   rw [hsnoc]
-  change (Tm E ℓ).map (RawCtx.toCtx.map (σ.snoc ⟨u, ht₁⟩ harg)).op _ = _
-  rw [Tm.map_label he₁' (σ.snoc ⟨u, ht₁⟩ harg)]
   refine Eq.trans ?_
     (Tm.apply_congr hlabel (Tm.map_label (.lamDF ht₁ ht₁' ht₁' he₁' he₁') σ) hmeq h hm h' hm').symm
   refine Eq.trans ?_
@@ -249,7 +246,7 @@ theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁'
     HasFixedness Γ₁ (.lam t₁ e₁') (.forallE t₁ t₁') := by
   intro Γ₂ _ σ₁ ρ hρ
   rw [rawInterpret_lam (piLimit E ℓ) ht₁, rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁',
-    RawFamily.abstraction_value, RawFamily.pi_value]
+    RawFamily.pi_value]
   refine RawFamily.normalizedAbstraction_fixed ht₁ _ _ _
     (rawInterpret_isFinitary (piLimit E ℓ) (Γ₁.extension ht₁) t₁')
     (rawInterpret_isFinitary (piLimit E ℓ) (Γ₁.extension ht₁) e₁') σ₁ ρ _
@@ -369,9 +366,7 @@ theorem lam (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u) (htI : HasIdea
     (he₂' : HasSubstitution (CtxCat.extension Γ₁ ht.left) e₂') :
     HasEquality Γ₁ (.lam t₁ e₁') (.lam t₂ e₂') := by
   intro Γ₂ σ ρ hρ
-  rw [rawInterpret_lam (piLimit E ℓ) ht.left,
-    rawInterpret_lam (piLimit E ℓ) ht.right, RawFamily.abstraction_value,
-    RawFamily.abstraction_value]
+  rw [rawInterpret_lam (piLimit E ℓ) ht.left, rawInterpret_lam (piLimit E ℓ) ht.right]
   exact RawAction.abstraction_eq_of_eq_on_ideals (normalizedBodyAction_contextConversion ht htI hteq he' he₂' σ ρ hρ)
 
 theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u)
@@ -383,8 +378,8 @@ theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u)
     HasEquality Γ₁ (.forallE t₁ t₁') (.forallE t₂ t₂') := by
   intro Γ₂ σ ρ hρ
   rw [rawInterpret_forallE (piLimit E ℓ) ht.left ht'.left,
-    rawInterpret_forallE (piLimit E ℓ) ht.right ht₂'.right,
-    RawFamily.pi_value, RawFamily.pi_value, Ty.pairOfTyping_congr Γ₁.as ht ht', hteq σ ρ hρ]
+    rawInterpret_forallE (piLimit E ℓ) ht.right ht₂'.right, RawFamily.pi_value,
+    Ty.pairOfTyping_congr Γ₁.as ht ht', hteq σ ρ hρ]
   exact rawPi_eq_of_eq_on_ideals _ _
     (normalizedBodyAction_contextConversion ht htI hteq hteq' htR' σ ρ hρ)
 
@@ -476,8 +471,8 @@ theorem HasIdeality.application_fixed
   have elabel : (Ty.pairPresheaf E ℓ).map (𝟙 Γ₂).op
       ((Ty.pairPresheaf E ℓ).map σ.op (Ty.pairOfTyping Γ₁.as ht ht')) =
       (Ty.pairPresheaf E ℓ).map σ.op (Ty.pairOfTyping Γ₁.as ht ht') := by
-    simp only [op_id, Functor.map_id_apply]
-  have en : (Tm E ℓ).map (𝟙 Γ₂).op n = n := by simp only [op_id, Functor.map_id_apply]
+    simp
+  have en : (Tm E ℓ).map (𝟙 Γ₂).op n = n := by simp
   have h' : Tm.type ((Tm E ℓ).map (𝟙 Γ₂).op n) =
       Ty.piApp ((Ty.pairPresheaf E ℓ).map (𝟙 Γ₂).op
           ((Ty.pairPresheaf E ℓ).map σ.op (Ty.pairOfTyping Γ₁.as ht ht'))).1
@@ -510,7 +505,7 @@ theorem HasIdeality.application_value
   let X := hρ.eval hXI
   have hF := hFF hf σ₁ ρ hρ
   rw [rawInterpret_forallE (piLimit E ℓ) ht ht'] at hF
-  rw [rawInterpret_app, RawFamily.application_value]
+  rw [rawInterpret_app]
   exact RawFamily.rawApplication_eq_of_sections ht he₁ σ₁ F X fun σ₂ _ _ _ hy =>
     RawFamily.outputAtom_rawPi_fixed_bot_or_section ht _ (rawInterpret (piLimit E ℓ) Γ₁ t)
       (rawInterpret_isFinitary (piLimit E ℓ) (Γ₁.extension ht) t') σ₁ ρ (htI σ₁ ρ hρ)
@@ -545,7 +540,7 @@ theorem eta_body_value (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (hren : HasSubs
     exact Or.inr ⟨Raw.ContextSection.cartesianLift ht (CtxCat.projectionRaw Γ₁ ht)
       ⟨r.hom, r.over.trans ((congrArg (σ₂ ≫ ·) s.over).symm.trans (Category.assoc _ _ _).symm),
         r.generic⟩⟩
-  · rw [Tm.label_eq_var hvar rfl, ← CtxCat.rawComprehension_generic]
+  · rw [Tm.label_eq_var hvar rfl]
     exact congrArg (fun n => (application F n X).val) s.generic
 
 theorem eta_sectionValue (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (hren : HasSubstitution Γ₁ e)
@@ -625,7 +620,6 @@ theorem HasEquality.eta
         Y.val := by
       change (piLimit E ℓ).rawExtend (C.app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) name X.val =
         ((piLimit E ℓ).extend (T.pullback σ₂) name X).val
-      rw [← (piLimit E ℓ).rawExtend_toLower]
       exact congrArg (fun I : RawValue Γ₃ ↦ (piLimit E ℓ).rawExtend I name X.val)
         (C.app_pullback σ₁.op σ₂ ρ).symm
     change RawFamily.sectionValue (CtxCat.rawComprehension ht) Eb (σ₂ ≫ σ₁) (ρ.pullback σ₂) name

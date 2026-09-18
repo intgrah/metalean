@@ -45,8 +45,8 @@ theorem ordinaryField_properties (f : Fin csig.nfields)
     Ctor.ordinarySubstWFStrong f.isLt.le hps hprevious⟩
   have pσ (v : Var Src.as.len) : RawInterpretationProperties Γ₁ (σ.subst v) := by
     cases v using Fin.addCases with
-    | left p => simpa only [σ, Fin.append_left] using pps p
-    | right g => simpa only [σ, Fin.append_right] using pprevious g
+    | left p => simpa [σ] using pps p
+    | right g => simpa [σ] using pprevious g
   have hf (v : Var Src.as.len) : HasFixedness Γ₁ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
     change HasFixedness Γ₁ (σ.subst v)
       ((Ctx.get v (Ctx.instL ls (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le))).subst σ.subst)

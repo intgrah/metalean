@@ -54,12 +54,10 @@ theorem CtxCat.ctorFields_get_ordinary (f : Fin (ι.ctors s c).nfields) :
   have hf : f.val < (ι.ctors s c).nfields := f.isLt
   change Ctx.get ⟨Γ₁.as.len + f.val, by omega⟩
     (Γ₁.as.ctx ++ ((E.get η).block.ctors s c).fieldTele η ls ps) = _
-  rw [← Expr.subst_id (Ctx.get _ _),
-    Ctx.get_subst _ Subst.id _ (Γ₁.as.len + f.val) (by omega) rfl,
-    Ctx.entry_append_right Γ₁.as.ctx _ (Nat.zero_le _) (by omega) (by omega),
-    Ctor.fieldTele, Ctx.entry_append_left _ _ (by omega) (by omega) (by omega),
-    Ctor.ordinaryFieldTele, Ctor.ordinaryFieldTeleAux_entry, Subst.liftN_eq_append, Expr.subst_subst,
-    Ctor.ordinaryFieldExpr]
+  rw [← Expr.subst_id (Ctx.get _ _), Ctx.get_subst _ Subst.id _ (Γ₁.as.len + f.val) (by omega) rfl,
+    Ctx.entry_append_right Γ₁.as.ctx _ (Nat.zero_le _) (by omega) (by omega), Ctor.fieldTele,
+    Ctx.entry_append_left _ _ (by omega) (by omega) (by omega), Ctor.ordinaryFieldTele,
+    Ctor.ordinaryFieldTeleAux_entry, Subst.liftN_eq_append, Expr.subst_subst]
   congr 1
   funext v
   cases v using Fin.addCases with
@@ -69,8 +67,7 @@ theorem CtxCat.ctorFields_get_ordinary (f : Fin (ι.ctors s c).nfields) :
     rw [← Expr.subst_vars]
     rfl
   | right prior =>
-    simp only [Subst.comp, Fin.append_right, Expr.boundVars, CtorSig.fieldOrdinary,
-      Expr.subst, Expr.var_wkN]
+    simp only [Subst.comp, Fin.append_right, CtorSig.fieldOrdinary, Expr.var_wkN]
     rfl
 
 theorem CtxCat.ctorFields_get_recursive (f : Fin (ι.ctors s c).nrecFields) :
@@ -140,7 +137,6 @@ theorem ordinaryFieldExpr_projSubst (hstruct : (E.get η).block.IsStructure s c)
         (ι.ctors s c).fieldOrdinary f).subst (projSubst h s c hstruct) =
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
         (projField ls ps s c hstruct) f := by
-  unfold projSubst
   rw [Ctor.ordinaryFieldExpr_subst]
   congr 1
   · exact funext fun p =>
@@ -156,8 +152,7 @@ theorem projSubstWF (hstruct : (E.get η).block.IsStructure s c) :
   | left v =>
     cases v using Fin.addCases with
     | left v =>
-      simpa [projSubst, Subst.wk, CtxCat.ctorFields, Ctor.fieldTele,
-        ← Tele.append_assoc, Expr.subst_wk, Ctx.get, v.isLt.ne] using
+      simpa [projSubst, Subst.wk, Ctor.fieldTele, ← Tele.append_assoc, Expr.subst_wk] using
         (CtxCat.majorCtx h s c hstruct).as.wf.var v.castSucc
     | right f =>
       erw [projSubst_ordinary h s c hstruct f, CtxCat.ctorFields_get_ordinary,
@@ -179,7 +174,6 @@ theorem map_projHom_varLabel_base (hstruct : (E.get η).block.IsStructure s c)
     (Tm E ℓ).map (RawCtx.toCtx.map (projHom h s c hstruct)).op
         (Tm.varLabel (CtxCat.ctorFields h s c) (baseVar h s c v)) =
       Tm.varLabel (CtxCat.majorCtx h s c hstruct) v.castSucc := by
-  rw [Tm.map_varLabel]
   exact Tm.label_eq_var _ (projSubst_base h s c hstruct v)
 
 theorem projHom_one_ordinary (hstruct : (E.get η).block.IsStructure s c)
@@ -190,7 +184,7 @@ theorem projHom_one_ordinary (hstruct : (E.get η).block.IsStructure s c)
       hstruct.projTerm η ls ps f maj := by
   change (projSubst h s c hstruct (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f))).subst
     (Subst.id.extend maj) = _
-  rw [projSubst_ordinary, projField, Inductive.IsStructure.projTerm_subst]
+  rw [projSubst_ordinary, projField]
   simp [Expr.wk_subst_extend, Expr.subst]
 
 theorem projHom_one_get_ordinary (hstruct : (E.get η).block.IsStructure s c)
@@ -255,7 +249,7 @@ def pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) : CtorSe
 @[simp] theorem names_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) :
     (sect.pullback σ₃).names = fun i => (Tm E ℓ).map σ₃.op (sect.names i) := by
   funext i
-  simp [names, op_comp]
+  simp [names]
 
 @[simp] theorem ihName_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂)
     (f : Fin (ι.ctors s c).nrecFields) :
@@ -356,9 +350,7 @@ theorem proj_name (sect : CtorSection h s c σ₁) (hs : (E.get η).block.IsStru
         (Raw.ContextSection.ofTerm hA hmaj).generic }
   have ⟨msect, hm⟩ := hp
   have hhom : sect.hom = σ₁ ≫ RawCtx.toCtx.map (ν ≫ projHom h.toIndData s c hs) := by
-    rw [hm, Section.hom_eq msect mcanon]
-    change (σ₁ ≫ RawCtx.toCtx.map ν) ≫ RawCtx.toCtx.map (projHom h.toIndData s c hs) = _
-    rw [Category.assoc, ← RawCtx.toCtx.map_comp]
+    rw [hm, Section.hom_eq msect mcanon, Category.assoc, ← RawCtx.toCtx.map_comp]
   rw [CtorSection.names, hhom, op_comp, Functor.map_comp_apply, Tm.map_varLabel]
   apply congrArg ((Tm E ℓ).map σ₁.op)
   have hterm := projHom_one_ordinary h.toIndData s c hs hmaj f
@@ -447,7 +439,7 @@ theorem map_fieldsHom_baseVar (v : Var Γ₁.as.len) :
     (Tm E ℓ).map (RawCtx.toCtx.map (inst.fieldsHom h σ hps)).op
         (Tm.varLabel (CtxCat.ctorFields h s c) (baseVar h s c v)) =
       (Tm E ℓ).map (RawCtx.toCtx.map σ).op (Tm.varLabel Γ₁ v) := by
-  rw [Tm.map_varLabel, Tm.map_varLabel]
+  rw [Tm.map_varLabel]
   refine Tm.label_eq_iff.mpr ⟨?_, ?_⟩
   · rw [fieldsHom_subst, CtxCat.ctorFields_get_base, fieldsSubst, Expr.wkN_subst_append,
       Expr.wkN_subst_append]

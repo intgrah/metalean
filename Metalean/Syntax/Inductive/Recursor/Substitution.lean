@@ -81,10 +81,7 @@ def Inductive.recrSubst :
       (Inductive.recrSubst ps ms mins is maj) =
       I.paramType ls ps param := by
   unfold recrTele
-  rw [Ctx.get_snoc _ _ _ (Nat.ne_of_lt
-    (((param.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).isLt),
-    Fin.castLT_castSucc, Ctx.get_append, Ctx.get_append, Ctx.get_append]
-  simp [Expr.wk_subst, Expr.wkN_eq_subst, recrSubst, Expr.subst, Ren.wkN]
+  simp [Expr.wk_subst, Expr.wkN_eq_subst, Expr.subst, Ren.wkN]
 
 @[simp] theorem Inductive.recrTele_get_motive_subst (s₁ : Fin ι.nsorts) :
     (Ctx.get
@@ -94,11 +91,7 @@ def Inductive.recrSubst :
         (Inductive.recrSubst ps ms mins is maj) =
       I.motiveType η ls ps l s₁ := by
   unfold recrTele
-  rw [Ctx.get_snoc _ _ _ (Nat.ne_of_lt
-    (((Fin.natAdd ι.nparams s₁).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).isLt),
-    Fin.castLT_castSucc, Ctx.get_append, Ctx.get_append]
-  simp [motiveBinders, Expr.wk_subst, Expr.wkN_eq_subst, recrSubst,
-    Expr.subst, Ren.wkN]
+  simp [motiveBinders, Expr.wk_subst, Expr.wkN_eq_subst, Expr.subst, Ren.wkN]
 
 @[simp] theorem Inductive.recrTele_get_case_subst (s₁ : Fin ι.nsorts) (c : Fin (ι.nctors s₁)) :
     (Ctx.get
@@ -113,8 +106,7 @@ def Inductive.recrSubst :
       (ι.nindices s)).isLt),
     Fin.castLT_castSucc, Ctx.get_append, caseBinders, Ctx.get_append_ofTypes,
     Fin.decodeSigma_encodeSigma]
-  simp [Expr.wk_subst, Expr.wkN_eq_subst, recrSubst,
-    Expr.subst, Ren.wkN]
+  simp [Expr.wk_subst, Expr.wkN_eq_subst, Expr.subst, Ren.wkN]
 
 @[simp] theorem Inductive.recrTele_get_index_subst (index : Fin (ι.nindices s)) :
     (Ctx.get
@@ -124,23 +116,20 @@ def Inductive.recrSubst :
         (Inductive.recrSubst ps ms mins is maj) =
       I.indexType ls s ps is index := by
   unfold recrTele
-  rw [Ctx.get_snoc _ _ _
-      (Nat.ne_of_lt (Fin.natAdd
-        (ι.nparams + ι.nsorts + Fin.sum ι.nctors) index).isLt),
-    Expr.wk_subst]
-  rw [Fin.castLT_castSucc, Fin.natAdd_mk, I.indexTele_get]
+  rw [
+    Ctx.get_snoc _ _ _ (Nat.ne_of_lt (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) index).isLt),
+    Expr.wk_subst, Fin.castLT_castSucc, Fin.natAdd_mk, I.indexTele_get]
   simp only [Inductive.indexType_subst]
   congr 2
   · funext param
-    simp [Expr.subst]
+    simp
     calc
       _ = Inductive.recrSubst ps ms mins is maj
           (((param.castAdd ι.nsorts).castAdd
             (Fin.sum ι.nctors)).castAdd
             (ι.nindices s)).castSucc := rfl
-      _ = ps param := by simp [Inductive.recrSubst]
+      _ = ps param := by simp
   · funext previous
-    simp only [Expr.subst]
     calc
       _ = Inductive.recrSubst ps ms mins is maj
           (Fin.natAdd
@@ -172,16 +161,15 @@ def Inductive.recrSubst :
       .ind η s ls ps is := by
   unfold recrTele
   rw [Ctx.get_last, Expr.wk_subst]
-  simp only [Expr.subst, Expr.wkN_eq_rename, Expr.rename_subst]
+  simp only [Expr.subst, Expr.wkN_eq_rename]
   congr 2
   · funext param
-    simp only [Subst.precomp, Ren.wkN]
     calc
       _ = Inductive.recrSubst ps ms mins is maj
           (((param.castAdd ι.nsorts).castAdd
             (Fin.sum ι.nctors)).castAdd
             (ι.nindices s)).castSucc := rfl
-      _ = ps param := by simp [Inductive.recrSubst]
+      _ = ps param := by simp
   · funext index
     let expected := (Fin.natAdd
       (ι.nparams + ι.nsorts + Fin.sum ι.nctors) index).castSucc
@@ -202,10 +190,7 @@ def Inductive.recrSubst :
     (ι.recrBody s).subst
         (Inductive.recrSubst ps ms mins is maj) =
       Inductive.motiveResult (ms s) is maj := by
-  unfold IndSig.recrBody Inductive.motiveResult
-  simp [Expr.subst,
-    Inductive.recrSubst_resolve_major, Inductive.recrSubst_resolve_motive,
-    Inductive.recrSubst_resolve_index]
+  simp [recrBody, Expr.subst]
 
 section
 

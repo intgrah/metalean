@@ -330,7 +330,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
     all_goals first
       | exact hChar
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
   | cons c cs ih =>
     simp only [charList, Expr.subst]
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
@@ -338,7 +338,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
       | exact hChar
       | exact ih
       | exact congrArg (Expr.app (.const ηOfNat ![])) (subst_natLit σ ηNat c.toNat)
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
 
 @[simp] theorem subst_strLit {m : Nat} (σ : Subst ζ ℓ m n)
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
@@ -346,7 +346,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (ηOfList : Head ζ (.const .def 0)) (str : String) :
     (strLit ηNat ηList ηChar ηOfNat ηOfList str).subst σ =
       strLit ηNat ηList ηChar ηOfNat ηOfList str := by
-  simp only [strLit, Expr.subst, subst_charList]
+  simp [strLit, Expr.subst, subst_charList]
 
 @[simp] theorem instL_natLit {ℓ' : Nat} (σ : Param ℓ → Level ℓ')
     (η : Head ζ (.inductive Nat.sig)) (num : Nat) :
@@ -371,7 +371,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     all_goals first
       | exact hChar
       | rfl
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
   | cons c cs ih =>
     simp only [charList, Expr.instL]
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
@@ -380,7 +380,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
       | exact ih
       | rfl
       | exact (natOp₁_instL σ _).trans congr(natOp₁ ηOfNat $(instL_natLit σ ηNat c.toNat))
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
 
 @[simp] theorem instL_strLit {ℓ' : Nat} (σ : Param ℓ → Level ℓ')
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
@@ -403,7 +403,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
     all_goals first
       | exact ih
-      | simp [Nat.zeroSig, Nat.succSig] at hi
+      | simp at hi
 
 @[simp] theorem map_charList {ζ₂ : Sigs} (pre : ζ ⟶ ζ₂)
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
@@ -421,7 +421,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
     all_goals first
       | exact hChar
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
   | cons c cs ih =>
     simp only [charList, Expr.map]
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
@@ -431,7 +431,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
       | change Expr.map pre (.app (.const ηOfNat ![]) (natLit ηNat c.toNat)) = _
         simp only [Expr.map, map_natLit]
         rfl
-      | simp [List.nilSig, List.consSig] at hi
+      | simp at hi
 
 @[simp] theorem map_strLit {ζ₂ : Sigs} (pre : ζ ⟶ ζ₂)
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
@@ -440,7 +440,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (strLit ηNat ηList ηChar ηOfNat ηOfList str : Expr ζ ℓ n).map pre =
       strLit (ηNat.map pre) (ηList.map pre) (ηChar.map pre) (ηOfNat.map pre) (ηOfList.map pre)
         str := by
-  simp only [strLit, Expr.map, map_charList]
+  simp [strLit, Expr.map, map_charList]
 
 theorem natType_rename {m : Nat} (ρ : Ren n m) :
     (natType ηNat : Expr ζ ℓ n).rename ρ = natType ηNat := by
@@ -488,8 +488,6 @@ theorem natOp₂_wkClosed (x y : Expr ζ ℓ 0) :
   | zero => rfl
   | succ n ih =>
     rw [Expr.wkClosed, ih]
-    simp only [Expr.wk, Expr.wkFrom]
-    rw [natOp₂_rename]
     rfl
 
 end Literals

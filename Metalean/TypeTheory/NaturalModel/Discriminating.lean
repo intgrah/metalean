@@ -64,8 +64,7 @@ theorem piCode_injective {A₁ A₂ : y Γ ⟶ Ty} {B₁ : y (ext A₁) ⟶ Ty} 
   have hlabel := Canonical.pi.inj (decode_inj
     (.pi ((comprehension A₁).label (yonedaEquiv B₁)))
     (.pi ((comprehension A₂).label (yonedaEquiv B₂))) h)
-  have hA : A₁ = A₂ := congrArg Sigma.fst hlabel
-  subst hA
+  obtain rfl : A₁ = A₂ := congrArg Sigma.fst hlabel
   refine congrArg (Sigma.mk A₁) (yonedaEquiv.injective ?_)
   have heval := (comprehension A₁).eval_congr hlabel rfl rfl
   rwa [(comprehension A₁).eval_family, (comprehension A₁).eval_family] at heval
@@ -83,7 +82,7 @@ theorem ind_injective {a₁ a₂ : IndArgs Ty ℓ}
     {σ₂ : Γ ⟶ extTele ((LeanModel.indSpec a₂.ind a₂.levels).index a₂.sort)}
     (h : y σ₁ ≫ (LeanModel.indAlgebra a₁.ind a₁.levels).carrier a₁.sort =
       y σ₂ ≫ (LeanModel.indAlgebra a₂.ind a₂.levels).carrier a₂.sort) :
-    a₁ = a₂ ∧ HEq σ₁ σ₂ :=
+    a₁ = a₂ ∧ σ₁ ≍ σ₂ :=
   Canonical.ind.inj (decode_inj (.ind a₁ σ₁) (.ind a₂ σ₂) h)
 
 theorem sort_ne_piCode (v : Level ℓ) (A : y Γ ⟶ Ty) (B : y (ext A) ⟶ Ty) :

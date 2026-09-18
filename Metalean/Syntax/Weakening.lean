@@ -158,17 +158,15 @@ theorem wkFrom_subst (σ : Subst ζ ℓ (m + 1) n) (e : Expr ζ ℓ m) :
   by_cases hv : v.val < n
   · have hs : (Ren.wkFrom cut v).val < n + 1 := by
       by_cases hc : v.val < cut
-      · simp [Ren.wkFrom, hc]
+      · simp [hc]
       · simpa [Ren.wkFrom, hc] using hv
-    rw [dite_eq_left hv]
-    change _ = if h : (Ren.wkFrom cut v).val < n + 1 then _ else _
-    rw [dite_eq_left hs]
+    rw [dite_eq_left hv, dite_eq_left hs]
     simp [Subst.id]
     by_cases hc : v.val < cut
     · rw [ite_eq_left hc]
       apply congrArg Expr.var
       apply Fin.ext
-      simp [Ren.wkFrom, hc]
+      simp [hc]
     · rw [ite_eq_right hc]
       apply congrArg Expr.var
       apply Fin.ext
@@ -177,9 +175,7 @@ theorem wkFrom_subst (σ : Subst ζ ℓ (m + 1) n) (e : Expr ζ ℓ m) :
       have hvn : v.val = n := by omega
       rw [Ren.wkFrom_of_ge v (by omega)]
       simp [hvn]
-    rw [dite_eq_right hv]
-    change _ = if h : (Ren.wkFrom cut v).val < n + 1 then _ else _
-    rw [dite_eq_right hs]
+    rw [dite_eq_right hv, dite_eq_right hs]
     simp
 
 @[simp] theorem wkFrom_const {kind : ConstKind} {nlevels : Nat}
@@ -252,7 +248,7 @@ namespace Ctx
 
 @[simp] theorem get_castSucc (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) (v : Var n) :
     (Γ.snoc t).get v.castSucc = (Γ.get v).wk := by
-  simp [get, v.isLt.ne]
+  simp [v.isLt.ne]
 
 @[simp] theorem get_append (Γ : Ctx ζ ℓ 0 n) (Δ : Ctx ζ ℓ n (n + k))
     (v : Var n) :
@@ -271,7 +267,7 @@ theorem get_insert (Γ₀ : Ctx ζ ℓ 0 cutPos) (t : Expr ζ ℓ cutPos)
       (Ctx.get v (Γ₀ ++ Δ)).wkFrom cutPos := by
   induction Δ with
   | nil =>
-    rw [insert, Ctx.wkFrom, Ren.wkFrom_of_lt v v.isLt]
+    rw [Ren.wkFrom_of_lt v v.isLt]
     exact Γ₀.get_snoc t v.castSucc (Nat.ne_of_lt v.isLt)
   | @snoc m Δ t₁ ih =>
     rw [insert, Ctx.wkFrom, Tele.append_snoc, Tele.append_snoc]
@@ -288,7 +284,7 @@ theorem get_insert (Γ₀ : Ctx ζ ℓ 0 cutPos) (t : Expr ζ ℓ cutPos)
         by_cases hc : v.val < cutPos <;> simp [Ren.wkFrom, hc] <;> omega
       have hb : (Ren.wkFrom cutPos v).val < m + 1 := by
         by_cases hc : v.val < cutPos
-        · simp [Ren.wkFrom, hc]
+        · simp [hc]
         · simpa [Ren.wkFrom, hc] using hlt
       have he : (Ren.wkFrom cutPos v).castLT hb = Ren.wkFrom cutPos (v.castLT hlt) := by
         ext
@@ -316,6 +312,6 @@ end Ctx
   cases v using Fin.lastCases <;> simp [Subst.rename, Subst.precomp, Subst.id, Expr.rename]
 
 theorem Expr.var_wk {ℓ n : Nat} (v : Var n) : (Expr.var v : Expr ζ ℓ n).wk = .var v.castSucc := by
-  simp [Expr.wk, Expr.wkFrom, Expr.rename, Ren.wkFrom, v.isLt]
+  simp [Expr.wk, Expr.wkFrom, Expr.rename]
 
 end Metalean

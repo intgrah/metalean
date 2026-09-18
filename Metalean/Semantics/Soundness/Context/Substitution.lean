@@ -197,8 +197,7 @@ theorem comp {σ₁ : Γ₂.as ⟶ Γ₁.as} {σ₂ : Γ₃.as ⟶ Γ₂.as} {σ
   have hvalue := himages v (r ≫ σ₂) σ₅ (ρ₂.pullback σ₄) ρ₄
     ((h₂.pullback σ₄).reindex hr σ₅ hσ hag) (by rw [hover]; exact hadm.pullback σ₄)
   rw [hover] at hvalue
-  have hvar := (h₁.pullback σ₄).variable_eq
-    (by simpa only [Functor.map_comp, Category.assoc] using hadm₁) v
+  have hvar := (h₁.pullback σ₄).variable_eq (by simpa using hadm₁) v
   rw [← Category.assoc]
   exact hvalue.trans hvar
 

@@ -93,7 +93,7 @@ theorem CoherentShape.CtorInstance.recovery_index_name (h : IndData Γ₁ η ls 
         (ι.ctors s c).fieldOrdinary i =
       .var (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f)) := by
     rw [Ctor.targetIndex_recovery hi]
-    simp [CtorSig.fieldOrdinary, fieldVar, Fin.castAdd, Fin.natAdd]
+    simp [CtorSig.fieldOrdinary, fieldVar, Fin.natAdd]
   have hmap : Tm.label Γ₂.as (ht.substitution (inst.fieldsHom h σ₁ hps).typed) =
       inst.names (Fin.castAdd (ι.ctors s c).nrecFields f) :=
     (Tm.map_label ht (inst.fieldsHom h σ₁ hps)).symm.trans
@@ -147,7 +147,7 @@ theorem proofConstructor_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel :
       (RawValue.ctor ⟨η, s, c⟩ (fun f => (Tm E₂ ℓ).map (σ₃ ≫ σ₂).op (inst.names f))
         (recoveredField η s c ls fun i => (indices i).pullback σ₃)).mem (𝟙 Γ₄) y := by
     rw [← ΩLower.presheaf_map_mem_id, RawValue.pullback_ctor]
-    simp [pullback_recoveredField, op_comp]
+    simp [pullback_recoveredField]
   rw [hrhs]
   constructor
   · rintro (hy | ⟨c', sect', hn', hy⟩)
@@ -156,13 +156,13 @@ theorem proofConstructor_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel :
       subst c'
       have hn' : RecoveryNames η s c ls
           (fun i => (Tm E₂ ℓ).map (σ₃ ≫ σ₂).op (Tm.label Γ₂.as (hidx i))) sect'.names := by
-        simpa [op_comp, Functor.map_comp_apply] using hn'
+        simpa using hn'
       have he := CtorSection.names_eq_recovery h herased sect' sect hn' (by rwa [hsect])
       rwa [he, hsect] at hy
   · intro hy
     refine Or.inr ⟨c, sect, ?_, ?_⟩
     · rw [hsect]
-      simpa [op_comp] using hnames
+      simpa using hnames
     · rwa [hsect]
 
 variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)
@@ -287,7 +287,7 @@ theorem RawSound.recursiveField_prop (h : IndData Γ₁ η ls ps) (fds : Fin (ι
   have hσ : E₂[Γ₁.as.ctx] ⊢ₛ Fin.append ps fds ⊣
       Ctx.instL ls ((E₂.get η).block.params ++ ((E₂.get η).block.ctors s c).ordinaryTele) := σ.typed
   have hΔ := ((h.block.ctors s c).recursive f).instantiatedTelescope (P := fun _ => True) (ls := ls)
-    (fun _ => trivial) (by simpa only [Ctx.instL_append] using hσ)
+    (fun _ => trivial) (by simpa only using hσ)
   let T := CtxCat.extendTele Γ₁ _ hΔ
   have hI : IndTyping T η ((ι.ctors s c).recursiveTarget f) ls
       (fun p => (ps p).wkN ((ι.ctors s c).recursiveArity f))
@@ -299,7 +299,7 @@ theorem RawSound.recursiveField_prop (h : IndData Γ₁ η ls ps) (fds : Fin (ι
       simp only [Inductive.paramType_wkN] at hp
       exact hp,
     fun i => ((h.block.ctors s c).recursive f).instantiatedIndices (fun p => Fin.append_left _ _ p) i
-      (by simpa only [Ctx.instL_append] using hσ)⟩
+      (by simpa only using hσ)⟩
   have hb : E₂[T.as.ctx] ⊢ₛ .ind η ((ι.ctors s c).recursiveTarget f) ls
       (fun p => (ps p).wkN ((ι.ctors s c).recursiveArity f))
       ((((E₂.get η).block.ctors s c).recursive f).instantiatedIndices ls (Fin.append ps fds)) :
@@ -349,7 +349,7 @@ theorem recoveredField_eq_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel 
     simp only [recoveredField, Fin.append_right]
     have ⟨ht, hp⟩ := hsound.recursiveField_prop hB hblock h.toIndData inst.fds pps pf herased f
     have hsort := hp ht σ ρ hρ
-    rw [rawInterpret_sort, RawFamily.sort_value] at hsort
+    rw [rawInterpret_sort] at hsort
     exact (((prf f).fixed (prf f).syntactic.left σ ρ hρ).symm.trans
       (piLimit_rawExtend_prop _ hsort _ _)).symm
 
@@ -372,7 +372,7 @@ theorem CoherentShape.CtorInstance.caseSubstWF (h : RecData Γ₁ η ls l ps ms 
     rw [inst.ihType_fieldsSubst h (𝟙 Γ₁.as) (fun p => Expr.subst_id _) (fun t => Expr.subst_id _)]
     exact inst.ih_typed h f
   have hσ := WFTeleStrong.extendFamily hΔ (inst.fieldsSubstWF h.toIndData (𝟙 Γ₁.as) fun p => Expr.subst_id _) hxs
-  simpa only [Inductive.caseTele, Tele.append_assoc, CtorSig.caseSubst, CtorInstance.fieldsSubst,
+  simpa [Inductive.caseTele, Tele.append_assoc, CtorSig.caseSubst, CtorInstance.fieldsSubst,
     RawCtx.Hom.id_subst] using hσ
 
 theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
@@ -492,7 +492,7 @@ theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTel
     fih σ₁ ρR ρ hfields.1 hfields.2 hρ
   have hOrd : SourceAdmissible (σ₁ ≫ RawCtx.toCtx.map σ₄) ρO := by
     have hp := SourceAdmissible.tailTele pcase.recursiveWF hfields.2
-    simp only [T, CtxCat.extendTele, Nat.add_sub_cancel_left] at hp
+    simp only [T, Nat.add_sub_cancel_left] at hp
     have hv : ρR.tailN (ι.ctors s c).nrecFields = ρO := RawValuation.tailN_pushFin _ _
     erw [Category.assoc, ← RawCtx.toCtx.map_comp, hv] at hp
     exact hp
@@ -537,7 +537,7 @@ theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTel
       have q := hfull.2
       change SourceAdmissible _ (ρR.pushFin fun i =>
         (rawInterpret (piLimit E₂ ℓ) Γ₁ (σ₂.subst (Fin.natAdd U.as.len i))).app _ σ₁.op ρ) at q
-      simpa only [hih] using q)
+      simpa only using q)
   simp only [hih] at qc
   have hnfield (i : Fin (CtorHead.mk η s c).arity) :
       Tm.label Γ₁.as (σ₃.typed (fieldVar h.toIndData s c i)) = inst.names i := by
@@ -552,11 +552,9 @@ theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTel
   have hnO (f : Fin (ι.ctors s c).nfields) :
       Tm.label Γ₁.as (σ₄.typed (Fin.natAdd Γ₁.as.len f)) =
         Tm.label Γ₁.as (inst.typed.ordinary f) := by
-    rw [← Tm.map_varLabel]
     change (Tm E₂ ℓ).map (RawCtx.toCtx.map
       (σ₃ ≫ RawCtx.Hom.teleProjection pcase.recursiveWF)).op (Tm.varLabel T _) = _
-    rw [RawCtx.toCtx.map_comp, op_comp, Functor.map_comp_apply,
-      Tm.map_teleProjection_varLabel, Tm.map_varLabel]
+    rw [RawCtx.toCtx.map_comp, op_comp, Functor.map_comp_apply, Tm.map_teleProjection_varLabel]
     have hh := hnfield (f.castAdd _)
     simp only [CtorInstance.names, CtorTyping.names, Fin.append_left] at hh
     exact hh
@@ -736,7 +734,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
     change σ₁ ≫ RawCtx.toCtx.map (inst.fieldsHom gen.toIndData hr.recrHom hps) =
       (σ' ≫ RawCtx.toCtx.map (RawCtx.Hom.one ⟨_, hA⟩ hvar)) ≫
         RawCtx.toCtx.map (projHom gen.toIndData s c hstruct)
-    rw [Category.assoc, Category.assoc, ← RawCtx.toCtx.map_comp, ← RawCtx.toCtx.map_comp]
+    rw [Category.assoc, Category.assoc]
     congr 1
     set τ := hr.recrHom ≫ RawCtx.Hom.one ⟨_, hA⟩ hvar ≫ projHom gen.toIndData s c hstruct with hτ
     refine ((RawCtx.toCtx_map_eq_iff _ _).mpr fun v => ?_).symm
@@ -762,15 +760,14 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
             hstruct.projTerm η ls ps f (.ctor η s c ls ps inst.fds hstruct.recursive) := by
           change ((RawCtx.Hom.one ⟨_, hA⟩ hvar ≫ projHom gen.toIndData s c hstruct).subst
             (fieldVar gen.toIndData s c (Fin.castAdd (ι.ctors s c).nrecFields f))).subst hr.recrHom.subst = _
-          rw [projHom_one_ordinary gen.toIndData s c hstruct hvar f, Inductive.IsStructure.projTerm_subst]
+          rw [projHom_one_ordinary gen.toIndData s c hstruct hvar f]
           simp [RecTyping.recrHom, Expr.subst, hrec]
         have hget : (Ctx.get (fieldVar gen.toIndData s c (Fin.castAdd (ι.ctors s c).nrecFields f))
             (CtxCat.ctorFields gen.toIndData s c).as.ctx).subst τ.subst =
             hstruct.projType η ls ps f (.ctor η s c ls ps inst.fds hstruct.recursive) := by
           change Expr.subst (Subst.comp (RawCtx.Hom.one ⟨_, hA⟩ hvar ≫
               projHom gen.toIndData s c hstruct).subst hr.recrHom.subst) _ = _
-          rw [← Expr.subst_subst, projHom_one_get_ordinary gen.toIndData s c hstruct hvar f,
-            Inductive.IsStructure.projType_subst]
+          rw [← Expr.subst_subst, projHom_one_get_ordinary gen.toIndData s c hstruct hvar f]
           simp [RecTyping.recrHom, Expr.subst, hrec]
         change E₂[Γ₁.as.ctx] ⊢ₛ
           τ.subst (fieldVar gen.toIndData s c (Fin.castAdd (ι.ctors s c).nrecFields f)) ≡
@@ -787,10 +784,10 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       RawValue.ctor ⟨η, s, c⟩ ((inst.section gen.toRecData hr.recrHom hps).pullback σ₁).names xs := by
     rw [CtorSection.names_pullback, CtorInstance.names_section]
     by_cases hcar : Level.rel ((E₂.get η).block.level.inst ls) = true
-    · simp only [recoverMajor, hcar, ↓reduceIte]
+    · simp only [recoverMajor, hcar]
       change ρ' (Var.db (RecrBinder.major (s := s)).resolve) = _
       simp only [ρ', RawValuation.pushFin_variable, Inductive.recrSubst_resolve_major]
-      rw [rawInterpret_ctor_typed _ inst.typed hcar, RawFamily.ctor_value]
+      rw [rawInterpret_ctor_typed _ inst.typed hcar]
       rfl
     · have hz : (E₂.get η).block.level.inst ls = .zero := by simpa using hcar
       have hnames : (fun i => (Tm E₂ ℓ).map σ'.op
@@ -810,7 +807,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
           fun i => (rawInterpret (piLimit E₂ ℓ) Γ₁ (((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)).app _ σ₁.op ρ₁ := by
         funext i
         simp [ρ']
-      simp only [recoverMajor, hcar, Bool.false_eq_true, ↓reduceIte]
+      simp only [recoverMajor, hcar]
       change proofConstructor gen.toRecData s (σ' ≫ 𝟙 _)
         (fun i => (Tm E₂ ℓ).map σ'.op (Tm.varLabel _ (RecrBinder.index (s := s) i).resolve))
         (fun i => ρ' (Var.db (RecrBinder.index (s := s) i).resolve)) = _
@@ -831,7 +828,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       inst.ihName_section gen.toRecData hr.recrHom hps hms hmins h, caseArgs]
     congr 1
     · change ρ' (Var.db (RecrBinder.case (s := s) s c).resolve) = _
-      simp only [ρ', RawValuation.pushFin_variable, Inductive.recrSubst_resolve_case]
+      simp [ρ', RawValuation.pushFin_variable, Inductive.recrSubst_resolve_case]
     · congr 1
       funext f
       exact hcase f

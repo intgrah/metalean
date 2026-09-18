@@ -60,7 +60,7 @@ variable (σ : Subst ζ ℓ m n)
   have hσ : ((fun v => (Subst.id.extend e₂) (Ren.wkFrom n v)) : Subst ζ ℓ n n) =
       Subst.id := by
     funext v
-    simp [Ren.wkFrom, Subst.extend, Subst.id, v.isLt]
+    simp
   rw [hσ, Expr.subst_id]
 
 theorem Expr.inst_subst (σ : Subst ζ ℓ n p) (t' : Expr ζ ℓ (n + 1)) (e : Expr ζ ℓ n) :
@@ -70,9 +70,9 @@ theorem Expr.inst_subst (σ : Subst ζ ℓ n p) (t' : Expr ζ ℓ (n + 1)) (e : 
   congr 1
   funext v
   cases v using Fin.lastCases with
-  | last => simp [Subst.comp, Subst.extend, Subst.lift, Expr.subst]
+  | last => simp [Subst.comp, Expr.subst]
   | cast v =>
-    simpa [Subst.comp, Subst.lift, Subst.id, Expr.subst, Expr.inst] using
+    simpa [Subst.comp, Subst.id, Expr.subst, Expr.inst] using
       (Expr.inst_wk (σ v) (e.subst σ)).symm
 
 @[simp] theorem Expr.wkN_subst (σ : Subst ζ ℓ n p) (e : Expr ζ ℓ n) (k : Nat) :
@@ -125,7 +125,7 @@ theorem Expr.wkClosed_subst (e : Expr ζ ℓ 0) (σ : Subst ζ ℓ m n) :
   | zero => exact absurd j.isLt (by omega)
   | succ k ih =>
     cases j using Fin.lastCases with
-    | last => simp [Subst.liftN]
+    | last => simp
     | cast j =>
         change (σ.liftN k).lift (Fin.natAdd n j).castSucc = _
         rw [Subst.lift_castSucc, ih j]
@@ -195,7 +195,7 @@ theorem Expr.wk_subst_extend (σ : Subst ζ ℓ n m) (e₁ : Expr ζ ℓ n)
   rw [show e₁.wk = e₁.wkFrom n from rfl, Expr.wkFrom_subst]
   congr 1
   funext v
-  simp [Ren.wkFrom, Subst.extend, v.isLt]
+  simp
 
 def Subst.wk : Subst ζ ℓ n (n + 1) := fun v => .var v.castSucc
 
@@ -203,7 +203,7 @@ theorem Expr.subst_wk (e : Expr ζ ℓ n) : e.subst Subst.wk = e.wk := by
   rw [Expr.wk, Expr.wkFrom_eq_subst]
   congr 1
   funext v
-  simp [Subst.wk, Subst.wkFrom, v.isLt]
+  simp [Subst.wk, Subst.wkFrom]
 
 theorem Expr.wk_subst (e : Expr ζ ℓ n) (σ : Subst ζ ℓ (n + 1) m) :
     e.wk.subst σ = e.subst (Subst.wk.comp σ) := by
@@ -227,7 +227,7 @@ theorem Ctx.entry_substN (k : Nat) (Γ : Ctx ζ ℓ m (m + k)) (j : Nat) (hb : n
     have .snoc Γ t := Γ
     by_cases hjk : j = k
     · subst j
-      simp [Ctx.substN, Ctx.entry]
+      simp [Ctx.substN]
     · change (if _ : n + j = n + k then _
             else Ctx.entry (Ctx.substN σ k Γ) hb (by omega)) =
           (if _ : m + j = m + k then _
@@ -401,7 +401,7 @@ theorem Expr.inst_subst_lift (σ : Subst ζ ℓ n p) (e' : Expr ζ ℓ (n + 1)) 
     (ctor.recursiveFieldExpr η ls ps fds field).subst σ =
       ctor.recursiveFieldExpr η ls (fun i => (ps i).subst σ)
         (fun i => (fds i).subst σ) field := by
-  simp [recursiveFieldExpr, RecField.instantiatedType_subst]
+  simp [recursiveFieldExpr]
 
 theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
     σ.liftN count =
@@ -433,8 +433,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
         (ctor.fieldTele η ls ps stop) =
       ctor.fieldTele η ls (fun i => (ps i).subst σ) stop := by
   unfold Ctor.fieldTele Ctor.ordinaryFieldTele
-  rw [Ctx.substN₂_append, Ctor.ordinaryFieldTeleAux_subst,
-    Ctor.recursiveFieldTeleAux_subst]
+  rw [Ctx.substN₂_append, Ctor.recursiveFieldTeleAux_subst]
   erw [Expr.boundVars_subst σ csig.nfields 0]
   simp
 
@@ -585,7 +584,6 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
         (fun i => (fds i).subst σ)
         (fun i => (recFds i).subst σ) f := by
   unfold Ctor.iotaIH
-  rw [RecField.iotaIH_subst]
   simp
 
 @[simp] theorem Inductive.iotaIHs_subst (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -658,8 +656,8 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
           is (previous.castLE index.isLt.le)) =
       I.indexType ls s (fun p => (ps p).subst σ) is index := by
   unfold Inductive.indexTele Inductive.indexType
-  rw [Ctx.entry_substN _ _ _ index.val (by omega) (by omega) (by omega) (by omega)]
-  rw [Expr.subst_subst, Subst.liftN_comp_append]
+  rw [Ctx.entry_substN _ _ _ index.val (by omega) (by omega) (by omega) (by omega),
+    Expr.subst_subst, Subst.liftN_comp_append]
   congr 1
   rw [← Ctx.entry_instL]
   exact congrArg (Expr.instL ls)
@@ -672,12 +670,9 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
       I.indexType ls s
         (fun p => (ps p).wkN (ι.nindices s))
         (fun i => .var ⟨n + i.val, by omega⟩) index := by
-  rw [← Expr.subst_id
-    (Ctx.get ⟨n + index.val, by omega⟩
-      (Γ ++ I.indexTele ls s ps))]
-  rw [Ctx.get_subst _ Subst.id _ (n + index.val) (by omega) rfl]
-  rw [Ctx.entry_append_right Γ (I.indexTele ls s ps)
-    (Nat.zero_le _) (by omega) (by omega)]
+  rw [← Expr.subst_id (Ctx.get ⟨n + index.val, by omega⟩ (Γ ++ I.indexTele ls s ps)),
+    Ctx.get_subst _ Subst.id _ (n + index.val) (by omega) rfl,
+    Ctx.entry_append_right Γ (I.indexTele ls s ps) (Nat.zero_le _) (by omega) (by omega)]
   have hσ :
       (fun w : Fin (n + index.val) =>
         (.var (w.castLE (by omega)) :
@@ -873,9 +868,9 @@ theorem Expr.inst_wkFrom_last (t' : Expr ζ ℓ (n + 1)) :
       = (Subst.id : Subst ζ ℓ (n + 1) (n + 1)) := by
     funext v
     cases v using Fin.lastCases with
-    | last => simp [Ren.wkFrom, Subst.extend, Subst.id]
+    | last => simp [Subst.id]
     | cast v =>
-        simp [Ren.wkFrom, Subst.extend, Subst.id, v.isLt]
+        simp
 
   rw [this, Expr.subst_id]
 
@@ -883,8 +878,8 @@ theorem Subst.wkFrom_eq_lift_wk :
     (Subst.wkFrom n : Subst ζ ℓ (n + 1) (n + 2)) = Subst.wk.lift := by
   funext v
   cases v using Fin.lastCases with
-  | last => simp [Subst.wkFrom, Ren.wkFrom]
-  | cast v => simp [Subst.wkFrom, Ren.wkFrom, Subst.wk, Expr.var_wk, v.isLt]
+  | last => simp [Subst.wkFrom]
+  | cast v => simp [Subst.wkFrom, Subst.wk, Expr.var_wk]
 
 theorem Expr.inst_subst_lift_wk_last (t' : Expr ζ ℓ (n + 1)) :
     (t'.subst Subst.wk.lift).inst (.var (Fin.last n)) = t' := by
@@ -903,7 +898,7 @@ theorem Subst.Renames.lift {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m} {σ
     have ⟨w, hw, htype⟩ := h v
     refine ⟨w.castSucc, ?_, ?_⟩
     · rw [Subst.lift_castSucc, hw]
-      simp [Expr.wk, w.isLt]
+      simp [Expr.wk]
     · rw [Γ₂.get_snoc (t.subst σ) w.castSucc (Nat.ne_of_lt w.isLt),
         Γ₁.get_snoc t v.castSucc (Nat.ne_of_lt v.isLt), Expr.wk_subst_lift]
       exact congrArg Expr.wk htype

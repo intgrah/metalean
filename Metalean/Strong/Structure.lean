@@ -43,8 +43,7 @@ theorem IsStructure.projTypeWith_hasTypeStrong
     (ctor := I.ctors s c) f.isLt.le hps fun prior => by
       simpa [projTypeWith] using hprevious prior
   have htype := ((hctor.ordinary f).typeExact.instLevel ls).substitution hσ
-  simpa [projTypeWith, Ctor.ordinaryType,
-    Expr.instL, Expr.subst] using htype
+  simpa [projTypeWith, Ctor.ordinaryType, Expr.instL] using htype
 
 theorem IsStructure.projTypeWith_congrStrong
     (hB : I.WFStrong E) (hctor : (I.ctors s c).WFStrong E I)
@@ -67,9 +66,8 @@ theorem IsStructure.projTypeWith_congrStrong
     (Q := fun _ => True) ls fun _ => trivial
   have hfullEq := SubstEqStrong.extendFamily
       (xs₁ := previous) (xs₂ := previous') hfieldsTele hpsEq fun prior => by
-    rw [← Ctx.entry_instL, Ctor.ordinaryTeleAux_entry]
-    simpa [projTypeWith,
-      Ctor.ordinaryType] using hprevious prior
+    rw [← Ctx.entry_instL]
+    simpa [projTypeWith] using hprevious prior
   have hsource := hB.params.append
     (by simpa using hctor.ordinaryTeleAuxStrong f.val f.isLt.le)
   have hfield := (hctor.ordinary f).typeExact.instLevel ls
@@ -78,8 +76,7 @@ theorem IsStructure.projTypeWith_congrStrong
     ls fun _ => trivial
   rw [Ctx.instL_append] at hsourceInst
   have hfield := hsourceInst.substitution_congr hfullEq hfield
-  simpa [projTypeWith, Ctor.ordinaryType,
-    Fin.append, Expr.instL, Expr.subst] using hfield
+  simpa [projTypeWith, Ctor.ordinaryType, Expr.instL] using hfield
 
 structure IsStructure.ProjectionStrong
     (E : Env ζ) (Γ : Ctx ζ ℓ 0 n)
@@ -245,7 +242,7 @@ theorem IsStructure.projectionStrong
       (ι.ctors s c).nrecFields le_rfl
     have hfieldTele : WFTeleStrong E (fun _ => True) Γ
         (((E.get η).block.ctors s c).fieldTele η ls ps) := by
-      simpa [Ctor.fieldTele, Ctor.recursiveFieldTele] using
+      simpa [Ctor.fieldTele] using
         hfieldsTele.append hrecFieldsTele
     have hihTeleAux (count : Nat)
         (hcount : count ≤ (ι.ctors s c).nrecFields) :
@@ -590,7 +587,7 @@ theorem IsStructure.projectionStrong
               Fin.last (n + (ι.ctors s c).nfields +
                 (ι.ctors s c).nrecFields +
                 (ι.ctors s c).nrecFields) :=
-            (Fin.heq_ext_iff (by omega)).2 (by simp [Fin.last]; omega)
+            (Fin.heq_ext_iff (by omega)).2 (by simp; omega)
           exact congr(@Expr.var $(rfl) $(rfl) $(by omega) $hv)
         have hbodyBase :
             projTypeWith ((E.get η).block) ls
@@ -630,11 +627,8 @@ theorem IsStructure.projectionStrong
                 (ι.ctors s c).nrecFields).wkN
                 (ι.ctors s c).nrecFields = actualMotive :=
             eq_of_heq (houter.trans hbaseActual)
-        rw [hmotiveExact]
-        rw [Expr.apps_eq_self_of_zero hni]
-        rw [hcaseRecursive]
-      · simp [casePrevious, caseMajor, Expr.inst,
-          Expr.wk_subst_extend]
+        rw [hmotiveExact, Expr.apps_eq_self_of_zero hni, hcaseRecursive]
+      · simp [Expr.inst, Expr.wk_subst_extend]
         congr 1
         funext prior
         rw [Expr.subst, Subst.extend_last]
@@ -702,7 +696,7 @@ theorem IsStructure.projectionStrong
         .var (Fin.last n) :
           .ind η s ls (fun param => (ps param).wk) h.indices := by
       convert hΓmajor.var (Fin.last n) using 1
-      simp only [Ctx.get_last, Expr.wk, Expr.wkFrom_ind]
+      simp only [Ctx.get_last]
       congr 1
       exact funext h.no_indices.elim
     have hpreviousMajor (prior : Fin f.val) :
@@ -739,8 +733,7 @@ theorem IsStructure.projectionStrong
       rw [hmotiveZero]
       convert hbeta using 1
       · rw [Expr.apps_eq_self_of_zero hni]
-      · simp [previous, IsStructure.projTerm, Expr.inst,
-          Expr.wk_subst_extend]
+      · simp [IsStructure.projTerm, Expr.inst, Expr.wk_subst_extend]
         congr 1
         funext prior
         have hs := congrArg Prod.snd
@@ -787,8 +780,7 @@ theorem IsStructure.projectionStrong
       have ht := DefeqStrong.defeqDF htypeIota.symm
         (hresultTermCase.2.1.left)
       unfold IsStructure.projTerm at ht
-      rw [projection.eq_1] at ht
-      rw [← htargetIndices] at ht
+      rw [projection.eq_1, ← htargetIndices] at ht
       change E[Γ] ⊢ₛ
         (E.get η).block.iotaLhs η ls u ps ms mins s c
             fds h.recursive ≡
@@ -810,23 +802,17 @@ theorem IsStructure.projectionStrong
       have hv := (hB.ctors s c).boundOrdinarySubstWFStrong
         (η := η) hps
           (Fin.natAdd ι.nparams f)
-      rw [Ctx.get_subst _ _ _ _ (by omega) rfl] at hv
-      rw [← Ctx.entry_instL] at hv
+      rw [Ctx.get_subst _ _ _ _ (by omega) rfl, ← Ctx.entry_instL] at hv
       have hb : ι.nparams ≤ (Fin.natAdd ι.nparams f).val := by
         simp
       rw [Ctx.entry_append_right (E.get η).block.params _ (by omega) hb (by omega)] at hv
-      simpa [Ctor.ordinaryTele,
-        CtorSig.fieldOrdinary, Expr.boundVars, projTypeWith,
-        Ctor.ordinaryType] using hv
+      simpa [projTypeWith] using hv
     have hcaseBeta := Ctx.lam_applyFamilyStrong (xs := fds)
       hΓ hfieldsTele' (fun current => by
         unfold Ctor.ordinaryFieldTele Ctor.ordinaryFieldTeleAux
-        rw [Ctx.entry_substN ps _ _ current.val
-          (by omega) (by omega) (by omega) (by omega), ← Ctx.entry_instL,
-          Ctor.ordinaryTeleAux_entry]
-        rw [Expr.subst_subst, Subst.liftN_comp_append]
-        simpa [projTypeWith,
-          Ctor.ordinaryType] using
+        rw [Ctx.entry_substN ps _ _ current.val (by omega) (by omega) (by omega) (by omega),
+          ← Ctx.entry_instL]
+        simpa [projTypeWith] using
             hfields current) hbody
     have hcaseBeta' : E[Γ] ⊢ₛ
         (E.get η).block.iotaRhs η ls u ps ms mins s c
@@ -842,15 +828,8 @@ theorem IsStructure.projectionStrong
           $(h.caseOrdinaryField f)
           $(h.caseTeleOrdinary η ls ps ms)))
       unfold Inductive.iotaRhs
-      rw [hcaseTerm]
-      rw [Expr.apps_eq_self_of_zero hnr,
-        Expr.apps_eq_self_of_zero hnr]
-      simpa [Inductive.iotaIHs,
-        mins, projectionCases, Inductive.caseTele,
-        Ctor.fieldTele, Ctor.recursiveFieldTele,
-        Ctor.recursiveFieldTeleAux, Ctor.ihTele,
-        Ctor.ihTeleAux, CtorSig.caseOrdinary,
-        CtorSig.fieldOrdinary, Expr.boundVars, Expr.subst] using hcaseBeta
+      rw [hcaseTerm, Expr.apps_eq_self_of_zero hnr, Expr.apps_eq_self_of_zero hnr]
+      simpa [Expr.boundVars, Expr.subst] using hcaseBeta
     have hpreviousIota (prior : Fin f.val) : E[Γ] ⊢ₛ
         h.projTerm η ls ps (prior.castLE f.isLt.le)
             (.ctor η s c ls ps fds h.recursive) ≡
@@ -892,14 +871,13 @@ theorem IsStructure.projectionStrong
             subst targetCtor
             simpa using hcase)
           (fun current => by
-            simpa [projTypeWith, Ctor.ordinaryType] using
+            simpa [projTypeWith] using
               hfields current)
           h.no_recursive.elim
           htypeToOrd.left
           hlhs hrhs
     unfold IsStructure.projTerm
-    rw [projection.eq_1]
-    rw [← htargetIndices]
+    rw [projection.eq_1, ← htargetIndices]
     change E[Γ] ⊢ₛ
       (E.get η).block.iotaLhs η ls u ps ms mins s c
           fds h.recursive ≡ fds f :
@@ -1025,7 +1003,7 @@ theorem IsStructure.projTerm_congrStrong
   intro hps hmaj
   have hparams := hB.params.instLevel (Q := fun _ : Level ℓ => True) ls fun _ => trivial
   have hΓ₀ : E[Ctx.instL ls (E.get η).block.params] ⊢ₛ ok := by
-    simpa [Ctx.instL] using hparams.appendCtxWFStrong (Γ := .nil) .nil
+    simpa using hparams.appendCtxWFStrong (Γ := .nil) .nil
   have hgeneric : ∀ param : Fin ι.nparams,
       E[Ctx.instL ls (E.get η).block.params] ⊢ₛ Expr.var param :
         (E.get η).block.paramType ls (Subst.id : Subst ζ ℓ ι.nparams ι.nparams) param := by
@@ -1056,7 +1034,7 @@ theorem IsStructure.projType_congrStrong
             h.projTerm η ls ps₁ (prior.castLE current.isLt.le) maj₁) := by
     intro current
     have hcongr := h.projTerm_congrStrong hB current hps hmaj
-    rwa [IsStructure.projType_eq, Ctor.ordinaryFieldExpr] at hcongr
+    rwa [IsStructure.projType_eq] at hcongr
   have ⟨_, heq⟩ := (hB.ctors s c).ordinaryFieldExpr_congr hB.params f
     hps hfields
   rw [IsStructure.projType_eq, IsStructure.projType_eq]
