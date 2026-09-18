@@ -215,7 +215,6 @@ theorem DefeqStrong.quotLift_prop :
     rw [Expr.inst_wk]
     exact hβ
   have hrhs := DefeqStrong.appDF hα (hβ.wk α) hf hp hβinst
-  change E[Γ] ⊢ₛ .app f p ≡ .app f p : β.wk.inst p at hrhs
   rw [Expr.inst_wk] at hrhs
   exact (DefeqStrong.quotLiftDF hα hr hβ hf hh hqmk).trans
     (.quotIota hα hr hβ hf hh hp (.quotLiftDF hα hr hβ hf hh hmk) hrhs)

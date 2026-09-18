@@ -105,12 +105,11 @@ theorem piLimit_extend_pi (label : Ty.Pair Γ₁) (A : Domain Γ₁) (B : IdealA
 
 theorem piLimit_value_sort (r : Level ℓ) :
     (piLimit E ℓ).app _ (sortAtom r : CoherentShape Γ₁) = universeAction r.rel := by
-  rw [← piLimit_fixedPoint]
   rfl
 
 theorem piLimit_extend_sort (r : Level ℓ) (n : Tm_ Γ₁) (X : Domain Γ₁) :
     (piLimit E ℓ).extend (principalIdeal (sortAtom r)) n X = universeIdeal r.rel X := by
-  rw [extend_principal, eval, piLimit_value_sort]
+  rw [extend_principal]
   rfl
 
 theorem piStage_eval_prop (k : Nat) {c : CoherentShape Γ₁} (hc : Shape.IsCode false c.1)
@@ -153,10 +152,8 @@ theorem piStage_eval_prop (k : Nat) {c : CoherentShape Γ₁} (hc : Shape.IsCode
         rw [CodeAssignment.resultBody] at hy
         have ⟨c, hc, hy⟩ := (mem_extend _ _ _ _ _ _).mp hy
         rw [IdealAction.pullback_app] at hc
-        simp only [op_id, unop_id, Category.comp_id] at hc
         erw [graphAction_value] at hc
-        rw [ih (isCode_of_mem_application_lamGenerator (fun i => (hf i).map _ _) _ _ (𝟙 Γ₄) hc),
-          ΩIdeal.mem_bot] at hy
+        rw [ih (isCode_of_mem_application_lamGenerator (fun i => (hf i).map _ _) _ _ (𝟙 Γ₄) hc)] at hy
         exact (ΩIdeal.mem_bot σ₂ y).mpr hy
       · exact @bot_le (Domain _) _ _ _
     | _ => rfl
@@ -174,7 +171,6 @@ theorem mem_piLimit_rawExtend_sort_iff (r : Level ℓ) (X : RawValue Γ₁)
       X.mem σ y ∧ Shape.IsCode r.rel y.1 := by
   have heval (x : CoherentShape Γ₂) : (piLimit E ℓ).eval (sortAtom r)
       ((Tm E ℓ).map σ.op n) (principalIdeal x) = universeIdeal r.rel (principalIdeal x) := by
-    rw [eval, piLimit_value_sort]
     rfl
   rw [mem_rawExtend]
   constructor
@@ -197,7 +193,7 @@ theorem piLimit_rawExtend_prop {X : RawValue Γ₁} (m : Tm_ Γ₁)
     rw [← hX, mem_piLimit_rawExtend_sort_iff] at hc
     have ⟨_, hcode⟩ := hc
     simp at hcode
-    rw [piLimit_eval_prop hcode, ΩIdeal.mem_bot] at hy
+    rw [piLimit_eval_prop hcode] at hy
     exact (ΩLower.mem_bot _ _).mpr hy
   · intro Γ₂ σ y hy
     exact ((piLimit E ℓ).rawExtend X n Y).lower σ ((ΩLower.mem_bot _ _).mp hy)
@@ -206,7 +202,7 @@ theorem piLimit_rawExtend_prop {X : RawValue Γ₁} (m : Tm_ Γ₁)
 theorem piLimit_extend_quot_of_rel (code : QuotCode Γ₁) (hrel : code.level.rel = true)
     (n : Tm_ Γ₁) (X : Domain Γ₁) :
     (piLimit E ℓ).extend (principalIdeal (quotAtom code)) n X = quotIdeal code.η X := by
-  rw [extend_principal, ← piLimit_fixedPoint]
+  rw [extend_principal]
   change (quotCodeAction code).val.app _ ((𝟙 Γ₁).op, n) X = _
   unfold quotCodeAction
   rw [hrel]

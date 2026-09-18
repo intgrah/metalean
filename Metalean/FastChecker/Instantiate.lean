@@ -21,8 +21,7 @@ structure Ren.Shifts {m n : Nat} (k : Nat) (ρ : Ren m n) : Prop where
 theorem Ren.Shifts.lift {m n k : Nat} {ρ : Ren m n} (h : Ren.Shifts k ρ) :
     Ren.Shifts (k + 1) ρ.lift where
   free v hv := by
-    simp [Ren.lift, show v.val < m by omega]
-    exact h.free _ (by simp; omega)
+    simpa [Ren.lift, show v.val < m by omega] using h.free _ (by simp; omega)
   bound v hv := by
     by_cases hvm : v.val < m
     · have := h.bound ⟨v.val, hvm⟩ (by simp; omega)
@@ -43,13 +42,11 @@ theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k'
   | @bvar m k i j hi hj =>
     have hv := hρ.bound ⟨i, by omega⟩ (by simp; omega)
     have : ρ ⟨i, by omega⟩ = ⟨n - 1 - j, by omega⟩ := Fin.ext (by simp at hv ⊢; omega)
-    simp [Expr.rename, this]
-    exact .bvar (by omega) (by omega)
+    simpa [Expr.rename, this] using .bvar (by omega) (by omega)
   | @fvar m k i hi =>
     have hv := hρ.free ⟨i, by omega⟩ (by simp; omega)
     have : ρ ⟨i, by omega⟩ = ⟨i, by omega⟩ := Fin.ext hv
-    simp [Expr.rename, this]
-    exact .fvar (by omega)
+    simpa [Expr.rename, this] using .fvar (by omega)
   | sort hl => exact .sort hl
   | const hls hη hls' => exact .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
@@ -88,8 +85,7 @@ theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k'
       (iha ρ hk hmn hρ)
   | proj hstruct hη hs hidx _ ihe =>
     rw [← Expr.subst_vars, Inductive.IsStructure.projTerm_subst]
-    simp only [Expr.subst_vars]
-    exact .proj hstruct hη hs hidx (ihe ρ hk hmn hρ)
+    simpa using .proj hstruct hη hs hidx (ihe ρ hk hmn hρ)
   | app _ _ ihf iha => exact .app (ihf ρ hk hmn hρ) (iha ρ hk hmn hρ)
   | lam _ _ iht ihb => exact .lam (iht ρ hk hmn hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
   | forallE _ _ iht ihb =>
@@ -106,12 +102,12 @@ theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k'
 theorem FExpr.Denotes.wkOpen {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
     FExpr.Denotes L E 0 fe e →
     FExpr.Denotes L E 1 fe e.wk := fun h =>
-  h.rename _ (Nat.zero_le 1) (by omega) ⟨fun v _ => by simp [Ren.wkFrom], fun v hv => by omega⟩
+  h.rename _ (Nat.zero_le 1) (by omega) ⟨fun v _ => by simp, fun v hv => by omega⟩
 
 theorem FExpr.Denotes.wk {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
     FExpr.Denotes L E 0 fe e →
     FExpr.Denotes L E 0 fe e.wk := fun h =>
-  h.rename _ le_rfl (by omega) ⟨fun v hv => by simp [Ren.wkFrom], fun v hv => by omega⟩
+  h.rename _ le_rfl (by omega) ⟨fun v hv => by simp, fun v hv => by omega⟩
 
 theorem FExpr.Denotes.wkClosed {fe : FExpr} {e : Expr E.1 ℓ 0} :
     FExpr.Denotes L E 0 fe e →
@@ -263,7 +259,7 @@ theorem FExpr.Denotes.fvarRange_le {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
       have hx := Fin.encodeSigma_decodeSigma ι.nctors ⟨i, by omega⟩
       have := ihmins (Fin.decodeSigma ι.nctors ⟨i, by omega⟩).1
         (Fin.decodeSigma ι.nctors ⟨i, by omega⟩).2
-      simpa [hx] using this
+      simpa using this
     · obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hy
       exact ihis ⟨i, by omega⟩
     · exact ihmaj
@@ -399,19 +395,16 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
   | fvar hi => exact .fvar hi
   | sort hl =>
     rw [FExpr.data_sort, Data.hasLevelParam_mk] at hp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .sort (hl.inst_of_hasParam_eq_false hp σ)
+    simpa! [← Level.mk_inst] using .sort (hl.inst_of_hasParam_eq_false hp σ)
   | const hls hη hls' =>
     rw [FExpr.data_const, Data.hasLevelParam_mk, Array.any_eq_false] at hp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .const hls hη (fun i =>
+    simpa! [← Level.mk_inst] using .const hls hη (fun i =>
       (hls' i).inst_of_hasParam_eq_false (by simpa using hp _ (hls.symm ▸ i.isLt)) σ)
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
     rw [FExpr.data_ind] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Array.any_eq_false] at hlp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .ind hls hps his hη hs
+    simpa! [← Level.mk_inst] using .ind hls hps his hη hs
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
       (fun i => ihis i (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -419,8 +412,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     rw [FExpr.data_ctor] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Array.any_eq_false] at hlp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .ctor hls hps hfds hrecFds hη hs hc
+    simpa! [← Level.mk_inst] using .ctor hls hps hfds hrecFds hη hs hc
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
       (fun f => ihfds f (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -429,8 +421,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     rw [FExpr.data_recr] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Bool.or_eq_false_iff, Array.any_eq_false] at hlp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .recr hls hps hms hmins his hη hs
+    simpa! [← Level.mk_inst] using .recr hls hps hms hmins his hη hs
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp.1 _ (hls.symm ▸ i.isLt)) σ)
       (hl.inst_of_hasParam_eq_false hlp.2 σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -441,16 +432,14 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
   | quot hη hl _ _ ihα ihr =>
     rw [FExpr.data_quot] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .quot hη
+    simpa! [← Level.mk_inst] using .quot hη
       (hl.inst_of_hasParam_eq_false hlp σ)
       (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
       (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
   | quotMk hη hl _ _ _ ihα ihr iha =>
     rw [FExpr.data_quotMk] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .quotMk hη
+    simpa! [← Level.mk_inst] using .quotMk hη
       (hl.inst_of_hasParam_eq_false hlp σ)
       (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
       (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
@@ -459,8 +448,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     rw [FExpr.data_quotLift] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Bool.or_eq_false_iff] at hlp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .quotLift hη
+    simpa! [← Level.mk_inst] using .quotLift hη
       (hl₁.inst_of_hasParam_eq_false hlp.1 σ)
       (hl₂.inst_of_hasParam_eq_false hlp.2 σ)
       (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
@@ -472,8 +460,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
   | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
     rw [FExpr.data_quotInd] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
-    simp only [Expr.instL, ← Level.mk_inst]
-    exact .quotInd hη
+    simpa! [← Level.mk_inst] using .quotInd hη
       (hl.inst_of_hasParam_eq_false hlp σ)
       (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
       (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
@@ -483,24 +470,19 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
   | proj hstruct hη hs hidx _ ihe =>
     rw [FExpr.data_proj] at hp
     rw [Inductive.IsStructure.projTerm_instL]
-    simp only [← Level.mk_inst]
-    exact .proj hstruct hη hs hidx (ihe (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
+    simpa [← Level.mk_inst] using .proj hstruct hη hs hidx (ihe (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
   | app _ _ ihf iha =>
     rw [FExpr.data_app, Data.hasLevelParam_mkApp, Bool.or_eq_false_iff] at hp
-    simp only [Expr.instL]
     exact .app (ihf hp.1) (iha hp.2)
   | lam _ _ iht ihb =>
     rw [FExpr.data_lam, Data.hasLevelParam_mkBinder, Bool.or_eq_false_iff] at hp
-    simp only [Expr.instL]
     exact .lam (iht hp.1) (ihb hp.2)
   | forallE _ _ iht ihb =>
     rw [FExpr.data_forallE, Data.hasLevelParam_mkBinder, Bool.or_eq_false_iff] at hp
-    simp only [Expr.instL]
     exact .forallE (iht hp.1) (ihb hp.2)
   | letE _ _ _ iht ihv ihb =>
     rw [FExpr.data_letE, Data.hasLevelParam_mkLet, Bool.or_eq_false_iff,
       Bool.or_eq_false_iff] at hp
-    simp only [Expr.instL]
     exact .letE (iht hp.1.1) (ihv hp.1.2) (ihb hp.2)
   | natLit hNat =>
     rw [Literals.instL_natLit]
@@ -536,14 +518,13 @@ theorem Subst.Instantiates.lift {m n q p d : Nat} {a' : Expr E.1 ℓ q} {σ : Su
       Expr.wk, Expr.wkFrom]
     congr 1
     funext w
-    ext
-    simp [Ren.comp, Ren.wkFrom, show w.val < n by omega]
+    simp [Ren.comp, show w.val < n by omega]
   bound v hv := by
     have := h.scope
     by_cases hvm : v.val < m
     · have ⟨w, hw, hwv⟩ := h.bound ⟨v.val, hvm⟩ hv
       refine ⟨w.castSucc, ?_, by simp at hwv ⊢; omega⟩
-      simp [Subst.lift, hvm, hw, Expr.wk, Expr.wkFrom, Expr.rename, show w.val < n by omega]
+      simp [Subst.lift, hvm, hw, Expr.wk, Expr.wkFrom, Expr.rename]
     · refine ⟨Fin.last n, by simp [Subst.lift, hvm], ?_⟩
       simp
       omega
@@ -561,14 +542,12 @@ theorem FExpr.Denotes.drop {m k : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
     have := hσ.size
     have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
-    simp [Expr.subst, hw]
-    exact .bvar (i := w.val) (by simp at hwv; omega) (by omega)
+    simpa [Expr.subst, hw] using .bvar (i := w.val) (by simp at hwv; omega) (by omega)
   | @fvar m k i hi =>
     have := hσ.size
     have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
-    simp [Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv]
-    exact .fvar (by omega)
+    simpa [Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
   | sort hl => exact .sort hl
   | const hls hη hls' => exact .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
@@ -678,8 +657,7 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
     have := hσ.scope
     by_cases hjd : j < d
     · have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
-      simp [FExpr.instAtCore, Expr.subst, hjd, hw]
-      exact .bvar (i := w.val) (by simp at hwv; omega) hjd
+      simpa [FExpr.instAtCore, Expr.subst, hjd, hw] using .bvar (i := w.val) (by simp at hwv; omega) hjd
     · have hjd' : j = d := by omega
       simp [FExpr.instAtCore, Expr.subst, hjd', hσ.here ⟨i, by omega⟩ (by simp; omega)]
       have := hσ.le
@@ -689,25 +667,20 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
     have := hσ.size
     have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
-    simp [FExpr.instAtCore, Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv]
-    exact .fvar (by omega)
+    simpa [FExpr.instAtCore, Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
   | sort hl =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .sort hl
+    simpa [FExpr.instAtCore] using .sort hl
   | const hls hη hls' =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .const hls hη hls'
+    simpa [FExpr.instAtCore] using .const hls hη hls'
   | ind hls hps his hη hs hls' hps' his' ihps ihis =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .ind hls
+    simpa [FExpr.instAtCore] using .ind hls
       (by simpa using hps)
       (by simpa using his)
       hη hs hls'
       (fun p => by simpa using (hps' p).instAtStep (ihps p) σ hk hσ)
       (fun i => by simpa using (his' i).instAtStep (ihis i) σ hk hσ)
   | ctor hls hps hfds hrecFds hη hs hc hls' hps' hfds' hrecFds' ihps ihfds ihrecFds =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .ctor hls
+    simpa [FExpr.instAtCore] using .ctor hls
       (by simpa using hps)
       (by simpa using hfds)
       (by simpa using hrecFds)
@@ -717,8 +690,7 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
       (fun f => by simpa using (hrecFds' f).instAtStep (ihrecFds f) σ hk hσ)
   | recr hls hps hms hmins his hη hs hls' hl hps' hms' hmins' his' hmaj ihps ihms ihmins ihis
       ihmaj =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .recr hls
+    simpa [FExpr.instAtCore] using .recr hls
       (by simpa using hps)
       (by simpa using hms)
       (by simpa using hmins)
@@ -730,19 +702,16 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
       (fun i => by simpa using (his' i).instAtStep (ihis i) σ hk hσ)
       (hmaj.instAtStep ihmaj σ hk hσ)
   | quot hη hl hα hr ihα ihr =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .quot hη hl
+    simpa [FExpr.instAtCore] using .quot hη hl
       (hα.instAtStep ihα σ hk hσ)
       (hr.instAtStep ihr σ hk hσ)
   | quotMk hη hl hα hr ha' ihα ihr iha =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .quotMk hη hl
+    simpa [FExpr.instAtCore] using .quotMk hη hl
       (hα.instAtStep ihα σ hk hσ)
       (hr.instAtStep ihr σ hk hσ)
       (ha'.instAtStep iha σ hk hσ)
   | quotLift hη hl₁ hl₂ hα hr hβ hf hh ha' ihα ihr ihβ ihf ihh iha =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .quotLift hη hl₁ hl₂
+    simpa [FExpr.instAtCore] using .quotLift hη hl₁ hl₂
       (hα.instAtStep ihα σ hk hσ)
       (hr.instAtStep ihr σ hk hσ)
       (hβ.instAtStep ihβ σ hk hσ)
@@ -750,43 +719,36 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
       (hh.instAtStep ihh σ hk hσ)
       (ha'.instAtStep iha σ hk hσ)
   | quotInd hη hl hα hr hβ hf ha' ihα ihr ihβ ihf iha =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .quotInd hη hl
+    simpa [FExpr.instAtCore] using .quotInd hη hl
       (hα.instAtStep ihα σ hk hσ)
       (hr.instAtStep ihr σ hk hσ)
       (hβ.instAtStep ihβ σ hk hσ)
       (hf.instAtStep ihf σ hk hσ)
       (ha'.instAtStep iha σ hk hσ)
   | proj hstruct hη hs hidx he' ihe =>
-    simp only [FExpr.instAtCore, Inductive.IsStructure.projTerm_subst]
-    exact .proj hstruct hη hs hidx (he'.instAtStep ihe σ hk hσ)
+    simpa [FExpr.instAtCore, Inductive.IsStructure.projTerm_subst] using
+      .proj hstruct hη hs hidx (he'.instAtStep ihe σ hk hσ)
   | app hf ha' ihf iha =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .app
+    simpa [FExpr.instAtCore] using .app
       (hf.instAtStep ihf σ hk hσ)
       (ha'.instAtStep iha σ hk hσ)
   | lam ht hb iht ihb =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .lam
+    simpa [FExpr.instAtCore] using .lam
       (ht.instAtStep iht σ hk hσ)
       (hb.instAtStep ihb σ.lift (by omega) hσ.lift)
   | forallE ht hb iht ihb =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .forallE
+    simpa [FExpr.instAtCore] using .forallE
       (ht.instAtStep iht σ hk hσ)
       (hb.instAtStep ihb σ.lift (by omega) hσ.lift)
   | letE ht hv hb iht ihv ihb =>
-    simp [FExpr.instAtCore, Expr.subst]
-    exact .letE
+    simpa [FExpr.instAtCore] using .letE
       (ht.instAtStep iht σ hk hσ)
       (hv.instAtStep ihv σ hk hσ)
       (hb.instAtStep ihb σ.lift (by omega) hσ.lift)
   | natLit hNat =>
-    simp [FExpr.instAtCore, Literals.subst_natLit]
-    exact .natLit hNat
+    simpa [FExpr.instAtCore] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
-    simp [FExpr.instAtCore, Literals.subst_strLit]
-    exact .strLit hNat hList hChar hOfNat hString
+    simpa [FExpr.instAtCore] using .strLit hNat hList hChar hOfNat hString
 
 theorem FExpr.Denotes.instAt {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ q}
     {b : Expr E.1 ℓ m} :
@@ -806,10 +768,10 @@ theorem FExpr.Denotes.inst {n : Nat} {fb fa : FExpr} {b : Expr E.1 ℓ (n + 1)} 
     { size := rfl
       le := le_rfl
       scope := by omega
-      free v hv := ⟨⟨v.val, hv⟩, by simp [Subst.extend, Fin.snoc, hv, Subst.id]; rfl, rfl⟩
+      free v hv := ⟨⟨v.val, hv⟩, by simp [Subst.extend, Fin.snoc, hv]; rfl, rfl⟩
       here v hv := by
         obtain rfl : v = Fin.last n := Fin.ext hv
-        simp [Subst.extend_last]
+        simp
         exact (Expr.rename_id a).symm
       bound v hv := absurd v.isLt (by omega) }
 
@@ -824,7 +786,6 @@ theorem FExpr.Denotes.instFVar {n : Nat} {fb : FExpr} {b : Expr E.1 ℓ (n + 1)}
       scope := by omega
       free v _ := ⟨v, rfl, rfl⟩
       here v hv := by
-        simp only [Expr.rename, Subst.id]
         exact congrArg Expr.var (Fin.ext hv)
       bound v hv := absurd v.isLt (by omega) }
 
@@ -840,7 +801,6 @@ theorem FExpr.Denotes.instFVarAt {m p d : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
       scope := by omega
       free v _ := ⟨v, rfl, rfl⟩
       here v hv := by
-        simp only [Expr.rename, Subst.id]
         exact congrArg Expr.var (Fin.ext hv)
       bound v _ := ⟨v, rfl, rfl⟩ }
 
@@ -871,8 +831,7 @@ theorem FExpr.Denotes.abstractAtCore {m d x : Nat} {fe : FExpr} {e : Expr E.1 �
   intro h
   induction h generalizing x with
   | @bvar m d i j hi hj =>
-    simp [FExpr.abstractAtCore]
-    exact .bvar hi (by omega)
+    simpa [FExpr.abstractAtCore] using .bvar hi (by omega)
   | @fvar m d i hi =>
     simp [FExpr.abstractAtCore]
     by_cases hix : i = x
@@ -881,22 +840,18 @@ theorem FExpr.Denotes.abstractAtCore {m d x : Nat} {fe : FExpr} {e : Expr E.1 �
     · simp [hix]
       exact .fvar (by omega)
   | sort hl =>
-    simp [FExpr.abstractAtCore]
-    exact .sort hl
+    simpa [FExpr.abstractAtCore] using .sort hl
   | const hls hη hls' =>
-    simp [FExpr.abstractAtCore]
-    exact .const hls hη hls'
+    simpa [FExpr.abstractAtCore] using .const hls hη hls'
   | ind hls hps his hη hs hls' hps' his' ihps ihis =>
-    simp [FExpr.abstractAtCore]
-    exact .ind hls
+    simpa [FExpr.abstractAtCore] using .ind hls
       (by simpa using hps)
       (by simpa using his)
       hη hs hls'
       (fun p => by simpa using (hps' p).abstractAtStep (ihps p hx))
       (fun i => by simpa using (his' i).abstractAtStep (ihis i hx))
   | ctor hls hps hfds hrecFds hη hs hc hls' hps' hfds' hrecFds' ihps ihfds ihrecFds =>
-    simp [FExpr.abstractAtCore]
-    exact .ctor hls
+    simpa [FExpr.abstractAtCore] using .ctor hls
       (by simpa using hps)
       (by simpa using hfds)
       (by simpa using hrecFds)
@@ -906,8 +861,7 @@ theorem FExpr.Denotes.abstractAtCore {m d x : Nat} {fe : FExpr} {e : Expr E.1 �
       (fun f => by simpa using (hrecFds' f).abstractAtStep (ihrecFds f hx))
   | recr hls hps hms hmins his hη hs hls' hl hps' hms' hmins' his' hmaj ihps ihms ihmins ihis
       ihmaj =>
-    simp [FExpr.abstractAtCore]
-    exact .recr hls
+    simpa [FExpr.abstractAtCore] using .recr hls
       (by simpa using hps)
       (by simpa using hms)
       (by simpa using hmins)
@@ -919,19 +873,16 @@ theorem FExpr.Denotes.abstractAtCore {m d x : Nat} {fe : FExpr} {e : Expr E.1 �
       (fun i => by simpa using (his' i).abstractAtStep (ihis i hx))
       (hmaj.abstractAtStep (ihmaj hx))
   | quot hη hl hα hr ihα ihr =>
-    simp [FExpr.abstractAtCore]
-    exact .quot hη hl
+    simpa [FExpr.abstractAtCore] using .quot hη hl
       (hα.abstractAtStep (ihα hx))
       (hr.abstractAtStep (ihr hx))
   | quotMk hη hl hα hr ha ihα ihr iha =>
-    simp [FExpr.abstractAtCore]
-    exact .quotMk hη hl
+    simpa [FExpr.abstractAtCore] using .quotMk hη hl
       (hα.abstractAtStep (ihα hx))
       (hr.abstractAtStep (ihr hx))
       (ha.abstractAtStep (iha hx))
   | quotLift hη hl₁ hl₂ hα hr hβ hf hh ha ihα ihr ihβ ihf ihh iha =>
-    simp [FExpr.abstractAtCore]
-    exact .quotLift hη hl₁ hl₂
+    simpa [FExpr.abstractAtCore] using .quotLift hη hl₁ hl₂
       (hα.abstractAtStep (ihα hx))
       (hr.abstractAtStep (ihr hx))
       (hβ.abstractAtStep (ihβ hx))
@@ -939,43 +890,35 @@ theorem FExpr.Denotes.abstractAtCore {m d x : Nat} {fe : FExpr} {e : Expr E.1 �
       (hh.abstractAtStep (ihh hx))
       (ha.abstractAtStep (iha hx))
   | quotInd hη hl hα hr hβ hf ha ihα ihr ihβ ihf iha =>
-    simp [FExpr.abstractAtCore]
-    exact .quotInd hη hl
+    simpa [FExpr.abstractAtCore] using .quotInd hη hl
       (hα.abstractAtStep (ihα hx))
       (hr.abstractAtStep (ihr hx))
       (hβ.abstractAtStep (ihβ hx))
       (hf.abstractAtStep (ihf hx))
       (ha.abstractAtStep (iha hx))
   | proj hstruct hη hs hidx he' ihe =>
-    simp only [FExpr.abstractAtCore]
-    exact .proj hstruct hη hs hidx (he'.abstractAtStep (ihe hx))
+    simpa [FExpr.abstractAtCore] using .proj hstruct hη hs hidx (he'.abstractAtStep (ihe hx))
   | app hf ha ihf iha =>
-    simp [FExpr.abstractAtCore]
-    exact .app
+    simpa [FExpr.abstractAtCore] using .app
       (hf.abstractAtStep (ihf hx))
       (ha.abstractAtStep (iha hx))
   | lam ht hb iht ihb =>
-    simp [FExpr.abstractAtCore]
-    exact .lam
+    simpa [FExpr.abstractAtCore] using .lam
       (ht.abstractAtStep (iht hx))
       (hb.abstractAtStep (ihb (by omega)))
   | forallE ht hb iht ihb =>
-    simp [FExpr.abstractAtCore]
-    exact .forallE
+    simpa [FExpr.abstractAtCore] using .forallE
       (ht.abstractAtStep (iht hx))
       (hb.abstractAtStep (ihb (by omega)))
   | letE ht hv hb iht ihv ihb =>
-    simp [FExpr.abstractAtCore]
-    exact .letE
+    simpa [FExpr.abstractAtCore] using .letE
       (ht.abstractAtStep (iht hx))
       (hv.abstractAtStep (ihv hx))
       (hb.abstractAtStep (ihb (by omega)))
   | natLit hNat =>
-    simp [FExpr.abstractAtCore]
-    exact .natLit hNat
+    simpa [FExpr.abstractAtCore] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
-    simp [FExpr.abstractAtCore]
-    exact .strLit hNat hList hChar hOfNat hString
+    simpa [FExpr.abstractAtCore] using .strLit hNat hList hChar hOfNat hString
 
 theorem FExpr.Denotes.abstractAt {m d x : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
     (hx : x + d + 1 = m) :
@@ -1003,20 +946,15 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
   intro h hus'
   induction h with
   | bvar hi hj =>
-    simp [FExpr.instLCore, Expr.instL]
-    exact .bvar hi hj
+    simpa [FExpr.instLCore] using .bvar hi hj
   | fvar hi =>
-    simp [FExpr.instLCore, Expr.instL]
-    exact .fvar hi
+    simpa [FExpr.instLCore] using .fvar hi
   | sort hl =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .sort (hl.inst hus hus')
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .sort (hl.inst hus hus')
   | const hls hη hls' =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .const (by simpa using hls) hη (fun i => by simpa using (hls' i).inst hus hus')
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .const (by simpa using hls) hη (fun i => by simpa using (hls' i).inst hus hus')
   | ind hls hps his hη hs hls' hps' his' ihps ihis =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .ind
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .ind
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using his)
@@ -1025,8 +963,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun p => by simpa using (hps' p).instLStep (ihps p))
       (fun i => by simpa using (his' i).instLStep (ihis i))
   | ctor hls hps hfds hrecFds hη hs hc hls' hps' hfds' hrecFds' ihps ihfds ihrecFds =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .ctor
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .ctor
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using hfds)
@@ -1038,8 +975,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun f => by simpa using (hrecFds' f).instLStep (ihrecFds f))
   | recr hls hps hms hmins his hη hs hls' hl hps' hms' hmins' his' hmaj ihps ihms ihmins ihis
       ihmaj =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .recr
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .recr
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using hms)
@@ -1054,18 +990,15 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun i => by simpa using (his' i).instLStep (ihis i))
       (hmaj.instLStep ihmaj)
   | quot hη hl hα hr ihα ihr =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .quot hη (hl.inst hus hus') (hα.instLStep ihα) (hr.instLStep ihr)
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quot hη (hl.inst hus hus') (hα.instLStep ihα) (hr.instLStep ihr)
   | quotMk hη hl hα hr ha ihα ihr iha =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .quotMk hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotMk hη
       (hl.inst hus hus')
       (hα.instLStep ihα)
       (hr.instLStep ihr)
       (ha.instLStep iha)
   | quotLift hη hl₁ hl₂ hα hr hβ hf hh ha ihα ihr ihβ ihf ihh iha =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .quotLift hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotLift hη
       (hl₁.inst hus hus')
       (hl₂.inst hus hus')
       (hα.instLStep ihα)
@@ -1075,8 +1008,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (hh.instLStep ihh)
       (ha.instLStep iha)
   | quotInd hη hl hα hr hβ hf ha ihα ihr ihβ ihf iha =>
-    simp only [FExpr.instLCore, Expr.instL, ← Level.mk_inst]
-    exact .quotInd hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotInd hη
       (hl.inst hus hus')
       (hα.instLStep ihα)
       (hr.instLStep ihr)
@@ -1084,26 +1016,19 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (hf.instLStep ihf)
       (ha.instLStep iha)
   | proj hstruct hη hs hidx he' ihe =>
-    simp only [FExpr.instLCore, Inductive.IsStructure.projTerm_instL, ← Level.mk_inst]
-    exact .proj hstruct hη hs hidx (he'.instLStep ihe)
+    simpa! [FExpr.instLCore, ← Level.mk_inst] using .proj hstruct hη hs hidx (he'.instLStep ihe)
   | app hf ha ihf iha =>
-    simp only [FExpr.instLCore, Expr.instL]
-    exact .app (hf.instLStep ihf) (ha.instLStep iha)
+    simpa [FExpr.instLCore] using .app (hf.instLStep ihf) (ha.instLStep iha)
   | lam ht hb iht ihb =>
-    simp only [FExpr.instLCore, Expr.instL]
-    exact .lam (ht.instLStep iht) (hb.instLStep ihb)
+    simpa [FExpr.instLCore] using .lam (ht.instLStep iht) (hb.instLStep ihb)
   | forallE ht hb iht ihb =>
-    simp only [FExpr.instLCore, Expr.instL]
-    exact .forallE (ht.instLStep iht) (hb.instLStep ihb)
+    simpa [FExpr.instLCore] using .forallE (ht.instLStep iht) (hb.instLStep ihb)
   | letE ht hv hb iht ihv ihb =>
-    simp only [FExpr.instLCore, Expr.instL]
-    exact .letE (ht.instLStep iht) (hv.instLStep ihv) (hb.instLStep ihb)
+    simpa [FExpr.instLCore] using .letE (ht.instLStep iht) (hv.instLStep ihv) (hb.instLStep ihb)
   | natLit hNat =>
-    simp only [FExpr.instLCore, Literals.instL_natLit]
-    exact .natLit hNat
+    simpa [FExpr.instLCore, Literals.instL_natLit] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
-    simp only [FExpr.instLCore, Literals.instL_strLit]
-    exact .strLit hNat hList hChar hOfNat hString
+    simpa [FExpr.instLCore, Literals.instL_strLit] using .strLit hNat hList hChar hOfNat hString
 
 theorem FExpr.Denotes.instL {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {us : Array FLevel}
     {σ : Param ℓ → RawLevel ℓ'} (hus : us.size = ℓ) :
@@ -1132,7 +1057,7 @@ theorem Subst.InstFVars.lift {n₀ n k : Nat} {args : Array FExpr} {σ : Subst E
     by_cases hvn : v.val < n₀
     · have ⟨w, hw, hwv⟩ := h.bound ⟨v.val, hvn⟩ hv
       refine ⟨w.castSucc, ?_, by simpa using hwv⟩
-      simp [Subst.lift, hvn, hw, Expr.wk, Expr.wkFrom, Expr.rename, Ren.wkFrom]
+      simp [Subst.lift, hvn, hw, Expr.wk]
     · refine ⟨Fin.last (n + k), by simp [Subst.lift, hvn], ?_⟩
       simp
       omega
@@ -1172,17 +1097,13 @@ theorem append {m₂ : Nat} {args₂ : Array FExpr} {σ₂ : Subst E.1 ℓ m₂ 
 theorem fvars (n k : Nat) :
     ArgsDenote (ℓ := ℓ) L E (FExpr.fvars n k) (Expr.boundVars n k 0) where
   size := by simp
-  denotes v := by
-    simp only [FExpr.getElem_fvars, Expr.boundVars]
-    exact .fvar (by omega)
+  denotes v := by simpa using .fvar (by omega)
 
 theorem params {nparams n : Nat} (h : nparams ≤ n) :
     ArgsDenote (ℓ := ℓ) L E (FExpr.fvars 0 nparams)
       (fun p : Fin nparams => (.var ⟨p.val, by omega⟩ : Expr E.1 ℓ n)) where
   size := by simp
-  denotes v := by
-    simp only [FExpr.getElem_fvars, Nat.zero_add]
-    exact .fvar (by omega)
+  denotes v := by simpa using .fvar (by omega)
 
 theorem liftN (k : Nat) :
     ArgsDenote L E args σ →
@@ -1213,31 +1134,24 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
   | @bvar _ k i j hi hj =>
     have := hσ.size
     have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
-    simp only [FExpr.instFVarsCore, Expr.subst, hw]
-    exact .bvar (i := w.val) (by simp at hwv; omega) hj
+    simpa! [FExpr.instFVarsCore, hw] using .bvar (i := w.val) (by simp at hwv; omega) hj
   | @fvar _ k i hi =>
     have := hσ.size
     have ⟨a', ha', hσ'⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
-    simp only [FExpr.instFVarsCore, Expr.subst,
-      Array.getElem?_eq_getElem (show i < args.size by omega), Option.getD_some, hσ']
-    exact ha'.wkNOpen k
+    simpa! [FExpr.instFVarsCore, show i < args.size by omega, hσ'] using ha'.wkNOpen k
   | sort hl =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .sort hl
+    simpa [FExpr.instFVarsCore] using .sort hl
   | const hls hη hls' =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .const hls hη hls'
+    simpa [FExpr.instFVarsCore] using .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .ind hls
+    simpa [FExpr.instFVarsCore] using .ind hls
       (by simpa using hps)
       (by simpa using his)
       hη hs hls'
       (fun p => by simpa using ihps p hσ)
       (fun i => by simpa using ihis i hσ)
   | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .ctor hls
+    simpa [FExpr.instFVarsCore] using .ctor hls
       (by simpa using hps)
       (by simpa using hfds)
       (by simpa using hrecFds)
@@ -1246,8 +1160,7 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
       (fun ff => by simpa using ihfds ff hσ)
       (fun ff => by simpa using ihrecFds ff hσ)
   | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .recr hls
+    simpa [FExpr.instFVarsCore] using .recr hls
       (by simpa using hps)
       (by simpa using hms)
       (by simpa using hmins)
@@ -1259,14 +1172,11 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
       (fun i => by simpa using ihis i hσ)
       (ihmaj hσ)
   | quot hη hl _ _ ihα ihr =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .quot hη hl (ihα hσ) (ihr hσ)
+    simpa [FExpr.instFVarsCore] using .quot hη hl (ihα hσ) (ihr hσ)
   | quotMk hη hl _ _ _ ihα ihr iha =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .quotMk hη hl (ihα hσ) (ihr hσ) (iha hσ)
+    simpa [FExpr.instFVarsCore] using .quotMk hη hl (ihα hσ) (ihr hσ) (iha hσ)
   | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .quotLift hη hl₁ hl₂
+    simpa [FExpr.instFVarsCore] using .quotLift hη hl₁ hl₂
       (ihα hσ)
       (ihr hσ)
       (ihβ hσ)
@@ -1274,34 +1184,26 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
       (ihh hσ)
       (iha hσ)
   | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .quotInd hη hl
+    simpa [FExpr.instFVarsCore] using .quotInd hη hl
       (ihα hσ)
       (ihr hσ)
       (ihβ hσ)
       (ihf hσ)
       (iha hσ)
   | proj hstruct hη hs hidx _ ihe =>
-    simp only [FExpr.instFVarsCore, Inductive.IsStructure.projTerm_subst]
-    exact .proj hstruct hη hs hidx (ihe hσ)
+    simpa [FExpr.instFVarsCore, Inductive.IsStructure.projTerm_subst] using .proj hstruct hη hs hidx (ihe hσ)
   | app _ _ ihf iha =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .app (ihf hσ) (iha hσ)
+    simpa [FExpr.instFVarsCore] using .app (ihf hσ) (iha hσ)
   | lam _ _ iht ihb =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .lam (iht hσ) (ihb hσ.lift)
+    simpa [FExpr.instFVarsCore] using .lam (iht hσ) (ihb hσ.lift)
   | forallE _ _ iht ihb =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .forallE (iht hσ) (ihb hσ.lift)
+    simpa [FExpr.instFVarsCore] using .forallE (iht hσ) (ihb hσ.lift)
   | letE _ _ _ iht ihv ihb =>
-    simp only [FExpr.instFVarsCore, Expr.subst]
-    exact .letE (iht hσ) (ihv hσ) (ihb hσ.lift)
+    simpa [FExpr.instFVarsCore] using .letE (iht hσ) (ihv hσ) (ihb hσ.lift)
   | natLit hNat =>
-    simp only [FExpr.instFVarsCore, Literals.subst_natLit]
-    exact .natLit hNat
+    simpa [FExpr.instFVarsCore, Literals.subst_natLit] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
-    simp only [FExpr.instFVarsCore, Literals.subst_strLit]
-    exact .strLit hNat hList hChar hOfNat hString
+    simpa [FExpr.instFVarsCore, Literals.subst_strLit] using .strLit hNat hList hChar hOfNat hString
 
 theorem instFVars {m n : Nat} {ft : FExpr} {e : Expr E.1 ℓ m} {args : Array FExpr}
     {σ : Subst E.1 ℓ m n} :
@@ -1547,11 +1449,11 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
     intro d p b' hk hm h'
     subst hk
     by_cases hjd : j < d
-    · simp only [FExpr.instAtCore, hjd, ↓reduceIte] at h'
+    · simp only [FExpr.instAtCore, hjd] at h'
       cases h' with
       | bvar hi₂ hj₂ => exact .bvar hi₂ (by omega)
     · have hjd' : j = d := by omega
-      simp only [FExpr.instAtCore, hjd', Nat.lt_irrefl, ↓reduceIte] at h'
+      simp only [FExpr.instAtCore, hjd', Nat.lt_irrefl] at h'
       cases h' with
       | fvar hi₂ => exact .bvar (i := p) (by omega) (by omega)
   | fvar hi =>

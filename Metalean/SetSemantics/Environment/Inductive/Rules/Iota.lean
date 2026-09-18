@@ -61,7 +61,6 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         (code recFd source).index graph δ
         (recoverRecField (code recFd source).tele (code recFd source).index block level
           δ ε₂[γ]⟦r⟧) := by
-  unfold RecField.iotaIH RecField.instantiatedTelescope RecField.instantiatedIndices RecField.map
   let project : Slots n → Slots (ι.nparams + nfields) := fun _ => δ
   have hrealizes := ((congrArg (fun Δ => Realizes ε₂ zeroNs _ Δ _)
     (Ctx.map_instL pre.sigs ls recFd.tele)).mp
@@ -89,8 +88,7 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         rw [Expr.denote_subst, Expr.denote_substLiftN, hbase final hfinal, hσ, ← Expr.map_instL]
         exact Expr.denote_map pre.sigs hatoms _ _]
       have h := hatom (Slots.pull project final) (Reachable.pull hfinal fun _ _ => rfl)
-      simp only [Slots.pull, Fin.addCases_right] at h
-      exact h
+      simpa only [Slots.pull, Fin.addCases_right] using h
   rwa [SemTele.lam_applyAt (source.extension.sem.pull project arity)
     (fun final value => leaf (Slots.pull project final) value) γ recovered,
     SemTele.lamAt_pull] at hden
@@ -158,7 +156,7 @@ theorem recursiveIotaLeaf
     have hprefix : RecSlots.prefixOf outer ∈ Reachable Set.univ (model.recrPrefixSem l) := by
       change (fun current => Fin.init outer (current.castLE (by omega))) ∈
         Reachable Set.univ (model.recrPrefixSem l)
-      simpa [recrTeleSem] using Reachable.base (Reachable.of_append (Reachable.init houter))
+      simpa using Reachable.base (Reachable.of_append (Reachable.init houter))
     have hpsOuter : RecSlots.paramsOf outer ∈ Reachable Set.univ model.paramsSem :=
       model.recrParamsReachable s l outer houter
     have hvalues := StrongRecursiveFieldSource.valuesReachable
@@ -183,10 +181,10 @@ theorem recursiveIotaLeaf
         (model.recrIndicesSem ((ι.ctors s c).recursiveTarget f)) := by
       apply Reachable.of_pull
       · rw [RecSlots.pull_recrParams_withIndices]
-        simpa [recrIndicesSem, vis] using hvalues
+        simpa [vis] using hvalues
       · simpa using hprefix
-    refine Reachable.snoc (by simpa [vis, recFd, child] using Reachable.append his) ?_
-    simp only [child, RecSlots.childOf, Fin.snoc_last, Fin.init_snoc]
+    refine Reachable.snoc (by simpa [child] using Reachable.append his) ?_
+    simp only [child, Fin.init_snoc]
     have hmaj : vmaj ∈ propSet model.toModel.level
         (fibreOp (model.toModel.block (RecSlots.paramsOf outer))
           (code.index final)) := by
@@ -194,15 +192,14 @@ theorem recursiveIotaLeaf
         (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal)))
       simpa [typedRecFieldSet, code] using hrecFields f
     unfold recrMajorDomain InductiveModel.sortValue
-    rw [RecSlots.withIndices_params, RecSlots.recrIndices_withIndices]
+    rw [RecSlots.withIndices_params]
     simpa [code, vis] using hmaj
   rw [show RecSlots.args (RecSlots.paramsOf outer)
       (RecSlots.motivesOf outer)
       (fun target c => RecSlots.casesOf outer
         (Fin.encodeSigma ι.nctors ⟨target, c⟩))
       (ε₁[final]⟦recFd.indices · |>.instL ls⟧) vmaj = child by
-    simp [RecSlots.args, child, vis, RecSlots.childOf, RecSlots.withIndices,
-      RecSlots.append_params_motives_cases]]
+    simp [RecSlots.args, child, vis, RecSlots.append_params_motives_cases]]
   let fields := source.recursiveCodes
   let vargs := source.ordinary.sem.pack fieldSlots
     (CtorCode.packRecursive (model.toModel.block (RecSlots.paramsOf outer)) fields
@@ -220,7 +217,7 @@ theorem recursiveIotaLeaf
     rw [model.codeOf_eq s c, StrongInductiveModel.recursiveRest,
       ← Set.eq_of_mem_singleton (Reachable.base hfields), SemTele.predecessors_prependOrdinary,
       SemTele.tail_pack, SemTele.values_pack]
-    simpa [fields, code, raw, source, StrongCtorSource.recursiveCodes] using
+    simpa [fields, code, StrongCtorSource.recursiveCodes] using
       CtorCode.mem_predecessors_packRecursive
         (model.toModel.block (RecSlots.paramsOf outer)) fields
         (StrongCtorSource.targetIndex (model.ctors s c).target)
@@ -238,11 +235,9 @@ theorem recursiveIotaLeaf
       (leaf := fun current => leaf current [zf|$(vrecFds f) $(fun argument =>
         current (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument))...])] at happ
     unfold recrState recrMajorOf
-    rw [RecSlots.paramsOf_childOf, RecSlots.indicesOfSlots_childOf,
-      RecSlots.majorOfSlots_childOf,
-      ← StrongRecursiveFieldSource.code_index recFd recSource final]
+    rw [RecSlots.paramsOf_childOf, RecSlots.indicesOfSlots_childOf, RecSlots.majorOfSlots_childOf]
     exact congrArg (pair (code.index final))
-      (show leaf final vmaj = raw by simpa [recoverRecField, raw, leaf, vmaj] using happ)
+      (show leaf final vmaj = raw by simpa [recoverRecField, raw] using happ)
 
 theorem iotaRuleSound
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hsourceRule : SemDeclRules E₁ ε₁ zeroNs)
@@ -346,8 +341,7 @@ theorem iotaRuleSound
         ((Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧).trans
           (congrArg (Fin.append · _) (funext hps')))
         fun final hfinal => ?_
-      simp only [hps', hms', hmins']
-      exact (hrecr ((ι.ctors s c).recursiveTarget f) l
+      simpa [hps', hms', hmins'] using (hrecr ((ι.ctors s c).recursiveTarget f) l
         (RecSlots.paramsOf outer) (RecSlots.motivesOf outer)
         (fun target c => RecSlots.casesOf outer
           (Fin.encodeSigma ι.nctors ⟨target, c⟩))

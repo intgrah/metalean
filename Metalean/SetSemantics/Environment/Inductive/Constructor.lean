@@ -104,9 +104,7 @@ theorem denotesDepMapEnv
     have his (index : Fin (ι.nindices s₁)) :=
       Expr.denote_map (ν := zeroNs) pre.sigs hatoms final ((recFd.indices index).instL ls)
     simp only [Expr.map_instL] at his
-    change ε₂ (.ind η s₁ ls _ _) = _
-    simp only [RecField.instantiatedIndices_id, Expr.denote_wkN, Expr.denote]
-    change ε₂ (.ind η s₁ ls _ (ε₂[final]⟦recFd.indices · |>.map pre.sigs |>.instL ls⟧)) = _
+    simp! only [RecField.instantiatedIndices_id, Expr.denote_wkN]
     rw [funext his, hF]
     exact happly final hfinal
   · exact Realizes.mapInst (source.extension.realizes.monoReach hreaches) pre hatoms
@@ -146,7 +144,7 @@ theorem ihType_denotes
         show (fun v => final (v.castAdd arity)) = γ from
           Set.eq_of_mem_singleton (Reachable.base hfinal), hσ])
     fun final hfinal value hvalue =>
-      hleaf (Slots.pull project final) (fun v => by simp [Slots.pull, project]) value hvalue
+      hleaf (Slots.pull project final) (fun v => by simp [project]) value hvalue
   rwa [SemTele.piAt_pull (leaf := fun final value =>
     fibreOp motive (pair ((code recFd source).index final) value))] at hden
 
@@ -183,7 +181,7 @@ theorem Ctor.WF.sourceAt
     (hblock : (I.level.inst ls).eval zeroNs = bound + 1) :
     Nonempty (StrongCtorSource E₁ ε₁ I ls ctor params bound) := by
   have hnz : I.level.eval (Level.eval zeroNs ∘ ls) ≠ 0 := by
-    rw [← Level.eval_inst, hblock]
+    rw [← Level.eval_inst]
     omega
   have ⟨fields⟩ := (hctor.ordinaryTele.instLevel
     (Q := fun l => l.eval zeroNs ≤ bound + 1) ls fun hl => by
@@ -236,7 +234,7 @@ private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
     Fin.append (fun param => .var (param.castLE hm)) is
   let γ₁ : Slots (ι.nparams + ι.nindices s) := Fin.append vps (ε₁[γ]⟦is ·⟧)
   apply his.reachable_subst (Γ := I.params.instL ls) (γ := γ) σ γ₁
-  · simpa [γ₁, vps, Fin.append_left] using hps
+  · simpa [γ₁] using hps
   · intro v
     cases v using Fin.addCases with
     | left param => simp [σ, γ₁, vps, Expr.denote]
@@ -384,19 +382,17 @@ theorem recursivePhaseAux
           pre hatoms (ctor.recursive f) (source.recursive f) hreaches
           (hsortValues (csig.recursiveTarget f)) (happlyRecursive f)
           _ (hreach hγ)
-        rw [Expr.denote_wkN]
-        simpa [Inductive.map, Ctor.map] using h
+        simpa [Ctor.map] using h
     refine ⟨{γ | Fin.init γ ∈ reachEnd ∧
         γ (Fin.last (ι.nparams + csig.nfields + count)) ∈
           typedRecFieldSetDep code.tele code.index block level
             fun f => Fin.init γ (f.castAdd count)},
       ?_, fun _ hγ => hreach hγ.1⟩
-    simp only [Nat.add_succ]
     convert hphase₁ using 1
     · exact (Fin.snoc_init_self
         fun f : Fin (count + 1) => source.recursiveCodes (f.castLE hcount)).symm
     · rfl
-    · simp [Ctor.recursiveFieldTeleAux, f]
+    · simp [Ctor.recursiveFieldTeleAux]
       rfl
 
 theorem realizes
@@ -459,10 +455,8 @@ theorem realizes
     (hphase.prepend (rest := .target (targetIndex model))
       (.target fun γ hγ => (Expr.denote_wkN γ _).trans (htarget _ (hreach hγ))))
   rw [(ctor.map pre.sigs).targetType_fields η ls] at hfields
-  simpa [id, Fin.castAdd, Fin.castLE, Ctor.fieldTele, Ctx.pi, Tele.foldr_append, code,
-    show Ctx.instL ls (ctor.map pre.sigs).ordinaryTele =
-      (ctor.map pre.sigs).ordinaryFieldTele η ls fun param => .var param from
-      ((Ctx.substFunctor _).map_id_apply _ _).symm] using hfields
+  simpa [Fin.castAdd, Ctor.fieldTele, Ctx.pi, Tele.foldr_append, code,
+    show Ctx.instL ls (ctor.map pre.sigs).ordinaryTele = (ctor.map pre.sigs).ordinaryFieldTele η ls fun param => .var param from ((Ctx.substFunctor _).map_id_apply _ _).symm] using hfields
 
 end StrongCtorSource
 
@@ -486,7 +480,7 @@ theorem Ctor.WF.targetModel
         I.indexType ls s
           (fun param => .var ⟨param.val, by omega⟩)
           (fun i => Expr.instL ls (ctor.targetIndices i)) index := by
-    simpa [Inductive.indexType, Expr.instL, Subst.instL] using
+    simpa! using
       soundness hdecl hrule ho (htarget index) γ (sourceModel.semCtx γ hγ)
   let vis (γ : Slots (ι.nparams + csig.nfields))
       (index : Fin (ι.nindices s)) : ZFSet :=

@@ -118,11 +118,10 @@ theorem SourceAdmissible.ctorFieldTarget (h : IndData Γ η ls ps)
   have hsub := SemanticSubstitution.tailTele hfield σ ρ
   simp only [Nat.add_sub_cancel_left] at hsub
   have hs := hbase.comp hsub htail fun v => by
-    change HasSubstitution (CtxCat.ctorFields h s c) (.var _)
     exact HasSubstitution.var _ _
   rw [CtxCat.ctorFieldTargetHom_projection] at hs
   rw [Category.assoc, ← RawCtx.toCtx.map_comp, CtxCat.ctorFieldTargetHom_projection] at hadm
-  simpa [RawValuation.tailN_tailN, Nat.add_comm] using And.intro hs hadm
+  simpa [Nat.add_comm] using And.intro hs hadm
 
 end CoherentShape
 
@@ -143,7 +142,7 @@ theorem ctorSource_ctx_map :
 
 theorem RawSound.ctorSourceProperties :
     RawTeleProperties E₂ .nil (Ctx.instL ls ((E₂.get η).block.params ++ ((E₂.get η).block.ctors s c).ordinaryTele)) := by
-  simpa [hblock, Ctor.ordinaryTele] using
+  simpa [hblock] using
     hsound.ordinaryPrefixProperties hB s c ls (ι.ctors s c).nfields le_rfl
 
 theorem RawSound.recursiveArgumentProperties :
@@ -184,7 +183,7 @@ theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).
   erw [hx i, Inductive.indexType_map] at hp'
   have hxs := funext hx
   erw [hxs] at hp'
-  simp only [← hblock, Expr.map_wkN, Expr.map] at hp'
+  simp only [← hblock, Expr.map_wkN] at hp'
   exact hp'
 
 omit hsound hB hblock in
@@ -253,11 +252,10 @@ theorem RawSound.fieldTeleProperties
     (Ctx.substFunctor _).map_id_apply _ _
   have pO : RawTeleProperties E₂ Src.as.ctx O := by
     rw [hOeq]
-    simpa [Src, hblock, Ctor.ordinaryTeleAux, Ctx.instL] using
+    simpa [Src, hblock] using
       hsound.ordinaryTeleProperties hB s c ls
   let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong h.param).left⟩
   have pf (p : Fin ι.nparams) : HasFixedness Γ (σ.subst p) ((Src.as.ctx.get p).subst σ.subst) := by
-    change HasFixedness Γ (ps p) (((Ctx.instL ls (E₂.get η).block.params).get p).subst ps)
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact (pps p).fixed
   have pO' := hparams.substitution O hO pO σ (fun p => (pps p).term) pf
@@ -281,7 +279,6 @@ theorem RawSound.fieldTeleProperties
     change Ctx.substN ps (ι.ctors s c).nfields
       (((E₂.get η).block.ctors s c).ordinaryFieldTeleAux η ls
         (Subst.id : Subst ζ₂ ℓ ι.nparams ι.nparams) (ι.ctors s c).nfields le_rfl) = _
-    rw [Ctor.ordinaryFieldTeleAux_subst]
     simp [Ctor.ordinaryFieldTele, Subst.id, Expr.subst]
   have hr := recursiveSourceTele_subst E₂ η ls s c ps
   let Tctx : Ctx ζ₂ ℓ 0 (Γ.as.len + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields) :=
@@ -573,7 +570,6 @@ theorem RawSound.ihTypeProperties (h : IndData Γ η ls ps) (hR : RawTelePropert
   have hp := RawInterpretationProperties.pi (fieldTelescope h s c f)
     (fieldTelescopeStrong h s c f) pΔ _ pe'.syntactic.left pe'.left
   erw [CtxCat.ctorFieldTargetHom_param] at hp
-  unfold Ctor.ihType Ctor.ihTypeWith RecField.ihType
   exact hp
 
 theorem RawSound.caseTeleProperties (h : IndData Γ η ls ps) (hR : RawTeleProperties E₂ .nil Γ.as.ctx)

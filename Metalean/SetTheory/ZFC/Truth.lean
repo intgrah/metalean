@@ -30,7 +30,7 @@ theorem proof_mem_verum : proof ∈ verum := by simp
 theorem falsum_mem_truth : falsum ∈ truth := by simp
 
 /-- False propositions are not true propositions -/
-theorem falsum_ne_verum : falsum ≠ verum := by
+@[simp] theorem falsum_ne_verum : falsum ≠ verum := by
   intro h
   simpa using congrArg (fun x => ∅ ∈ x) h
 

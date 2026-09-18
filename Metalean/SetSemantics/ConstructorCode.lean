@@ -335,7 +335,7 @@ theorem argSet_arg_inv {domain : Dom n} {rest : CtorCode (n + 1)}
       t ∈ rest.argSet block (Fin.snoc γ value) ∧ vargs = [zf|(value, t)] := by
   obtain ⟨value, hvalue, t, ht, rfl⟩ := mem_sigma.mp h
   rw [app_map hvalue] at ht
-  exact ⟨value, t, hvalue, by simpa [argSet] using ht, rfl⟩
+  exact ⟨value, t, hvalue, by simpa using ht, rfl⟩
 
 theorem argSet_recArg_inv {b : Nat} {tele : SemTele n b} {index : Dom b}
     {rest : CtorCode n}
@@ -344,7 +344,7 @@ theorem argSet_recArg_inv {b : Nat} {tele : SemTele n b} {index : Dom b}
       t ∈ rest.argSet block γ ∧ vargs = [zf|(value, t)] := by
   obtain ⟨value, hvalue, t, ht, rfl⟩ := mem_sigma.mp h
   rw [app_map hvalue] at ht
-  exact ⟨value, t, hvalue, by simpa [argSet] using ht, rfl⟩
+  exact ⟨value, t, hvalue, by simpa using ht, rfl⟩
 
 theorem argSet_mem_of_support
     (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
@@ -381,9 +381,7 @@ theorem argSet_mem_of_support
         (mem_image.mpr ⟨point, hpoint, rfl⟩)))
       have hmem' : (CtorCode.recArg tele index rest).readSupport γ
           [zf|(field, tail)] [zf|(falsum, point)] ∈ block₁ := by
-        rw [readSupport]
-        simp [branch_falsum]
-        exact hmem
+        simpa [readSupport] using hmem
       simpa [readSupport, branch_falsum] using hp hmem'
     refine mem_argSet_recArg hfield' (ih γ tail htail ?_)
     intro point hpoint hmem
@@ -474,14 +472,12 @@ theorem argMap_congr_of_predecessors (code : CtorCode n)
       · exact hfield
       · intro predecessor hpredecessor
         apply hgraph predecessor
-        simp [predecessors]
-        exact .inl hpredecessor
+        simpa [predecessors] using .inl hpredecessor
     simp only [argMap, fst_pair, snd_pair]
     rw [hfieldMap, ih γ tail htail]
     intro predecessor hpredecessor
     apply hgraph predecessor
-    simp [predecessors]
-    exact .inr hpredecessor
+    simpa [predecessors] using .inr hpredecessor
 
 noncomputable def forgetIhs {n : Nat} :
     CtorCode n → ZFSet → ZFSet
@@ -499,14 +495,12 @@ theorem forgetIhs_mem_argSet (code : CtorCode n)
   | arg domain rest ih =>
     obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma.mp hargs
     rw [app_map hvalue] at htail
-    simp [forgetIhs]
-    exact mem_argSet_arg hvalue (ih (γ.snoc value) tail htail)
+    simpa [forgetIhs] using mem_argSet_arg hvalue (ih (γ.snoc value) tail htail)
   | recArg tele index rest ih =>
     obtain ⟨fieldAndIh, hfieldAndIh, tail, htail, rfl⟩ := mem_sigma.mp hargs
     rw [app_map hfieldAndIh] at htail
     obtain ⟨field, hfield, fieldIh, _, rfl⟩ := mem_sigma.mp hfieldAndIh
-    simp [forgetIhs]
-    exact mem_argSet_recArg hfield (ih γ tail htail)
+    simpa [forgetIhs] using mem_argSet_recArg hfield (ih γ tail htail)
 
 noncomputable def applyFields (level : Nat) {n : Nat} :
     (code : CtorCode n) → Slots n → ZFSet → ZFSet → ZFSet

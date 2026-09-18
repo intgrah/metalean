@@ -86,10 +86,10 @@ def fieldRecursive (csig : CtorSig nsorts) :
   funext v
   cases v using Fin.addCases with
   | left param =>
-    simp only [Fin.append_left, Subst.id]
+    simp
     rfl
   | right f =>
-    simp only [Fin.append_right, Expr.boundVars, Subst.id]
+    simp
     rfl
 
 theorem fieldParams_vars {ι : IndSig}
@@ -99,7 +99,7 @@ theorem fieldParams_vars {ι : IndSig}
         Expr ζ₁ ℓ (ι.nparams + csig.nfields + csig.nrecFields)) := by
   funext param
   unfold fieldParams
-  rw [Expr.wkN_eq_rename, Expr.wkN_eq_rename, Expr.rename_rename]
+  rw [Expr.wkN_eq_rename, Expr.wkN_eq_rename]
   rfl
 
 theorem targetSubst_fields {ι : IndSig} (csig : CtorSig ι.nsorts)
@@ -110,11 +110,9 @@ theorem targetSubst_fields {ι : IndSig} (csig : CtorSig ι.nsorts)
   funext v
   cases v using Fin.addCases with
   | left param =>
-    simp only [Fin.append_left, fieldParams, Subst.rename]
-    exact Expr.wkN_eq_rename _ _
+    simpa [fieldParams, Subst.rename] using Expr.wkN_eq_rename _ _
   | right f =>
-    simp only [Fin.append_right, fieldOrdinary, Subst.rename,
-      Expr.boundVars]
+    simp [Subst.rename]
     exact Expr.wkN_eq_rename _ _
 
 end CtorSig
@@ -237,8 +235,7 @@ def ordinaryFieldTele :
       ((ctor.ordinaryType ⟨count, by omega⟩).instL ls).subst (Subst.liftN ps count)
     simp [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.instL, Ctx.substN]
   | cast f ih =>
-    simpa [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.instL, Ctx.substN,
-      Ctx.entry, f.isLt.ne] using ih (by omega)
+    simpa [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.instL, Ctx.substN] using ih (by omega)
 
 def recursiveFieldTeleAux (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (count : Nat) (hcount : count ≤ csig.nrecFields) : Ctx ζ₁ ℓ n (n + count) :=
@@ -365,7 +362,6 @@ theorem targetType_fields :
   rw [Expr.wkN_ind]
   congr 1
   · funext param
-    unfold CtorSig.fieldParams
     congr 1
     rw [Expr.wkN_eq_rename]
     rfl

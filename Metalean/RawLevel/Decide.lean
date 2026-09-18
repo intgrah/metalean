@@ -46,8 +46,7 @@ theorem dominates_sound (ν : Param ℓ → Nat) : ∀ {b a : Atom ℓ}, dominat
     simp only [eval]
     omega
   | (some _, _), (some _, _) => fun h => by
-    simp only [dominates, Bool.and_eq_true, decide_eq_true_eq] at h
-    have rfl := h
+    simp! at h
     change _ + _ ≤ _ + _
     lia
   | (none, _), (some _, _) => fun h => by simp [dominates] at h
@@ -146,10 +145,8 @@ theorem atomsLe_iff (A B : List (Atom ℓ)) (hB : B ≠ []) :
 theorem isZero_iff (Z : Zeros ℓ) (ν : Param ℓ → Nat) (l : RawLevel ℓ) :
     isZero Z l = true ↔ l.eval (Z.lift ν) = 0 := by
   induction l with
-  | zero | succ => simp [isZero, eval]
-  | max _ _ ih₁ ih₂ =>
-    simp only [isZero, eval, Bool.and_eq_true, ih₁, ih₂]
-    grind
+  | zero | succ => simp [isZero]
+  | max _ _ ih₁ ih₂ => simp!; grind
   | imax _ l₂ _ ih₂ =>
     change isZero Z l₂ = true ↔ Nat.imax _ _ = 0
     rw [ih₂, Nat.imax_eq_zero_iff]
@@ -266,7 +263,7 @@ theorem decLe_iff (l₁ l₂ : RawLevel ℓ) : decLe l₁ l₂ = true ↔ l₁ �
 
 theorem decZeroLe_iff (l₁ l₂ : RawLevel ℓ) :
     decZeroLe l₁ l₂ = true ↔ ∀ ν, l₁.eval ν = 0 → l₂.eval ν = 0 := by
-  simp only [decZeroLe, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true']
+  simp only [decZeroLe, List.all_eq_true, Bool.or_eq_true]
   constructor
   · intro h ν hzero
     have ⟨Z, hmem, hZ⟩ := exists_mem_allZeros (ℓ := ℓ) fun p => decide (ν p = 0)

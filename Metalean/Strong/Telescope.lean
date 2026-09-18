@@ -100,10 +100,10 @@ theorem WFTeleStrong.substitution_congr {m : Nat}
       hprefix'.extend hlast'
     have htinst : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₁).lift).inst (σ₁ (Fin.last m)) ≡
         (t.subst (Subst.wk.comp σ₁).lift).inst (σ₁ (Fin.last m)) : .sort u := by
-      simpa [Expr.inst, Expr.subst_subst] using ht.substitution hσfull
+      simpa [Expr.inst] using ht.substitution hσfull
     have htinst' : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₂).lift).inst (σ₂ (Fin.last m)) ≡
         (t.subst (Subst.wk.comp σ₂).lift).inst (σ₂ (Fin.last m)) : .sort u := by
-      simpa [Expr.inst, Expr.subst_subst] using ht.substitution hσfull'
+      simpa [Expr.inst] using ht.substitution hσfull'
     have htapp := DefeqStrong.appDF ht₁σ .sortDF
       (ih hσ' (.lamDF ht₁ .sortDF .sortDF ht ht)) hlast
       .sortDF
@@ -153,12 +153,10 @@ theorem WFTeleStrong.extendFamily
       (Ctx.entry Δ (by omega) (by omega)).subst
         (Fin.append σ fun previous : Fin p.val =>
           xs (previous.castLE p.castSucc.isLt.le)) := by
-      simpa [Ctx.entry, p.isLt.ne] using hxs p.castSucc
+      simpa using hxs p.castSucc
     have hlast := hxs (Fin.last k)
-    simp [Ctx.entry] at hlast
-    simpa [Subst.extend, ← Fin.append_snoc, Nat.add_assoc,
-      show Fin.snoc (fun previous : Fin k => xs (previous.castLE (Nat.le_succ k)))
-        (xs (Fin.last k)) = xs from Fin.snoc_init_self xs] using
+    simpa [Subst.extend, ← Fin.append_snoc,
+      show Fin.snoc (fun previous : Fin k => xs (previous.castLE (Nat.le_succ k))) (xs (Fin.last k)) = xs from Fin.snoc_init_self xs] using
       (ih hΔ hprefix).extend hlast
 
 theorem WFTeleStrong.entry_isTypeStrong
@@ -185,15 +183,15 @@ theorem WFTeleStrong.entry_isTypeStrong
           (Ctx.entry Δ (by omega) (by omega)).subst
             (Fin.append σ fun previous : Fin q.val =>
               xs (previous.castLE q.castSucc.isLt.le)) := by
-        simpa [Ctx.entry, q.isLt.ne] using hxs q.castSucc (by simpa [Fin.lt_def] using hq)
+        simpa using hxs q.castSucc (by simpa [Fin.lt_def] using hq)
       simpa [Ctx.entry, hp.ne] using ih (xs := fun q => xs q.castSucc) hΔ ⟨p.val, hp⟩ hprefix
     · obtain rfl : p = Fin.last k := Fin.ext (by have := p.isLt; simp only [Fin.val_last]; omega)
       have hprefix (q : Fin k) : E[Γ] ⊢ₛ xs q.castSucc :
           (Ctx.entry Δ (by omega) (by omega)).subst
             (Fin.append σ fun previous : Fin q.val =>
               xs (previous.castLE q.castSucc.isLt.le)) := by
-        simpa [Ctx.entry, q.isLt.ne] using
-          hxs q.castSucc (by simp [Fin.lt_def, Fin.val_last])
+        simpa using
+          hxs q.castSucc (by simp)
       have hfam := WFTeleStrong.extendFamily (xs := fun q => xs q.castSucc) hΔ hσ hprefix
       have ⟨u, _, ht⟩ := hA
       refine ⟨u, ?_⟩
@@ -218,9 +216,9 @@ theorem WFTeleStrong.entry_isTypeStrong_nil {m : Nat} {Θ : Ctx ζ ℓ 0 m}
       have hσ : E[Γ] ⊢ₛ (fun w : Var p => xs (w.castLE (by omega))) ⊣ Δ := fun v => by
         rw [Ctx.get_subst Δ _ v v.val v.isLt rfl]
         have := hxs v.val v.isLt
-        simp only [Ctx.entry, v.isLt.ne, ↓reduceDIte] at this
+        simp only [Ctx.entry, v.isLt.ne] at this
         exact this
-      exact ⟨u, by simpa [Ctx.entry] using ht.substitution hσ⟩
+      exact ⟨u, by simpa using ht.substitution hσ⟩
     · have := ih (xs := fun w => xs w.castSucc) (by omega) fun q hq => by
         have := hxs q hq
         simpa [Ctx.entry, show q ≠ m by omega] using this
@@ -247,12 +245,10 @@ theorem SubstEqStrong.extendFamily
         (Ctx.entry Δ₀ (by omega) (by omega)).subst
           (Fin.append σ₁ fun previous : Fin p.val =>
             xs₁ (previous.castLE p.castSucc.isLt.le)) := by
-      simpa [Ctx.entry, p.isLt.ne] using hxs p.castSucc
+      simpa using hxs p.castSucc
     have hlast := hxs (Fin.last k)
-    simp [Ctx.entry] at hlast
-    simpa [Subst.extend, ← Fin.append_snoc, ← Fin.init_def, Nat.add_assoc,
-      show Fin.snoc (fun previous : Fin k => xs₁ (previous.castLE (Nat.le_succ k)))
-        (xs₁ (Fin.last k)) = xs₁ from Fin.snoc_init_self xs₁] using
+    simpa [Subst.extend, ← Fin.append_snoc, ← Fin.init_def,
+      show Fin.snoc (fun previous : Fin k => xs₁ (previous.castLE (Nat.le_succ k))) (xs₁ (Fin.last k)) = xs₁ from Fin.snoc_init_self xs₁] using
       (ih hΔ hprefix).extend hlast
 
 theorem SubstEqStrong.lift {t : Expr ζ ℓ n} {σ₁ σ₂ : Subst ζ ℓ n m} :
@@ -263,8 +259,7 @@ theorem SubstEqStrong.lift {t : Expr ζ ℓ n} {σ₁ σ₂ : Subst ζ ℓ n m} 
   cases v using Fin.lastCases with
   | last => simpa using hσ.left.lift ht (Fin.last n)
   | cast v =>
-    simp [Nat.ne_of_lt v.isLt, Expr.wk_subst_lift]
-    exact (hσ v).wk (t.subst σ₁)
+    simpa [Expr.wk_subst_lift] using (hσ v).wk (t.subst σ₁)
 
 theorem SubstEqStrong.liftN {k : Nat} {P : Level ℓ → Prop}
     {Δ : Ctx ζ ℓ n (n + k)} {σ₁ σ₂ : Subst ζ ℓ n m}
@@ -366,11 +361,11 @@ theorem Ctx.pi_applyFamilyStrong {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
         (Ctx.entry (p := n + p.val) Δ₀ (by omega) (by omega)).subst
           (Fin.append Subst.id fun previous =>
             init₁ (previous.castLE p.isLt.le)) := by
-      simpa [init₁, init₂, Ctx.entry, p.isLt.ne] using hxs p.castSucc
+      simpa [init₁] using hxs p.castSucc
     have hlast : E[Γ] ⊢ₛ xs₁ (Fin.last k) ≡ xs₂ (Fin.last k) :
         t₁.subst (Fin.append Subst.id init₁) := by
       have h := hxs (Fin.last k)
-      simp [Ctx.entry] at h
+      simp at h
       exact h
     have hid : E[Γ] ⊢ₛ Subst.id ⊣ Γ := fun v => by
       simp
@@ -401,8 +396,7 @@ theorem Ctx.lam_applyFamilyStrong {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
       t.subst (Fin.append Subst.id xs) := by
   intro hΓ hΔ hxs he
   induction Δ using Tele.addInduction with
-  | nil =>
-    simpa [Ctx.lam] using he
+  | nil => simpa using he
   | snoc k Δ₀ t₁ ih =>
     have .snoc hΔ ⟨u₁, _, ht₁⟩ := hΔ
     have ⟨_, ht⟩ := he.regular
@@ -411,11 +405,11 @@ theorem Ctx.lam_applyFamilyStrong {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
         (Ctx.entry (p := n + p.val) Δ₀ (by omega) (by omega)).subst
           (Fin.append Subst.id fun previous =>
             xs₀ (previous.castLE p.isLt.le)) := by
-      simpa [xs₀, Ctx.entry, p.isLt.ne] using hxs p.castSucc
+      simpa [xs₀] using hxs p.castSucc
     have hlast : E[Γ] ⊢ₛ xs (Fin.last k) :
         t₁.subst (Fin.append Subst.id xs₀) := by
       have h := hxs (Fin.last k)
-      simp [Ctx.entry] at h
+      simp at h
       exact h
     have hlam : E[Γ ++ Δ₀] ⊢ₛ .lam t₁ e : .forallE t₁ t :=
       .lamDF ht₁ ht ht he he

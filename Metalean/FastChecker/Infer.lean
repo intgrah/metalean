@@ -596,14 +596,12 @@ partial def inferCore (G : FCtx) :
           (fun _ j => (E.get η₀).block.caseFnType η₀ (⟦ls' ·⟧) eps ems
             (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2)
           (fun j => by
-            have := hmins'' (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2
-            simpa [Fin.encodeSigma_decodeSigma] using this)
+            simpa using hmins'' (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2)
           (fun _ _ j => (hI.ctors _ _).caseFnType hls hls' hpsA hη (fun r => rfl)
             (fun r => hemsD _) (hemsD _))
           (fun _ j _ => hB.caseFnType hS.wf hepsT hemsT)
           (fun j => by
-            have := hminsT (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2
-            simpa [minorIndex, Fin.encodeSigma_decodeSigma] using this)
+            simpa [minorIndex] using hminsT (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2)
         have ⟨eis, heisD, heisT⟩ := TypedSpec.fixArgs hS his'
           (fts := fun i => I.indexType ls ps s (by omega) is i.val (by omega))
           (fun e i => (E.get η₀).block.indexType (⟦ls' ·⟧) ⟨s, hs⟩ eps e i) his''

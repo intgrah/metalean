@@ -120,13 +120,13 @@ end Aczel
 
 def branch (c a b : ZFSet) : ZFSet := fibreOp (image (pair falsum) a ∪ image (pair verum) b) c
 
-theorem branch_falsum (a b : ZFSet) : branch falsum a b = a := by
-  ext e
-  simp [branch, falsum_ne_verum, eq_comm]
+@[simp] theorem branch_falsum (a b : ZFSet) : branch falsum a b = a := by
+  ext
+  simp [branch, eq_comm]
 
-theorem branch_verum (a b : ZFSet) : branch verum a b = b := by
-  ext e
-  simp [branch, falsum_ne_verum, eq_comm]
+@[simp] theorem branch_verum (a b : ZFSet) : branch verum a b = b := by
+  ext
+  simp [branch]
 
 def squash (s : ZFSet) : ZFSet := image (fun _ => proof) s
 
@@ -137,11 +137,11 @@ theorem proof_mem_squash {s x : ZFSet} (hx : x ∈ s) : proof ∈ squash s :=
   mem_squash.mpr ⟨x, hx, rfl⟩
 
 theorem squash_eq_verum {s x : ZFSet} (hx : x ∈ s) : squash s = verum := by
-  ext z
+  ext
   rw [mem_squash, mem_verum]
   exact ⟨fun ⟨_, _, hz⟩ => hz, fun hz => ⟨x, hx, hz⟩⟩
 
-theorem squash_falsum : squash falsum = falsum :=
+@[simp] theorem squash_falsum : squash falsum = falsum :=
   (eq_empty _).2 fun _ hz =>
     have ⟨_, hw, _⟩ := mem_squash.mp hz
     notMem_empty _ hw

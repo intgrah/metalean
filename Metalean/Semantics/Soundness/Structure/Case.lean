@@ -88,7 +88,6 @@ theorem rawInterpret_structure_case_beta (hs : (E₂.get η).block.IsStructure s
   refine hb.trans ?_
   erw [rawInterpret_var]
   change (ρ.pushFin fun i => (args i).val) (Var.db (Fin.natAdd Γ₁.as.len f)) = _
-  rw [Var.db_natAdd]
   simp
 
 structure StructureProjection (hs : (E₂.get η).block.IsStructure s c)
@@ -119,7 +118,7 @@ theorem structure_carrier_relevant (hs : (E₂.get η).block.IsStructure s c)
   have hz : (E₂.get η).block.level.inst ls = .zero := by simpa using hn
   have hzero : ((E₂.get η).block.level.inst ls).eval (fun _ => 0) = 0 := by rw [hz]; rfl
   have hfield := hs.ordinaryLevel_eq_zero_of_eval_zero ls hzero f
-  simp only [hfield, Level.inst, Level.rel, decide_eq_true_eq] at hf
+  simp only [hfield, Level.rel, decide_eq_true_eq] at hf
   exact hf rfl
 
 theorem HasFixedness.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
@@ -184,9 +183,9 @@ theorem HasFixedness.structure_projection_case (hsound : RawSound E₂ ℓ pre) 
     rw [CtxCat.ctorFields_get_ordinary, Expr.wkN_eq_subst, Ctor.ordinaryFieldExpr_subst]
     congr 1
     · funext p
-      simp only [CtorSig.caseParams, Expr.wkN_eq_subst]
+      simp [CtorSig.caseParams, Expr.wkN_eq_subst]
     · funext g'
-      simp only [CtorSig.caseOrdinary, Expr.wkN_eq_subst]
+      simp [CtorSig.caseOrdinary, Expr.wkN_eq_subst]
   have hctx (k : Nat) (hk : k ≤ (ι.ctors s c).nfields) := hB.ordinaryClosedWF s c ls k hk
   have pctx (k : Nat) (hk : k ≤ (ι.ctors s c).nfields) :=
       hsound.blockOrdinaryPrefixProperties η hI hblock s c ls k hk
@@ -241,7 +240,7 @@ theorem HasFixedness.structure_projection_case (hsound : RawSound E₂ ℓ pre) 
       Inductive.motiveResult (hs.projectionMotives η ls ((ι.ctors s c).caseParams ps) f s) hs.indices
         (.ctor η s c ls ((ι.ctors s c).caseParams ps) (ι.ctors s c).caseOrdinary hs.recursive) := by
     unfold Inductive.caseType
-    rw [hs.projectionMotives_wkN, hs.projectionMotives_wkN, hs.projectionMotives_wkN, hidx]
+    rw [hs.projectionMotives_wkN, hs.projectionMotives_wkN, hs.projectionMotives_wkN]
     congr 2
     exact funext hs.no_recursive.elim
   have hiota (g : Fin f.val) := by
@@ -317,8 +316,8 @@ theorem HasFixedness.structure_projection_case (hsound : RawSound E₂ ℓ pre) 
       | left p =>
         rw [Ctx.entry_append_left (E₂.get η).block.params _ (by omega) p.isLt
           (show p.val < ι.nparams + f.val by omega)]
-        simp only [σ₁, σ₂, Fin.append_left, Fin.append_castLE_left _ _ p.isLt.le]
-        exact ⟨(pps' p).left, (pps' p).left, HasEquality.refl _ _, (pps' p).fixed⟩
+        simpa only [σ₁, σ₂, Fin.append_left, Fin.append_castLE_left _ _ p.isLt.le] using
+          ⟨(pps' p).left, (pps' p).left, HasEquality.refl _ _, (pps' p).fixed⟩
       | right g =>
         rw [Ctx.entry_append_right (E₂.get η).block.params _ (by omega) (by simp) (by omega)]
         refine ⟨by simpa only [σ₁, Fin.append_right] using (hprev' g).term,

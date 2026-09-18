@@ -50,7 +50,7 @@ theorem pullback_indBody (T X : Domain Γ₁) (hg : code.StructGuard c n) (σ : 
     (hg' : (code.map ((Tm E ℓ).map σ.op)).StructGuard c
       ((Tm E ℓ).map σ.op n)) :
     (F.indBody T X hg).pullback σ = F.indBody (T.pullback σ) (X.pullback σ) hg' := by
-  rw [indBody, indBody, pullback_ctorIdeal]
+  rw [indBody, pullback_ctorIdeal]
   have hn := funext fun i => map_indNames hg σ hg' i
   refine congrArg₂ (ctorIdeal (code.ctorHead c)) hn ?_
   have h := congrArg (fun result :
@@ -116,7 +116,6 @@ noncomputable def indRebuild (code : IndCode Γ₁)
       refine Or.inr (Or.inl ⟨c, (hg.pullback σ₃).cast hcode rfl hn, ?_⟩)
       have hmem : ((F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
           hg).pullback σ₃).mem (𝟙 _) (reindex σ₃ y) := by
-        rw [ΩIdeal.presheaf_map_mem_id]
         simpa using (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
           hg).natural (𝟙 _) σ₃ y hy
       rwa [F.pullback_indBody _ _ hg σ₃ (hg.pullback σ₃),
@@ -129,7 +128,6 @@ noncomputable def indRebuild (code : IndCode Γ₁)
     · refine Or.inr (Or.inr ⟨hns, ?_⟩)
       have hmem : ((indIdeal code.toIndHead (X.pullback σ₂)).pullback σ₃).mem (𝟙 _)
           (reindex σ₃ y) := by
-        rw [ΩIdeal.presheaf_map_mem_id]
         simpa using (indIdeal code.toIndHead (X.pullback σ₂)).natural (𝟙 _) σ₃ y hy
       rwa [show (indIdeal code.toIndHead (X.pullback σ₂)).pullback σ₃ =
           indIdeal code.toIndHead (X.pullback (σ₃ ≫ σ₂)) from
@@ -221,7 +219,7 @@ theorem indRebuild_eq_indIdeal (code : IndCode Γ₁)
   · rintro (hy | ⟨c, hg, _⟩ | ⟨_, hy⟩)
     · exact (indIdeal _ X).lower σ₂ hy ((indIdeal _ X).bottom σ₂)
     · exact absurd hg.witness.struct (hns c)
-    · rwa [← ΩIdeal.presheaf_map_mem_id _ σ₂, hfilter]
+    · rwa [← ΩIdeal.presheaf_map_mem_id _ σ₂]
   · intro hy
     refine Or.inr (Or.inr ⟨hns, ?_⟩)
     rwa [← hfilter, ΩIdeal.presheaf_map_mem_id]

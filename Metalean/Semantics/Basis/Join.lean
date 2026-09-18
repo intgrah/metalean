@@ -156,7 +156,7 @@ theorem le_cSup {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b) :
     exact ⟨.ind fun c => (ih c (hct c c rfl)).1, .ind fun c => (ih c (hct c c rfl)).2⟩
   · refine le_cSupBot ?_
     have hcode := h.1
-    rw [IndCode.map_hom_id, IndCode.map_hom_id] at hcode
+    rw [IndCode.map_hom_id] at hcode
     exact absurd (congrArg (fun c : IndCode Γ => c.toIndHead.nctors) hcode) (by assumption)
   · rename_i η name value η' name' value' ih
     have ⟨hh, hn, hv⟩ := h
@@ -179,7 +179,7 @@ theorem le_cSup {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b) :
       subst h
       exact ⟨.refl _, .refl _⟩
     · exact (hquotMk _ _ _ _ _ _ rfl rfl).elim
-    · simp only [Compatible, *] at h
+    · simp only [Compatible] at h
       exact le_cSupBot h
 
 theorem cSup_isCoherent {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b)
@@ -214,7 +214,7 @@ theorem cSup_isCoherent {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b)
   · exact cSupBot_induction ha hb
   · rename_i _ ih
     have ⟨hcode, hct⟩ := h
-    rw [IndCode.map_hom_id, IndCode.map_hom_id] at hcode
+    rw [IndCode.map_hom_id] at hcode
     subst hcode
     cases ha with | ind ha =>
       cases hb with | ind hb => exact .ind fun c => ih c (hct c c rfl) (ha c) (hb c)
@@ -251,11 +251,11 @@ theorem map_cSup (arg : (Tm_ Γ₁) → Tm_ Γ₂)
       by_cases h : code.toIndHead.nctors = code'.toIndHead.nctors
       · simp only [cSup, map, dite_eq_left h]
         exact congrArg _ (funext fun c => ih c _)
-      · simp only [cSup, map, dite_eq_right h, map_cSupBot]
+      · simp [cSup, map, dite_eq_right h, map_cSupBot]
     | _ => simp [cSup, map, map_cSupBot]
   | quotMk _ _ _ ih => cases b <;> simp [cSup, map, ih, map_cSupBot]
   | _ =>
-    cases b <;> simp_all only [cSup, map, pi, abs, map_cSupBot]
+    cases b <;> simp_all only [cSup, map, map_cSupBot]
     all_goals congr 1 <;> funext i <;> refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;>
       simp [Graph.append]
 

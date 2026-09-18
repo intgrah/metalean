@@ -114,7 +114,6 @@ theorem RawInterpretationProperties.motiveResult (ht' : (E₂.get η).block.WFSt
     rwa [hcarrier] at hp
   rw [he] at papp
   rw [he, hcodomain] at fapp
-  change RawInterpretationProperties Γ₁ (.app (m.apps is) maj)
   exact .app hc .sortDF pai (HasIdeality.sort _ l) hmaj hfun papp pmaj fapp
 
 theorem RawJudgment.motiveResult (hB : (E₂.get η).block.WFStrong E₂)
@@ -140,11 +139,9 @@ theorem RawJudgment.motiveResult (hB : (E₂.get η).block.WFStrong E₂)
       RawInterpretationProperties Γ₁ (σ₂.subst (Fin.natAdd Γ₁.as.len i)) := by
     cases i using Fin.lastCases with
     | last =>
-      change RawInterpretationProperties Γ₁ ((h.motiveHom hB hmaj).subst _)
       rw [h.motiveHom_major hB hmaj]
       exact pmaj
     | cast i =>
-      change RawInterpretationProperties Γ₁ ((h.motiveHom hB hmaj).subst _)
       rw [h.motiveHom_index hB hmaj i]
       exact pis i
   have hf (i : Fin (ι.nindices s + 1)) :
@@ -165,8 +162,7 @@ theorem RawJudgment.motiveResult (hB : (E₂.get η).block.WFStrong E₂)
     rw [Expr.apps_last]
     change (m.apps fun i => (h.motiveHom hB hmaj).subst (Fin.natAdd Γ₁.as.len i.castSucc)).app
       ((h.motiveHom hB hmaj).subst (Fin.natAdd Γ₁.as.len (Fin.last _))) = _
-    simp [Inductive.motiveResult]
-    exact h.motiveHom_major hB hmaj
+    simpa [Inductive.motiveResult] using h.motiveHom_major hB hmaj
   have happ : E₂[Γ₁.as.ctx] ⊢ₛ m.apps (fun i : Fin (ι.nindices s + 1) => σ₂.subst (Fin.natAdd Γ₁.as.len i)) :
       (Expr.sort l).subst σ₂.subst :=
     RawCtx.Hom.applyTele_typed (Γ₁ := Γ₁.as) (k := ι.nindices s + 1) (Δ := Δ) hΔ σ₂ (h.motiveHom_over hB hmaj) .sortDF
@@ -203,20 +199,16 @@ theorem RawJudgment.motiveResult (hB : (E₂.get η).block.WFStrong E₂)
   · funext i
     cases i using Fin.lastCases with
     | last =>
-      simp only [Fin.snoc_last]
-      exact congrArg ((Tm E₂ ℓ).map σ₁.op) (h.motiveHom_major_label hB hmaj)
+      simpa using congrArg ((Tm E₂ ℓ).map σ₁.op) (h.motiveHom_major_label hB hmaj)
     | cast i =>
-      simp only [Fin.snoc_castSucc]
-      exact congrArg ((Tm E₂ ℓ).map σ₁.op) (h.motiveHom_index_label hB hmaj i)
+      simpa only [Fin.snoc_castSucc] using congrArg ((Tm E₂ ℓ).map σ₁.op) (h.motiveHom_index_label hB hmaj i)
   · funext i
     cases i using Fin.lastCases with
     | last =>
-      simp only [Fin.snoc_last]
-      exact congrArg (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ₁.op ρ)
+      simpa using congrArg (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ₁.op ρ)
         (h.motiveHom_major hB hmaj)
     | cast i =>
-      simp only [Fin.snoc_castSucc]
-      exact congrArg (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ₁.op ρ)
+      simpa only [Fin.snoc_castSucc] using congrArg (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ₁.op ρ)
         (h.motiveHom_index hB hmaj i)
 
 end CoherentShape
@@ -230,7 +222,7 @@ theorem RawSound.indexTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WF
     RawTeleProperties E₂ Γ₁.as.ctx ((E₂.get η).block.indexTele ls s ps) := by
   let Src : CtxCat E₂ ℓ := ⟨Ctx.instL ls (E₂.get η).block.params, hI.paramClosedWF ls⟩
   have pctx : RawTeleProperties E₂ .nil Src.as.ctx := by
-    simpa [Src] using hsound.paramTeleProperties hB hblock ls
+    simpa using hsound.paramTeleProperties hB hblock ls
   have hindices := (hI.indices s).instLevel (Q := fun _ => True) ls fun _ => trivial
   have pindices : RawTeleProperties E₂ Src.as.ctx (Ctx.instL ls ((E₂.get η).block.indices s)) := by
     have hctx := hB.paramClosedWF ls
@@ -244,7 +236,6 @@ theorem RawSound.indexTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WF
   let σ : Γ₁.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
   have pf (v : Fin ι.nparams) :
       HasFixedness Γ₁ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
-    change HasFixedness Γ₁ (ps v) (((Ctx.instL ls (E₂.get η).block.params).get v).subst ps)
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact fps v
   exact pctx.substitution (Ctx.instL ls ((E₂.get η).block.indices s)) hindices pindices σ pps pf

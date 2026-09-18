@@ -135,11 +135,8 @@ theorem ctorResult_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     model.ctorResult s c vps vfds vrecFds ∈ model.toModel.sortValue s vps vis := by
   have hentry := entry_mem_indSet (model.mapsTo vps)
     (model.ctorArgs_mem_argSet hrec vps vfds vrecFds hfieldsReach)
-  rw [model.toModel_codes, model.codeOf_targetIndex s c vps
-    (model.ctorArgs s c vps vfds vrecFds),
-    show model.targetValues s c
-      (model.ordinaryOf s c vps (model.ctorArgs s c vps vfds vrecFds)) = vis from
-      funext hind.elim] at hentry
+  rw [model.codeOf_targetIndex s c vps (model.ctorArgs s c vps vfds vrecFds),
+    show model.targetValues s c (model.ordinaryOf s c vps (model.ctorArgs s c vps vfds vrecFds)) = vis from funext hind.elim] at hentry
   exact propVal_mem_propSet (entryValue_mem_fibre (by simpa [InductiveModel.block] using hentry))
 
 section
@@ -191,10 +188,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
       (I.map total.sigs) ls ps₁ f previous⟧ = domain by
     rw [htype]
     exact ⟨model.ordinarySemCtx s c vps hps w hw (Fin.natAdd ι.nparams f), hsorted⟩
-  rw [← Ctx.entry_instL, show (I.ctors s c).ordinaryTele =
-    (I.ctors s c).ordinaryTeleAux (ι.ctors s c).nfields le_rfl from rfl,
-    Ctor.ordinaryTeleAux_entry] at hden
-  simp only [Fin.castLE_rfl, id_eq] at hden
+  rw [← Ctx.entry_instL, Ctor.ordinaryTeleAux_entry] at hden
   change ε₂[γ]⟦((((I.ctors s c).ordinary f).type.map total.sigs).instL ls).subst
     (Fin.append ps₁ previous)⟧ = domain
   rw [Expr.denote_subst]
@@ -265,7 +259,7 @@ theorem projTerm_denotes_field
         (γ := γ₂) fun param => by simpa using congrFun hpsDen₂ param
         fun prior => by
           rw [Fin.append_right]
-          simpa only [hpsDen₂] using ih prior.val prior.isLt _ (hpsDen₂ ▸ hvps) hpsTy₂
+          simpa [hpsDen₂] using ih prior.val prior.isLt _ (hpsDen₂ ▸ hvps) hpsTy₂
             (hpsDen₂ ▸ hmajMem₂) rfl
       rw [Fin.append_right] at hmem
       exact ⟨hmem, hsorted⟩
@@ -280,8 +274,7 @@ theorem projTerm_denotes_field
       ⟨funext fun param => by rw [Expr.denote_wkN, hδ],
         fun param => by
           rw [← Inductive.paramType_wkN]
-          simp only [Expr.denote_wkN, hδ]
-          exact hpsTy₁ param⟩
+          simpa only [Expr.denote_wkN, hδ] using hpsTy₁ param⟩
     let op (z : ZFSet) :=
       ε₂[Fin.snoc γ₁ z]⟦projTy (fun param => (ps₁ param).wkN 1) (.var (Fin.last m₁))⟧
     have hop (z : ZFSet) (hz : z ∈ model.toModel.sortValue s vps vis) :
@@ -290,7 +283,7 @@ theorem projTerm_denotes_field
         (funext fun v => Fin.snoc_castSucc (α := fun _ => ZFSet) ..)
       have ⟨hmem, _⟩ := hbody (γ₂ := Fin.snoc γ₁ z) (ps₂ := fun param => (ps₁ param).wkN 1)
         (maj₂ := .var (Fin.last m₁)) hden hty (by simpa [Expr.denote] using hz)
-      simpa [Expr.denote, op, Slots.snoc] using hmem
+      simpa [Expr.denote] using hmem
     let vms : Fin ι.nsorts → ZFSet :=
       fun _ => [zf|fun value : $(model.toModel.sortValue s vps vis) => $(op value)]
     have hmsDen (target : Fin ι.nsorts) : ε₂[γ₁]⟦mot target⟧ = vms target := by
@@ -372,10 +365,9 @@ theorem projTerm_denotes_field
         hstruct.no_indices vps vfds₁ hstruct.recursive vis hreachArgs
       rw [show ε₂[slots]⟦(I.map total.sigs).caseType η ls ps₁ mot s c⟧ =
           [zf|$(vms s) $(model.ctorResult s c vps vfds₁ hstruct.recursive)] from by
-        rw [Inductive.caseType, Inductive.motiveResult,
-          Expr.apps_eq_self_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_indices)]
-        simp only [Expr.denote, CtorSig.caseParams, CtorSig.fieldParams, hwk3, hmsDen, hfieldVar,
-          hctors₂]
+        simp only [Inductive.caseType, Inductive.motiveResult,
+          Expr.apps_eq_self_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_indices), Expr.denote,
+          CtorSig.caseParams, CtorSig.fieldParams, hwk3, hmsDen, hfieldVar, hctors₂]
         congr 2
         exact funext hstruct.no_recursive.elim, Aczel.app_lam hctorMem, hfieldVar f]
       simpa [model.fieldsOf_ctorResult hlevel] using hop _ hctorMem
@@ -397,16 +389,12 @@ theorem projTerm_denotes_field
     have hiota := model.recLeaf_iota hdecl hrule ho hB s u
       ((I.recAllowed_map total.sigs u).mp (hstruct.recAllowed u))
       (RecSlots.args vps vms vminsVal vis ε₂[γ₁]⟦maj₁⟧) hreach c
-      (by simp only [RecSlots.paramsOf_args]; exact hargs)
-      (by
-        simp only [RecSlots.paramsOf_args, RecSlots.indicesOfSlots, RecSlots.indexValuesOf_args]
-        exact hkey)
+      (by simpa using hargs)
+      (by simpa [RecSlots.indicesOfSlots] using hkey)
       ((RecSlots.majorOfSlots_args ..).trans hrebuild.symm)
-    rw [RecSlots.casesOf_args, RecSlots.paramsOf_args] at hiota
-    rw [model.applyMinor_ctorApplication s c vps vfds hreachFds hstruct.recursive
-        hstruct.no_recursive.elim,
-      Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr,
-      show vminsVal s c = _ from hcaseValue] at hiota
+    rw [RecSlots.casesOf_args, RecSlots.paramsOf_args,
+      model.applyMinor_ctorApplication s c vps vfds hreachFds hstruct.recursive hstruct.no_recursive.elim,
+      Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr, show vminsVal s c = _ from hcaseValue] at hiota
     have hlamApp := Reachable.apps_lam_of_base
       (leaf := fun slots => slots (Fin.natAdd m₁ f))
       (Reachable.of_pull (by rwa [Slots.pull_append])
@@ -454,11 +442,10 @@ theorem etaStructRuleSound
     exact congrArg _ (funext hstruct.no_indices.elim)
   have hmajMem : ε₂[γ]⟦maj⟧ ∈ model.toModel.sortValue s vps vis := htype ▸ hmaj.mem
   have hrebuild : ε₂[γ]⟦hstruct.rebuildTerm η ls ps maj⟧ = ε₂[γ]⟦maj⟧ := by
-    rw [Inductive.IsStructure.rebuildTerm]
-    simp only [Expr.denote]
+    simp only [Inductive.IsStructure.rebuildTerm, Expr.denote]
     rw [hctors]
     by_cases hlevel : model.toModel.level = 0
-    · rw [InductiveModel.sortValue, hlevel, propSet_zero] at hmajMem
+    · rw [InductiveModel.sortValue, hlevel] at hmajMem
       have ⟨_, _, hproof⟩ := mem_squash.mp hmajMem
       rw [ctorResult, hlevel, propVal_zero, hproof]
     have hfields (f) : ε₂[γ]⟦hstruct.projTerm η ls ps f maj⟧ =
@@ -466,8 +453,7 @@ theorem etaStructRuleSound
       model.projTerm_denotes_field hdecl hrule ho hB pre hatoms hsorts hctors hrecr hlevel
         hstruct vis f (model.paramsReachable pre hatoms hsorts hps)
         (fun param => (hps param).mem) hmajMem
-    simp only [hfields]
-    exact (model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
+    simpa [hfields] using (model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
       hstruct.no_recursive vps vis _ hmajMem).2
   exact ⟨hrebuild, hrebuild.symm ▸ hmaj.mem⟩
 

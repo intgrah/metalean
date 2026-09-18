@@ -62,15 +62,14 @@ noncomputable abbrev stepApplicationRaw (label : Tm_ Γ₁) :=
 theorem application_eq_bind₂ (I : Domain Γ₁) (label : Tm_ Γ₁) (X : Domain Γ₁) :
     application I label X = ΩIdeal.bind₂ I X (stepApplication label) := by
   ext Γ₂ σ y
-  rw [mem_application, ΩIdeal.mem_bind₂]
+  rw [ΩIdeal.mem_bind₂]
   constructor
   · intro ⟨x, hx, heval⟩
     have ⟨u, hu, heval'⟩ := Evaluates.function_ideal_finitary heval
     refine ⟨u, x, by simpa using hu, hx, ?_⟩
-    rw [stepApplication_app, mem_application]
     exact ⟨x, by simp, by simpa using heval'⟩
   · intro ⟨u, x, hu, hx, hy⟩
-    rw [stepApplication_app, mem_application] at hy
+    rw [stepApplication_app] at hy
     have ⟨x', hx', heval⟩ := hy
     refine ⟨x, hx, ?_⟩
     have hle : principalIdeal u ≤ I.pullback σ :=
@@ -87,8 +86,7 @@ theorem mem_rawApplication (F : RawValue Γ₁) (Q : Set (Tm_ Γ₁)) (X : RawVa
     (rawApplication F Q X).mem σ y ↔ y ≤ ⊥ ∨ ∃ label ∈ Q, ∃ u x, F.mem σ u ∧ X.mem σ x ∧
       (application (principalIdeal u) ((Tm E ℓ).map σ.op label)
         (principalIdeal x)).mem (𝟙 Γ₂) y := by
-  simp only [rawApplication, ΩLower.mem_iSup, ΩLower.mem_bind₂,
-    stepApplicationRaw_app, ΩIdeal.val_mem]
+  simp only [rawApplication, ΩLower.mem_iSup, ΩLower.mem_bind₂]
   constructor
   · rintro (h | ⟨label, h | ⟨hlabel, h⟩⟩)
     · exact Or.inl h
@@ -138,7 +136,6 @@ theorem rawApplication_eq_of_support (F X : Domain Γ₁)
     rawApplication F.val Q X.val = (application F label X).val := by
   apply le_antisymm
   · intro Γ₂ σ y hy
-    simp
     rcases (mem_rawApplication _ _ _ _ _).mp hy with hy | ⟨name, hname, u, x, hu, hx, hy⟩
     · exact (application F label X).lower σ hy ((application F label X).bottom σ)
     rw [mem_application] at hy
@@ -270,17 +267,15 @@ theorem exists_shapes_of_mem_rawApps (F : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁)
         | cast j => rw [Fin.snoc_castSucc]; exact hxs j
       · rw [rawApps_last, mem_rawApplication]
         refine Or.inr ⟨(Tm E ℓ).map σ.op (names (Fin.last k)), rfl, u, x, ?_, ?_, ?_⟩
-        · simpa [Fin.snoc_castSucc] using hu
-        · simp [Fin.snoc_last]
+        · simpa using hu
+        · simp
         · simpa using hy
 
 theorem rawApps_isDirected (F : Domain Γ₁) (names : Fin k → Tm_ Γ₁)
     (args : Fin k → Domain Γ₁) :
     (rawApps F.val names fun i => (args i).val).IsDirected := by
   induction k with
-  | zero =>
-    rw [rawApps_zero]
-    exact F.property
+  | zero => exact F.property
   | succ k ih =>
     rw [rawApps_last]
     exact rawApplication_isDirected Set.subsingleton_singleton (ih _ _) (args _).property

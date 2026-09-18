@@ -39,7 +39,6 @@ theorem natAdd_eq_snoc {a k : Nat} (γ : Slots (a + k + 1)) :
     (fun f : Fin (k + 1) => γ (Fin.natAdd a f)) =
       Fin.snoc (fun f : Fin k => Fin.init γ (Fin.natAdd a f))
         (γ (Fin.last (a + k))) := by
-  rw [← Fin.snoc_init_self γ]
   simpa [Function.comp_def] using
     Fin.snoc_comp_natAdd (f := Fin.init γ) (a := γ (Fin.last (a + k)))
 
@@ -73,7 +72,6 @@ def pull {a a₁ count : Nat} (project : Slots a₁ → Slots a)
   | left base =>
     rw [pull, Fin.addCases_left]
     apply congrArg fun current => project current base
-    funext current
     rfl
   | right field => nomatch field
 
@@ -84,12 +82,9 @@ def pull {a a₁ count : Nat} (project : Slots a₁ → Slots a)
   funext slot
   cases slot using Fin.addCases with
   | left base =>
-    simp [Fin.init, pull,
-      show (base.castAdd count).castSucc = base.castAdd (count + 1) from rfl]
+    simp [Fin.init, show (base.castAdd count).castSucc = base.castAdd (count + 1) from rfl]
     rfl
-  | right field =>
-    simp [Fin.init, pull,
-      show (Fin.natAdd a field).castSucc = Fin.natAdd a field.castSucc from rfl]
+  | right field => simp [Fin.init]
 
 @[simp] theorem pull_last {a a₁ count : Nat}
     (project : Slots a₁ → Slots a) (γ : Slots (a₁ + count + 1)) :
@@ -360,7 +355,6 @@ theorem lamAt_comp {source middle : Dom b} (Δ : SemTele a b)
     rw [hcomp]
     refine SemTele.lamAt_congr Δ
       (fun current function hfunction => Aczel.lam_congr fun argument hargument => ?_) γ value hfield'
-    dsimp only [inner']
     rw [Aczel.app_lam hargument]
 
 theorem lamAt_id (Δ : SemTele a b) (cod : Dom b)

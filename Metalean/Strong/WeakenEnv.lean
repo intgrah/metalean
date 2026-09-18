@@ -25,7 +25,7 @@ theorem weakenEnv (entry : Entry ζ sig) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     (E.snoc entry)[Γ.weakenEnv] ⊢ₛ e₁.weakenEnv ≡ e₂.weakenEnv : t.weakenEnv := by
   intro h
-  induction h with simp [Expr.weakenEnv, Expr.map, Ctx.weakenEnv] at *
+  induction h with simp [Expr.weakenEnv, Expr.map] at *
   | var _ ih =>
       rw [← Ctx.get_map] at ih ⊢
       exact .var ih
@@ -33,32 +33,32 @@ theorem weakenEnv (entry : Entry ζ sig) :
   | trans _ _ ih₁ ih₂ => exact .trans ih₁ ih₂
   | sortDF => exact .sortDF
   | constDF _ ihtype =>
-    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply, ← Env.get_map_step] at *
+    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply] at *
     exact .constDF ihtype
   | indDF _ _ ihps ihis =>
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at ihps ihis
     have d := DefeqStrong.indDF ihps ihis
-    simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map] using d
+    simpa [Inductive.map] using d
   | ctorDF _ _ _ _ _ _ ihps ihfields ihrecFields
       ihfieldTypes ihrecFieldTypes ihtype =>
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at ihps
     have d := DefeqStrong.ctorDF ihps
-      (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
-      (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.map] using ihrecFields)
-      (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.map] using ihfieldTypes)
-      (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.map] using ihrecFieldTypes)
-      (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map] using ihtype)
-    simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map] using d
+      (by simpa [Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
+      (by simpa [Inductive.map, Ctor.map] using ihrecFields)
+      (by simpa [Inductive.map] using ihfieldTypes)
+      (by simpa [Inductive.map] using ihrecFieldTypes)
+      (by simpa [Inductive.map] using ihtype)
+    simpa [Inductive.map] using d
   | recrDF hallowed _ _ _ _ _ _ ihps ihms ihmins
       ihis ihmaj ihresult =>
     have hallowed' := (Inductive.recAllowed_map _ (.step .refl : ζ ⟶ .snoc ζ sig) _).mpr hallowed
-    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at hallowed'
-    have hps := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihps
-    have hms := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihms
-    have hmins := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihmins
-    have his := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihis
-    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at hps hms hmins his
-    simpa [Expr.weakenEnv, Ctx.weakenEnv] using
+    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply] at hallowed'
+    have hps := by simpa using ihps
+    have hms := by simpa using ihms
+    have hmins := by simpa using ihmins
+    have his := by simpa using ihis
+    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply] at hps hms hmins his
+    simpa using
       .recrDF hallowed' hps hms hmins his ihmaj ihresult
   | appDF _ _ _ _ _ iht iht' ihf ihe ihtype =>
     exact .appDF iht iht' ihf ihe ihtype
@@ -75,8 +75,7 @@ theorem weakenEnv (entry : Entry ζ sig) :
     exact .eta iht iht' ihtwk ihewk ihe
   | @etaStruct _ _ _ η _ _ _ _ _ _ h _ _ _ ihps ihmaj ihrebuild =>
     have hblock : ((E.snoc entry).get (η.map (.step .refl))).block =
-        (E.get η).block.map (.step .refl) := by
-      simp [dsimp% (Entry.blockNatTrans _).naturality_apply]
+        (E.get η).block.map (.step .refl) := by simp
     generalize h.map (.step .refl) = hs at ihrebuild ⊢
     generalize hB : (E.get η).block.map (.step .refl) = B at hs ihps ihrebuild ⊢
     obtain rfl := hblock.trans hB
@@ -87,29 +86,29 @@ theorem weakenEnv (entry : Entry ζ sig) :
     have hallowed' := (Inductive.recAllowed_map _
       (.step .refl : ζ ⟶ .snoc ζ sig) _).mpr hallowed
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at hallowed'
-    have hps := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihps
-    have hms := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihms
-    have hmins := by simpa [Expr.weakenEnv, Ctx.weakenEnv] using ihmins
-    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at hps hms hmins ihtype ihlhs ihrhs
-    simpa [dsimp% (Entry.blockNatTrans _).naturality_apply] using
+    have hps := by simpa using ihps
+    have hms := by simpa using ihms
+    have hmins := by simpa using ihmins
+    rw [← dsimp% (Entry.blockNatTrans _).naturality_apply] at hps hms hmins ihtype ihlhs ihrhs
+    simpa using
       DefeqStrong.iota hallowed' hps hms hmins
-        (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
-        (by simpa [dsimp% (Entry.blockNatTrans _).naturality_apply, Inductive.map, Ctor.map] using ihrecFields)
+        (by simpa [Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
+        (by simpa [Inductive.map, Ctor.map] using ihrecFields)
         ihtype ihlhs ihrhs
   | quotDF _ _ ihα ihr => exact .quotDF ihα ihr
   | quotMkDF _ _ _ ihα ihr iha => exact .quotMkDF ihα ihr iha
   | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    rw [← dsimp% Entry.eqHeadNatTrans.naturality_apply, ← Env.get_map_step] at ihh
+    rw [← dsimp% Entry.eqHeadNatTrans.naturality_apply] at ihh
     exact .quotLiftDF ihα ihr ihβ ihf ihh iha
   | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha ihresult =>
     exact .quotIndDF ihα ihr ihβ ihf iha ihresult
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
-    rw [← dsimp% Entry.eqHeadNatTrans.naturality_apply, ← Env.get_map_step] at ihh
+    rw [← dsimp% Entry.eqHeadNatTrans.naturality_apply] at ihh
     exact .quotIota ihα ihr ihβ ihf ihh iha ihlhs ihrhs
   | delta _ _ ihtype ihvalue =>
-    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply, ← Env.get_map_step] at ihtype
-    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply, ← dsimp% (Entry.defValueNatTrans _).naturality_apply,
-      ← Env.get_map_step] at ihvalue ⊢
+    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply] at ihtype
+    rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply,
+      ← dsimp% (Entry.defValueNatTrans _).naturality_apply] at ihvalue ⊢
     exact .delta ihtype ihvalue
 
 theorem envMono {e₁ e₂ t : Expr ζ₁ ℓ n} (pre : E₁.as ⟶ E₂.as) :

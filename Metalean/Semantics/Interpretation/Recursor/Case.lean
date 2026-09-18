@@ -123,7 +123,7 @@ noncomputable def rawRecCase
         funext fun f => RawFamily.app_pullback ..
       rw [Category.comp_id, ← ΩLower.presheaf_map_mem_id, pullback_rawApps, RawFamily.app_pullback,
         Fin.append_comp _ _ ((Tm E ℓ).map σ₃.op), pullback_caseArgs, hih] at hy'
-      simpa [Category.assoc, ΩLower.presheaf_map_principal, RawValuation.pullback_comp] using hy'
+      simpa [RawValuation.pullback_comp] using hy'
   bottom _ := Or.inl bot_le
   lower σ₂ hyz hz := by
     rcases hz with hz | ⟨c, sect, fields, hobs, hz⟩
@@ -142,7 +142,6 @@ theorem pullback_rawRecCase (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ
         (Tm E ℓ).map (g ≫ σ₂).op majorName :=
     ((Tm E ℓ).map_comp_apply σ₂.op g.op majorName).symm
   ext Γ₄ g y
-  rw [ΩLower.presheaf_map_mem]
   constructor
   · rintro (hy | ⟨c, sect, fields, hobs, hy⟩)
     · exact Or.inl hy
@@ -151,7 +150,7 @@ theorem pullback_rawRecCase (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ
         · exact Or.inl ⟨hns, hX⟩
         · exact Or.inr ⟨hstruct, by rw [hmap]; exact hp.congr (Category.assoc g σ₂ σ₁),
             fun i => by simpa using hf i⟩
-      · simpa [RawValuation.pullback_comp, Category.assoc] using hy
+      · simpa [RawValuation.pullback_comp] using hy
   · rintro (hy | ⟨c, sect, fields, hobs, hy⟩)
     · exact Or.inl hy
     · refine Or.inr ⟨c, sect.congr (Category.assoc g σ₂ σ₁).symm, fields, ?_, ?_⟩
@@ -160,7 +159,7 @@ theorem pullback_rawRecCase (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ
         · refine Or.inr ⟨hstruct, ?_, fun i => by simpa using hf i⟩
           have hpp := hp.congr (Category.assoc g σ₂ σ₁).symm
           rwa [hmap] at hpp
-      · simpa [RawValuation.pullback_comp, Category.assoc] using hy
+      · simpa [RawValuation.pullback_comp] using hy
 
 theorem rawRecCase_mono (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ₁)
     {ih ih' : (c : Fin (ι.nctors s)) → Fin (ι.ctors s c).nrecFields → RawFamily Γ₁}
@@ -338,7 +337,6 @@ theorem rawRecCaseFamily_isActionFinitary (minValue : (c : Fin (ι.nctors s)) �
     (ih : (c : Fin (ι.nctors s)) → Fin (ι.ctors s c).nrecFields → RawFamily Γ₁) :
     (rawRecCaseFamily h minValue ih).IsActionFinitary := by
   intro Γ₂ σ₁ ρ Γ₃ σ₂ label
-  change ΩLower.IsFinitary fun X => rawRecCase h minValue ih (σ₂ ≫ σ₁) (ρ.pullback σ₂) label X
   refine ΩLower.IsFinitary.of_eventually fun X _ hy => ?_
   rcases hy with hy | ⟨c, sect, fields, hobs, hy⟩
   · exact Filter.Eventually.of_forall fun _ => Or.inl hy
@@ -431,7 +429,7 @@ theorem mem_rawRecCase_ctor (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ
       · obtain rfl : c₁ = c := (hstruct.ctor_unique c).symm
         obtain rfl : sect₁ = sect.pullback σ₂ := CtorSection.eq_of_names_eq
           (CtorSection.names_eq_of_projectsFrom sect₁ (sect.pullback σ₂) hp ((hname hstruct).pullback σ₂))
-        exact Or.inr ⟨fields, fun i => by simpa only [RawValue.proj_ctor] using hf i, hy⟩
+        exact Or.inr ⟨fields, fun i => by simpa [RawValue.proj_ctor] using hf i, hy⟩
   · rintro (hy | ⟨fields, hfields, hy⟩)
     · exact Or.inl hy
     · refine Or.inr ⟨c, sect.pullback σ₂, fields, ?_, hy⟩
@@ -497,7 +495,7 @@ theorem rawRecCase_ctor (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ₁)
       exact ⟨fields, hmem, hf⟩
     choose fieldsOf hfieldsOf happ using hrec
     have hmajor (i : Fin (CtorHead.mk η s c).arity) : (xs i).mem σ₂ (zs (Fin.castAdd _ i)) := by
-      simpa only [caseArgs, Fin.append_left] using hzs (Fin.castAdd (ι.ctors s c).nrecFields i)
+      simpa [caseArgs] using hzs (Fin.castAdd (ι.ctors s c).nrecFields i)
     choose b hb hble using fun i =>
       ΩLower.IsDirected.exists_upper_fin (hxs i) σ₂ (fun f => fieldsOf f i) fun f =>
         hfieldsOf f i

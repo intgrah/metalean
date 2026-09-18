@@ -110,7 +110,7 @@ private theorem substOf
         Subst ζ ℓ (n + 1) (m + 2)) = fun v => (σ.lift v).wkFrom m := by
       funext w
       cases w using Fin.lastCases with
-      | last => simp [Ren.wkFrom, Subst.lift]
+      | last => simp
       | cast w =>
         simp
         rfl
@@ -202,12 +202,11 @@ private theorem SubstRen.lift {t : Expr ζ ℓ n} (h : SubstRen E Γ₁ Γ₂ σ
     cases h v with
     | typed d =>
       refine .typed ?_
-      simp [Nat.ne_of_lt v.isLt, Expr.wk_subst_lift]
-      exact d.wk (t.subst σ)
+      simpa [Expr.wk_subst_lift] using d.wk (t.subst σ)
     | renamed w hw htype =>
       refine .renamed w.castSucc ?_ ?_
-      · simp [hw, Expr.wk, w.isLt]
-      · simp [Nat.ne_of_lt w.isLt, Nat.ne_of_lt v.isLt, Expr.wk_subst_lift]
+      · simp [hw, Expr.wk]
+      · simp [Expr.wk_subst_lift]
         exact congrArg Expr.wk htype
 
 private theorem SubstRen.liftN (h : SubstRen E Γ₁ Γ₂ σ)
@@ -225,7 +224,7 @@ private theorem SubstRen.inst
     exact .typed (by simpa [Expr.wk_subst_extend] using he)
   | cast v =>
     refine .renamed v (Subst.extend_castSucc _ _ _) ?_
-    simp [Nat.ne_of_lt v.isLt]
+    simp
     change _ = (Γ.get v).wk.inst e
     simp
 

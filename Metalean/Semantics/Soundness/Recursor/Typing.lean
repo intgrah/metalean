@@ -67,7 +67,6 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
   let ms₂ : Fin ι.nsorts → Expr ζ₂ ℓ (ι.nparams + ι.nsorts) := fun t => .var (Fin.natAdd ι.nparams t)
   have heq₂ (p : Fin ι.nparams) :
       Ctx.get (p.castAdd ι.nsorts) P₂.as.ctx = (E₂.get η).block.paramType ls ps₂ p := by
-    change Ctx.get (p.castAdd ι.nsorts) (P₁.as.ctx ++ (E₂.get η).block.motiveBinders η ls l) = _
     rw [Ctx.get_append, heq₁ p, Inductive.paramType_wkN]
     simp only [Expr.var_wkN]
     rfl
@@ -79,8 +78,7 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
         (E₂.get η).block.motiveType η ls ps₂ l t := by
       change Ctx.get (Fin.natAdd ι.nparams t)
         (P₁.as.ctx ++ Ctx.ofTypes ((E₂.get η).block.motiveType η ls Expr.var l)) = _
-      rw [Ctx.get_append_ofTypes, Inductive.motiveType_wkN]
-      simp only [Expr.var_wkN]
+      simp
       rfl
     exact heq ▸ RawTyped.var pP₂ (Fin.natAdd ι.nparams t)
   have hI₂ : IndData P₂ η ls ps₂ := ⟨hI, fun p => (pps₂ p).typed⟩
@@ -103,8 +101,7 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
         (E₂.get η).block.paramType ls ps₃ p := by
       change Ctx.get ((p.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors))
         (P₂.as.ctx ++ (E₂.get η).block.caseBinders η ls) = _
-      rw [Ctx.get_append, heq₂ p, Inductive.paramType_wkN]
-      simp only [ps₂, Expr.var_wkN]
+      simp only [Ctx.get_append, heq₂ p, Inductive.paramType_wkN, ps₂, Expr.var_wkN]
       rfl
     exact heq ▸ RawTyped.var pP₃ ((p.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors))
   have hIdx := hI.indexTele (s := s) fun p => (pps₃ p).typed
@@ -240,9 +237,6 @@ theorem RawSound.recursorBody_isDirected (hrel : l.rel = true) {V : RecApprox E�
     (hυ : SourceAdmissible σ υ) :
     ((recursorBody (piLimit E₂ ℓ) (fun Γ e _ => rawInterpret (piLimit E₂ ℓ) Γ e) hd ls V s).app _
       σ.op υ).IsDirected := by
-  unfold recursorBody
-  rw [RawFamily.decode_app_hom_coe]
-  beta_reduce
   apply (piLimit E₂ ℓ).rawExtend_isDirected
   · exact (hsound.recrBodyProperties hB hblock hd ls s).ideal σ υ hυ
   · exact hsound.recursorPayload_isDirected hB hblock hd ls s hrel hV σ υ hυ
@@ -415,7 +409,7 @@ theorem RawSound.recr_eval (hrel : l.rel = true)
   · exact congrArg (fun τ => (RawFamily.ctxLam (piLimit E₂ ℓ) _ (CtxCat.nil E₂ ℓ) _ hd.block.recrTele
       (recrTele_headRank_lt η ls s) _).app _ (Quiver.Hom.op τ) fun _ => ⊥) (CtxCat.hom_nil_eq _ _)
   · funext v
-    rw [op_comp, Functor.map_comp_apply, Tm.map_varLabel]
+    rw [op_comp, Functor.map_comp_apply]
     rfl
   · funext v
     rw [RawValuation.pushFin_variable]
@@ -458,7 +452,7 @@ theorem RawSound.recr_value (hrel : l.rel = true)
   have hlabel : (Tm E₂ ℓ).map (σ ≫ RawCtx.toCtx.map h.recrHom).op
       (Tm.label (CtxCat.recr h.toRecDecl ls s).as (RecTyping.recrBody_typed h.toRecDecl ls s)) =
       (Tm E₂ ℓ).map σ.op (Tm.label Γ.as he) := by
-    rw [op_comp, Functor.map_comp_apply, Tm.map_label]
+    rw [op_comp, Functor.map_comp_apply]
     have ht' : E₂[Γ.as.ctx] ⊢ₛ (ι.recrBody s).subst h.recrHom.subst ≡
         Inductive.motiveResult (ms s) is maj typ := by
       rw [hbodyEq]
@@ -470,8 +464,8 @@ theorem RawSound.recr_value (hrel : l.rel = true)
       rwa [hrecEq, hbodyEq]
     exact congrArg _ (Tm.label_eq ht' he')
   rw [hsound.recr_eval hB hblock h pargs fargs hrel σ ρ hρ,
-    hsound.recr_type_eq hB hblock h pargs fargs σ ρ hρ]
-  rw [recursorBody, RawFamily.decode_app_hom_coe, hlabel]
+    hsound.recr_type_eq hB hblock h pargs fargs σ ρ hρ, recursorBody, RawFamily.decode_app_hom_coe,
+    hlabel]
 
 include h pargs fargs in
 theorem RawSound.recr_fixed :

@@ -233,9 +233,8 @@ theorem resultIdeal_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent)
   apply ΩIdeal.ext
   intro Γ₃ σ₂ z
   refine or_congr_right (exists_congr fun h' => exists_congr fun hm' => ?_)
-  rw [resultBody, resultBody, F.pullback_resultIdeal,
-    F.resultIdeal_eq_body label n B (σ₂ ≫ σ₁) _ _ _ h' hm', resultBody,
-    F.extend_idempotent hF]
+  rw [resultBody, F.pullback_resultIdeal, F.resultIdeal_eq_body label n B (σ₂ ≫ σ₁) _ _ _ h' hm',
+    resultBody, F.extend_idempotent hF]
 
 noncomputable def piBody (G : Domain Γ₁) : IdealAction Γ₁ where
   val.app _ := fun (⟨σ⟩, m) => Preord.ofHom {
@@ -317,13 +316,13 @@ theorem piBody_finitary (G X : Domain Γ₁) (m : Tm_ Γ₁) {y : CoherentShape 
   rw [piBody_app_id] at hy
   rcases hy with hy | ⟨hc, hm, hy⟩
   · exact ⟨⊥, G.bottom (𝟙 _), by rw [piBody_app_id]; exact Or.inl hy⟩
-  rw [resultBody, ΩIdeal.pullback_id, ΩIdeal.pullback_id] at hy
+  rw [ΩIdeal.pullback_id] at hy
   have ⟨c, hc', hy⟩ := F.extend_finitary_right _ _ _ hy
   have ⟨g, hg, hc'⟩ := application_function_finitary G m hc'
   refine ⟨g, hg, ?_⟩
   rw [piBody_app_id]
   refine Or.inr ⟨hc, hm, ?_⟩
-  rw [resultBody, ΩIdeal.pullback_id, ΩIdeal.pullback_id]
+  rw [ΩIdeal.pullback_id, ΩIdeal.pullback_id]
   exact F.extend_mono (@le_rfl _ _ _) (ΩLower.principal_le_iff.mpr hc') (𝟙 _) y hy
 
 noncomputable def piAction : IdealAction Γ₁ where
@@ -338,9 +337,8 @@ noncomputable def piAction : IdealAction Γ₁ where
         (G.pullback σ.unop)) =
       (IdealAction.abstraction (F.piBody ((Ty.pairPresheaf E ℓ).map p.1.unop.op label) p.2
         (A.pullback p.1.unop) (B.pullback p.1.unop) G)).pullback σ.unop
-    rw [pullback_abstraction, pullback_piBody, ΩIdeal.pullback_pullback,
-      IdealAction.pullback_pullback, unop_comp, op_comp]
-    simp only [Functor.map_comp_apply, Quiver.Hom.op_unop]
+    simp only [pullback_abstraction, pullback_piBody, ΩIdeal.pullback_pullback,
+      IdealAction.pullback_pullback, unop_comp, op_comp, Functor.map_comp_apply, Quiver.Hom.op_unop]
   property _ p := IdealAction.abstraction_finitary
     (fun G => F.piBody ((Ty.pairPresheaf E ℓ).map p.1.unop.op label) p.2
       (A.pullback p.1.unop) (B.pullback p.1.unop) G)
@@ -395,7 +393,6 @@ variable (F : CodeAssignment E ℓ) {z : CoherentShape Γ₁}
 theorem applicationAction_abstraction (B : IdealAction Γ₁) :
     applicationAction (IdealAction.abstraction B) = B := by
   ext ⟨Γ₂⟩ ⟨⟨σ⟩, label⟩ X
-  change application ((IdealAction.abstraction B).pullback σ) label X = _
   refine (congrArg (fun I => application I label X) (pullback_abstraction B σ)).trans ?_
   rw [IdealAction.application_abstraction]
   change B.val.app _ (σ.op ≫ (𝟙 Γ₂).op, label) X = _

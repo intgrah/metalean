@@ -105,15 +105,15 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
       his hmaj hresult ihps ihms ihmins ihis ihmaj ihresult =>
     have ptype := ihresult hΔ hR
     have hrec := (DefeqStrong.recrDF hallowed hps hms hmins his hmaj hresult).envMono pre
-    simp only [Expr.map, Inductive.motiveResult_map] at ptype hrec ⊢
+    simp only [Inductive.motiveResult_map] at ptype hrec ⊢
     have ⟨_, _, _, _, hsound, hI, hb⟩ := hblock η
     have pps := fun p => ihps p hΔ hR
     have pms := fun s => ihms s hΔ hR
     have pmins := fun s c => ihmins s c hΔ hR
     have pis := fun i => ihis i hΔ hR
     have pmaj := ihmaj hΔ hR
-    simp only [Expr.map, Inductive.paramType_map, Inductive.indexType_map,
-      Inductive.motiveType_map, Inductive.caseFnType_map, ← hlookup η] at pps pms pmins pis pmaj
+    simp only [Inductive.paramType_map, Inductive.indexType_map, Inductive.motiveType_map,
+      Inductive.caseFnType_map, ← hlookup η] at pps pms pmins pis pmaj
     have hB := (ho.entryWFStrong (η.map pre.sigs)).block
     have ha : (E₂.get (η.map pre.sigs)).block.RecAllowed l := by simpa [hlookup η] using hallowed
     exact RawJudgment.recrDF hsound hI hb
@@ -163,14 +163,13 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have hs : (E₂.get (η.map pre.sigs)).block.IsStructure s c := hlookup η ▸ h.map pre.sigs
     have hidx : (fun i => (is i).map pre.sigs) = (hs.indices : Fin (ι.nindices s) → Expr ζ₂ ℓ _) :=
       funext h.no_indices.elim
-    simp only [Expr.map, Inductive.IsStructure.rebuildTerm_map] at pmaj prebuild ⊢
+    simp only [Expr.map] at pmaj prebuild ⊢
     rw [hidx] at pmaj prebuild ⊢
     simp only [Inductive.paramType_map, ← hlookup η] at pps
     have he := RawJudgment.etaStruct hsound hI hb hs (ho.entryWFStrong _).block hR pps pmaj
     simpa [← hlookup η] using he (by simpa [← hlookup η] using prebuild)
   | proofIrrel _ _ _ ihp ih₁ ih₂ =>
     have pP := ihp hΔ hR
-    simp only [Expr.map] at pP
     exact RawJudgment.proofIrrel pP (ih₁ hΔ hR) (ih₂ hΔ hR)
   | @iota _ _ ι η s c ls u ps ms mins fds recFds hallowed hps hms hmins hfields hrecFields
       htype hlhs hrhs ihps ihms ihmins ihfields ihrecFields ihtype ihlhs ihrhs =>
@@ -230,7 +229,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have pr := ihr hΔ hR
     have pβ := ihβ hΔ hR
     have pf := ihf hΔ hR
-    simp only [Quot.relType_map, Quot.motiveType_map, Quot.minorType_map] at pr pβ pf
+    simp only [Quot.relType_map, Quot.minorType_map] at pr pβ pf
     exact RawJudgment.quotIndDF (ihα hΔ hR) pr pβ pf (iha hΔ hR) (ihresult hΔ hR)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha _ ihrhs =>
     have pr := ihr hΔ hR

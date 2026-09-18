@@ -200,7 +200,6 @@ theorem ind_mono (code : IndCode Γ₁) {Ts Us : Fin code.toIndHead.nctors → R
     (ind code Ts).pullback σ₁ =
       ind (code.map ((Tm E ℓ).map σ₁.op)) fun c => (Ts c).pullback σ₁ := by
   ext Γ₃ σ₂ y
-  simp only [ΩLower.pullback, mem_ind]
   refine exists_congr fun ts => and_congr Iff.rfl (Iff.of_eq (congrArg (y ≤ ·) ?_))
   exact indAtom_congr (IndCode.map_comp_hom σ₁ σ₂ code)
     fun _ _ hcc => by rw [Fin.ext hcc]
@@ -262,7 +261,7 @@ theorem ctor_mono (names : Fin head.arity → Tm_ Γ₁)
     (ctor head names Xs).pullback σ₁ =
       ctor head (fun i => (Tm E ℓ).map σ₁.op (names i)) fun i => (Xs i).pullback σ₁ := by
   ext Γ₃ σ₂ y
-  simp [ΩLower.pullback]
+  simp
 
 theorem ctor_isDirected (names : Fin head.arity → Tm_ Γ₁)
     {Xs : Fin head.arity → RawValue Γ₁} (hXs : ∀ i, (Xs i).IsDirected) :

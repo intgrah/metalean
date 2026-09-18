@@ -303,15 +303,11 @@ theorem mergeOffsets_spec (ls : List (RawLevel ℓ)) :
   fun_induction mergeOffsets ls with
   | case1 a b rest hbase hlt ih =>
     refine ⟨?_, fun _ => ih.2 (List.cons_ne_nil _ _)⟩
-    simp only [ih.1, evalMax_cons]
-    rw [eval_toOffset ν a, eval_toOffset ν b, hbase]
-    simp only [natMax_def]
+    simp only [ih.1, evalMax_cons, eval_toOffset ν a, eval_toOffset ν b, hbase, natMax_def]
     (repeat' split) <;> omega
   | case2 a b rest hbase hlt ih =>
     refine ⟨?_, fun _ => ih.2 (List.cons_ne_nil _ _)⟩
-    simp only [ih.1, evalMax_cons]
-    rw [eval_toOffset ν a, eval_toOffset ν b, hbase]
-    simp only [natMax_def]
+    simp only [ih.1, evalMax_cons, eval_toOffset ν a, eval_toOffset ν b, hbase, natMax_def]
     (repeat' split) <;> omega
   | case3 a b rest _ ih =>
     exact ⟨by rw [evalMax_cons, ih.1]; rfl, fun _ => List.cons_ne_nil _ _⟩

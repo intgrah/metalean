@@ -105,12 +105,11 @@ theorem toNat_looseBVarRange_mk (h : UInt64) (r : Nat) (dep : UInt32) (fv lp : B
     unfold maxRange
     omega
   have hr : (min r maxRange).toUInt64.toNat = min r maxRange := by
-    simp only [Nat.toUInt64_eq]
     exact UInt64.toNat_ofNat_of_lt' (by unfold UInt64.size; omega)
   unfold mk looseBVarRange
   generalize (min r maxRange).toUInt64 = ru at hr ⊢
   have hru : ru < 1048576 := by
-    rw [UInt64.lt_iff_toNat_lt, hr, UInt64.toNat_ofNat_of_lt (by decide)]
+    rw [UInt64.lt_iff_toNat_lt, hr]
     exact hlt
   have hshift : (h.toUInt32.toUInt64 ||| (if dep ≤ 255 then dep else 255).toUInt64 <<< 32 |||
       fv.toUInt64 <<< 40 ||| lp.toUInt64 <<< 43 ||| ru <<< 44) >>> 44 = ru := by
@@ -173,7 +172,6 @@ theorem looseBVarRange_le_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : 
     (hd : d ∈ ds) :
     d.looseBVarRange ≤ (mkArr h lp ds).looseBVarRange := by
   obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hd
-  unfold mkArr
   refine Array.foldl_induction
     (motive := fun j (acc : Data) => ∀ i (hi : i < ds.size), i < j →
       ds[i].looseBVarRange ≤ acc.looseBVarRange)
@@ -188,7 +186,6 @@ theorem hasFVar_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : Data} (hd 
     (hf : d.hasFVar = true) :
     (mkArr h lp ds).hasFVar = true := by
   obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hd
-  unfold mkArr
   refine Array.foldl_induction
     (motive := fun j (acc : Data) => ∀ i (hi : i < ds.size), i < j → ds[i].hasFVar = true →
       acc.hasFVar = true)
@@ -202,7 +199,6 @@ theorem hasFVar_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : Data} (hd 
 
 theorem hasLevelParam_mkArr_init (h : UInt64) (ds : Array Data) :
     (mkArr h true ds).hasLevelParam = true := by
-  unfold mkArr
   refine Array.foldl_induction (motive := fun _ (acc : Data) => acc.hasLevelParam = true)
     (hasLevelParam_mk ..) fun _ acc ih => ?_
   rw [hasLevelParam_mkApp, ih]
@@ -212,7 +208,6 @@ theorem hasLevelParam_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : Data
     (hp : d.hasLevelParam = true) :
     (mkArr h lp ds).hasLevelParam = true := by
   obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hd
-  unfold mkArr
   refine Array.foldl_induction
     (motive := fun j (acc : Data) => ∀ i (hi : i < ds.size), i < j → ds[i].hasLevelParam = true →
       acc.hasLevelParam = true)
@@ -300,7 +295,6 @@ def maxArr (xs : Array Nat) : Nat :=
 
 theorem le_maxArr {xs : Array Nat} {x : Nat} (hx : x ∈ xs) : x ≤ maxArr xs := by
   obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hx
-  unfold maxArr
   refine Array.foldl_induction
     (motive := fun j (acc : Nat) => ∀ i (hi : i < xs.size), i < j → xs[i] ≤ acc)
     (fun _ _ h => absurd h (Nat.not_lt_zero _))
@@ -310,11 +304,9 @@ theorem le_maxArr {xs : Array Nat} {x : Nat} (hx : x ∈ xs) : x ≤ maxArr xs :
   · exact Nat.le_trans (ih i hi hlt) (Nat.le_max_left _ _)
   · exact Nat.le_max_right _ _
 
-theorem maxArr_le {xs : Array Nat} {b : Nat} (h : ∀ x ∈ xs, x ≤ b) : maxArr xs ≤ b := by
-  unfold maxArr
-  refine Array.foldl_induction (motive := fun _ (acc : Nat) => acc ≤ b) (Nat.zero_le _)
-    (fun i acc ih => ?_)
-  exact Nat.max_le.mpr ⟨ih, h _ (Array.getElem_mem _)⟩
+theorem maxArr_le {xs : Array Nat} {b : Nat} (h : ∀ x ∈ xs, x ≤ b) : maxArr xs ≤ b :=
+  Array.foldl_induction (motive := fun _ (acc : Nat) => acc ≤ b) (Nat.zero_le _)
+    (fun _ _ ih => Nat.max_le.mpr ⟨ih, h _ (Array.getElem_mem _)⟩)
 
 theorem maxArr_bound {xs : Array Nat} {x d m : Nat} (h : maxArr xs + d + 1 ≤ m) (hx : x ∈ xs) :
     x + d + 1 ≤ m := by

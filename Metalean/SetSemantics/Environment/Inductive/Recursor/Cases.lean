@@ -79,7 +79,6 @@ private theorem StrongRecursiveFieldSource.ihType_eraseRecField
         (eraseRecField (StrongRecursiveFieldSource.code recFd source).tele
           level γ raw) := by
   let code := StrongRecursiveFieldSource.code recFd source
-  unfold ihType eraseRecField
   refine code.tele.piAt_lamAt
     (domain := fun final => fibreOp block (code.index final))
     (map := fun _ value => propVal level value)
@@ -93,9 +92,6 @@ private theorem StrongRecursiveFieldSource.ihType_eraseRecField
     have hentry : pair (code.index final) value ∈ block := mem_fibre.mp hvalue
     have htag : fst (fst (pair (code.index final) value)) =
         numeral s.val := by
-      rw [show code.index final = sortKey s.val
-        (encode (ε₁[final]⟦recFd.indices · |>.instL ls⟧)) by
-        simp [code, StrongRecursiveFieldSource.code_index]]
       change fst (fst (pair
         (pair (numeral s.val)
           (encode (ε₁[final]⟦recFd.indices · |>.instL ls⟧)))
@@ -172,10 +168,9 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
           (model.recrMotivesSem l)) (model.recrCaseFieldsSem s c))
         (model.recrCaseIhSem s c) :=
     Reachable.ofDoms_append (Reachable.append hrec) fun f => by
-      simp only [recrCaseParams_append, recrCaseMotives_append, recrCaseOrdinary_append,
-        recrCaseRecursive_append, ← hfieldsSlotsEq]
-      exact StrongRecursiveFieldSource.ihType_eraseRecField ((I.ctors s c).recursive f)
-        (source.recursive f) model.toModel.level vms (model.toModel.block vps) γ₁ (raw f) (hraw f) ▸
+      simpa [← hfieldsSlotsEq] using
+        StrongRecursiveFieldSource.ihType_eraseRecField ((I.ctors s c).recursive f)
+          (source.recursive f) model.toModel.level vms (model.toModel.block vps) γ₁ (raw f) (hraw f) ▸
           hihs f
   have hminor₁ : minor ∈ SemTele.pi
       (SemTele.pi ((model.recrCaseIhSem s c).pi (model.recrCaseLeaf s c))
@@ -189,7 +184,7 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
   have hrecApp := Reachable.apps_mem_of_base hrec (γ := Fin.append (Fin.append vps vms) vfds)
     (by simp) (by simpa using hordApp)
   have hleaf := Reachable.apps_mem_of_base hihSlots (γ := fieldSlots) (by simp [fieldSlots])
-    (fn := [zf|minor vfds... typed...]) (by simpa [fieldSlots] using hrecApp)
+    (by simpa using hrecApp)
   simp only [Fin.append_right] at hleaf
   have happlyMinor : (model.codeOf s c).applyMinor model.toModel.level
         vps minor vargs = [zf|minor vfds... typed... ihs...] := by
@@ -213,12 +208,11 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
   rw [hfieldsRaw, hfieldsSlotsEq] at htarget
   have hentry : _ ∈ model.toModel.block vps := entry_mem_indSet (model.mapsTo vps)
     (CtorCode.forgetIhs_mem_argSet _ _ _ hargs)
-  rw [model.toModel_codes, htarget] at hentry
+  rw [htarget] at hentry
   have hvalue := hmaj ▸ propVal_mem_propSet (level := model.toModel.level)
     (entryValue_mem_fibre hentry)
-  rwa [happlyMinor, show (model.codeOf s c).forgetIhs vargs = rawArgs from rfl, htarget,
-    recrCaseMotive, fibre_bundleMotive_propVal hentry, entry_eq, fst_pair, snd_pair, ← hmaj,
-    fibre_bundleMotive_typed s _ hvalue]
+  rwa [happlyMinor, htarget, recrCaseMotive, fibre_bundleMotive_propVal hentry, entry_eq, fst_pair,
+    snd_pair, ← hmaj, fibre_bundleMotive_typed s _ hvalue]
 
 include hatoms hsorts hctors in
 theorem StrongInductiveModel.recrCaseDomain_denotes
@@ -254,10 +248,9 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
             (model.recrCaseOrdinary s c fieldSlots)) i := by
       have h := (Expr.denote_map pre.sigs hatoms _ _).trans
         (ctorModel.target.denotes _ hsource i)
-      rw [hproject, Expr.map_instL] at h
-      rw [Ctor.targetIndex, Expr.denote_subst, Fin.append_comp]
-      simp only [ps, CtorSig.caseParams, CtorSig.fieldParams,
-        CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.var_wkN]
+      rw [Expr.map_instL] at h
+      simp only [Ctor.targetIndex, Expr.denote_subst, Fin.append_comp, ps, CtorSig.caseParams,
+        CtorSig.fieldParams, CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.var_wkN]
       exact h
     simp only [Inductive.caseType, Inductive.motiveResult, Expr.denote, Expr.denote_apps,
       CtorSig.caseParams, CtorSig.caseOrdinary, CtorSig.caseRecursive,

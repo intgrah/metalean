@@ -88,7 +88,6 @@ theorem fieldSlotsReachable
     cases f using Fin.addCases with
     | left param => exact ((Nat.not_le_of_gt param.isLt) hfield).elim
     | right current =>
-      simp only [Fin.append_right]
       rw [Ctx.get_subst _ _ (Fin.natAdd ι.nparams current)
         (ι.nparams + current.val) (by omega) (by simp),
         Ctx.entry_append_right
@@ -97,10 +96,7 @@ theorem fieldSlotsReachable
             ((I.ctors s c).map pre.sigs).ordinaryTele)
           (by omega) (by omega) (by omega),
         ← Ctx.entry_instL]
-      simp only [Ctor.ordinaryTele]
-      rw [Ctor.ordinaryTeleAux_entry,
-        funext (Fin.append_castLE_right ps fds current.isLt.le)]
-      simpa [Inductive.map, Ctor.map] using (hfields current).mem
+      simpa [Inductive.map] using (hfields current).mem
 
 include hatoms hsorts hparamReach hfieldsReach in
 theorem recFieldsMem
@@ -123,14 +119,13 @@ theorem recFieldsMem
           (fun param : Fin ι.nparams =>
             δ (param.castLE (by omega))) = (ε₂[γ]⟦ps ·⟧) := by
         funext param
-        simpa [Fin.castLE] using
+        simpa using
           congrFun (Set.eq_of_mem_singleton (Reachable.base (Reachable.base hδ))) param
       simpa [hpsEq] using model.recursiveField_apply s c f δ)
     (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) hfieldsReach
   suffices heq : _ = model.recFieldSet s c f (ε₂[γ]⟦ps ·⟧)
       (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) from heq ▸ (hrecFields f).mem
-  simpa [recFieldSet, recCode, Inductive.map, Ctor.map, RecField.map,
-    RecField.instantiatedType_subst, Expr.instL, Expr.subst] using
+  simpa [recFieldSet, recCode, Inductive.map, Ctor.map, Expr.subst] using
     (Expr.denote_subst γ (Fin.append ps fds) _).trans
       ((congrArg (fun δ => ε₂[δ]⟦_⟧)
         (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧)).trans hdomain)
@@ -139,8 +134,7 @@ include hatoms hparamReach hfieldsReach in
 theorem targetIndexDenotes (index : Fin (ι.nindices s)) :
     ε₂[γ]⟦((I.map pre.sigs).ctors s c).targetIndex ls ps fds index⟧ =
       model.targetValues s c (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) index := by
-  simpa [Inductive.map, Ctor.map, RecField.map, Ctor.targetIndex,
-    StrongInductiveModel.targetValues] using
+  simpa [Inductive.map, Ctor.map, Ctor.targetIndex, StrongInductiveModel.targetValues] using
     (Expr.denote_subst γ (Fin.append ps fds) _).trans
       ((congrArg (fun δ => ε₂[δ]⟦_⟧) (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧)).trans
         ((Expr.denote_map pre.sigs hatoms _ _).trans ((model.ctors s c).target.denotes
@@ -173,7 +167,7 @@ theorem targetIndexInterp (index : Fin (ι.nindices s)) :
     cases v using Fin.addCases with
     | left param => simp [σ, γ₁]
     | right i =>
-      simpa [σ, γ₁, expressions] using
+      simpa [σ, γ₁] using
         model.targetIndexDenotes pre hatoms hparamReach hfieldsReach i
   have h := (hrealizes.params.append (by simpa using hrealizes.indicesRealizes s)).slot_interp
     (Γ := .nil) σ γ₁ (Reachable.append hvalues) hσ (Fin.natAdd ι.nparams index) (by simp)
@@ -204,7 +198,6 @@ theorem indRuleSound
     rw [funext fun p => (hps p).eq, funext fun i => (his i).eq]
   · change ε₂ (.ind η s ls _ _) ∈ S_ (((E₂.get η).block.level.inst ls).eval zeroNs)
     rw [hsorts, hblock]
-    change model.toModel.sortValue s _ _ ∈ S_ model.toModel.level
     exact propSet_mem_sort fun k hk =>
       fibreOp_indSet_mem_type (fun s c => model.codeOf_localDoms s c hk) (model.mapsTo _) _
 
@@ -249,7 +242,7 @@ theorem ctorRuleSound
     have hentry := entry_mem_indSet (model.mapsTo vps) hargs
     have hkey := model.codeOf_targetIndex s c vps (model.ctorArgs s c vps vfds vrecFds)
     rw [hfieldsOf] at hkey
-    rw [model.toModel_codes, hkey] at hentry
+    rw [hkey] at hentry
     exact propVal_mem_propSet (entryValue_mem_fibre
       (by simpa [InductiveModel.block] using hentry))
 

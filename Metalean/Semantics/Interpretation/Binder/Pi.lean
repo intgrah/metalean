@@ -153,11 +153,10 @@ theorem application_rawPi_fixed (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
   rw [hXideal, (piLimit E ℓ).resultIdeal_eq_body _ n V σ₂ name X _ h hm] at hresult
   have hcode : (V.val.app _ (σ₂.op, name) X).val =
       sectionValue (CtxCat.rawComprehension ht) B (σ₂ ≫ σ₁) (ρ.pullback σ₂) name X.val := by
-    rw [RawAction.toIdealAction_value_toLower]
     change sectionValue (CtxCat.rawComprehension ht) B (σ₂ ≫ σ₁) (ρ.pullback σ₂) name
       ((piLimit E ℓ).rawExtend (C.app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) name X.val) = _
     rw [hX]
-  rw [← hcode, (piLimit E ℓ).rawExtend_toLower]
+  rw [← hcode]
   exact congrArg Subtype.val hresult.symm
 
 theorem application_rawPi_fixed_support (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
@@ -260,7 +259,6 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   have hdecode {Γ₃ : CtxCat E ℓ} (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃) (Y : Domain Γ₃) :
       ((piLimit E ℓ).extend (T.pullback σ₂) name Y).val =
         (piLimit E ℓ).rawExtend (C.app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) name Y.val := by
-    rw [← (piLimit E ℓ).rawExtend_toLower]
     exact congrArg (fun S : RawValue Γ₃ => (piLimit E ℓ).rawExtend S name Y.val)
       (C.app_pullback σ₁.op σ₂ ρ)
   have hβ {Γ₃ : CtxCat E ℓ} (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃) (Y : Domain Γ₃) :
@@ -271,7 +269,7 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
       (hmF.pullback σ₂) (hMI.pullback σ₂) Y {name} name rfl
       fun _ _ hname _ _ _ => Or.inr (by simpa using hname)
     rw [RawAction.pullback, RawAction.app_map] at h
-    simpa only [RawAction.pullback_abstraction, RawAction.pullback, op_id, Category.comp_id] using h
+    simpa only [RawAction.pullback_abstraction, op_id, Category.comp_id] using h
   change (piLimit E ℓ).rawExtend (rawPi label T.val b) n L.val = m.abstraction
   rw [rawPi_toIdealAction label T b hbF hBI, (piLimit E ℓ).rawExtend_toLower, piLimit_extend_pi label,
     piAction_app_id]
@@ -285,13 +283,12 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   set W : Domain Γ₃ := CoherentShape.application (L.pullback σ₂) name U with hWdef
   set J : Domain Γ₄ := (piLimit E ℓ).extend (T.pullback (σ₃ ≫ σ₂)) name' (X.pullback σ₃) with hJdef
   have hUJ : U.pullback σ₃ = J := by
-    rw [hUdef, hJdef, (piLimit E ℓ).pullback_extend, Presheaf.ΩIdeal.pullback_pullback]
+    rw [(piLimit E ℓ).pullback_extend, Presheaf.ΩIdeal.pullback_pullback]
   have hJval : J.val =
       (piLimit E ℓ).rawExtend (C.app _ ((σ₃ ≫ σ₂) ≫ σ₁).op (ρ.pullback (σ₃ ≫ σ₂))) name' (X.pullback σ₃).val := by
-    rw [hJdef]
     exact hdecode (σ₃ ≫ σ₂) name' (X.pullback σ₃)
   have hJfix : (piLimit E ℓ).rawExtend (C.app _ ((σ₃ ≫ σ₂) ≫ σ₁).op (ρ.pullback (σ₃ ≫ σ₂))) name' J.val = J.val := by
-    rw [← hdecode (σ₃ ≫ σ₂) name' J, hJdef]
+    rw [← hdecode (σ₃ ≫ σ₂) name' J]
     exact congrArg Subtype.val ((piLimit E ℓ).extend_idempotent piLimit_isIdempotent _ _ _)
   have hMX : m.app _ ((σ₃ ≫ σ₂).op, name') (X.pullback σ₃).val =
       sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val := by
@@ -301,7 +298,7 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     rw [RawAction.toIdealAction_value_toLower, normalizedBodyAction_value, hJfix]
   have hWvalue : (W.pullback σ₃).val =
       sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val := by
-    rw [hWdef, pullback_application, Presheaf.ΩIdeal.pullback_pullback, hUJ, hβ,
+    rw [pullback_application, Presheaf.ΩIdeal.pullback_pullback, hUJ, hβ,
       normalizedBodyAction_value, hJfix]
   have hrb (h : Tm.type ((Tm E ℓ).map (σ₃ ≫ σ₂).op n) =
         Ty.piApp ((Ty.pairPresheaf E ℓ).map (σ₃ ≫ σ₂).op label).1

@@ -101,7 +101,7 @@ theorem Reachable.apps_mem_of_base {k : Nat}
     have hresult := Aczel.app_mem (ih hprior hbase hf) hlast
     rw [app_map hlast] at hresult
     rw [Slots.natAdd_eq_snoc]
-    simpa [Fin.snoc_init_self] using hresult
+    simpa using hresult
 
 theorem Reachable.apps_lam_of_base {k : Nat}
     {Δ : SemTele a (a + k)} {base : Slots a}
@@ -204,8 +204,8 @@ theorem Realizes.denotes_motivePiAt {k count : Nat}
   apply h.denotes_piAt hs
   intro final hfinal
   have hb : (fun v => final (v.castAdd k)) = s := funext (hbase final hfinal)
-  simp [Inductive.motiveResult, Expr.denote, hb, his final hfinal]
-  exact hleaf final hfinal _ (Reachable.apps_mem_of_base hfinal (hbase final hfinal) hvalue)
+  simpa [Inductive.motiveResult, Expr.denote, hb, his final hfinal] using
+    hleaf final hfinal _ (Reachable.apps_mem_of_base hfinal (hbase final hfinal) hvalue)
 
 theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
     DenotesOver ε ν reach Δsem e leaf →
@@ -247,7 +247,7 @@ theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reac
     (fun base => γ (base.castLE Δ.le)) ∈ reach := by
   induction h with
   | nil hreach => simpa using hreach
-  | snoc hprefix hlast ih => simpa [Fin.init, Fin.castLE] using ih
+  | snoc hprefix hlast ih => simpa [Fin.init] using ih
 
 @[reachability →] theorem Reachable.init {Δ : SemTele a b} {domain : Dom b}
     {γ : Slots (b + 1)} :
@@ -436,9 +436,7 @@ theorem Realizes.reachable_subst
     have hprefix : Fin.init γ₁ ∈ Reachable reach Δsem := by
       refine ih σ' (Fin.init γ₁) (by simpa [Fin.init] using hbase) (fun v => hσ v.castSucc)
         fun v hv => ?_
-      have hv := hmem v.castSucc hv
-      rw [Tele.append_snoc, Ctx.get_castSucc] at hv
-      simpa [Expr.wk_subst, σ', Fin.init] using hv
+      simpa [Expr.wk_subst, σ', Fin.init] using hmem v.castSucc hv
     refine .snoc hprefix ?_
     have hvalues : (ε[ν; γ]⟦σ' ·⟧) = Fin.init γ₁ :=
       funext fun v => hσ v.castSucc

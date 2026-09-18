@@ -40,10 +40,9 @@ private theorem applyFields_zero_congr {n : Nat}
   | arg hfst _ ih =>
     obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
     obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
-    simp only [fst_pair, snd_pair] at hfst ih
+    simp at hfst ih
     subst hfst
-    simp only [applyFields, fst_pair, snd_pair]
-    exact ih _ hleftTail hrightTail
+    simpa [applyFields] using ih _ hleftTail hrightTail
   | @recArg _ _ tele index _ _ _ _ ih =>
     obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
     obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
@@ -70,8 +69,7 @@ private theorem applyIhs_argMap_congr {n : Nat}
     obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
     simp only [fst_pair, snd_pair] at hfst ih
     subst hfst
-    simp only [argMap, applyIhs, fst_pair, snd_pair]
-    exact ih _ hleftTail hrightTail
+    simpa [argMap, applyIhs, fst_pair, snd_pair] using ih _ hleftTail hrightTail
   | @recArg _ _ tele index _ _ _ _ ih =>
     obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
     obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
@@ -241,17 +239,15 @@ theorem recLeaf_iota
       pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs) ∈
         model.toModel.block (RecSlots.paramsOf γ) := by
     have h := entry_mem_indSet hmaps hargs
-    rwa [model.toModel_codes, htarget, entry_eq] at h
+    rwa [htarget] at h
   have hiota : app (model.recrGraph s γ)
       (pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs)) =
       (model.codeOf s c).applyMinor model.toModel.level (RecSlots.paramsOf γ)
         (RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s, c⟩))
         ((model.codeOf s c).argMap (model.recrGraph s γ) (RecSlots.paramsOf γ) vargs) := by
-    rw [show RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s, c⟩) =
-      [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s c))] from by
-        rw [tagOf]
-        exact (app_minorFamily (RecSlots.casesOf γ) (Fin.encodeSigma ι.nctors ⟨s, c⟩)).symm,
-      ← htarget, ← entry_eq]
+    rw [
+      show RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s, c⟩) = [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s c))] from by exact (app_minorFamily (RecSlots.casesOf γ) (Fin.encodeSigma ι.nctors ⟨s, c⟩)).symm,
+      ← htarget]
     exact recGraph_iota hmaps hstep hargs
   by_cases hresult : l.eval zeroNs = 0
   · have hmem : app (model.recrGraph s γ)

@@ -98,10 +98,9 @@ theorem quotientCarrier_mem_sort {n : Nat} {α r : ZFSet} (ha : α ∈ S_ n) :
 theorem quotientCarrier_zero {α r : ZFSet} (ha : α ∈ S_ 0) : quotientCarrier 0 α r = α := by
   rw [quotientCarrier, propSet_zero]
   rcases mem_truth.mp ha with rfl | rfl
-  · rw [show quotientClasses 0 falsum r = falsum from
+  · simp [show quotientClasses 0 falsum r = falsum from
       (ZFSet.eq_empty _).mpr fun _ h => by
-        simpa [falsum] using (mem_quotient.mp h).choose_spec.1,
-      squash_falsum]
+        simpa using (mem_quotient.mp h).choose_spec.1]
   · exact squash_eq_verum
       (mem_quotient.mpr ⟨proof, proof_mem_verum, rfl⟩)
 

@@ -308,13 +308,10 @@ theorem FInductive.Denotes.motiveTele {pos : Nat} {η : Head E.1 (.inductive ι)
     (hη : E.1.lookup pos = some ⟨.inductive ι, η⟩) (s : Fin ι.nsorts) :
     FCtx.Denotes L E (fI.motiveTele pos us ps n s (hI.indicesLt s))
       (I.motiveTele η (⟦ls' ·⟧) ps' s) := by
-  unfold FInductive.motiveTele Inductive.motiveTele
   refine .snoc (hI.indexTele hus hus' hps s) ?_
   rw [hI.indicesRow s]
   exact .ind hus hps.size (by simp) hη rfl hus' (fun p => (hps.denotes p).wkN _)
-    fun i => by
-      simp only [FExpr.getElem_fvars]
-      exact .fvar (by omega)
+    fun i => by simpa using .fvar (by omega)
 
 include hus' hps in
 theorem FInductive.Denotes.motiveType {pos : Nat} {η : Head E.1 (.inductive ι)}
@@ -401,8 +398,7 @@ theorem FRecField.Denotes.ihType {fmotive fr : FExpr} {ms' : Fin ι.nsorts → E
   refine .app ((hmotive.wkN arity).apps hfd.instIndices_size (hfd.instIndices hus hus' hargs)) ?_
   rw [hfd.teleSize]
   exact (hr.wkN arity).apps (by simp) fun i => by
-    simp only [FExpr.getElem_fvars]
-    exact .fvar (by omega)
+    simpa using .fvar (by omega)
 
 include hfd hus' hps hargs in
 theorem FRecField.Denotes.iotaIH {pos : Nat} {η : Head E.1 (.inductive ι)}
@@ -426,8 +422,7 @@ theorem FRecField.Denotes.iotaIH {pos : Nat} {η : Head E.1 (.inductive ι)}
     ?_
   rw [hfd.teleSize]
   exact (hr.wkN arity).apps (by simp) fun i => by
-    simp only [FExpr.getElem_fvars]
-    exact .fvar (by omega)
+    simpa using .fvar (by omega)
 
 end RecField
 
@@ -473,9 +468,7 @@ theorem ArgsDenote.fieldRecursive (csig : CtorSig ι.nsorts) :
     ArgsDenote (ℓ := ℓ) L E (FExpr.fvars (n + csig.nfields) csig.nrecFields)
       (csig.fieldRecursive (n := n)) where
   size := by simp
-  denotes v := by
-    simp only [FExpr.getElem_fvars]
-    exact .fvar (by omega)
+  denotes v := by simpa using .fvar (by omega)
 
 include hps in
 theorem ArgsDenote.caseParams {csig : CtorSig ι.nsorts} :
@@ -575,11 +568,9 @@ theorem FCtor.Denotes.iotaRhs {fl : FLevel} {l : RawLevel ℓ} (hl : FLevel.Deno
       (fctor.iotaRhs pos us ps fds n target fl ms mins fminor recFds
         (hrecFds.size.trans hc.recursiveSize.symm))
       (I.iotaRhs η (⟦ls' ·⟧) ⟦l⟧ ps' ms' mins' s c fds' recFds') := by
-  unfold FCtor.iotaRhs Inductive.iotaRhs
   refine ((hminor.apps hfds.size hfds.denotes).apps hrecFds.size hrecFds.denotes).apps
     (by simp [hc.recursiveSize]) fun fr => ?_
   simp only [Array.getElem_ofFn]
-  unfold Inductive.iotaIHs Ctor.iotaIH
   rw [htarget]
   exact (hc.recursive _).iotaIH hus hus' hps (hps.append hfds) hη hl hms hmins hmins'
     (hrecFds.denotes _)
@@ -625,7 +616,7 @@ theorem FCtor.Denotes.eligible {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {fcto
     (I.ctors s c).Eligible I.level := by
   intro hc hlevel
   simp only [FCtor.eligible, Bool.and_eq_true, List.all_eq_true, List.mem_finRange, true_implies,
-    Bool.or_eq_true, beq_iff_eq, Array.any_eq_true, Fin.getElem_fin] at h
+    Bool.or_eq_true, beq_iff_eq, Array.any_eq_true] at h
   refine ⟨fun ff => ?_, fun ff => ?_⟩
   · rcases h.1 ⟨ff.val, hc.ordinaryLt ff⟩ with hz | ⟨i, hi, hfv⟩
     · left
@@ -711,8 +702,7 @@ theorem FExpr.Denotes.projFields {k : Nat} (hk : k = (ι.ctors s c).nfields) :
       (fun f => hstruct.projTerm η (⟦ls' ·⟧) ps' f e) where
   size := by simp [FExpr.projFields, hk]
   denotes f := by
-    simp only [FExpr.projFields, Array.getElem_ofFn]
-    exact .proj hstruct hη rfl rfl he
+    simpa [FExpr.projFields] using .proj hstruct hη rfl rfl he
 
 include hus' hps hη he in
 theorem FCtor.Denotes.projType {fctor : FCtor}
@@ -733,7 +723,6 @@ theorem FCtor.Denotes.rebuildTerm {fctor : FCtor}
     have := c.isLt
     omega
   have hfds := FExpr.Denotes.projFields (ls' := ls') (ps' := ps') hη hstruct he hc.ordinarySize
-  unfold FCtor.rebuildTerm Inductive.IsStructure.rebuildTerm
   exact .ctor hus hps.size hfds.size
     (by simp; exact (Fin.eq_zero_of_isEmpty hstruct.no_recursive).symm)
     hη rfl hc0 hus' hps.denotes hfds.denotes (fun fr => hstruct.no_recursive.elim fr)
