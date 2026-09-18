@@ -47,8 +47,8 @@ theorem preBeth_lt_inaccessible {o : Ordinal}
     · rw [(inaccessible_isInaccessible n).isRegular.cof_ord, mk_toType]
       exact lt_ord.mp ho
     · intro a
+      have ⟨a, ha⟩ := Ordinal.ToType.mk.symm a
       exact (inaccessible_isInaccessible n).isStrongLimit.isStrongPrelimit
-        (ih (Ordinal.ToType.mk.symm a).1 (Ordinal.ToType.mk.symm a).2
-          ((Ordinal.ToType.mk.symm a).2.trans ho))
+        (ih a ha (ha.trans ho))
 
 end Cardinal

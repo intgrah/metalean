@@ -100,7 +100,7 @@ theorem Reachable.apps_mem_of_base {k : Nat}
     have .snoc hprior hlast := h
     have hresult := Aczel.app_mem (ih hprior hbase hf) hlast
     rw [app_map hlast] at hresult
-    rw [Slots.natAdd_eq_snoc, Aczel.apps_snoc]
+    rw [Slots.natAdd_eq_snoc]
     simpa [Fin.snoc_init_self] using hresult
 
 theorem Reachable.apps_lam_of_base {k : Nat}
@@ -151,7 +151,7 @@ theorem SemTele.lam_applyAt {k : Nat} (Δ : SemTele a (a + k))
       funext current
       apply Aczel.lam_congr
       intro d hd
-      rw [Slots.natAdd_snoc, Aczel.apps_snoc]
+      simp [Slots.natAdd_snoc]
     change SemTele.lam (fun current => [zf|fun d : $(domain current) =>
         $(leaf (current.snoc d)
           [zf|fn $(fun fn : Fin (k + 1) =>
@@ -174,27 +174,14 @@ theorem Reachable.mem_collect {count : Nat} {Δ : SemTele a (a + count)}
     simpa [SemTele.collect, SemTele.foldAt, Aczel.apps] using hresult
   | snoc count prior domain ih =>
     have .snoc hprior hlast := hfinal
-    change result ∈ SemTele.collect
-      (fun current function => ⋃₀ image (fun argument =>
-        leaf (current.snoc argument) [zf|function argument])
-        (domain current)) prior γ value
     apply ih hprior
       fun current function => ⋃₀ image (fun argument =>
         leaf (current.snoc argument) [zf|function argument])
         (domain current)
-    change result ∈ ⋃₀ image (fun argument =>
-        leaf (Slots.snoc (Fin.init final) argument)
-        [zf|value $(fun f : Fin count => Fin.init final (Fin.natAdd a f))...
-          argument])
-      (domain (Fin.init final))
     rw [mem_sUnion]
     refine ⟨_, mem_image.mpr
       ⟨final (Fin.last (a + count)), hlast, rfl⟩, ?_⟩
-    have hγ : Slots.snoc (Fin.init final)
-        (final (Fin.last (a + count))) = final :=
-      Fin.snoc_init_self final
-    rw [hγ]
-    rwa [Slots.natAdd_eq_snoc, Aczel.apps_snoc] at hresult
+    simpa [Slots.natAdd_eq_snoc] using hresult
 
 theorem Realizes.denotes_motivePiAt {k count : Nat}
     {Δsyn : Ctx ζ ℓ a (a + k)} {Δsem : SemTele a (a + k)}
@@ -217,8 +204,7 @@ theorem Realizes.denotes_motivePiAt {k count : Nat}
   apply h.denotes_piAt hs
   intro final hfinal
   have hb : (fun v => final (v.castAdd k)) = s := funext (hbase final hfinal)
-  simp only [Inductive.motiveResult, Expr.denote, Expr.denote_apps,
-    Expr.denote_wkN, Expr.denote_applyBound, hb, his final hfinal]
+  simp [Inductive.motiveResult, Expr.denote, hb, his final hfinal]
   exact hleaf final hfinal _ (Reachable.apps_mem_of_base hfinal (hbase final hfinal) hvalue)
 
 theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
@@ -313,7 +299,7 @@ theorem Reachable.mono {reach₁ reach₂ : Set (Slots a)}
     {Δ : SemTele a b} {γ : Slots b}
     (h : γ ∈ Reachable reach₁ Δ) (hle : reach₁ ⊆ reach₂) :
     γ ∈ Reachable reach₂ Δ := by
-  induction h <;> constructor <;> solve_by_elim
+  induction h <;> solve_by_elim
 
 theorem Reachable.pull {a₁ count : Nat} {reach₁ : Set (Slots a₁)}
     {project : Slots a₁ → Slots a}
