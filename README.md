@@ -26,7 +26,7 @@ Terms [(Expr.lean)](Metalean/Syntax/Expr.lean)
 
 `Expr (ζ : Sigs) (ℓ : Nat) (n : Nat)` seems like a silly type signature for expressions.
 
-- `ζ : Sigs` is a snoc-list of the "shape" of the environment. It describes, in what ways can a term legally refer to something in the environment. For example, you can say you want "the 7th entry in the environment, which I assume to be an inductive type, and in that inductive type, I want the second sort (out of a mutual block containing 2 inductives), and the third constructor, applied to some parameters, some fields, and some recursive fields", and `Expr.const` can do this, and it will be a _total_ operation.
+- `ζ : Sigs` is a snoc-list of the "shape" of the environment. It describes, in what ways can a term legally refer to something in the environment. For example, you can say you want "the 7th entry in the environment, which I assume to be an inductive type, and in that inductive type, I want the second sort (out of a mutual block containing 2 inductives), and the third constructor, applied to some parameters, some fields, and some recursive fields", and `Expr.ctor` can do this, and it will be a _total_ operation.
 - `ℓ : Nat` represents the number of universe variables.
 - `n : Nat` represents the number of binders in the local context.
 
@@ -40,7 +40,7 @@ Typing [(Defeq.lean)](Metalean/Typing/Defeq.lean)
 
 ## Checkers
 
-- There is a "logical" checker [(Checker)](Metalean/Checker/Infer.lean), which is EXTREMELY slow. This is because, it uses the exact same `Expr ζ ℓ n` type as the metatheory which, while nice to prove things about, contains atrocities such as `Fin k → Expr ζ ℓ n` for $n$-tuples, does not support nat/str literals, and type indices that are not erased at runtime.
+- There is a "logical" checker [(Checker)](Metalean/Checker/Infer.lean), which is EXTREMELY slow. This is because, it uses the exact same `Expr ζ ℓ n` type as the metatheory which, while nice to prove things about, contains atrocities such as `Fin k → Expr ζ ℓ n` for k-tuples, does not support nat/str literals, and type indices that are not erased at runtime.
 
 - For this reason there is a "fast" (still slow!) checker [(Checker)](Metalean/FastChecker/Infer.lean) that attempts to mimic the official Lean kernel. It uses a raw `FExpr` type that is related to `Expr ζ ℓ n` extrinsically. It supports nat/str literals, and the corresponding accelerated operations. It uses some `unsafe`/`implemented_by` for performance reasons, which you just have to trust.
 
