@@ -29,7 +29,7 @@ theorem WF.teleAt (h : RecField.WF E I Γ ⟨telescope, is⟩)
     WFTele E (fun level => level.eval zeroNs ≤ bound + 1)
       (Ctx.instL ls Γ) (Ctx.instL ls telescope) := by
   have hnz : I.level.eval (Level.eval zeroNs ∘ ls) ≠ 0 := by
-    rw [← Level.eval_inst, hblock]
+    rw [← Level.eval_inst]
     omega
   apply h.tele.instLevel ls
   intro level hlevel

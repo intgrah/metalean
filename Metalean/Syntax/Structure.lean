@@ -204,15 +204,14 @@ theorem projection_map :
       · funext other
         have hs := h.sort_unique other
         subst other
-        simp [ms, ihMotiveTerm, Inductive.map, Expr.map]
+        simp [ms, ihMotiveTerm, Expr.map]
       · funext other otherCtor
         have hs := h.sort_unique other
         subst other
         have hc := h.ctor_unique otherCtor
         subst otherCtor
-        simp only [cases, Ctx.map_lam]
-        rw [Inductive.caseTele_map]
-        simp [ms, ihMotiveTerm, Inductive.map, Expr.map]
+        simp only [cases]
+        simp [ms, ihMotiveTerm, Expr.map]
       · exact funext h.no_indices.elim
 
 @[simp] theorem projType_map :
@@ -261,7 +260,7 @@ theorem projection_instL :
       · funext other
         have hs := h.sort_unique other
         subst other
-        simp [ms, projTypeWith, ihMotiveTerm, Expr.instL]
+        simp [ms, ihMotiveTerm, Expr.instL]
       · funext other otherCtor
         have hs := h.sort_unique other
         subst other

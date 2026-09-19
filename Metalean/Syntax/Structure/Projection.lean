@@ -68,19 +68,17 @@ theorem IsStructure.projection_subst :
       · funext other
         have hs := h.sort_unique other
         subst other
-        simp [ms, projTypeWith, ihMotiveTerm]
+        simp [ms, ihMotiveTerm]
       · funext other otherCtor
         have hs := h.sort_unique other
         subst other
         have hc := h.ctor_unique otherCtor
         subst otherCtor
-        simp only [cases]
         rw [Ctx.lam_subst₃]
         change Ctx.lam
             (((ι.ctors s c).caseOrdinary f).subst
               ((ι.ctors s c).liftCaseSubst σ)) _ = _
-        rw [CtorSig.caseOrdinary_subst]
-        simp [ms, projTypeWith, ihMotiveTerm]
+        simp [ms, ihMotiveTerm]
       · exact funext h.no_indices.elim
 
 theorem IsStructure.projection_wkFrom :
@@ -156,7 +154,7 @@ theorem IsStructure.projectionMotiveLam :
             Expr ζ ℓ (n + ι.nindices s + 1)) ≍
           (Expr.var (Fin.last n) : Expr ζ ℓ (n + 1)) := by
       have hv : Fin.last (n + ι.nindices s) ≍ Fin.last n :=
-        (Fin.heq_ext_iff (by omega)).2 (by simp [Fin.last]; exact hni)
+        (Fin.heq_ext_iff (by omega)).2 (by simp; exact hni)
       exact congr(Expr.var (n := $(by omega)) $hv)
     congr 1
     · omega
@@ -165,7 +163,6 @@ theorem IsStructure.projectionMotiveLam :
       cases eq_of_heq hprevious
       congr 1
       omega
-  unfold Inductive.motiveTele Ctx.lam
   let left := Expr.lam
     (Expr.ind η s ls
       (fun param => (ps param).wkN (ι.nindices s))
@@ -196,7 +193,6 @@ theorem IsStructure.projectionMotives_self :
         (h.projType η ls (fun p => (ps p).wk) f (.var (Fin.last n))) := by
   change Ctx.lam _ _ = _
   rw [h.projectionMotiveLam]
-  congr 1
   unfold IsStructure.projType
   rw [IsStructure.projection.eq_1]
   rfl
@@ -227,7 +223,7 @@ theorem IsStructure.caseOrdinaryField :
   have hnr : (ι.ctors s c).nrecFields = 0 := by
     by_contra hne
     exact h.no_recursive.elim ⟨0, Nat.pos_of_ne_zero hne⟩
-  simp [CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.boundVars]
+  simp [CtorSig.caseOrdinary, CtorSig.fieldOrdinary]
   congr 1
   · omega
   · exact (Fin.heq_ext_iff (by omega)).2 rfl
@@ -270,7 +266,6 @@ theorem IsStructure.projectionMotives_subst (other : Fin ι.nsorts) :
       h.projectionMotives η ls (fun param => (ps param).subst σ) f other := by
   have he := h.projTerm_subst η ls ps f (.sort .zero) σ
   rw [projTerm_eq_recr, projTerm_eq_recr] at he
-  simp only [Expr.subst] at he
   injection he with _ _ _ _ _ _ _ hms
   exact congrFun hms other
 
@@ -317,7 +312,6 @@ theorem IsStructure.motiveType_self (l : Level ℓ) :
           (fun index => .var ⟨n + index.val, by omega⟩)) (Expr.sort l) ≍
       Expr.forallE (Expr.ind η s ls ps h.indices) (Expr.sort l) :=
     congr(Expr.forallE (n := $(by omega)) $hhead $hsort)
-  unfold Inductive.motiveType Inductive.motiveTele Ctx.pi
   apply eq_of_heq
   exact
     show Tele.foldr (fun {c} => Expr.forallE)

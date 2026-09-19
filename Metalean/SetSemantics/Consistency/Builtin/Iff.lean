@@ -32,7 +32,7 @@ private theorem reachable (h : InductiveModel.Sound E ε Iff.block η ![] w)
     ![a, b] ∈ Reachable Set.univ w.paramsSem :=
   h.realizes.params.reachable_of_semCtx ![a, b]
     (by
-      simpa [Iff.block, Ctx.instL, Expr.instL] using
+      simpa [Ctx.instL] using
         ((.nil : ε[zeroNs] ⊨ ![] : #t[]).snoc ha).snoc
           hb)
     trivial
@@ -43,7 +43,7 @@ theorem ofSound (h : ∃ w : InductiveModel.{u} Iff.sig,
   sound {a b raw} ha hb hraw := by
     have ⟨w, hclause⟩ := h
     have ⟨vargs, hargs, _⟩ := hclause.uniqueCtor_of_mem_sort
-      (by simpa [Iff.block] using hclause.realizes.level_eq)
+      (by simpa using hclause.realizes.level_eq)
       ⟨0, by decide⟩ ⟨0, by decide⟩ Fin.eq_zero Fin.eq_zero hraw
     have hfields := hclause.realizes.fieldsRealize ⟨0, by decide⟩ ⟨0, by decide⟩ ![a, b]
       (reachable hclause ha hb) vargs hargs
@@ -58,12 +58,12 @@ theorem ofSound (h : ∃ w : InductiveModel.{u} Iff.sig,
       rw [app_map hx] at hmem
       exact fun h => (notMem_empty _ (h ▸ hmem)).elim
     have hforward := himp ⟨2, by decide⟩ a b (by
-      simpa [Iff.block, Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL,
-        Expr.instL, Expr.wk, Expr.denote, Fin.snoc, hfirst, hsecond] using
+      simpa [Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
+        Fin.snoc, hfirst, hsecond] using
         hfields ⟨2, by decide⟩)
     have hbackward := himp ⟨3, by decide⟩ b a (by
-      simpa [Iff.block, Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL,
-        Expr.instL, Expr.wk, Expr.denote, Fin.snoc, hfirst, hsecond] using
+      simpa [Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
+        hfirst, hsecond] using
         hfields ⟨3, by decide⟩)
     rcases mem_truth.mp ha with rfl | rfl <;> rcases mem_truth.mp hb with rfl | rfl
     · rfl

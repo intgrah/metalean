@@ -33,26 +33,22 @@ theorem Tm.map_liftTele_varLabel {Γ₁ Γ₂ : RawCtx E ℓ} {Δ : Ctx ζ ℓ �
     (Tm E ℓ).map (RawCtx.toCtx.map (σ.liftTele hΔ)).op
         (Tm.varLabel ⟨⟨Γ₁.ctx ++ Δ, hΔ.appendCtxWFStrong Γ₁.wf⟩⟩ (Fin.natAdd Γ₁.len f)) =
       Tm.varLabel ⟨⟨Γ₂.ctx ++ Ctx.substN σ.subst k Δ,
-        (hΔ.substitution σ.typed).appendCtxWFStrong Γ₂.wf⟩⟩ (Fin.natAdd Γ₂.len f) := by
-  rw [Tm.map_varLabel]
-  exact Tm.label_eq_var _ (Subst.liftN_var σ.subst f)
+        (hΔ.substitution σ.typed).appendCtxWFStrong Γ₂.wf⟩⟩ (Fin.natAdd Γ₂.len f) :=
+  Tm.label_eq_var _ (Subst.liftN_var σ.subst f)
 
 def RawCtx.Hom.teleProjection {m : Nat} {Δ : Ctx ζ ℓ Γ.len m}
     (hΔ : WFTeleStrong E P Γ.ctx Δ) :
     (⟨Γ.ctx ++ Δ, hΔ.appendCtxWFStrong Γ.wf⟩ : RawCtx E ℓ) ⟶ Γ where
   subst v := .var (v.castLE Δ.le)
   typed v := by
-    have ⟨k, hk⟩ := Nat.exists_eq_add_of_le Δ.le
-    subst m
-    simpa [Expr.wkN_eq_rename, Expr.subst_vars, Expr.rename, Ren.wkN, Fin.castAdd] using
-      (Γ.wf.var v).wkN
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le Δ.le
+    simpa! [Expr.wkN_eq_rename, Ren.wkN, Fin.castAdd] using (Γ.wf.var v).wkN
 
 theorem Tm.map_teleProjection_varLabel (hΔ : WFTeleStrong E P Γ.ctx Δ) (v : Var Γ.len) :
     (Tm E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ)).op
         (Tm.varLabel ⟨Γ⟩ v) =
-      Tm.varLabel ⟨⟨Γ.ctx ++ Δ, hΔ.appendCtxWFStrong Γ.wf⟩⟩ (v.castAdd k) := by
-  rw [Tm.map_varLabel]
-  exact Tm.label_eq_var ((RawCtx.Hom.teleProjection hΔ).typed v) rfl
+      Tm.varLabel ⟨⟨Γ.ctx ++ Δ, hΔ.appendCtxWFStrong Γ.wf⟩⟩ (v.castAdd k) :=
+  Tm.label_eq_var ((RawCtx.Hom.teleProjection hΔ).typed v) rfl
 
 theorem RawCtx.Hom.teleProjection_snoc {m : Nat} {Δ : Ctx ζ ℓ Γ.len m}
     (hΔ : WFTeleStrong E P Γ.ctx Δ)
@@ -60,9 +56,8 @@ theorem RawCtx.Hom.teleProjection_snoc {m : Nat} {Δ : Ctx ζ ℓ Γ.len m}
     (ht : E[Γ.ctx ++ Δ] ⊢ₛ t : .sort u) :
     RawCtx.toCtx.map (teleProjection (hΔ.snoc ⟨u, hu, ht⟩)) =
       CtxCat.rawProjection ⟨⟨Γ.ctx ++ Δ, hΔ.appendCtxWFStrong Γ.wf⟩⟩ ht ≫
-        RawCtx.toCtx.map (teleProjection hΔ) := by
-  rw [CtxCat.rawProjection, ← RawCtx.toCtx.map_comp]
-  exact congrArg RawCtx.toCtx.map (RawCtx.Hom.ext rfl)
+        RawCtx.toCtx.map (teleProjection hΔ) :=
+  congrArg RawCtx.toCtx.map (RawCtx.Hom.ext rfl)
 
 theorem RawCtx.Hom.liftTele_isPullback {Γ₁ Γ₂ : RawCtx E ℓ}
     {Δ : Ctx ζ ℓ Γ₁.len (Γ₁.len + k)} (σ : Γ₂ ⟶ Γ₁)
@@ -102,7 +97,7 @@ theorem RawCtx.Hom.applyTele_typed {Γ₁ Γ₂ : RawCtx E ℓ}
   induction Δ using Tele.addInduction generalizing u with
   | nil =>
     have hσ₂ : σ₂.subst = σ₁.subst := congrArg RawCtx.Hom.subst hover
-    simpa [Ctx.pi, hσ₂] using he
+    simpa [hσ₂] using he
   | snoc k Δ t ih =>
     have ⟨v, hv, ht⟩ := hΔ.last
     let C : CtxCat E ℓ := ⟨⟨Γ₁.ctx ++ Δ, hΔ.init.appendCtxWFStrong Γ₁.wf⟩⟩

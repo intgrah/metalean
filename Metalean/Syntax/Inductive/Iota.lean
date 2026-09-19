@@ -109,8 +109,7 @@ def iotaIHs
     (fds : Fin (ι.ctors s c).nfields → Expr ζ₁ ℓ n)
     (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n) :
     Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n :=
-  fun f => (I.ctors s c).iotaIH η ls l ps ms mins
-    fds recFds f
+  (I.ctors s c).iotaIH η ls l ps ms mins fds recFds
 
 theorem iotaIHs_map
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -124,8 +123,7 @@ theorem iotaIHs_map
         (fun s c => (mins s c).map pre) s c
         (fun i => (fds i).map pre)
         fun i => (recFds i).map pre :=
-  funext <| Ctor.iotaIH_map _ pre η ls l ps ms mins
-    fds recFds
+  funext <| Ctor.iotaIH_map _ pre η ls l ps ms mins fds recFds
 
 @[simp] theorem iotaIHs_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -196,8 +194,7 @@ def iotaRhs
         (fun s c => (mins s c).map pre) s c
         (fun i => (fds i).map pre)
         fun i => (recFds i).map pre := by
-  simp [iotaRhs, iotaIHs_map I pre η ls l ps ms mins s c
-    fds recFds]
+  simp [iotaRhs, iotaIHs_map I pre η ls l ps ms mins s c fds recFds]
 
 @[simp] theorem iotaRhs_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -211,8 +208,7 @@ def iotaRhs
         (fun s c => (mins s c).instL levelSubst) s c
         (fun i => (fds i).instL levelSubst)
         fun i => (recFds i).instL levelSubst := by
-  simp [iotaRhs, iotaIHs_instL I η ls l ps ms mins s c
-    fds recFds]
+  simp [iotaRhs]
 
 def iotaType
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -231,7 +227,7 @@ def iotaType
         (fun s => (ms s).map pre) s c
         (fun i => (fds i).map pre)
         fun i => (recFds i).map pre := by
-  simp [iotaType, map, Expr.map]
+  simp! [iotaType, map]
 
 @[simp] theorem iotaType_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -244,7 +240,7 @@ def iotaType
         (fun s => (ms s).instL levelSubst) s c
         (fun i => (fds i).instL levelSubst)
         fun i => (recFds i).instL levelSubst := by
-  simp [iotaType, Expr.instL]
+  simp! [iotaType]
 
 end Inductive
 

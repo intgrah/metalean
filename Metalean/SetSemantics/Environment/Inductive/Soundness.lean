@@ -195,8 +195,7 @@ theorem map
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
     InductiveModel.Sound E₂ ε₂ (I.map pre.sigs) (η.map pre.sigs) ls witness where
   block_eq := by
-    simpa [dsimp% (Env.lookup _).naturality_apply pre η,
-      dsimp% (Entry.blockNatTrans _).naturality_apply] using
+    simpa [dsimp% (Env.lookup _).naturality_apply pre η] using
       congrArg (Inductive.map pre.sigs) h.block_eq
   realizes := h.realizes.map pre hatoms
   sortAtom s vps vis := (congrFun hatoms _).trans (h.sortAtom s vps vis)

@@ -114,8 +114,7 @@ theorem quotLift (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a 
         σ₂.op ρ₂ = _
     rw [rawInterpret_quotLift_app (hlift.substitution σ₁.typed), rawInterpret_quotLift_app hlift,
       pα.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ, pβ.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ, pf.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ,
-      pa.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ, op_comp, Functor.map_comp_apply, Tm.map_label,
-      Functor.map_comp_apply, Ty.map_ofTyping]
+      pa.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ, op_comp, Functor.map_comp_apply, Functor.map_comp_apply]
     rfl
 
 theorem quotInd (η : Head ζ .quot) (u : Level ℓ) (α r β f a : Expr ζ ℓ Γ₁.as.len) :
@@ -247,7 +246,7 @@ theorem quotIota :
   cases hu : u.rel
   · obtain rfl : u = .zero := by simpa using hu
     have hαfixed := pα.fixed hα σ ρ hρ
-    rw [rawInterpret_sort, RawFamily.sort_value] at hαfixed
+    rw [rawInterpret_sort] at hαfixed
     have hbottom : (rawInterpret (piLimit E ℓ) Γ₁ a).app _ σ.op ρ = ⊥ :=
       (pa.fixed ha σ ρ hρ).symm.trans (piLimit_rawExtend_prop _ hαfixed _ _)
     change _ = rawApplication ((rawInterpret (piLimit E ℓ) Γ₁ f).app _ σ.op ρ) _

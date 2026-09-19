@@ -54,7 +54,7 @@ theorem CtxWFStrong.get
     · rw [show Ctx.get v (Γ.snoc t) = t.wk by simp [Ctx.get, hv]]
       exact ht.wk t
     · rw [show Ctx.get v (Γ.snoc t) =
-          (Ctx.get (v.castLT (by omega)) Γ).wk by simp [Ctx.get, hv]]
+          (Ctx.get (v.castLT (by omega)) Γ).wk by simp [hv]]
       exact (ih (v.castLT (by omega))).wk t
 
 theorem CtxWFStrong.var

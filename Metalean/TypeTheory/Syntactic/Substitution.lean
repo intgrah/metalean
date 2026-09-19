@@ -30,7 +30,7 @@ theorem extensionMap_projection (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : 
       rawProjection Γ₁ (ht.substitution σ.typed) ≫ RawCtx.toCtx.map σ := by
   change RawCtx.toCtx.map (σ.lift ⟨u, ht⟩) ≫ RawCtx.toCtx.map (projectionRaw Γ₂ ht) =
     RawCtx.toCtx.map (projectionRaw Γ₁ (ht.substitution σ.typed)) ≫ RawCtx.toCtx.map σ
-  rw [← RawCtx.toCtx.map_comp, ← RawCtx.toCtx.map_comp]
+  rw [← RawCtx.toCtx.map_comp]
   congr 1
   apply RawCtx.Hom.ext
   funext v
@@ -82,12 +82,8 @@ instance contextConversion_isIso (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
 @[simp]
 theorem contextConversion_projection (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
     (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
-    contextConversion h ht₁ ht₂ ≫ rawProjection Γ₁ ht₁ = rawProjection Γ₁ ht₂ := by
-  change RawCtx.toCtx.map (contextConversionRaw h ht₁ ht₂) ≫
-    RawCtx.toCtx.map (projectionRaw Γ₁ ht₁) =
-      RawCtx.toCtx.map (projectionRaw Γ₁ ht₂)
-  rw [← RawCtx.toCtx.map_comp]
-  congr 1
+    contextConversion h ht₁ ht₂ ≫ rawProjection Γ₁ ht₁ = rawProjection Γ₁ ht₂ :=
+  rfl
 
 @[simp]
 theorem contextConversion_binderVar (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)

@@ -65,7 +65,7 @@ theorem subst (h : IndTyping Γ₁ η s ls ps₁ is₁) (σ : Γ₂.as ⟶ Γ₁
 
 theorem code_map (h : IndTyping Γ₁ η s ls ps₁ is₁) (σ : Γ₂.as ⟶ Γ₁.as) :
     h.code.map ((Tm E ℓ).map (RawCtx.toCtx.map σ).op) = (h.subst σ).code := by
-  simp only [code, IndCode.map, Tm.map_label]
+  simp only [code, IndCode.map]
   congr 1
   · funext p
     exact Tm.label_congr (by simp)
@@ -149,11 +149,9 @@ theorem names_map (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (σ
   funext i
   cases i using Fin.addCases with
   | left f =>
-    simp only [names, Fin.append_left, Tm.map_label]
-    exact Tm.label_congr (by simp)
+    simpa only [names, Fin.append_left, Tm.map_label] using Tm.label_congr (by simp)
   | right f =>
-    simp only [names, Fin.append_right, Tm.map_label]
-    exact Tm.label_congr (by simp)
+    simpa only [names, Fin.append_right, Tm.map_label] using Tm.label_congr (by simp)
 
 theorem names_congr
     (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ fds₁ f ≡ fds₂ f :
@@ -171,11 +169,9 @@ theorem names_congr
   funext i
   cases i using Fin.addCases with
   | left f =>
-    simp only [names, Fin.append_left]
-    exact Tm.label_eq (.ofDefEq (hfieldTypes f)) (hfields f)
+    simpa [names, Fin.append_left] using Tm.label_eq (.ofDefEq (hfieldTypes f)) (hfields f)
   | right f =>
-    simp only [names, Fin.append_right]
-    exact Tm.label_eq (.ofDefEq (hrecFieldTypes f)) (hrecFields f)
+    simpa [names, Fin.append_right] using Tm.label_eq (.ofDefEq (hrecFieldTypes f)) (hrecFields f)
 
 end CtorTyping
 

@@ -50,7 +50,7 @@ theorem type_subset_add (m k : Nat) : U_ m ⊆ U_ (m + k) := by
   exact Cardinal.ord_inaccessible_isSuccLimit.bot_lt
 
 theorem omega_mem_type : omega ∈ U_ n := by
-  rw [type, mem_vonNeumann, omega, rank_mk]
+  rw [type, mem_vonNeumann]
   apply Ordinal.iSup_lt_of_lt_cof
   · simpa [(Cardinal.inaccessible_isInaccessible n).isRegular.cof_ord] using (Cardinal.inaccessible_isInaccessible n).aleph0_lt
   · intro i
@@ -147,7 +147,7 @@ theorem range_mem_type {k : Nat} {f : Fin k → ZFSet.{u}} (hf : ∀ i, f i ∈ 
     | succ i => exact mem_union.mpr (.inr (mem_range.mpr ⟨i, hi⟩))
 
 theorem prod_mem_type (hx : x ∈ U_ n) (hy : y ∈ U_ n) : prod x y ∈ U_ n := by
-  rw [prod, pairSep]
+  rw [prod]
   exact sep_mem_type (powerset_mem_type
     (powerset_mem_type (union_mem_type hx hy)))
 

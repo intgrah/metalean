@@ -104,7 +104,7 @@ theorem HasIdeality.application_value_fixed_subst
         (Tm.label_eq (IsTypeStrong.isTypeEq ⟨_, hres⟩) happ))
   have hval : (rawInterpret (piLimit E ℓ) Tgt (.app f e)).app _ σ₂.op ρt =
       (application F na X).val := by
-    rw [rawInterpret_app, RawFamily.application_value]
+    rw [rawInterpret_app]
     exact HasIdeality.application_value_subst ht ht' htI htI' σ₁ he σ₂ ρs hρ _ (F := F) hff X
   have hfixed := HasIdeality.application_fixed ht ht' htI htI' (σ₂ ≫ RawCtx.toCtx.map σ₁) ρs hρ
     ((Raw.ContextSection.ofTyping ht σ₁ he).pullback σ₂) nf
@@ -152,7 +152,6 @@ theorem rawInterpret_applyTele_source {k : Nat} {P : Level ℓ → Prop}
   induction Δ using Tele.addInduction generalizing v with
   | nil =>
     have hσ₂ : σ₂ = σ₁ := by
-      change σ₂ ≫ 𝟙 Src.as = σ₁ at hover
       exact (Category.comp_id σ₂).symm.trans hover
     subst σ₂
     exact ⟨rfl, hei, hff⟩
@@ -170,7 +169,6 @@ theorem rawInterpret_applyTele_source {k : Nat} {P : Level ℓ → Prop}
       RawCtx.Hom.applyTele_typed hΔ.init σ₄ hoverInit (.forallEDF ht hbody hbody) he
     have harg : E[Tgt.as.ctx] ⊢ₛ arg : t.subst σ₄.subst := by
       have h := σ₂.typed (Fin.last S.as.len)
-      change E[Tgt.as.ctx] ⊢ₛ arg : (Ctx.get (Fin.last S.as.len) (S.as.ctx.snoc t)).subst σ₂.subst at h
       erw [Ctx.get_last, Expr.wk_subst] at h
       exact h
     have hsσ₂ : σ₄.snoc ⟨_, ht⟩ harg = σ₂ := RawCtx.Hom.ext (Fin.snoc_init_self σ₂.subst)
@@ -178,7 +176,6 @@ theorem rawInterpret_applyTele_source {k : Nat} {P : Level ℓ → Prop}
       (rawInterpret (piLimit E ℓ) Tgt (σ₄.subst (Fin.natAdd Src.as.len i))).app _ σ₃.op ρ
     have hadmInit : SourceAdmissible (σ₃ ≫ RawCtx.toCtx.map σ₄) ρInit := by
       have htail := hadm.tail ht
-      change SourceAdmissible ((σ₃ ≫ RawCtx.toCtx.map σ₂) ≫ RawCtx.toCtx.map (S.projectionRaw ht)) ρInit at htail
       erw [Category.assoc, ← RawCtx.toCtx.map_comp] at htail
       exact htail
     have ⟨hevalInit, hidealInit, hfixedInit⟩ := ih hΔ.init pΔ.init (.forallE t body)
@@ -192,7 +189,6 @@ theorem rawInterpret_applyTele_source {k : Nat} {P : Level ℓ → Prop}
       erw [op_comp, Functor.map_comp_apply, CtxCat.rawComprehension_generic, Tm.map_varLabel]
       apply congrArg ((Tm E ℓ).map σ₃.op)
       apply Tm.label_congr
-      change (Ctx.get (Fin.last S.as.len) (S.as.ctx.snoc t)).subst σ₂.subst = t.subst σ₄.subst
       erw [Ctx.get_last, Expr.wk_subst]
       rfl
     have hhead' : (piLimit E ℓ).rawExtend
@@ -229,7 +225,6 @@ theorem rawInterpret_applyTele_source {k : Nat} {P : Level ℓ → Prop}
     have hlast : Tm.label Tgt.as (σ₂.typed (Fin.natAdd Src.as.len (Fin.last k))) =
         Tm.label Tgt.as harg := by
       apply Tm.label_congr
-      change (Ctx.get (Fin.last S.as.len) (S.as.ctx.snoc t)).subst σ₂.subst = t.subst σ₄.subst
       erw [Ctx.get_last, Expr.wk_subst]
       rfl
     have heval : (rawInterpret (piLimit E ℓ) Tgt

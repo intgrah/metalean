@@ -37,12 +37,8 @@ theorem preBeth_lt_inaccessible {o : Ordinal}
     preBeth o < inaccessible n := by
   induction o using WellFoundedLT.induction with
   | _ o ih =>
-    rw [preBeth]
-    rw [show (⨆ a : Set.Iio o, 2 ^ preBeth a.1) =
-        ⨆ a : o.ToType, (2 : Cardinal) ^
-          preBeth (Ordinal.ToType.mk.symm a).1 from
-      Ordinal.ToType.mk.symm.iSup_comp
-        (g := fun a : Set.Iio o => (2 : Cardinal) ^ preBeth a.1).symm]
+    rw [preBeth, show (⨆ a : Set.Iio o, 2 ^ preBeth a.1) = ⨆ a : o.ToType,
+      (2 : Cardinal) ^ preBeth (Ordinal.ToType.mk.symm a).1 from Ordinal.ToType.mk.symm.iSup_comp (g := fun a : Set.Iio o => (2 : Cardinal) ^ preBeth a.1).symm]
     apply iSup_lt_of_lt_cof_ord
     · rw [(inaccessible_isInaccessible n).isRegular.cof_ord, mk_toType]
       exact lt_ord.mp ho

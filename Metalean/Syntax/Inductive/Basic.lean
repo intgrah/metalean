@@ -91,7 +91,7 @@ def ordinaryTeleAux (ctor : Ctor ζ ι s csig) (count : Nat)
         ctor.ordinaryType ⟨count, by omega⟩
       simp [ordinaryTeleAux]
   | cast f ih =>
-    simpa [ordinaryTeleAux, Ctx.entry, f.isLt.ne] using ih (by omega)
+    simpa [ordinaryTeleAux] using ih (by omega)
 
 abbrev ordinaryTele (ctor : Ctor ζ ι s csig) :
     Ctx ζ ι.nlevels ι.nparams (ι.nparams + csig.nfields) :=

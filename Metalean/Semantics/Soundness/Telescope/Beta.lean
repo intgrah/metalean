@@ -47,13 +47,11 @@ theorem rawInterpret_ctxLam_beta {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok
         fun v : Var n => (Tm E ℓ).map
           (σ ≫ CtxCat.rawProjection ⟨ctx, hctx⟩ hA).op (Tm.varLabel ⟨ctx, hctx⟩ v) :=
       funext fun v => Tm.map_extension_varLabel (Γ₁ := ⟨ctx, hctx⟩) hA σ v
-    rw [hnames]
-    simp only [Var.db_castSucc, Var.db_last]
+    simp only [hnames, Var.db_castSucc, Var.db_last]
     refine (congrArg (fun F : RawValue Γ₁ => rawApplication F _ _)
       (ih hprops.init (.lam A body) (RawInterpretationProperties.lam hA pA pbody)
         (σ ≫ CtxCat.rawProjection ⟨ctx, hctx⟩ hA) ρ₂.tail htail)).trans ?_
-    rw [rawInterpret_lam (piLimit E ℓ) hA, RawFamily.abstraction_value,
-      ← CtxCat.rawComprehension_generic (Γ₁ := ⟨ctx, hctx⟩) hA]
+    rw [rawInterpret_lam (piLimit E ℓ) hA]
     have hb := RawFamily.rawApplication_singleton_abstraction_eq_body (piLimit E ℓ)
       (CtxCat.rawComprehension hA) (rawInterpret (piLimit E ℓ) ⟨ctx, hctx⟩ A)
       (rawInterpret_isFinitary (piLimit E ℓ) (CtxCat.extension ⟨ctx, hctx⟩ hA) body)
@@ -87,14 +85,13 @@ theorem RawFamily.ctxLam_beta {P : Level ℓ → Prop} {b : Nat} {ctx : Ctx ζ �
     have ⟨htail, _, hdir, hfixed⟩ := (SourceAdmissible.cons_iff hA σ ρ).mp hρ
     have htailN : ρ.tail.tailN k = ρ.tailN (k + 1) :=
       (RawValuation.tailN_tailN ρ 1 k).trans (congrArg ρ.tailN (Nat.add_comm 1 k))
-    rw [RawFamily.ctxLam, ← htailN, rawApps_last]
+    rw [← htailN, rawApps_last]
     have hnames :
         (fun v : Var _ => (Tm E ℓ).map σ.op
           (Tm.varLabel (CtxCat.extendTele (CtxCat.nil E ℓ) (ctx.snoc A) hctx) v.castSucc)) =
         fun v => (Tm E ℓ).map (σ ≫ CtxCat.rawProjection G hA).op (Tm.varLabel G v) :=
       funext fun v => Tm.map_extension_varLabel hA σ v
-    rw [hnames]
-    simp only [Var.db_castSucc, Var.db_last]
+    simp only [hnames, Var.db_castSucc, Var.db_last]
     refine (congrArg (fun F : RawValue Γ₁ => rawApplication F _ _)
       (ih hctx.init pctx.init _ _ (RawFamily.IsFinitary.abstraction _ _
         (rawInterpret_isFinitary _ G A) fB)
@@ -103,9 +100,7 @@ theorem RawFamily.ctxLam_beta {P : Level ℓ → Prop} {b : Nat} {ctx : Ctx ζ �
     have hlast : (Tm E ℓ).map σ.op
         (Tm.varLabel (CtxCat.extendTele (CtxCat.nil E ℓ) (ctx.snoc A) hctx) (Fin.last k)) =
         (Tm E ℓ).map σ.op (CtxCat.rawComprehension hA).generic := by
-      rw [CtxCat.rawComprehension_generic hA]
       rfl
-    rw [hlast]
     have hb := RawFamily.rawApplication_singleton_abstraction_eq_body (piLimit E ℓ)
       (CtxCat.rawComprehension hA) (rawInterpret (piLimit E ℓ) G A) fB
       (σ ≫ CtxCat.rawProjection G hA) ρ.tail
@@ -139,7 +134,7 @@ theorem RawFamily.ctxLam_openBeta {P : Level ℓ → Prop} {b m k : Nat}
     have hA : E[G.as.ctx] ⊢ₛ A : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     have pA : RawInterpretationProperties G A := pΔ.last G.as.wf
     have ⟨htail, _, hdir, hfixed⟩ := (SourceAdmissible.cons_iff hA σ _).mp hρ
-    rw [RawFamily.ctxLam, rawApps_last]
+    rw [rawApps_last]
     have hnames :
         (fun i : Fin k => (Tm E ℓ).map σ.op
           (Tm.varLabel (CtxCat.extendTele Γ₁ (Δ.snoc A) hΔ) ⟨Γ₁.as.len + i.castSucc.val,
@@ -158,13 +153,6 @@ theorem RawFamily.ctxLam_openBeta {P : Level ℓ → Prop} {b m k : Nat}
       (ih (fun i => args i.castSucc) hΔ.init pΔ.init _ _
         (RawFamily.IsFinitary.abstraction _ _ (rawInterpret_isFinitary _ G A) fB)
         (RawFamily.abstraction_isDirected_of hA pA.ideal iB) (σ ≫ CtxCat.rawProjection G hA) htail)).trans ?_
-    have hlast : (Tm E ℓ).map σ.op
-        (Tm.varLabel (CtxCat.extendTele Γ₁ (Δ.snoc A) hΔ) ⟨Γ₁.as.len + (Fin.last k).val,
-          show Γ₁.as.len + (Fin.last k).val < Γ₁.as.len + (k + 1) by rw [Fin.val_last]; omega⟩) =
-        (Tm E ℓ).map σ.op (CtxCat.rawComprehension hA).generic := by
-      rw [CtxCat.rawComprehension_generic hA]
-      rfl
-    rw [hlast]
     have hb := RawFamily.rawApplication_singleton_abstraction_eq_body (piLimit E ℓ)
       (CtxCat.rawComprehension hA) (rawInterpret (piLimit E ℓ) G A) fB
       (σ ≫ CtxCat.rawProjection G hA) (ρ₁.pushFin fun i => args i.castSucc)
@@ -233,12 +221,11 @@ theorem rawInterpret_openCtxLam_beta {k : Nat} {P : Level ℓ → Prop}
     have hprev := ih hΔ.init hprops.init (.lam t body) (RawInterpretationProperties.lam ht pt pbody)
       σ₂ argsInit htail
     have hnames := Tm.map_teleSnoc_varLabel hΔ ht σ₁
-    have hlast := Tm.map_teleSnoc_last_varLabel hΔ ht σ₁
     have hbase : σ₁ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ) =
         σ₂ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ.init) :=
       (Category.assoc σ₁ (CtxCat.rawProjection G ht)
         (RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ.init))).symm
-    rw [rawApps_last, hnames, hlast, hbase]
+    rw [rawApps_last, hnames, hbase]
     refine (congrArg (fun F : RawValue Γ₂ => rawApplication F _ _) hprev).trans ?_
     change rawApplication ((rawInterpret (piLimit E ℓ) G (.lam t body)).app _ σ₂.op ρ₂)
       {(Tm E ℓ).map σ₁.op (CtxCat.rawComprehension ht).generic} (args (Fin.last k)).val =

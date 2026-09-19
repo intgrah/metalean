@@ -35,8 +35,6 @@ theorem rawInterpret_ctxPi_admissible {k : Nat} {P : Level ℓ → Prop}
     SourceAdmissible σ₁ (ρ₁.pushFin fun i => (args i).val) := by
   induction Δ using Tele.addInduction generalizing v with
   | nil =>
-    change SourceAdmissible (σ₁ ≫ 𝟙 Γ₁) ρ₁ at hρ
-    change SourceAdmissible σ₁ ρ₁
     exact Eq.mp (congrArg (fun σ₂ : Γ₂ ⟶ Γ₁ => SourceAdmissible σ₂ ρ₁)
       (Category.comp_id σ₁)) hρ
   | snoc k Δ t ih =>
@@ -56,11 +54,10 @@ theorem rawInterpret_ctxPi_admissible {k : Nat} {P : Level ℓ → Prop}
       hT.trans (congrArg (fun σ₃ : Γ₂ ⟶ Γ₁ =>
         (rawInterpret (piLimit E ℓ) Γ₁ (Ctx.pi (.forallE t body) Δ)).app _ σ₃.op ρ₁) hprojection)
     have hnames := Tm.map_teleSnoc_varLabel hΔ ht σ₁
-    have hlast := Tm.map_teleSnoc_last_varLabel hΔ ht σ₁
     have hbase : SourceAdmissible
         (σ₂ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ.init)) ρ₁ :=
       hprojection ▸ hρ
-    rw [telescope_snoc, hnames, hlast] at hfixed
+    rw [telescope_snoc, hnames] at hfixed
     have hprefix : ((piLimit E ℓ).telescope T
         (fun i => (Tm E ℓ).map σ₂.op (Tm.varLabel G (Fin.natAdd Γ₁.as.len i))) argsInit).1 = argsInit := by
       simpa using congrArg (fun xs : Fin (k + 1) → Domain Γ₂ => fun i : Fin k => xs i.castSucc) hfixed
@@ -78,7 +75,7 @@ theorem rawInterpret_ctxPi_admissible {k : Nat} {P : Level ℓ → Prop}
         ((rawInterpret (piLimit E ℓ) G t).app _ σ₂.op ρ₂).toIdeal (pt.ideal σ₂ ρ₂ htail) := by
       apply Subtype.val_injective
       change RawValue.ctorTypeDom ((rawInterpret (piLimit E ℓ) G (.forallE t body)).app _ σ₂.op ρ₂) = _
-      rw [rawInterpret_forallE (piLimit E ℓ) ht hbody, RawFamily.pi_value]
+      rw [rawInterpret_forallE (piLimit E ℓ) ht hbody]
       exact RawValue.ctorTypeDom_pi _ _ _
     have hhead' := (congrArg (fun U : Domain Γ₂ => (piLimit E ℓ).extend U
       ((Tm E ℓ).map σ₁.op (CtxCat.rawComprehension ht).generic) (args (Fin.last k)))

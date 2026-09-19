@@ -48,7 +48,6 @@ theorem pi_mem_sort_imax {lA lB : Nat} {a b : ZFSet} (ha : a ∈ S_ lA)
     have hsucc : Nat.max lA (m + 1) = Nat.max lA (m + 1) - 1 + 1 :=
       (Nat.succ_pred_eq_of_pos hpos).symm
     rw [hk, hsucc]
-    change _ ∈ U_ (Nat.max lA (m + 1) - 1)
     refine piMap_mem_type (mem_type_of_mem_sort ?_ ha)
       fun x hx => mem_type_of_mem_sort ?_ (hb x hx)
     · exact hsucc ▸ Nat.le_max_left lA (m + 1)

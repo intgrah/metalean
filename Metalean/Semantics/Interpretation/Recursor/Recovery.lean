@@ -95,7 +95,7 @@ noncomputable def proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : F
       · have hy' := (RawValue.ctor ⟨η, s, c⟩ sect.names
           (recoveredField η s c ls fun i => (indices i).pullback σ₂)).natural (𝟙 _) σ₃ y hy
         rw [← ΩLower.presheaf_map_mem_id, RawValue.pullback_ctor] at hy'
-        simpa [pullback_recoveredField, ΩLower.pullback_pullback] using hy'
+        simpa [pullback_recoveredField] using hy'
   bottom _ := Or.inl bot_le
   lower σ₂ hyz := by
     rintro (hz | ⟨c, sect, hn, hz⟩)
@@ -121,7 +121,7 @@ theorem pullback_proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : Fi
   change (proofConstructor h s σ₁ indexNames indices).mem (g ≫ σ₂) y ↔ _
   simp only [proofConstructor]
   rw [Category.assoc]
-  simp [op_comp]
+  simp
 
 noncomputable def recoverMajor (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
     (source : Γ₂ ⟶ Γ₁) (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
@@ -139,8 +139,7 @@ noncomputable def recoverMajor (h : RecData Γ₁ η ls l ps ms mins) (s : Fin �
         (proofConstructor h s (σ₁.unop ≫ source)
           (fun i => (Tm E ℓ).map σ₁ (indexNames i))
           fun i => (indices i).app _ σ₁ ρ).pullback σ₂.unop
-      rw [pullback_proofConstructor]
-      simp only [Category.assoc, Functor.map_comp_apply]
+      simp only [pullback_proofConstructor, Category.assoc, Functor.map_comp_apply]
       congr 1
       funext i
       exact ((indices i).app_pullback σ₁ σ₂.unop ρ).symm }
@@ -159,10 +158,10 @@ private theorem recoveredField_eventually {α : Type*} {L : Filter α} {s : Fin 
     · rename_i hrel
       cases he : ((E.get η).block.ctors s c).recoveryIndex f with
       | none =>
-        simp only [hrel, ↓reduceIte, he] at hx ⊢
+        simp only [hrel, he] at hx ⊢
         exact Filter.Eventually.of_forall fun _ => hx
       | some i =>
-        simp only [hrel, ↓reduceIte, he] at hx ⊢
+        simp only [hrel, he] at hx ⊢
         exact hv i hx
     · rename_i hrel
       simp only [hrel]
@@ -193,7 +192,7 @@ theorem recoverMajor_isFinitary (h : RecData Γ₁ η ls l ps ms mins) (s : Fin 
     (recoverMajor h s source indexNames indices major).IsFinitary := by
   intro Γ₃ σ i ρ
   by_cases hrel : Level.rel ((E.get η).block.level.inst ls) = true
-  · simpa only [recoverMajor, hrel, Bool.false_eq_true, ↓reduceIte] using hm σ i ρ
+  · simpa only [recoverMajor, hrel, ↓reduceIte] using hm σ i ρ
   · simp only [recoverMajor, hrel]
     exact ΩLower.IsFinitary.of_eventually fun I _ hy =>
       proofConstructor_eventually h s _ _ (fun j {_} hx => RawFamily.IsFinitary.eventually (hi j) σ i ρ I hx) hy

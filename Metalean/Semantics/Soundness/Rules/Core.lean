@@ -20,7 +20,7 @@ open CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
 
 theorem HasIdeality.sort (Γ : CtxCat E ℓ) (u : Level ℓ) : HasIdeality Γ (.sort u) := by
   intro _ σ ρ _
-  rw [rawInterpret_sort, RawFamily.sort_value]
+  rw [rawInterpret_sort]
   exact (principalIdeal (sortAtom u : CoherentShape _)).property
 
 theorem HasFixedness.sort (Γ : CtxCat E ℓ) (u : Level ℓ) : HasFixedness Γ (.sort u) (.sort u.succ) :=
@@ -45,7 +45,7 @@ theorem HasEquality.proofIrrel (hpt : E[Γ₁.as.ctx] ⊢ₛ p : .sort .zero)
     (hf₂ : HasFixedness Γ₁ e₂ p) : HasEquality Γ₁ e₁ e₂ :=
   fun _ σ ρ hρ ↦ by
     have hpσ := hp hpt σ ρ hρ
-    rw [rawInterpret_sort, RawFamily.sort_value] at hpσ
+    rw [rawInterpret_sort] at hpσ
     exact (hf₁ he₁ σ ρ hρ).symm.trans ((piLimit_rawExtend_prop _ hpσ _ _).trans
       ((piLimit_rawExtend_prop _ hpσ _ _).symm.trans (hf₂ he₂ σ ρ hρ)))
 

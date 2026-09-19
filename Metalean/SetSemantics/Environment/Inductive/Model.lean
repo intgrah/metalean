@@ -234,10 +234,10 @@ theorem realizes
           (fun param : Fin ι.nparams => γ (param.castLE (by omega))) =
             vps := by
         funext param
-        simpa [Fin.castLE] using
+        simpa using
           congrFun (Set.eq_of_mem_singleton (Reachable.base (Reachable.base hγ))) param
       simpa [hpsEq] using recursiveField_apply model s c f γ)
-    simpa [codeOf, ctorModel, source, target, Inductive.map] using hctor
+    simpa [codeOf, Inductive.map] using hctor
   ordinaryOf_castLE := model.ordinaryOf_castLE
   targetIndex_eq := model.codeOf_targetIndex
   targetRealizes s c vps hps vargs hargs index := by
@@ -282,7 +282,7 @@ theorem ctorArgs_mem
   · have htail : tail ∈ (model.recursiveRest s c).argSet
         (model.toModel.block vps) fieldSlots :=
       CtorCode.packRecursive_mem hrecFields (CtorCode.proof_mem_argSet_target fieldSlots)
-    simpa [codeOf_eq, hbase] using SemTele.pack_mem hfields htail
+    simpa [codeOf_eq] using SemTele.pack_mem hfields htail
   · unfold ordinaryOf
     rw [← hbase]
     exact source.ordinary.sem.values_pack fieldSlots tail

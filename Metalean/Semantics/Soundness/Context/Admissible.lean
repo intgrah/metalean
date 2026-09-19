@@ -73,8 +73,7 @@ theorem pullback {σ₁ : Γ₂ ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ)} {ρ : RawV
       exact htideal.pullback σ₂
     · exact hhead.pullback σ₂
     · have h := congrArg (fun X : RawValue Γ₂ ↦ X.pullback σ₂) hfixed
-      rw [CodeAssignment.pullback_rawExtend, RawFamily.app_pullback,
-        ← Functor.map_comp_apply, ← op_comp] at h
+      rw [CodeAssignment.pullback_rawExtend, RawFamily.app_pullback] at h
       simpa [RawValuation.pullback] using h
 
 theorem push {σ : Γ₂ ⟶ Γ₁} {ρ : RawValuation Γ₂}

@@ -194,8 +194,7 @@ theorem pi_nonempty (h : ∀ a ∈ α, ∃ b, b ∈ app β a) :
     ∃ f, f ∈ pi α β := by
   let choose a := if ha : a ∈ α then Classical.choose (h a ha) else ∅
   have choose_mem (a) (ha : a ∈ α) : choose a ∈ app β a := by
-    simp only [choose, dite_eq_left ha]
-    exact Classical.choose_spec (h a ha)
+    simpa [choose, ha] using Classical.choose_spec (h a ha)
   exact ⟨map choose α, map_mem_pi choose_mem⟩
 
 theorem sigma_mono {α₁ α₂ β₁ β₂ : ZFSet} (hα : α₁ ⊆ α₂)

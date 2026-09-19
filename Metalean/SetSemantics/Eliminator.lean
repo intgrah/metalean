@@ -44,7 +44,7 @@ noncomputable def motivePart (level sortCode arity : Nat)
 theorem mem_fibre_motivePart :
     value ∈ fibreOp (motivePart level sortCode arity motive block) entry ↔
       entry ∈ sortPart sortCode block ∧ value ∈ motiveAt level arity motive entry := by
-  rw [mem_fibre, motivePart]
+  simp
   constructor
   · intro h
     have ⟨entry', hentry, value', hvalue, heq⟩ := mem_sigma.mp h

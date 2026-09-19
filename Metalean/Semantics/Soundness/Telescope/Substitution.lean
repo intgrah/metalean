@@ -26,8 +26,6 @@ theorem SemanticSubstitution.liftTele {k : Nat} {P : Level ℓ → Prop}
     SemanticSubstitution (σ₁.liftTele hΔ) σ₂ (ρs.pushFin args) (ρt.pushFin args) := by
   induction Δ using Tele.addInduction with
   | nil =>
-    change SemanticSubstitution σ₁ σ₂ ρs ρt
-    change SemanticSubstitution σ₁ (σ₂ ≫ RawCtx.toCtx.map (𝟙 Tgt.as)) ρs ρt at hsub
     erw [RawCtx.toCtx.map_id, Category.comp_id] at hsub
     exact hsub
   | snoc k Δ t ih =>

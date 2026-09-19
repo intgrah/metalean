@@ -38,7 +38,7 @@ theorem foldr_max_append (ys : List Nat) : ∀ xs : List Nat,
 
 theorem foldr_max_map_succ : ∀ {L : List Nat}, L ≠ [] →
     (L.map (· + 1)).foldr Nat.max 0 = L.foldr Nat.max 0 + 1
-  | [] => fun h => absurd rfl h
+  | [] => absurd rfl
   | [_] => by simp
   | _ :: y :: L => fun _ => by
     have := foldr_max_map_succ (L := y :: L) (cons_ne_nil _ _)

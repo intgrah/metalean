@@ -63,7 +63,7 @@ theorem eq_one_of_unique {k : Nat} (s : Fin k) (h : ∀ s', s' = s) : k = 1 := b
 theorem sum_eq_of_unique {k : Nat} (f : Fin k → Nat) (s : Fin k) (h : ∀ s', s' = s) :
     Fin.sum f = f s := by
   obtain rfl := eq_one_of_unique s h
-  rw [Fin.sum_succ, Fin.sum_zero, ← h 0]
+  rw [← h 0]
   rfl
 
 theorem encodeSigma_val_of_unique {k : Nat} (f : Fin k → Nat) (s : Fin k) (h : ∀ s', s' = s)

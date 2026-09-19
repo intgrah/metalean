@@ -202,8 +202,7 @@ theorem packRecursive_mem {fields : Fin count → CtorRecCode.Packed n}
       fun current => fields current.succ
     exact mem_argSet_recArg
       (recoverRecField_mem f.2.tele f.2.index (hvalues 0))
-      (by simpa [packRecursive, prependRecursive, f, restFields, Fin.tail_def] using
-        ih (Fin.tail hvalues) htail)
+      (by simpa [Fin.tail_def] using ih (Fin.tail hvalues) htail)
 
 theorem eraseRecField_recoverRecField {b level : Nat}
     (tele : SemTele n b) (index : Dom b) (block : ZFSet)
@@ -312,7 +311,7 @@ theorem splitIhArgSet_prependRecursive
           recCode.2.tele recCode.2.index block γ rawHead hrawHead
         simp [packRecursive, raw]
         rw [herase, hrecover]
-        simpa [prependRecursive, forgetIhs, rest, recCode, raw, Fin.tail_def] using
+        simpa [prependRecursive, forgetIhs, Fin.tail_def] using
           hpacked tag fun tail => build (pair rawHead tail)
 
 end CtorCode

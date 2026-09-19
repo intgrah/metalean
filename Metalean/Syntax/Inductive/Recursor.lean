@@ -183,26 +183,25 @@ def motiveType (l : Level ℓ)
   change (Ctx.instL levelSubst (I.indexTele ls s ps)).snoc
       ((Expr.ind η s ls (fun i => (ps i).wkN (ι.nindices s))
         fun index => Expr.var ⟨n + index.val, by omega⟩).instL levelSubst) = _
-  rw [I.indexTele_instL]
-  simp [Expr.instL]
+  simp!
 
 @[simp] theorem motiveType_instL
     (l : Level ℓ) (s : Fin ι.nsorts) (levelSubst : Param ℓ → Level ℓ') :
     (I.motiveType η ls ps l s).instL levelSubst =
       I.motiveType η (fun i => (ls i).inst levelSubst)
         (fun i => (ps i).instL levelSubst) (l.inst levelSubst) s := by
-  simp [motiveType, Expr.instL]
+  simp! [motiveType]
 
 @[simp] theorem motiveTele_map (s : Fin ι.nsorts) :
     (I.motiveTele η ls ps s).map pre =
       (I.map pre).motiveTele (η.map pre) ls
         (fun i => (ps i).map pre) s := by
-  simp [motiveTele, Expr.map]
+  simp! [motiveTele]
 
 @[simp] theorem motiveType_map (l : Level ℓ) (s : Fin ι.nsorts) :
     (I.motiveType η ls ps l s).map pre =
       (I.map pre).motiveType (η.map pre) ls (fun i => (ps i).map pre) l s := by
-  simp [motiveType, Expr.map]
+  simp! [motiveType]
 
 def caseTele (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     Ctx ζ₁ ℓ n (n + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields + (ι.ctors s c).nrecFields) :=
@@ -212,10 +211,11 @@ def caseTele (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
 @[simp] theorem caseTele_map (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     (I.caseTele η ls ps ms s c).map pre =
       (I.map pre).caseTele (η.map pre) ls
-        (fun i => (ps i).map pre) (fun s => (ms s).map pre) s c := by
-  refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
-  · exact Ctor.fieldTele_map _ pre η ls ps
-  · exact Ctor.ihTele_map _ pre ls ps ms
+        (fun i => (ps i).map pre) (fun s => (ms s).map pre) s c :=
+  (Ctx.map_append pre _ _).trans
+    congr(Tele.append
+      $(Ctor.fieldTele_map _ pre η ls ps)
+      $(Ctor.ihTele_map _ pre ls ps ms))
 
 @[simp] theorem caseTele_instL (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (levelSubst : Param ℓ → Level ℓ') :

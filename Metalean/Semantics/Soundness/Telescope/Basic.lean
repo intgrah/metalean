@@ -98,9 +98,8 @@ theorem RawFamily.abstraction_isDirected_of {t : Expr ζ₂ ℓ Γ₁.as.len}
       SourceAdmissible σ ρ → (B.app _ σ.op ρ).IsDirected)
     ⦃Γ₂ : CtxCat E₂ ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
     ((RawFamily.abstraction (piLimit E₂ ℓ) (CtxCat.rawComprehension ht)
-      (rawInterpret (piLimit E₂ ℓ) Γ₁ t) B).app _ σ.op ρ).IsDirected := by
-  rw [RawFamily.abstraction_value]
-  exact RawAction.abstraction_isDirected _ (RawFamily.bodyAction_isIdealValued ht pt hB σ ρ hρ)
+      (rawInterpret (piLimit E₂ ℓ) Γ₁ t) B).app _ σ.op ρ).IsDirected :=
+  RawAction.abstraction_isDirected _ (RawFamily.bodyAction_isIdealValued ht pt hB σ ρ hρ)
 
 theorem RawFamily.ctxLam_isDirected {b m : Nat} {P : Level ℓ → Prop}
     (Δ : Ctx ζ₂ ℓ Γ₁.as.len m) (hΔ : WFTeleStrong E₂ P Γ₁.as.ctx Δ)
@@ -128,17 +127,6 @@ theorem Tm.map_teleSnoc_varLabel {k : Nat} {P : Level ℓ → Prop}
       fun i : Fin k => (Tm E₂ ℓ).map (σ₁ ≫ CtxCat.rawProjection _ ht).op
         (Tm.varLabel (CtxCat.extendTele Γ₁ Δ hΔ.init) (Fin.natAdd Γ₁.as.len i)) :=
   funext fun i => Tm.map_extension_varLabel ht σ₁ (Fin.natAdd Γ₁.as.len i)
-
-theorem Tm.map_teleSnoc_last_varLabel {k : Nat} {P : Level ℓ → Prop}
-    {Δ : Ctx ζ₂ ℓ Γ₁.as.len (Γ₁.as.len + k)} {t : Expr ζ₂ ℓ (Γ₁.as.len + k)}
-    (hΔ : WFTeleStrong E₂ P Γ₁.as.ctx (Δ.snoc t))
-    (ht : E₂[(CtxCat.extendTele Γ₁ Δ hΔ.init).as.ctx] ⊢ₛ t : .sort hΔ.last.choose)
-    (σ₁ : Γ₂ ⟶ CtxCat.extendTele Γ₁ (Δ.snoc t) hΔ) :
-    (Tm E₂ ℓ).map σ₁.op
-        (Tm.varLabel (CtxCat.extendTele Γ₁ (Δ.snoc t) hΔ) (Fin.natAdd Γ₁.as.len (Fin.last k))) =
-      (Tm E₂ ℓ).map σ₁.op (CtxCat.rawComprehension ht).generic := by
-  rw [CtxCat.rawComprehension_generic ht]
-  rfl
 
 end CoherentShape
 
@@ -168,7 +156,7 @@ theorem RawSound.ordinaryTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I
       (Ctx.instL ls ((I.map pre.sigs).ctors s c).ordinaryTele) := by
   have hΔ := hB.paramClosedWF ls
   have hordinary : WFTeleStrong E₁ (fun _ => True) I.params (I.ctors s c).ordinaryTele := by
-    simpa [Ctor.ordinaryTele] using
+    simpa using
       (hB.ctors s c).ordinaryTeleAuxStrong (ι.ctors s c).nfields le_rfl
   have hΘ := hordinary.instLevel (Q := fun _ => True) ls fun _ => trivial
   exact congr(RawTeleProperties E₂ $(Ctx.map_instL pre.sigs ls I.params)

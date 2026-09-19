@@ -34,7 +34,7 @@ def sort (v : Level ℓ) (Γ : CtxCat E ℓ) : y Γ ⟶ Ty E ℓ :=
 
 theorem subst_sort (σ : Γ₂ ⟶ Γ₁) (v : Level ℓ) : y σ ≫ sort v Γ₁ = sort v Γ₂ := by
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-  rw [sort, sort, yonedaEquiv_symm_naturality_left]
+  rw [sort, yonedaEquiv_symm_naturality_left]
   exact congrArg yonedaEquiv.symm (congrArg ofRepr (Repr.ext rfl))
 
 def el (v : Level ℓ) (t : Tm_ Γ) (ht : Tm.type t = yonedaEquiv (sort v Γ)) : Ty_ Γ :=
@@ -48,38 +48,26 @@ theorem el_label (v : Level ℓ) {e : Expr ζ ℓ Γ.as.len} (he : E[Γ.as.ctx] 
   Tm.elim_eq _ _ _ _ _ he rfl
 
 theorem type_label_sort {e : Expr ζ ℓ Γ.as.len} (he : E[Γ.as.ctx] ⊢ₛ e : .sort v) :
-    Tm.type (Tm.label Γ.as he) = yonedaEquiv (sort v Γ) := by
-  rw [Tm.type_label, yonedaEquiv_sort]
-  exact congrArg ofRepr (Repr.ext rfl)
+    Tm.type (Tm.label Γ.as he) = yonedaEquiv (sort v Γ) :=
+  congrArg ofRepr (Repr.ext rfl)
 
 theorem exists_el (A : Ty_ Γ) :
     ∃ (v : Level ℓ) (t : Tm_ Γ) (ht : Tm.type t = yonedaEquiv (sort v Γ)), el v t ht = A := by
   obtain ⟨T, rfl⟩ := exists_ofRepr A
   obtain ⟨v, hv⟩ := T.wf
-  refine ⟨v, Tm.label Γ.as hv, type_label_sort hv, ?_⟩
-  have h : el v (Tm.label Γ.as hv) (type_label_sort hv) = ofTyping Γ.as hv := el_label v hv _
-  rw [h]
-  exact congrArg ofRepr (Repr.ext rfl)
+  exact ⟨v, Tm.label Γ.as hv, type_label_sort hv, congrArg ofRepr (Repr.ext rfl)⟩
 
 theorem exists_el_sort (v : Level ℓ) (Γ : CtxCat E ℓ) :
     ∃ (t : Tm_ Γ) (ht : Tm.type t = yonedaEquiv (sort v.succ Γ)),
-      el v.succ t ht = yonedaEquiv (sort v Γ) := by
-  refine ⟨Tm.label Γ.as (.sortDF (l := v)), type_label_sort .sortDF, ?_⟩
-  have h : el v.succ (Tm.label Γ.as (.sortDF (l := v))) (type_label_sort .sortDF) =
-      ofTyping Γ.as (.sortDF (l := v)) := el_label v.succ .sortDF _
-  rw [h, yonedaEquiv_sort]
-  exact congrArg ofRepr (Repr.ext rfl)
+      el v.succ t ht = yonedaEquiv (sort v Γ) :=
+  ⟨Tm.label Γ.as (.sortDF (l := v)), type_label_sort .sortDF, congrArg ofRepr (Repr.ext rfl)⟩
 
 theorem subst_el (σ : Γ₂ ⟶ Γ₁) (v : Level ℓ) (t : Tm_ Γ₁)
     (ht : Tm.type t = yonedaEquiv (sort v Γ₁))
     (ht' : Tm.type ((Tm E ℓ).map σ.op t) = yonedaEquiv (sort v Γ₂)) :
     (Ty E ℓ).map σ.op (el v t ht) = el v ((Tm E ℓ).map σ.op t) ht' := by
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-  obtain ⟨e, he, rfl⟩ := Tm.exists_label t (sortRepr Γ₁ v) (by rw [ht, yonedaEquiv_sort])
-  have h : el v (Tm.label Γ₁.as he) ht = ofTyping Γ₁.as he := el_label v he ht
-  have h' : el v ((Tm E ℓ).map (RawCtx.toCtx.map σ).op (Tm.label Γ₁.as he)) ht' =
-      ofTyping Γ₂.as (he.substitution σ.typed) := el_label v (he.substitution σ.typed) ht'
-  rw [h, h']
+  obtain ⟨_, _, rfl⟩ := Tm.exists_label t (sortRepr Γ₁ v) (by rw [ht, yonedaEquiv_sort])
   rfl
 
 end Ty
@@ -92,10 +80,10 @@ instance : HasSorts (Ty E ℓ) (Tm E ℓ) ℓ where
     rw [yonedaEquiv_symm_naturality_left]
     exact congrArg yonedaEquiv.symm (Ty.subst_el σ v t ht _)
   exists_el A := by
-    obtain ⟨v, t, ht, h⟩ := Ty.exists_el (yonedaEquiv A)
+    have ⟨v, t, ht, h⟩ := Ty.exists_el (yonedaEquiv A)
     exact ⟨v, t, ht, by rw [show Ty.el v t ht = yonedaEquiv A from h, Equiv.symm_apply_apply]⟩
   exists_el_sort v Γ := by
-    obtain ⟨t, ht, h⟩ := Ty.exists_el_sort v Γ
+    have ⟨t, ht, h⟩ := Ty.exists_el_sort v Γ
     exact ⟨t, ht, by rw [show Ty.el v.succ t ht = yonedaEquiv (Ty.sort v Γ) from h,
       Equiv.symm_apply_apply]⟩
 
@@ -108,7 +96,6 @@ theorem Ty.isProp_of_isSort_zero (A : y Γ ⟶ Ty E ℓ)
     apply isProp_of_subsingleton
     intro Δ σ
     have hsub := Tm.subsingleton_of_prop he rfl σ
-    rw [← hel] at hsub
     have hA : yonedaEquiv (y σ ≫ HasSorts.el Level.zero (Tm.label _ he) ht) =
         (Ty E ℓ).map σ.op (Ty.el .zero (Tm.label _ he) ht) :=
       (yonedaEquiv_naturality _ σ).symm.trans

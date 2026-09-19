@@ -32,10 +32,8 @@ theorem SemCtx.snoc {t : Expr ζ ℓ n} {x : ZFSet}
     ε[ν] ⊨ γ.snoc x : Γ.snoc t := by
   intro v
   cases v using Fin.lastCases with
-  | last => simpa [Ctx.get_last] using hx
-  | cast v =>
-    rw [Γ.get_snoc t v.castSucc (Nat.ne_of_lt v.isLt), Expr.denote_wk]
-    simpa using hΓ v
+  | last => simpa using hx
+  | cast v => simpa using hΓ v
 
 theorem Realizes.semCtx {reach : Set (Slots 0)} {Δ : SemTele 0 n}
     (h : Realizes ε ν reach Γ Δ) (γ : Slots n) (hγ : γ ∈ Reachable reach Δ) :

@@ -47,7 +47,6 @@ theorem applyBound_ideal_fixed (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
       body.subst (RawCtx.Hom.subst (𝟙 T.as)) := by
     change E[T.as.ctx] ⊢ₛ (e.wkN k).apps (fun i : Fin k => Expr.var (Fin.natAdd Γ₁.as.len i)) :
       body.subst Subst.id
-    rw [Expr.subst_id]
     simpa [Expr.applyBound_eq_apps] using hresult
   have hf : HasFixedness T (e.wkN k) ((Ctx.pi body Δ).wkN k) :=
     HasFixedness.wkN Δ hΔ he ptype pe fe
@@ -86,7 +85,7 @@ theorem applyBound_ideal_fixed (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
       apply Tm.label_eq
       · rw [RawCtx.Hom.id_subst, Expr.subst_id]
         exact IsTypeStrong.isTypeEq ⟨v, hbody⟩
-      · rw [RawCtx.Hom.id_subst, Expr.subst_id]
+      · rw [RawCtx.Hom.id_subst]
         simpa [Expr.applyBound_eq_apps] using hresult
     erw [hresultName] at hc
     have hvarName (i : Fin k) :

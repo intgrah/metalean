@@ -288,7 +288,7 @@ theorem CtorCode.argSet_subset_type {code : CtorCode n}
   intro t ht
   induction hdoms generalizing t with
   | target =>
-    rw [argSet, verum, mem_singleton] at ht
+    simp [argSet] at ht
     exact ht ▸ empty_mem_type
   | arg hdomain _ ih =>
     obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma.mp ht

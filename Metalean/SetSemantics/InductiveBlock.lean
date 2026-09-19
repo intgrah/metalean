@@ -321,10 +321,9 @@ theorem recGraph_app_eq {bound motive step graph : ZFSet}
   have hg := (mem_sep.mp hgs).2
   obtain ⟨z, hz, rfl⟩ := mem_dom.mp hkey
   obtain ⟨a, _, b, _, rfl⟩ := mem_prod.mp (mem_powerset.mp (mem_sep.mp hgs).1 hz)
-  change [zf|(a, b)] ∈ graph at hz
   change app (recGraph codes bound motive step γ) [zf|(a, b).1] =
     app graph [zf|(a, b).1]
-  rw [fst_pair, recGraph_app hmaps (mem_sUnion.mpr ⟨graph, hgs, hz⟩), IsApprox.app_eq hg hz]
+  simp [recGraph_app hmaps (mem_sUnion.mpr ⟨graph, hgs, hz⟩), IsApprox.app_eq hg hz]
 
 theorem IsApprox.app_mem {bound motive step graph key : ZFSet}
     (hg : IsApprox codes bound motive step graph γ)

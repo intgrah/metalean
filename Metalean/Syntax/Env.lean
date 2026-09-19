@@ -125,7 +125,6 @@ instance : SmallCategory (Σ ζ, Env ζ) where
   map_id _ := rfl
   map_comp := by
     intro ⟨ζ₁, E₁⟩ ⟨ζ₂, E₂⟩ ⟨ζ₃, E₃⟩ pre₁ pre₂
-    change (Prefix.trans pre₁ pre₂).sigs = pre₁.sigs ≫ pre₂.sigs
     induction pre₂ with
     | refl => rfl
     | step pre₂ ih => exact congrArg Sigs.Prefix.step (ih pre₁)

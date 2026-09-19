@@ -60,7 +60,7 @@ def ofTerm (h : IsPullback (yonedaEquiv.symm q) (y π) ℳ.typing A) (σ : Δ �
   generic := by
     apply yonedaEquiv.symm.injective
     rw [← yonedaEquiv_symm_naturality_left]
-    simp [h.lift_fst (yonedaEquiv.symm a) (y σ) ha]
+    simp
 
 theorem type_eq (s : Section h σ a) :
     ℳ.typing.app (op Δ) a = Ty.map σ.op (yonedaEquiv A) := by
@@ -188,7 +188,7 @@ theorem eval_reindex (K' : Comprehension Ty Δ ΔA) (σ : Δ ⟶ Γ) (f : ΔA �
     K'.eval (y σ ≫ A) (fibreMap A (y σ) ≫ B) hA' = X.map f.op (K.eval A B hA) := by
   have hto : K'.toFibre (y σ ≫ A) hA' ≫ fibreMap A (y σ) = y f ≫ K.toFibre A hA :=
     pullback.hom_ext
-      (by simp [← Functor.map_comp, ← Functor.map_comp, hf])
+      (by simp [← Functor.map_comp, hf])
       (by simp [← hq, yonedaEquiv_symm_naturality_left])
   rw [eval, ← Category.assoc, hto, Category.assoc, eval, ← yonedaEquiv_naturality]
 

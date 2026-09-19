@@ -53,9 +53,9 @@ theorem ordinaryField_properties (f : Fin csig.nfields)
     rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
     cases v using Fin.addCases with
     | left p =>
-      rw [Ctx.entry_append_left I.params _ (by omega) p.isLt
-        (show p.val < ι.nparams + f.val by omega)]
-      simp only [σ, Fin.append_left, Fin.append_castLE_left ps _ p.isLt.le]
+      simp only [
+        Ctx.entry_append_left I.params _ (by omega) p.isLt (show p.val < ι.nparams + f.val by omega),
+        σ, Fin.append_left, Fin.append_castLE_left ps _ p.isLt.le]
       exact hpsfixed p
     | right g =>
       rw [Ctx.entry_append_right I.params _ (by omega) (by simp) (by omega)]
@@ -102,10 +102,8 @@ theorem rawExtend_ordinaryFieldExpr_of_admissible
       Ctor.ordinarySubstWFStrong f.isLt hps fun g => hf (g.castLE f.isLt)⟩
   have hprefix := SourceAdmissible.ordinaryPrefix (ctor := ctor) le_rfl
     (hctx _ le_rfl) hps hf σ₁ vals args hadm (f.val + 1) f.isLt hfull
-  have hover : RawCtx.toCtx.map σ₂' ≫ Src.rawProjection ht = RawCtx.toCtx.map σ₂ := by
-    change RawCtx.toCtx.map σ₂' ≫ RawCtx.toCtx.map (Src.projectionRaw ht) = _
-    rw [← RawCtx.toCtx.map_comp]
-    exact congrArg RawCtx.toCtx.map (RawCtx.Hom.ext (funext fun v =>
+  have hover : RawCtx.toCtx.map σ₂' ≫ Src.rawProjection ht = RawCtx.toCtx.map σ₂ :=
+    congrArg RawCtx.toCtx.map (RawCtx.Hom.ext (funext fun v =>
       Fin.append_castLE_right ps (fun g => fds (g.castLE f.isLt)) (Nat.le_succ f.val) v))
   have ⟨htail, _, _, hfixed⟩ := (SourceAdmissible.cons_iff ht (σ₁ ≫ RawCtx.toCtx.map σ₂')
     ((vals.pushFin fun g : Fin f.val => args (g.castLE f.isLt.le)).push (args f))).mp hprefix
@@ -130,7 +128,6 @@ theorem rawExtend_ordinaryFieldExpr_of_admissible
       (CtxCat.rawComprehension ht).generic = (Tm E ℓ).map σ₁.op (Tm.label Γ₁.as (hf f)) := by
     rw [CtxCat.rawComprehension_generic, op_comp, Functor.map_comp_apply, Tm.map_varLabel]
     apply congrArg ((Tm E ℓ).map σ₁.op)
-    change Tm.label Γ₁.as (σ₂'.typed (Fin.last Src.as.len)) = _
     have he : σ₂'.subst (Fin.last Src.as.len) = fds f := by
       change Fin.append ps (fun g : Fin (f.val + 1) => fds (g.castLE f.isLt))
         (Fin.natAdd ι.nparams (Fin.last f.val)) = _
@@ -143,7 +140,6 @@ theorem rawExtend_ordinaryFieldExpr_of_admissible
       rw [Ctx.get_last, Expr.wk_subst]
       apply congrArg fun σ₃ => ((ctor.ordinaryType f).instL ls).subst σ₃
       funext v
-      change σ₂'.subst v.castSucc = σ₂.subst v
       exact Fin.append_castLE_right ps (fun g => fds (g.castLE f.isLt)) (Nat.le_succ f.val) v
     apply Tm.label_eq
     · rw [hget]

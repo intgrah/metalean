@@ -40,7 +40,7 @@ def ctorTargetHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
     (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ₛ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f) :
     Γ₁.as ⟶ (CtxCat.extendTele ⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ _ hΔ).as :=
-  ⟨Fin.append ps fds, by simpa [CtxCat.extendTele] using Ctor.targetSubstWFStrong hps hf⟩
+  ⟨Fin.append ps fds, by simpa using Ctor.targetSubstWFStrong hps hf⟩
 
 def ctorParamHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
@@ -80,7 +80,6 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
       fun f => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as (hf f)) := by
   have hadm := pctx.admissible_of_images hctx (ctorParamHom hctx hps) σ₁ ρ hρ (fun v => (pps v).ideal)
     (fun v => (pps v).subst) fun v => by
-      change HasFixedness Γ₁ (ps v) _
       rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
       exact fps v
   have hproj : RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf) ≫
@@ -94,7 +93,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
         (Tm.varLabel (⟨_, hctx⟩ : CtxCat E₂ ℓ) p)) =
         fun p => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as (hps p)) := by
       funext p
-      rw [op_comp, Functor.map_comp_apply, Tm.map_varLabel]
+      rw [op_comp, Functor.map_comp_apply]
       refine congrArg _ (Tm.label_congr ?_)
       change ((Ctx.instL ls (E₂.get η).block.params).get p).subst ps = _
       rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
@@ -111,7 +110,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
     rw [← Ctx.instL_append, Ctx.get_subst _ _ _ (ι.nparams + f.val) (by omega) rfl,
       ← Ctx.entry_instL, Ctx.entry_append_right (E₂.get η).block.params _ (by omega) (by simp)
         (by omega)]
-    simp [Ctor.ordinaryTele, Ctor.ordinaryFieldExpr]
+    simp [Ctor.ordinaryFieldExpr]
 
 theorem ctorSourceJudgment
     {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
@@ -125,10 +124,10 @@ theorem ctorSourceJudgment
         ((E₂.get η).block.ctors s c).ordinaryTele)).get v).subst (Fin.append ps fds)) := by
   rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
   cases v using Fin.addCases with
-  | left p => simpa [Inductive.paramType, Ctx.entry, Tele.append] using pps p
+  | left p => simpa [Inductive.paramType] using pps p
   | right f =>
     rw [Ctx.entry_append_right (E₂.get η).block.params _ (by omega) (by simp) (by omega)]
-    simpa [Ctor.ordinaryTele, Ctor.ordinaryFieldExpr] using pf f
+    simpa [Ctor.ordinaryFieldExpr] using pf f
 
 end CoherentShape
 
@@ -138,7 +137,7 @@ theorem RawSound.ctorTypeFnProperties (hsound : RawSound E₂ ℓ pre) (hB : I.W
       (((I.map pre.sigs).ctorTypeFn s d).instL ls) := by
   have ⟨_, hf⟩ := hB.ctorTypeFn s d
   have p := (hsound.properties .nil rfl .nil (hf.instLevel ls)).left
-  simpa [← Inductive.ctorTypeFn_map, ← Expr.map_instL, Ctx.map, CtxCat.nil] using p
+  simpa using p
 
 theorem RawSound.ctorFieldProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ)
@@ -199,7 +198,7 @@ theorem Inductive.WFStrong.ordinaryTeleInstL {J : Inductive ζ₂ ι} (hJ : J.WF
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) :
     WFTeleStrong E₂ (fun _ => True) (Ctx.instL ls J.params)
       (Ctx.instL ls ((J.ctors s c).ordinaryTele)) := by
-  simpa [Ctor.ordinaryTele] using
+  simpa using
     ((hJ.ctors s c).ordinaryTeleAuxStrong _ le_rfl).instLevel
       ls fun _ => trivial
 

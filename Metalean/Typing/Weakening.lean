@@ -29,7 +29,7 @@ namespace Quot
 
 @[simp] theorem relType_wkFrom (α : Expr ζ ℓ n) :
     (relType α).wkFrom cutPos = relType (α.wkFrom cutPos) := by
-  simp only [Expr.wkFrom_eq_subst, relType_subst]
+  simp [Expr.wkFrom_eq_subst]
 
 end Quot
 
@@ -38,23 +38,23 @@ namespace Inductive
 @[simp] theorem paramType_wkFrom (f : Fin ι.nparams) :
     (I.paramType ls ps f).wkFrom cutPos =
       I.paramType ls (fun i => (ps i).wkFrom cutPos) f := by
-  simp only [Expr.wkFrom_eq_subst, paramType_subst]
+  simp [Expr.wkFrom_eq_subst]
 
 @[simp] theorem paramType_wkN (f : Fin ι.nparams) (k : Nat) :
     (I.paramType ls ps f).wkN k =
       I.paramType ls (fun i => (ps i).wkN k) f := by
-  simp only [Expr.wkN_eq_subst, paramType_subst]
+  simp [Expr.wkN_eq_subst]
 
 @[simp] theorem motiveType_wkN (l : Level ℓ) (s : Fin ι.nsorts) (k : Nat) :
     (I.motiveType η ls ps l s).wkN k =
       I.motiveType η ls (fun i => (ps i).wkN k) l s := by
-  simp only [Expr.wkN_eq_subst, motiveType_subst]
+  simp [Expr.wkN_eq_subst]
 
 @[simp] theorem caseFnType_wkN (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (k : Nat) :
     (I.caseFnType η ls ps ms s c).wkN k =
       I.caseFnType η ls (fun i => (ps i).wkN k)
         (fun s => (ms s).wkN k) s c := by
-  simp only [Expr.wkN_eq_subst, caseFnType_subst]
+  simp [Expr.wkN_eq_subst]
 
 end Inductive
 
@@ -181,8 +181,7 @@ theorem wkFrom {E : Env ζ} {cut n : Nat} (Γ₀ : Ctx ζ ℓ 0 cut) (Δ : Ctx �
     E[Γ₀ ++ Δ] ⊢ e₁ ≡ e₂ : t →
     E[Γ₀.insert t₁ Δ] ⊢ e₁.wkFrom cut ≡ e₂.wkFrom cut : t.wkFrom cut := by
   intro h
-  simp only [Expr.wkFrom_eq_subst]
-  exact h.substRenames (Subst.renames_wkFrom Γ₀ t₁ Δ)
+  simpa [Expr.wkFrom_eq_subst] using h.substRenames (Subst.renames_wkFrom Γ₀ t₁ Δ)
 
 theorem wk {E : Env ζ} {Γ : Ctx ζ ℓ 0 n} (t₁ : Expr ζ ℓ n) {e₁ e₂ t : Expr ζ ℓ n} :
     E[Γ] ⊢ e₁ ≡ e₂ : t →

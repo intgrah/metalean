@@ -55,7 +55,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
             (fun index => Expr.var ⟨ι.nparams + index.val, by omega⟩)⟧ = model.toModel.sortValue s
             (fun param : Fin ι.nparams => γ (param.castLE (Nat.le_add_right _ _)))
             fun index : Fin (ι.nindices s) => γ (Fin.natAdd ι.nparams index) := by
-      simpa [Expr.denote, Fin.natAdd, Fin.castLE, Fin.castAdd] using hsorts s
+      simpa [Expr.denote, Fin.natAdd, Fin.castAdd] using hsorts s
         (fun param => γ (param.castLE (Nat.le_add_right _ _))) fun index =>
           γ (Fin.natAdd ι.nparams index)
     have hsnoc := Tele.Forall₂.snoc ((model.tele.indices s).realizes_mapInst pre hatoms) hlast
@@ -65,7 +65,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
     rw [Inductive.motiveTele, ← hindexTele]
     simpa [Inductive.map, paramsSem, indicesSem, recrMotiveTele] using hsnoc
   apply Realizes.denotes_pi hps (fun _ _ => rfl)
-  simpa [Inductive.motiveType, recrMotiveValue] using htele
+  simpa using htele
 
 noncomputable def recrMotivesSem (l : Level 0) :
     SemTele ι.nparams (ι.nparams + ι.nsorts) :=
@@ -114,7 +114,7 @@ theorem _root_.Metalean.StrongCtorSource.recursiveSem_realizes
   Realizes.ofTypes fun f γ hγ => by
     have hden := StrongRecursiveFieldSource.denotesDepMapEnv pre hatoms (ctor.recursive f)
       (source.recursive f) hreaches (hsortValues (csig.recursiveTarget f)) (happlyRecursive f) γ hγ
-    simp [StrongCtorSource.recursiveCodes] at hden ⊢
+    simp at hden ⊢
     exact hden
 
 section
@@ -210,7 +210,7 @@ theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (�
     (level := model.toModel.level)
     (reach := Reachable (Reachable Set.univ model.paramsSem) source.ordinary.sem)
     (fun _ => Reachable.append) model.toModel.sortValue hsorts
-    (fun f γ _ => by simpa [C] using model.recursiveField_apply s c f γ)
+    (fun f γ _ => by simpa using model.recursiveField_apply s c f γ)
   have hfields := source.ordinary.realizes_mapInst pre hatoms
   simp at hfields
   have hordTele : Ctx.instL ls ((I.ctors s c).map pre.sigs).ordinaryTele =
@@ -359,7 +359,7 @@ theorem recrCaseIhSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nc
         (ε₁[final]⟦(C.recursive f).indices · |>.instL ls⟧) hvalue).symm)
     (model.recrCaseFieldsSem_recursive_mem s c l γ hγ f)
   rw [hproject] at hden
-  simp [Ctor.ihType, StrongCtorSource.recursiveCodes] at hden ⊢
+  simp [Ctor.ihType] at hden ⊢
   exact hden
 
 end StrongInductiveModel

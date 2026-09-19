@@ -164,7 +164,7 @@ theorem InductiveModel.Sound.uniqueCtor_of_mem_sort {ι : IndSig} {E : Env ζ}
     (hraw : raw ∈ ε (.ind η s ls vps vis)) :
     ∃ vargs, vargs ∈ (w.codes s c).argSet (w.block vps) vps ∧
       (w.codes s c).targetIndex vps vargs = sortKey s.val (encode vis) := by
-  rw [h.sortAtom, InductiveModel.sortValue, hlevel, propSet_zero] at hraw
+  rw [h.sortAtom, InductiveModel.sortValue, hlevel] at hraw
   have ⟨value, hvalue, _⟩ := mem_squash.mp hraw
   exact h.uniqueCtor_of_mem_fibre s c hs hc vps hvalue
 

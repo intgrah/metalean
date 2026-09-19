@@ -52,7 +52,7 @@ theorem lamTerm_typing (A : y Γ ⟶ Ty) (B : y (ext A) ⟶ Ty) (b : Tm.obj (op 
 
 theorem subst_piCode (σ : Δ ⟶ Γ) (A : y Γ ⟶ Ty) (B : y (ext A) ⟶ Ty) :
     y σ ≫ piCode A B = piCode (y σ ≫ A) (y (extMap σ A) ≫ B) := by
-  rw [piCode, piCode, yonedaEquiv_symm_naturality_left]
+  rw [piCode, yonedaEquiv_symm_naturality_left]
   refine congrArg yonedaEquiv.symm ?_
   rw [← NatTrans.naturality_apply HasPi.pi σ.op,
     (comprehension A).label_reindex (comprehension (y σ ≫ A)) σ (extMap σ A) (extMap_disp σ A)

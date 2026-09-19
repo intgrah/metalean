@@ -156,8 +156,7 @@ theorem RawSound.caseTeleSplit (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong
       (Inductive.caseMotives_typed (c := c) · fun t => (pms t).typed)
       (h.block.caseOrdinary_typed (ms := ms) · h.param)
       (h.block.caseRecursive_typed (ms := ms) · Γ.as.wf h.param)
-    simp only [Inductive.caseTele, Ctor.fieldTele, ← Tele.append_assoc] at hh
-    exact hh
+    simpa [Inductive.caseTele, Ctor.fieldTele, ← Tele.append_assoc] using hh
   · have q := hsound.caseTypeProperties hB hblock h pps pms s c
     rw [Inductive.caseTele, Ctor.fieldTele, ← Tele.append_assoc, ← Tele.append_assoc] at q
     exact q wf

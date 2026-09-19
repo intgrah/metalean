@@ -287,7 +287,7 @@ theorem RecursivePhaseRealizes.prepend
     CtorCode.Interprets ε₁ ν block level project reach (Ctx.pi t Δ)
       (CtorCode.prependRecursive count fields rest) := by
   induction hphase with
-  | nil => simpa [Ctx.pi, CtorCode.prependRecursive] using hrest
+  | nil => simpa [CtorCode.prependRecursive] using hrest
   | cons hA htail ih =>
     simpa [Ctx.pi, Tele.foldr_append, CtorCode.prependRecursive] using
       CtorCode.Interprets.recArg hA (ih hrest)
@@ -318,7 +318,7 @@ theorem RecursivePhaseRealizes.snoc {block : Dom base}
     rw [Fin.cons_snoc_eq_snoc_cons,
       show Fin.cons (fields₁ 0) (fun i => fields₁ i.succ) = fields₁ from
         Fin.cons_self_tail fields₁] at hresult
-    simpa [Tele.append_snoc] using hresult
+    simpa using hresult
 
 end
 
@@ -391,12 +391,12 @@ theorem Interprets.map
   ctorRealizes s c vps hps := by
     refine (congrArg (fun Δ => CtorCode.Interprets ε₂ ν _ _ _ _ (Ctx.pi _ Δ) _)
       ((I.ctors s c).fieldTele_map pre.sigs η ls fun p => .var p)).mp ?_
-    simpa [Inductive.map, Ctor.map, Expr.map] using
+    simpa [Inductive.map, Expr.map] using
       (h.ctorRealizes s c vps hps).map pre hatoms
   ordinaryOf_castLE := h.ordinaryOf_castLE
   targetIndex_eq := h.targetIndex_eq
   targetRealizes s c vps hps vargs hargs index := by
-    simpa [Inductive.map, Ctor.map, Expr.map] using
+    simpa [Inductive.map, Ctor.map] using
       (Expr.denote_map pre.sigs hatoms _ _).trans (h.targetRealizes s c vps hps vargs hargs index)
   fieldsRealize s c vps hps vargs hargs v := by
     have hv := h.fieldsRealize s c vps hps vargs hargs v

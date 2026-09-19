@@ -104,7 +104,7 @@ theorem piMap_mem_truth {a b : ZFSet} (hb : ∀ x ∈ a, ZFSet.app b x ∈ truth
   refine mem_verum.mpr (lam_eq_empty fun x hx => ?_)
   have hmem := app_mem_of_mem_pi hf hx
   rcases mem_truth.mp (hb x hx) with he | he
-  · simp [he, falsum] at hmem
+  · simp [he] at hmem
   · rw [he] at hmem
     exact mem_verum.mp hmem
 
@@ -113,7 +113,7 @@ theorem pi_truth_id_eq_falsum : pi truth (fun x => x) = falsum :=
     rw [pi] at hz
     obtain ⟨f, hf, _⟩ := mem_piMap.mp hz
     have hmem := app_mem_of_mem_pi hf falsum_mem_truth
-    rw [app_map falsum_mem_truth, falsum] at hmem
+    rw [app_map falsum_mem_truth] at hmem
     exact notMem_empty _ hmem
 
 end Aczel

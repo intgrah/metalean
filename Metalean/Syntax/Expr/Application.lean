@@ -95,7 +95,6 @@ theorem applyBound_eq_apps (e : Expr ζ ℓ n) (k : Nat) :
   | succ k ih =>
     rw [applyBound, ih, hwk, apps_last]
     congr 2
-    funext i
-    simp [wk, wkFrom, rename, Ren.wkFrom, Fin.natAdd]
+    simp! [wk, wkFrom]
 
 end Metalean.Expr

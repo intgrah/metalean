@@ -46,7 +46,7 @@ theorem rawInterpret_forallE_decode {t : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ
   let label := (Ty.pairPresheaf E ℓ).map σ₂.op (Ty.pairOfTyping Γ₁.as ht ht')
   have hpi : T = pi label ((C.app _ σ₂.op ρ₂).toIdeal hdirA) V := by
     apply Subtype.val_injective
-    rw [hT, rawInterpret_forallE (piLimit E ℓ) ht ht', RawFamily.pi_value]
+    rw [hT, rawInterpret_forallE (piLimit E ℓ) ht ht']
     rfl
   have hdom : ctorTypeDomIdeal T = (C.app _ σ₂.op ρ₂).toIdeal hdirA := by
     rw [hpi]
@@ -60,7 +60,6 @@ theorem rawInterpret_forallE_decode {t : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ
   apply congrArg (Prod.mk X)
   rw [hpi, ctorTypeFibreIdeal_pi]
   apply Subtype.val_injective
-  rw [RawAction.toIdealAction_value_toLower]
   change RawFamily.sectionValue (CtxCat.rawComprehension ht) body (𝟙 Γ₂ ≫ σ₂) (ρ₂.pullback (𝟙 Γ₂)) name
     ((piLimit E ℓ).rawExtend (C.app _ (𝟙 Γ₂ ≫ σ₂).op (ρ₂.pullback (𝟙 Γ₂))) name X.val) = _
   rw [Category.id_comp, RawValuation.pullback_id]
@@ -87,7 +86,6 @@ theorem rawInterpret_ctxPi_decode {k : Nat} {P : Level ℓ → Prop}
     apply Prod.ext
     · exact funext fun i => i.elim0
     · apply Subtype.val_injective
-      change T.val = (rawInterpret (piLimit E ℓ) Γ₁ body).app _ σ₁.op ρ₁
       exact hT.trans (congrArg (fun σ₃ : Γ₂ ⟶ Γ₁ =>
         (rawInterpret (piLimit E ℓ) Γ₁ body).app _ σ₃.op ρ₁) (Category.comp_id σ₁))
   | snoc k Δ t ih =>
@@ -107,8 +105,7 @@ theorem rawInterpret_ctxPi_decode {k : Nat} {P : Level ℓ → Prop}
     have hprev := ih hΔ.init hprops.init (.forallE t body) (.forallEDF ht hbody hbody)
       (HasIdeality.forallE ht hbody pt.ideal pbody) σ₂ argsInit htail hT'
     have hnames := Tm.map_teleSnoc_varLabel hΔ ht σ₁
-    have hlast := Tm.map_teleSnoc_last_varLabel hΔ ht σ₁
-    rw [telescope_snoc, hnames, hprev, hlast]
+    rw [telescope_snoc, hnames, hprev]
     let U := ((rawInterpret (piLimit E ℓ) G (.forallE t body)).app _ σ₂.op ρ₂).toIdeal
       (HasIdeality.forallE ht hbody pt.ideal pbody _ _ htail)
     have hstep := rawInterpret_forallE_decode ht hbody pt.ideal pbody σ₁ ρ₂

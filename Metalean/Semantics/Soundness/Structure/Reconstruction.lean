@@ -31,7 +31,7 @@ theorem RawJudgment.structural_value_bot
     (rawInterpret (piLimit E ℓ) Γ₁ maj).app _ σ.op ρ = ⊥ := by
   have ht := hs.indTypeStrong hps
   have htype := HasFixedness.ind (IndTyping.ofTyping hB ht) hB ht σ ρ hρ
-  rw [rawInterpret_sort, RawFamily.sort_value] at htype
+  rw [rawInterpret_sort] at htype
   conv_lhs at htype => arg 2; rw [show (E.get η).block.level.inst ls = .zero by simpa using hrel]
   exact (pmaj.fixed pmaj.syntactic.left σ ρ hρ).symm.trans
     (piLimit_rawExtend_prop _ htype _ _)
@@ -62,7 +62,7 @@ theorem RawJudgment.structural_reconstruct
     let types := ctorFieldTypes (fun d => (pfn d).ideal) (fun p => Tm.label Γ₁.as (hT.param p))
       σ ρ fun p => (pps p).left.ideal σ ρ hρ
     have hfix := pmaj.fixed pmaj.syntactic.left σ ρ hρ
-    rw [rawInterpret_ind_typed _ hT hB, RawFamily.ind_value] at hfix
+    rw [rawInterpret_ind_typed _ hT hB] at hfix
     exact ctor_proj_of_structural_fixed (hT.code.map ((Tm E ℓ).map σ.op))
       ((IndCode.rel_map _ _).trans (hT.code_rel.trans hrel)) (hg.pullback σ)
       types (hρ.eval pmaj.left.ideal) hfix names
@@ -82,7 +82,7 @@ theorem HasEquality.structure_eta_of_projections
   have ht := hs.indTypeStrong fun p => (pps p).syntactic.left
   let hctor : CtorTyping Γ₁ η s c ls ps (fun f => hs.projTerm η ls ps f maj) hs.recursive := {
     ordinary f := by
-      simpa [Inductive.IsStructure.projType_eq, Ctor.ordinaryFieldExpr] using
+      simpa [Inductive.IsStructure.projType_eq] using
         hs.projTerm_hasTypeStrong hB f Γ₁.as.wf (fun p => (pps p).syntactic.left) pmaj.syntactic.left
     recursive := hs.no_recursive.elim }
   intro Γ₂ σ ρ hρ
@@ -137,7 +137,7 @@ theorem RawJudgment.structural_field_telescope
   let hg : hi.code.StructGuard c (Tm.label Γ₁.as pmaj.syntactic.left) := ⟨w⟩
   let types := ctorFieldTypes pfn (fun p => Tm.label Γ₁.as (hi.param p)) σ ρ fun p => pps p σ ρ hρ
   have hfix := pmaj.fixed pmaj.syntactic.left σ ρ hρ
-  rw [rawInterpret_ind_typed _ hi hB, RawFamily.ind_value] at hfix
+  rw [rawInterpret_ind_typed _ hi hB] at hfix
   have hd := telescope_of_structural_fixed (hi.code.map ((Tm E ℓ).map σ.op))
     ((IndCode.rel_map _ _).trans (hi.code_rel.trans hrel)) (hg.pullback σ)
     types (hρ.eval pmaj.left.ideal) hfix
@@ -151,9 +151,7 @@ theorem RawJudgment.structural_field_telescope
     cases i using Fin.addCases with
     | left f =>
       change Fin (ι.ctors s c).nfields at f
-      simp only [indNames, CtorHead.sig, IndCode.ctorHead, IndTyping.code, IndCode.map,
-        Fin.append_left]
-      exact congrArg ((Tm E ℓ).map σ.op)
+      simpa [indNames, IndTyping.code, Fin.append_left] using congrArg ((Tm E ℓ).map σ.op)
         ((Tm.projOfCode_eq_proj hg w f).trans
           (Tm.proj_label hs hB ls ps hi.param pmaj.syntactic.left f))
     | right f => exact hs.no_recursive.elim f

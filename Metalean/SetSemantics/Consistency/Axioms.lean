@@ -73,7 +73,7 @@ theorem value_mem {ε : Atom Nonempty.sigs 0 → ZFSet.{u}}
         $(ε <| .ind Quot.Sound.eqHead 0 (fun _ => ls 0)
           ![quotientCarrier ((ls 0).eval zeroNs) α r, quotientMk ((ls 0).eval zeroNs) α r a₁]
           ![quotientMk ((ls 0).eval zeroNs) α r a₂])] := by
-    simp only [Quot.Sound.type, Quot.eqApp, Expr.instL, Expr.denote, quotientRel, quotientProp]
+    simp only [Quot.Sound.type, Quot.eqApp, Expr.instL, Expr.denote]
     refine Aczel.pi_congr fun α hα => Aczel.pi_congr fun r hr => Aczel.pi_congr fun a₁ ha₁ =>
       Aczel.pi_congr fun a₂ ha₂ => Aczel.pi_congr fun witness hwitness => ?_
     congr 2 <;> funext i <;> fin_cases i <;>
@@ -93,8 +93,8 @@ theorem valid (m : Env.Model.{u} Nonempty.env) (ls : Fin 1 → Level 0) :
   ⟨value (ls 0),
     value_mem (m.sound.quotientRules Quot.Sound.quotHead)
       (.of_model m (by
-        simp [Quot.Sound.eqHead, Nonempty.env, Iff.env, Quot.env, Eq.env,
-          Env.get, Entry.weakenEnv, Entry.map, Entry.block])) ls⟩
+        simp [Nonempty.env, Iff.env, Quot.env, Eq.env, Env.get, Entry.weakenEnv, Entry.map,
+          Entry.block])) ls⟩
 
 end Quot.Sound
 
@@ -127,8 +127,8 @@ theorem valid (m : Env.Model.{u} Quot.Sound.env) (ls : Fin 0 → Level 0) :
   ⟨value m.atoms,
     value_mem
       (.of_model m (by
-        simp [Quot.Sound.env, Nonempty.env, Iff.env, Quot.env, Eq.env,
-          Env.get, Entry.weakenEnv, Entry.map, Entry.block]))
+        simp [Quot.Sound.env, Nonempty.env, Iff.env, Env.get, Entry.weakenEnv, Entry.map,
+          Entry.block]))
       (.of_model m (by
         simp [Quot.Sound.env, Nonempty.env, Iff.env, Quot.env, Eq.env,
           Env.get, Entry.weakenEnv, Entry.map, Entry.block])) ls⟩

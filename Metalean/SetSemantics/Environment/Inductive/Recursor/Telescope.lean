@@ -83,7 +83,7 @@ theorem recrTeleRealizes :
       (model.recrTeleSem s l) := by
   refine .snoc ((model.recrPrefixRealizes pre hatoms hsorts hctors l).append
     (model.recrIndicesRealizes pre hatoms s l)) fun γ _ => ?_
-  simp only [Expr.var_wkN, Expr.denote]
+  simp only [Expr.var_wkN]
   exact hsorts s (fun p => γ (p.castLE (by omega))) (RecSlots.recrIndices s γ)
 
 include hatoms hsorts hctors in
@@ -132,7 +132,7 @@ theorem recrSortReachable : Fin.append (RecSlots.paramsOf γ) (RecSlots.indexVal
 
 @[reachability →] theorem recrParamsReachable :
     RecSlots.paramsOf γ ∈ Reachable Set.univ model.paramsSem := by
-  simpa [sortSem, paramsSem] using
+  simpa using
     Reachable.base (Reachable.of_append (model.recrSortReachable s l γ hγ))
 
 theorem recrMajorOf_erased : RecSlots.majorOfSlots γ ∈ propSet model.toModel.level
@@ -153,7 +153,7 @@ theorem fibre_motive_recrState :
         [zf|$(RecSlots.motivesOf γ s) $(RecSlots.indexValuesOf γ)...
           $(RecSlots.majorOfSlots γ)] := by
   rw [recrCaseMotive, fibre_bundleMotive_propVal (model.recrState_mem s l γ hγ), recrState,
-    fst_pair, snd_pair, model.propVal_recrMajorOf s l γ hγ]
+    snd_pair, model.propVal_recrMajorOf s l γ hγ]
   simpa [RecSlots.indicesOfSlots] using
     fibre_bundleMotive_typed s (RecSlots.indexValuesOf γ) (model.recrMajorOf_erased s l γ hγ)
 
@@ -222,9 +222,8 @@ theorem recrStepSound :
       model.recrCaseDomain s₁ c motiveSlots :=
     model.recrCasesSem_mem l caseSlots hcaseReach s₁ c
   have hminorEq : [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s₁ c))] =
-      RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) := by
-    rw [tagOf]
-    exact app_minorFamily (vmins := RecSlots.casesOf γ) (Fin.encodeSigma ι.nctors ⟨s₁, c⟩)
+      RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) :=
+    app_minorFamily (vmins := RecSlots.casesOf γ) (Fin.encodeSigma ι.nctors ⟨s₁, c⟩)
   rw [app_stepGraph hargs, hminorEq]
   rw [← Fin.append_castAdd_natAdd (f := motiveSlots)] at hmsReach hminor
   exact model.recrCase_applyMinor_mem l s₁ c _ _ hmsReach _ hminor vargs hargs

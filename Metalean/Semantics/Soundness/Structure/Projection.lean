@@ -142,7 +142,7 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : I.WFStro
           (RawValuation.pushFin (fun _ => ⊥) fun v =>
             (rawInterpret (piLimit E₂ ℓ) Γ₁ (Inductive.recrSubst ps ms mins hs.indices maj v)).app _ σ.op ρ) =
         (rawInterpret (piLimit E₂ ℓ) Γ₁ maj).app _ σ.op ρ := by
-      simp only [recoverMajor, hcarrier, ↓reduceIte]
+      simp only [recoverMajor, hcarrier]
       change (RawValuation.pushFin (fun _ => ⊥) fun v =>
         (rawInterpret (piLimit E₂ ℓ) Γ₁ (Inductive.recrSubst ps ms mins hs.indices maj v)).app _ σ.op ρ)
           (Var.db (RecrBinder.major (s := s)).resolve) = _
@@ -216,7 +216,7 @@ theorem rawInterpret_structure_projection_beta (hsound : RawSound E₂ ℓ pre) 
   rw [hs.projTerm_eq_recr] at hr
   have hn : Tm.label Γ₁.as hr = Tm.label Γ₁.as hpr.term := by
     refine Tm.label_eq_iff.mpr ⟨.ofDefEq hpr.result, ?_⟩
-    simpa only [hs.projTerm_eq_recr] using hr
+    simpa [hs.projTerm_eq_recr] using hr
   let args : Fin (ι.ctors s c).nfields → Domain Γ₂ := fun i => projIdeal ⟨η, s, c⟩ (Fin.castAdd _ i) (hρ.eval pmaj.left.ideal)
   let ns : Fin (ι.ctors s c).nfields → Tm_ Γ₂ := fun i => (Tm E₂ ℓ).map σ₂.op
     (Tm.varLabel (CtxCat.extendTele Γ₁
@@ -230,7 +230,6 @@ theorem rawInterpret_structure_projection_beta (hsound : RawSound E₂ ℓ pre) 
     funext i
     cases i using Fin.addCases with
     | left i =>
-      change Fin (ι.ctors s c).nfields at i
       rw [Fin.append_left]
       rfl
     | right i => exact hs.no_recursive.elim i

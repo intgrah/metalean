@@ -81,8 +81,7 @@ theorem WFStrong.weakenEnv
       (by simpa [Ctx.weakenEnv, Expr.weakenEnv] using hvalue.weakenEnv entry')
   | .quot heq =>
     .quot <| by
-      simpa [dsimp% (Entry.blockNatTrans _).naturality_apply] using congrArg
-        (Inductive.map (.step .refl : ζ ⟶ ζ.snoc sig₁)) heq
+      simpa using congrArg (Inductive.map (.step .refl : ζ ⟶ ζ.snoc sig₁)) heq
   | .inductive hI => .inductive hI.weakenEnv
 
 theorem WFStrong.block {ι : IndSig}
@@ -268,7 +267,7 @@ theorem Defeq.toStrong
       (SubstWFStrong.inst hΓ ha.left)
     have hresult := DefeqStrong.appDF hquot hprop hβ ha hresultTy
     exact .quotIndDF hα (ihr hΓ) hβ (ihf hΓ) ha
-      (by simpa [Quot.motiveType, Expr.inst] using hresult)
+      (by simpa [Expr.inst] using hresult)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
     exact .quotIota (ihα hΓ) (ihr hΓ) (ihβ hΓ) (ihf hΓ) (ihh hΓ)
       (iha hΓ) (ihlhs hΓ) (ihrhs hΓ)

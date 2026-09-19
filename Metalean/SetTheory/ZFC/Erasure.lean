@@ -77,7 +77,6 @@ theorem propSet_eq_self_of_mem_sort {level : Nat} {carrier : ZFSet}
     (h : carrier ∈ S_ level) : propSet level carrier = carrier := by
   cases level with
   | zero =>
-    rw [propSet_zero]
     rcases mem_truth.mp h with rfl | rfl
     · exact squash_falsum
     · exact squash_eq_verum proof_mem_verum

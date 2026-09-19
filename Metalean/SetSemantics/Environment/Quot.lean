@@ -110,7 +110,7 @@ private theorem denote_compatType_map {ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : 
     ε₂[γ]⟦Quot.compatType (E₂.get (η.map pre.sigs)).eqHead l α r β f⟧ =
       quotientCompat (equality l) ε₂[γ]⟦α⟧ ε₂[γ]⟦r⟧ ε₂[γ]⟦β⟧ ε₂[γ]⟦f⟧ :=
   denote_compatType γ α r β f fun b x y => by
-    simpa [Atom.map, Function.comp_def, dsimp% (Env.lookup .quot).naturality_apply pre η,
+    simpa [Atom.map, dsimp% (Env.lookup .quot).naturality_apply pre η,
       dsimp% Entry.eqHeadNatTrans.naturality_apply] using
       (congrFun hatoms _).trans (hequality l b x y)
 

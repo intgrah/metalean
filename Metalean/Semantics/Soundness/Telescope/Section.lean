@@ -39,9 +39,6 @@ theorem RawTeleProperties.extend_admissible {m k : Nat} {P : Level ℓ → Prop}
   subst hk
   induction Δ using Tele.addInduction with
   | nil =>
-    change SemanticSubstitution (σ₁ ≫ 𝟙 Src.as) σ₂ ρs ρt at hsub
-    change SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map (σ₁ ≫ 𝟙 Src.as)) ρs at hsource
-    change SemanticSubstitution σ₁ σ₂ ρs ρt ∧ SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁) ρs
     erw [Category.comp_id] at hsub hsource
     exact ⟨hsub, hsource⟩
   | snoc k Δ t ih =>

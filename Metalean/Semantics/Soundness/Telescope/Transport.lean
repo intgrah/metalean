@@ -142,7 +142,6 @@ theorem SourceAdmissible.tailTele {m : Nat} {Δ : Ctx ζ ℓ Γ₁.as.len m}
     have hA := hΔ.last.choose_spec.2
     have hρtail := SourceAdmissible.tail (Γ₁ := CtxCat.extendTele Γ₁ Δ hΔ.init) hA hρ
     have htail := ih hΔ.init hρtail
-    rw [RawCtx.Hom.teleProjection_snoc hΔ.init hΔ.last.choose_spec.1 hA]
     have hcoords : ρ.tail.tailN k = ρ.tailN (k + 1) :=
       (RawValuation.tailN_tailN ρ 1 k).trans (congrArg ρ.tailN (Nat.add_comm 1 k))
     erw [hcoords, Category.assoc] at htail

@@ -64,7 +64,7 @@ def liftN (ρ : Ren m n) : (k : Nat) → Ren (m + k) (n + k)
 
 @[simp] theorem lift_id : (Ren.id : Ren n n).lift = Ren.id := by
   funext v
-  cases v using Fin.lastCases <;> simp [lift, id]
+  cases v using Fin.lastCases <;> simp [id]
 
 @[simp] theorem liftN_id (k : Nat) : (Ren.id : Ren n n).liftN k = Ren.id := by
   induction k with
@@ -76,9 +76,9 @@ def liftN (ρ : Ren m n) : (k : Nat) → Ren (m + k) (n + k)
   funext v
   by_cases h : v.val < m
   · have hr := (ρ₁ ⟨v.val, h⟩).isLt
-    simp [comp, lift, h, hr]
-  · obtain rfl : v = Fin.last m := Fin.ext (by simp [Fin.last]; omega)
-    simp [comp, lift]
+    simp [comp, lift, h]
+  · obtain rfl : v = Fin.last m := Fin.ext (by simp; omega)
+    simp [comp]
 
 attribute [local instance] category in
 @[reducible, functor] def successor : Nat ⥤ Nat where
@@ -103,7 +103,7 @@ attribute [local instance] category in
 @[simp] theorem lift_comp_wkFrom (ρ : Ren n k) :
     ρ.lift.comp (wkFrom n) = (wkFrom k).comp ρ := by
   funext v
-  simp [comp, lift, wkFrom]
+  simp [comp]
 
 theorem wkFrom_comm {cut₁ cut₂ : Nat} (h : cut₁ ≤ cut₂) :
     (wkFrom cut₁ : Ren (n + 1) (n + 2)).comp (wkFrom cut₂ : Ren n (n + 1)) =

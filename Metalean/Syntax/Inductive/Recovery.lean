@@ -29,7 +29,7 @@ def recoveryIndex (ctor : Ctor ζ ι s csig) (f : Fin csig.nfields) :
 theorem recoveryIndex_ne_none (ctor : Ctor ζ ι s csig) (f : Fin csig.nfields)
     (hi : ∃ i, (ctor.targetIndices i).isVar = some (ι.nparams + f.val)) :
     ctor.recoveryIndex f ≠ none := by
-  simpa [recoveryIndex, List.find?_eq_none] using hi
+  simpa [recoveryIndex] using hi
 
 variable {ctor : Ctor ζ ι s csig} {f : Fin csig.nfields} {i : Fin (ι.nindices s)}
 

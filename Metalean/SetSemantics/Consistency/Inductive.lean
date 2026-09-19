@@ -59,7 +59,6 @@ public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
       (suffix : (pre.snoc (.inductive I)).as ⟶ E₂.as) :
       (E₂.get (Head.map suffix.sigs .here)).block = I.map (step ≫ suffix).sigs := by
     simpa [dsimp% (Env.lookup _).naturality_apply suffix .here,
-      dsimp% (Entry.blockNatTrans _).naturality_apply,
       show ((pre.snoc (.inductive I)).get .here).block = I.map step.sigs from rfl] using
       ((Env.forget ⋙ Inductive.functor ι).map_comp_apply step suffix I).symm
   have hsortsAt {ζ₂ : Sigs} {E₂ : Env ζ₂} {ε₂ : Atom ζ₂ 0 → ZFSet.{u}}

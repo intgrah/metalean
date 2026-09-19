@@ -53,7 +53,7 @@ theorem subst (h : SemanticHom σ₁) (pe : HasSubstitution Γ₁ e) :
   intro Γ₃ Γ₄ σ₂ σ₃ ρ₂ ρ₃ h₂ hadm₂
   have ⟨ρ₁, h₁, hadm₁⟩ := h.admissible (σ₃ ≫ RawCtx.toCtx.map σ₂) ρ₂ hadm₂
   have he₂ := pe (σ₂ ≫ σ₁) σ₃ ρ₁ ρ₃ (SemanticSubstitution.comp h₁ h₂ hadm₂ h.image)
-    (by simpa [Functor.map_comp, Category.assoc] using hadm₁)
+    (by simpa using hadm₁)
   have he₁ := pe σ₁ (σ₃ ≫ RawCtx.toCtx.map σ₂) ρ₁ ρ₂ h₁ hadm₁
   rw [Functor.map_comp, ← Category.assoc] at he₂
   exact (congrArg (fun e => (rawInterpret (piLimit E ℓ) Γ₃ e).app _ σ₃.op ρ₃)
@@ -69,7 +69,7 @@ theorem fixed (h : SemanticHom σ₁) (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (pt : 
   intro Γ₃ heσ σ₂ ρ hρ
   have ⟨ρ₁, hs, hadm⟩ := h.admissible σ₂ ρ hρ
   rw [show Tm.label Γ₂.as heσ = _ from (Tm.map_label he σ₁).symm, ← Functor.map_comp_apply,
-    ← op_comp, pt σ₁ σ₂ ρ₁ ρ hs hadm, pe σ₁ σ₂ ρ₁ ρ hs hadm]
+    pt σ₁ σ₂ ρ₁ ρ hs hadm, pe σ₁ σ₂ ρ₁ ρ hs hadm]
   exact hf he _ _ hadm
 
 end SemanticHom
@@ -111,7 +111,7 @@ theorem HasFixedness.varLast (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : Has
   intro Γ₂ hterm σ ρ hadm
   have hname : Tm.label (Γ₁.extension ht).as hterm = (CtxCat.rawComprehension ht).generic :=
     Tm.label_eq_var hterm rfl
-  rw [rawInterpret_var, HasSubstitution.wk_value ht pt σ ρ (hadm.tail ht), hname]
+  rw [HasSubstitution.wk_value ht pt σ ρ (hadm.tail ht), hname]
   simpa [RawFamily.lookup] using ((SourceAdmissible.cons_iff ht σ ρ).mp hadm).2.2.2
 
 theorem RawTeleProperties.get {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
@@ -126,7 +126,7 @@ theorem RawTeleProperties.get {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] �
       rw [Ctx.get_last]
       exact (pctx.entry (by simp) hctx).wk ht
     | cast v =>
-      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt), Fin.castLT_castSucc]
+      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt)]
       exact (ih pctx.init v).wk ht
 
 theorem HasFixedness.var {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
@@ -142,7 +142,7 @@ theorem HasFixedness.var {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ 
       rw [Ctx.get_last]
       exact HasFixedness.varLast ht pt.subst
     | cast v =>
-      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt), Fin.castLT_castSucc]
+      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt)]
       have h : HasFixedness _ _ _ := HasFixedness.wk ht (CtxWFStrong.var v hctx)
         (pctx.init.get hctx v).subst (HasSubstitution.var ⟨ctx, hctx⟩ v) (ih pctx.init v)
       rwa [Expr.var_wk] at h

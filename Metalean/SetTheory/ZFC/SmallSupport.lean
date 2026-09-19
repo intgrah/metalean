@@ -50,7 +50,7 @@ theorem mem_ordExt : z ∈ ordExt q x ↔ z ∈ q ∨ z = pair (dom q) x := by
   simp [ordExt]
 
 theorem dom_ordExt (fn x : ZFSet) : dom (ordExt fn x) = insert (dom fn) (dom fn) := by
-  simp [ordExt, dom_union]
+  simp [ordExt]
   ext z
   simp [Or.comm]
 

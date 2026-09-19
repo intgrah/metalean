@@ -104,9 +104,9 @@ theorem append_params_motives_cases :
   cases current using Fin.addCases with
   | left current =>
     cases current using Fin.addCases with
-    | left param => simp [paramsOf]; rfl
-    | right target => simp [motivesOf]; rfl
-  | right tag => simp [casesOf]; rfl
+    | left param => simp; rfl
+    | right target => simp; rfl
+  | right tag => simp; rfl
 
 abbrev indexValuesOf : Slots (ι.nindices s) :=
   fun index =>
@@ -169,7 +169,7 @@ def majorOfSlots : ZFSet :=
 
 @[simp] theorem majorOfSlots_childOf :
     majorOfSlots (childOf outer values major) = major := by
-  simp [majorOfSlots, childOf]
+  simp [majorOfSlots]
 
 @[simp] theorem indexValuesOf_childOf :
     indexValuesOf (childOf outer values major) = values :=

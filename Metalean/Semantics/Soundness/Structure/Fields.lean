@@ -48,7 +48,7 @@ theorem structure_projection_type_properties
     pprevious fun g => by
       rw [← hs.projType_eq]
       exact hprevious g
-  simpa only [← hs.projType_eq] using hp
+  simpa [← hs.projType_eq] using hp
 
 theorem structure_field_telescope_properties
     (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
@@ -65,7 +65,6 @@ theorem structure_field_telescope_properties
   let Src : CtxCat E₂ ℓ := ⟨_, hctx⟩
   let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
   have hp (v : Var Src.as.len) : HasFixedness Γ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
-    change HasFixedness Γ (ps v) _
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact hpsfixed v
   exact RawTeleProperties.substitution ppctx _ hd ppfields σ pps hp

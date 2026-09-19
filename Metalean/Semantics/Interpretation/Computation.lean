@@ -34,15 +34,14 @@ theorem rawInterpret_beta (D : CodeAssignment E ℓ)
       (rawInterpret D Γ₁ (e'.inst e)).app _ σ.op ρ) :
     (rawInterpret D Γ₁ (.app (.lam t e') e)).app _ σ.op ρ =
       (rawInterpret D Γ₁ (e'.inst e)).app _ σ.op ρ := by
-  rw [rawInterpret_app, rawInterpret_lam D ht, RawFamily.application_value,
-    RawFamily.abstraction_value, ← ihb]
+  rw [rawInterpret_app, rawInterpret_lam D ht, ← ihb]
   conv_rhs => rw [← iha]
   refine (RawFamily.rawApplication_normalizedAbstraction_eq_value D (CtxCat.rawComprehension ht) _
     (rawInterpret_isFinitary D (Γ₁.extension ht) e') σ ρ hF (((rawInterpret D Γ₁ e).app _ σ.op ρ).toIdeal hX)
     _ _ (Set.mem_image_of_mem ((Tm E ℓ).map σ.op) (RawFamily.label_mem_sourceQuery he))
     fun {_} σ₂ _ hlabel hs => by
-      rw [← Functor.map_comp_apply, ← op_comp]
-      exact RawFamily.sourceQuery_eq_of_section ht he (σ₂ ≫ σ) (by simpa [Set.image_image] using hlabel) hs).trans ?_
+      rw [← Functor.map_comp_apply]
+      exact RawFamily.sourceQuery_eq_of_section ht he (σ₂ ≫ σ) (by simpa using hlabel) hs).trans ?_
   exact RawFamily.sectionValue_eq_value (CtxCat.rawComprehension ht) _ σ ρ _ _
     ((Raw.ContextSection.ofTerm ht he).pullbackId σ)
 

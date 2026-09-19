@@ -36,7 +36,7 @@ private theorem reachable (h : InductiveModel.Sound E ε Eq.block η (fun _ => l
     ![α, x] ∈ Reachable Set.univ w.paramsSem :=
   h.realizes.params.reachable_of_semCtx ![α, x]
     (by
-      simpa [Eq.block, Ctx.instL, Expr.instL] using
+      simpa [Ctx.instL] using
         ((.nil : ε[zeroNs] ⊨ ![] : #t[]).snoc hα).snoc
           hx)
     trivial
@@ -65,7 +65,7 @@ theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Eq.sig,
   separates level α hα x hx y hy raw hraw := by
     have ⟨w, hclause⟩ := h level
     have ⟨vargs, hargs, hkeyEq⟩ := hclause.uniqueCtor_of_mem_sort
-      (by simpa [Eq.block] using hclause.realizes.level_eq)
+      (by simpa using hclause.realizes.level_eq)
       ⟨0, by decide⟩ ⟨0, by decide⟩ Fin.eq_zero Fin.eq_zero hraw
     have hvis : ![y] = ![x] := Encode.injective <| congrArg Prod.snd <| sortKey_injective <|
       target hclause (reachable hclause hα hx) hargs hkeyEq
@@ -82,8 +82,7 @@ theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Eq.sig,
     have ⟨vargs, hargs, hkeyEq⟩ := hclause.uniqueCtor_of_mem_fibre
       ⟨0, by decide⟩ ⟨0, by decide⟩ Fin.eq_zero Fin.eq_zero ![α, x] hfibre
     rw [hclause.sortAtom, InductiveModel.sortValue,
-      show w.level = 0 by simpa [Eq.block] using hclause.realizes.level_eq, propSet_zero,
-      ← target hclause hps hargs hkeyEq]
+      show w.level = 0 by simpa using hclause.realizes.level_eq, ← target hclause hps hargs hkeyEq]
     exact proof_mem_squash hfibre
 
 theorem of_model (m : Env.Model.{u} E)

@@ -45,7 +45,7 @@ theorem recursive_recovery_field_prop (herased : (E.get η).block.level.inst ls 
     E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢ₛ
       Ctx.get (fieldVar h.toIndData s c (Fin.natAdd (ι.ctors s c).nfields f))
         (CtxCat.ctorFields h.toIndData s c).as.ctx : .prop := by
-  rw [CtxCat.ctorFields_get_recursive, Ctor.recursiveFieldExpr_eq]
+  rw [CtxCat.ctorFields_get_recursive]
   have hparams (p : Fin ι.nparams) :
       E[(CtxCat.ctorFieldTarget h.toIndData s c f).as.ctx] ⊢ₛ
         ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f) :
@@ -155,9 +155,9 @@ theorem recoverMajor_isDirected
     (hmajor : (major.app _ σ.op ρ).IsDirected) :
     ((recoverMajor h s source indexNames indices major).app _ σ.op ρ).IsDirected := by
   by_cases hrel : Level.rel ((E.get η).block.level.inst ls) = true
-  · simpa only [recoverMajor, hrel, Bool.false_eq_true, ↓reduceIte] using hmajor
+  · simpa only [recoverMajor, hrel, ↓reduceIte] using hmajor
   · have hz : (E.get η).block.level.inst ls = .zero := by simpa using hrel
-    simp only [recoverMajor, hrel, Bool.false_eq_true, ↓reduceIte]
+    simp only [recoverMajor, hrel]
     exact proofConstructor_isDirected h hresult hz s
       (σ ≫ source) (fun i => (Tm E ℓ).map σ.op (indexNames i))
       (fun i => (indices i).app _ σ.op ρ) hindices

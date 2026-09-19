@@ -129,7 +129,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
   | trans _ _ ih₁ ih₂ => exact (ih₁ γ hρ).trans (ih₂ γ hρ)
   | @sortDF n Γ l =>
     refine ⟨rfl, ?_⟩
-    simpa [Expr.denote] using sort_mem_succ (l.eval ν)
+    simpa! using sort_mem_succ (l.eval ν)
   | defeqDF _ _ iht ihe =>
     have ht := iht γ hρ
     have he := ihe γ hρ
@@ -166,7 +166,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     have ha := iha γ hρ
     constructor
     · exact congr(Aczel.app $hf.eq $ha.eq)
-    · rw [Expr.denote_inst]
+    · simp
       have h := Aczel.app_mem hf.mem ha.mem
       rwa [app_map ha.mem] at h
   | @beta n Γ e t body bt _ _ ihbody ihe =>
@@ -174,25 +174,23 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     have hbody := ihbody (γ.snoc ε[ν; γ]⟦e⟧) (hρ.snoc he.mem)
     have heq : ε[ν; γ]⟦Expr.app (.lam t body) e⟧ =
         ε[ν; γ]⟦body.inst e⟧ := by
-      simp only [Expr.denote, Expr.denote_inst]
-      exact Aczel.app_lam he.mem
+      simpa! using Aczel.app_lam he.mem
     refine ⟨heq, ?_⟩
-    rw [heq, Expr.denote_inst, Expr.denote_inst]
-    exact hbody.mem
+    simpa [heq] using hbody.mem
   | zeta _ _ _ _ _ ihbody =>
     have hbody := ihbody γ hρ
     refine ⟨?_, ?_⟩
-    · simp [Expr.denote]
-    · simpa [Expr.denote] using hbody.mem
+    · simp!
+    · simpa! using hbody.mem
   | @eta n Γ e t bt _ ihe =>
     have he := ihe γ hρ
     have heq : ε[ν; γ]⟦Expr.lam t (.app e.wk (.var (Fin.last n)))⟧ =
         ε[ν; γ]⟦e⟧ := by
-      simpa [Expr.denote] using Aczel.lam_app he.mem
+      simpa! using Aczel.lam_app he.mem
     exact ⟨heq, heq ▸ he.mem⟩
   | @constDF n nlevels kind Γ η ls =>
     refine ⟨rfl, ?_⟩
-    simpa [Expr.denote] using hdecl η ls
+    simpa! using hdecl η ls
   | indDF _ _ ihps ihis =>
     exact hrule.ind ho (fun p => ihps p γ hρ) fun i => ihis i γ hρ
   | ctorDF _ _ _ ihps ihfields ihrecFields =>

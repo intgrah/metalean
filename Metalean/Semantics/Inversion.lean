@@ -31,8 +31,7 @@ theorem DefeqStrong.ind_model_inv (ho : E.Ordered) {ι : IndSig}
   have hI₁ := IndTyping.ofTyping (Γ₁ := ⟨Δ, hΔ⟩) hB h.left
   have hI₂ := IndTyping.ofTyping (Γ₁ := ⟨Δ, hΔ⟩) hB h.right
   have heq := (h.rawSoundness ho hΔ).equal (𝟙 _) (fun _ ↦ ⊥) (hΔ.bottom_admissible ho (𝟙 _))
-  rw [rawInterpret_ind_typed _ hI₁ hB, rawInterpret_ind_typed _ hI₂ hB, RawFamily.ind_value,
-    RawFamily.ind_value] at heq
+  rw [rawInterpret_ind_typed _ hI₁ hB, rawInterpret_ind_typed _ hI₂ hB] at heq
   have hcode := RawValue.code_eq_of_ind_eq heq
   simp [IndTyping.code] at hcode
   exact ⟨hcode.1,

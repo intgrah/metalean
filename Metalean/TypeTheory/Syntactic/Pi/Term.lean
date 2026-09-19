@@ -219,10 +219,10 @@ theorem map_apply (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) �
     refine Eq.trans ?_ (T.eval_reindex σ A B (Ty.comprehension_type_eq hT)).symm
     rw [← hC]
     rfl
-  rw [apply_eq A B n m h hm T hT C hC hf ha hnf hma, map_label]
+  rw [apply_eq A B n m h hm T hT C hC hf ha hnf hma]
   refine Eq.trans ?_ (apply_eq _ _ _ _ h' hm' (T.reindex σ) hTσ _ hCσ (hf.substitution σ.typed)
-    (ha.substitution σ.typed) (by rw [hnf, map_label]; exact label_congr rfl)
-    (by rw [hma, map_label]; exact label_congr rfl)).symm
+    (ha.substitution σ.typed) (by rw [hnf]; exact label_congr rfl)
+    (by rw [hma]; exact label_congr rfl)).symm
   exact label_congr (Expr.inst_subst _ _ _)
 
 end Tm

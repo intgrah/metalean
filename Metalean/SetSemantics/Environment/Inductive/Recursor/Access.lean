@@ -174,7 +174,6 @@ theorem large_argAgree
         have hleftValue := hleftDenotes index
         have hrightValue := hrightDenotes index
         rw [hvar] at hleftValue hrightValue
-        change ε₁[_]⟦.var (Fin.natAdd ι.nparams f)⟧ = _ at hleftValue hrightValue
         exact hleftValue.trans ((congrFun htargetValues index).trans hrightValue.symm)
   rw [← show ordinary.values vps leftArgs = ordinary.values vps rightArgs from hfields]
     at hrightTail
@@ -200,7 +199,6 @@ theorem large_key_accessible
   have happroximation : approximation ⊆ block := fun _ hentry =>
     (mem_sep.mp hentry).1
   have hblock : block ⊆ approximation := by
-    change lfp model.toModel.bound (indOp model.toModel.codes vps) ⊆ approximation
     refine lfp_least (fun _ hentry => lfp_subset (happroximation hentry))
       fun current hcurrent => ?_
     have ⟨s₁, c₁, vargs, hargs, hcurrentEq⟩ := mem_indOp.mp hcurrent

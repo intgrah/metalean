@@ -96,7 +96,7 @@ def StructWitness.map {code : IndCode Γ₁} {c : Fin code.toIndHead.nctors}
   · intro p
     change Tm.label Γ₂.as (htyped p) =
       (Tm E ℓ).map (RawCtx.toCtx.map σ).op (code.params p)
-    rw [← w.params_eq p, Tm.map_label]
+    rw [← w.params_eq p]
     exact Tm.label_congr (Inductive.paramType_subst (I := (E.get code.η).block)
       (ls := code.ls) (ps := w.params) p σ.subst).symm
   · rw [Tm.type_map, w.guard]
@@ -159,7 +159,6 @@ theorem projOfCode_ctor_label {code : IndCode Γ} {c : Fin code.toIndHead.nctors
   trans proj w.struct w.block code.ls w.params w.typed f (label Γ.as hmaj) rfl
   · rw [projOfCode_eq_proj hg w f]
     congr
-  rw [proj_label]
   have hiota (current : Fin (code.ι.ctors code.s c).nfields) :=
     w.struct.projTerm_ctorStrong w.block current fds Γ.as.wf w.typed hmaj hfields
   have hprojected : ∀ current : Fin (code.ι.ctors code.s c).nfields,

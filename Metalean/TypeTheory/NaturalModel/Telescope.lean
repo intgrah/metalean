@@ -116,7 +116,6 @@ def TeleSect.ofFam {Γ Δ : C} (σ : Δ ⟶ Γ) :
       fun k => Sect.convert (by simp)
         (Sect.pullbackAlong (disp (y σ ≫ A 0)) (s k.succ))
     ⟨(s 0).hom ≫ t.hom, by
-      simp [Tele.ofFam, dispTele, reassoc_of% t.hom_disp]
-      exact (s 0).hom_disp⟩
+      simpa [Tele.ofFam, reassoc_of% t.hom_disp] using (s 0).hom_disp⟩
 
 end Metalean.TypeTheory.NaturalModel

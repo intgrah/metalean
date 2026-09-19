@@ -159,7 +159,7 @@ private theorem denote_snoc_lift {m n : Nat} (γ : Fin n → ZFSet) (ρ : Ren m 
   rw [wk, denote_wkFrom]
   congr 1
   funext v
-  simp [Ren.wkFrom, v.isLt]
+  simp
 
 @[simp] theorem denote_wkN {n k : Nat} (γ : Fin (n + k) → ZFSet) (e : Expr ζ ℓ n) :
     ε[ν; γ]⟦e.wkN k⟧ = ε[ν; fun v => γ (v.castAdd k)]⟦e⟧ := by
@@ -204,7 +204,7 @@ private theorem denote_substLift {m n : Nat} (γ : Fin n → ZFSet) (σ : Subst 
     ε[ν; γ]⟦e.apps args⟧ = Aczel.apps ε[ν; γ]⟦e⟧
       (ε[ν; γ]⟦args ·⟧) := by
   induction args using Fin.snocInduction generalizing e with
-  | elim0 => simp [apps, Aczel.apps]
+  | elim0 => simp [Aczel.apps]
   | snoc args arg ih =>
     have h := Fin.comp_snoc (denote ε ν γ) args arg
     simp only [Function.comp_def] at h
