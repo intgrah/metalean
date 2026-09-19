@@ -14,7 +14,7 @@ import Metalean.Syntax.Substitution
 namespace Metalean.DefeqStrong
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
-  {e e₁ e₂ t t₁ α r β f a α₂ r₂ β₂ f₂ h₂ a₂ : Expr ζ ℓ n}
+  {e t t₁ α r β f a α₂ r₂ β₂ f₂ h₂ a₂ : Expr ζ ℓ n}
   {e' t' : Expr ζ ℓ (n + 1)} {η : Head ζ .quot} {l l₁ l₂ u : Level ℓ}
 
 local macro "rigid " h:Lean.Parser.Tactic.elimTarget : tactic => `(tactic|
@@ -23,19 +23,29 @@ local macro "rigid " h:Lean.Parser.Tactic.elimTarget : tactic => `(tactic|
       | (cases hside; done)
       | solve_by_elim [Or.inl, Or.inr])
 
-theorem var_inv {v : Var n} (he : e₁ = .var v ∨ e₂ = .var v) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem var_inv {v : Var n} :
+    E[Γ] ⊢ₛ .var v : t →
     E[Γ] ⊢ₛ t ≡ Γ.get v typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n} {v : Var n},
+      e₁ = .var v ∨ e₂ = .var v →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ t ≡ Γ.get v typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t v he h
   induction h with
   | var => rcases he with he | he <;> cases he <;> exact .ofDefEq ‹_›
   | defeqDF ht _ _ ihe => exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
   | _ => rigid he
 
-theorem sort_inv (he : e₁ = .sort l ∨ e₂ = .sort l) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem sort_inv :
+    E[Γ] ⊢ₛ .sort l : t →
     E[Γ] ⊢ₛ t ≡ .sort (.succ l) typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n},
+      e₁ = .sort l ∨ e₂ = .sort l →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ t ≡ .sort (.succ l) typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t he h
   induction h with
   | sortDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
@@ -43,13 +53,22 @@ theorem sort_inv (he : e₁ = .sort l ∨ e₂ = .sort l) :
     exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
   | _ => rigid he
 
-theorem forallE_ty_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem forallE_ty_inv :
+    E[Γ] ⊢ₛ .forallE t₁ t' : t →
     ∃ l₁ l₂ : Level ℓ,
       E[Γ] ⊢ₛ t₁ : .sort l₁ ∧
       E[Γ.snoc t₁] ⊢ₛ t' : .sort l₂ ∧
       E[Γ] ⊢ₛ t ≡ .sort (.imax l₁ l₂) typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t t₁ : Expr ζ ℓ n}
+      {t' : Expr ζ ℓ (n + 1)},
+      e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t' →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ l₁ l₂ : Level ℓ,
+        E[Γ] ⊢ₛ t₁ : .sort l₁ ∧
+        E[Γ.snoc t₁] ⊢ₛ t' : .sort l₂ ∧
+        E[Γ] ⊢ₛ t ≡ .sort (.imax l₁ l₂) typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t t₁ t' he h
   induction h with
   | forallEDF ht ht' ht₂' =>
     rcases he with he | he <;> cases he
@@ -63,10 +82,15 @@ theorem forallE_ty_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t'
 theorem const_inv {kind nlevels}
     {η : Head ζ (.const kind nlevels)}
     {ls : Fin nlevels → Level ℓ}
-    (he : e₁ = .const η ls ∨ e₂ = .const η ls) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+    :
+    E[Γ] ⊢ₛ .const η ls : t →
     E[Γ] ⊢ₛ t ≡ ((E.get η).constType.instL ls).wkClosed typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n},
+      e₁ = .const η ls ∨ e₂ = .const η ls →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ t ≡ ((E.get η).constType.instL ls).wkClosed typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t he h
   induction h with
   | delta htype _ _ ih =>
     rcases he with he | he
@@ -94,10 +118,8 @@ variable {ι : IndSig} {η : Head ζ (.inductive ι)}
   {mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
   {maj₂ : Expr ζ ℓ n}
 
-theorem ctor_inv
-    (he : e₁ = .ctor η s c ls ps₂ fds₂ recFds₂ ∨
-      e₂ = .ctor η s c ls ps₂ fds₂ recFds₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem ctor_inv :
+    E[Γ] ⊢ₛ .ctor η s c ls ps₂ fds₂ recFds₂ : t →
     ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
       (fds₁ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n)
       (recFds₁ : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n),
@@ -122,7 +144,38 @@ theorem ctor_inv
       E[Γ] ⊢ₛ t ≡ .ind η s ls ps₁
         (fun i => ((E.get η).block.ctors s c).targetIndex
           ls ps₁ fds₁ i) typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
+      {ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+      {fds₂ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
+      {recFds₂ : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n},
+      e₁ = .ctor η s c ls ps₂ fds₂ recFds₂ ∨ e₂ = .ctor η s c ls ps₂ fds₂ recFds₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
+        (fds₁ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n)
+        (recFds₁ : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n),
+        (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
+          (E.get η).block.paramType ls ps₁ p) ∧
+        (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
+          ((((E.get η).block.ctors s c).ordinaryType f).instL
+            ls).subst
+            (Fin.append ps₁ fun previous : Fin f.val =>
+              fds₁ (previous.castLE f.isLt.le))) ∧
+        (∀ f, E[Γ] ⊢ₛ recFds₁ f ≡ recFds₂ f :
+          (((E.get η).block.ctors s c).recursive f).instantiatedType
+            η ls ps₁
+            (Fin.append ps₁ fds₁)) ∧
+        E[Γ] ⊢ₛ .ind η s ls ps₁
+            (fun i => ((E.get η).block.ctors s c).targetIndex
+              ls ps₁ fds₁ i) ≡
+          .ind η s ls ps₂
+            (fun i => ((E.get η).block.ctors s c).targetIndex
+              ls ps₂ fds₂ i) :
+            .sort ((E.get η).block.level.inst ls) ∧
+        E[Γ] ⊢ₛ t ≡ .ind η s ls ps₁
+          (fun i => ((E.get η).block.ctors s c).targetIndex
+            ls ps₁ fds₁ i) typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t ps₂ fds₂ recFds₂ he h
   induction h with
   | ctorDF hps hfields hrecFields _ _ htype =>
     rcases he with he | he <;> cases he
@@ -140,10 +193,8 @@ theorem ctor_inv
       hfields, hrecFields, hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
-theorem recr_inv
-    (he : e₁ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ ∨
-      e₂ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem recr_inv :
+    E[Γ] ⊢ₛ .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ : t →
     ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
       (ms₁ : Fin ι.nsorts → Expr ζ ℓ n)
       (mins₁ : (s : Fin ι.nsorts) →
@@ -165,7 +216,35 @@ theorem recr_inv
         Inductive.motiveResult (ms₂ s) is₂ maj₂ : .sort l ∧
       E[Γ] ⊢ₛ t ≡
         Inductive.motiveResult (ms₁ s) is₁ maj₁ typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
+      {ps₂ : Fin ι.nparams → Expr ζ ℓ n} {ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
+      {mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
+      {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n} {maj₂ : Expr ζ ℓ n},
+      e₁ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ ∨ e₂ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
+        (ms₁ : Fin ι.nsorts → Expr ζ ℓ n)
+        (mins₁ : (s : Fin ι.nsorts) →
+          Fin (ι.nctors s) → Expr ζ ℓ n)
+        (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n)
+        (maj₁ : Expr ζ ℓ n),
+        (E.get η).block.RecAllowed l ∧
+        (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
+          (E.get η).block.paramType ls ps₁ p) ∧
+        (∀ s, E[Γ] ⊢ₛ ms₁ s ≡ ms₂ s :
+          (E.get η).block.motiveType η ls ps₁ l s) ∧
+        (∀ s c,
+          E[Γ] ⊢ₛ mins₁ s c ≡ mins₂ s c :
+            (E.get η).block.caseFnType η ls ps₁ ms₁ s c) ∧
+        (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i :
+          (E.get η).block.indexType ls s ps₁ is₁ i) ∧
+        E[Γ] ⊢ₛ maj₁ ≡ maj₂ : .ind η s ls ps₁ is₁ ∧
+        E[Γ] ⊢ₛ Inductive.motiveResult (ms₁ s) is₁ maj₁ ≡
+          Inductive.motiveResult (ms₂ s) is₂ maj₂ : .sort l ∧
+        E[Γ] ⊢ₛ t ≡
+          Inductive.motiveResult (ms₁ s) is₁ maj₁ typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t ps₂ ms₂ mins₂ is₂ maj₂ he h
   induction h with
   | recrDF hallowed hps hms hmins his hmaj hresult =>
     rcases he with he | he <;> cases he
@@ -187,10 +266,8 @@ theorem recr_inv
       hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
-theorem ind_inv
-    (he : e₁ = .ind η s ls ps₂ is₂ ∨
-      e₂ = .ind η s ls ps₂ is₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem ind_inv :
+    E[Γ] ⊢ₛ .ind η s ls ps₂ is₂ : t →
     ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
       (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n),
       (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
@@ -198,7 +275,19 @@ theorem ind_inv
       (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i :
         (E.get η).block.indexType ls s ps₁ is₁ i) ∧
       E[Γ] ⊢ₛ t ≡ .sort ((E.get η).block.level.inst ls) typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
+      {ps₂ : Fin ι.nparams → Expr ζ ℓ n} {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n},
+      e₁ = .ind η s ls ps₂ is₂ ∨ e₂ = .ind η s ls ps₂ is₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
+        (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n),
+        (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
+          (E.get η).block.paramType ls ps₁ p) ∧
+        (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i :
+          (E.get η).block.indexType ls s ps₁ is₁ i) ∧
+        E[Γ] ⊢ₛ t ≡ .sort ((E.get η).block.level.inst ls) typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t ps₂ is₂ he h
   induction h with
   | indDF hps his =>
     rcases he with he | he <;> cases he
@@ -215,11 +304,15 @@ theorem ind_inv
 
 end Inductive
 
-theorem quot_inv
-    (he : e₁ = .quot η l α r ∨ e₂ = .quot η l α r) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quot_inv :
+    E[Γ] ⊢ₛ .quot η l α r : t →
     E[Γ] ⊢ₛ t ≡ .sort l typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t α r : Expr ζ ℓ n},
+      e₁ = .quot η l α r ∨ e₂ = .quot η l α r →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ t ≡ .sort l typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t α r he h
   induction h with
   | quotDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
@@ -227,10 +320,8 @@ theorem quot_inv
     exact (IsTypeEq.ofDefEq ht).symm.trans (ih he)
   | _ => rigid he
 
-theorem quotInd_prem
-    (he : e₁ = .quotInd η l α₂ r₂ β₂ f₂ a₂ ∨
-      e₂ = .quotInd η l α₂ r₂ β₂ f₂ a₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quotInd_prem :
+    E[Γ] ⊢ₛ .quotInd η l α₂ r₂ β₂ f₂ a₂ : t →
     ∃ α₁ r₁ β₁ f₁ a₁ : Expr ζ ℓ n,
       E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l ∧
       E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
@@ -239,7 +330,20 @@ theorem quotInd_prem
       E[Γ] ⊢ₛ a₁ ≡ a₂ : .quot η l α₁ r₁ ∧
       E[Γ] ⊢ₛ .app β₁ a₁ ≡ .app β₂ a₂ : .prop ∧
       E[Γ] ⊢ₛ t ≡ .app β₁ a₁ typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
+      {α₂ r₂ β₂ f₂ a₂ : Expr ζ ℓ n},
+      e₁ = .quotInd η l α₂ r₂ β₂ f₂ a₂ ∨ e₂ = .quotInd η l α₂ r₂ β₂ f₂ a₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ α₁ r₁ β₁ f₁ a₁ : Expr ζ ℓ n,
+        E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l ∧
+        E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
+        E[Γ] ⊢ₛ β₁ ≡ β₂ : Quot.motiveType η l α₁ r₁ ∧
+        E[Γ] ⊢ₛ f₁ ≡ f₂ : Quot.minorType η l α₁ r₁ β₁ ∧
+        E[Γ] ⊢ₛ a₁ ≡ a₂ : .quot η l α₁ r₁ ∧
+        E[Γ] ⊢ₛ .app β₁ a₁ ≡ .app β₂ a₂ : .prop ∧
+        E[Γ] ⊢ₛ t ≡ .app β₁ a₁ typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t α₂ r₂ β₂ f₂ a₂ he h
   induction h with
   | quotIndDF hα hr hβ he ha hresult =>
     rcases he with he | he <;> cases he
@@ -255,15 +359,23 @@ theorem quotInd_prem
       (IsTypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
-theorem quotMk_prem
-    (he : e₁ = .quotMk η l α₂ r₂ a₂ ∨ e₂ = .quotMk η l α₂ r₂ a₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quotMk_prem :
+    E[Γ] ⊢ₛ .quotMk η l α₂ r₂ a₂ : t →
     ∃ α₁ r₁ a₁ : Expr ζ ℓ n,
       E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l ∧
       E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
       E[Γ] ⊢ₛ a₁ ≡ a₂ : α₁ ∧
       E[Γ] ⊢ₛ t ≡ .quot η l α₁ r₁ typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t α₂ r₂ a₂ : Expr ζ ℓ n},
+      e₁ = .quotMk η l α₂ r₂ a₂ ∨ e₂ = .quotMk η l α₂ r₂ a₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ α₁ r₁ a₁ : Expr ζ ℓ n,
+        E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l ∧
+        E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
+        E[Γ] ⊢ₛ a₁ ≡ a₂ : α₁ ∧
+        E[Γ] ⊢ₛ t ≡ .quot η l α₁ r₁ typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t α₂ r₂ a₂ he h
   induction h with
   | quotMkDF hα hr ha =>
     rcases he with he | he <;> cases he
@@ -278,10 +390,8 @@ theorem quotMk_prem
       (IsTypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
-theorem quotLift_prem
-    (he : e₁ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ ∨
-      e₂ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quotLift_prem :
+    E[Γ] ⊢ₛ .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ : t →
     ∃ α₁ r₁ β₁ f₁ h₁ a₁ : Expr ζ ℓ n,
       E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l₁ ∧
       E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
@@ -291,7 +401,22 @@ theorem quotLift_prem
         Quot.compatType (E.get η).eqHead l₂ α₁ r₁ β₁ f₁ ∧
       E[Γ] ⊢ₛ a₁ ≡ a₂ : .quot η l₁ α₁ r₁ ∧
       E[Γ] ⊢ₛ t ≡ β₁ typ := by
-  intro hd
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
+      {α₂ r₂ β₂ f₂ h₂ a₂ : Expr ζ ℓ n},
+      e₁ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ ∨
+        e₂ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ α₁ r₁ β₁ f₁ h₁ a₁ : Expr ζ ℓ n,
+        E[Γ] ⊢ₛ α₁ ≡ α₂ : .sort l₁ ∧
+        E[Γ] ⊢ₛ r₁ ≡ r₂ : Quot.relType α₁ ∧
+        E[Γ] ⊢ₛ β₁ ≡ β₂ : .sort l₂ ∧
+        E[Γ] ⊢ₛ f₁ ≡ f₂ : .forallE α₁ β₁.wk ∧
+        E[Γ] ⊢ₛ h₁ ≡ h₂ :
+          Quot.compatType (E.get η).eqHead l₂ α₁ r₁ β₁ f₁ ∧
+        E[Γ] ⊢ₛ a₁ ≡ a₂ : .quot η l₁ α₁ r₁ ∧
+        E[Γ] ⊢ₛ t ≡ β₁ typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t α₂ r₂ β₂ f₂ h₂ a₂ he hd
   induction hd with
   | quotLiftDF hα hr hβ he hcompatType hcompat ha =>
     rcases he with he | he <;> cases he
@@ -320,29 +445,31 @@ theorem quotLift_prem
     · exact ih (Or.inl he)
   | _ => rigid he
 
-theorem quotMk_inv
-    (he : e₁ = .quotMk η l α r a ∨ e₂ = .quotMk η l α r a) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quotMk_inv :
+    E[Γ] ⊢ₛ .quotMk η l α r a : t →
     E[Γ] ⊢ₛ t ≡ .quot η l α r typ := by
   intro h
-  have ⟨_, _, _, hα, hr, _, hres⟩ := h.quotMk_prem he
+  have ⟨_, _, _, hα, hr, _, hres⟩ := h.quotMk_prem
   exact hres.trans (.ofDefEq (.quotDF hα hr))
 
-theorem quotLift_inv {h : Expr ζ ℓ n}
-    (he : e₁ = .quotLift η l₁ l₂ α r β f h a ∨
-      e₂ = .quotLift η l₁ l₂ α r β f h a) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quotLift_inv {h : Expr ζ ℓ n} :
+    E[Γ] ⊢ₛ .quotLift η l₁ l₂ α r β f h a : t →
     E[Γ] ⊢ₛ t ≡ β typ := by
   intro hd
   have ⟨_, _, _, _, _, _, _, _, hβ, _, _, _, hres⟩ :=
-    hd.quotLift_prem he
+    hd.quotLift_prem
   exact hres.trans (.ofDefEq hβ)
 
-theorem forallE_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ₛ t₁ typ ∧
-    E[Γ.snoc t₁] ⊢ₛ t' typ := by
-  intro h
+theorem forallE_inv :
+    E[Γ] ⊢ₛ .forallE t₁ t' : t →
+    E[Γ] ⊢ₛ t₁ typ ∧ E[Γ.snoc t₁] ⊢ₛ t' typ := by
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t t₁ : Expr ζ ℓ n}
+      {t' : Expr ζ ℓ (n + 1)},
+      e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t' →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ t₁ typ ∧ E[Γ.snoc t₁] ⊢ₛ t' typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t t₁ t' he h
   induction h with
   | forallEDF ht₁ ht' ht₂' =>
     rcases he with he | he <;> cases he
@@ -350,10 +477,15 @@ theorem forallE_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
     · exact ⟨⟨_, ht₁.right⟩, ⟨_, ht₂'.right⟩⟩
   | _ => rigid he
 
-theorem quot_formation_inv (he : e₁ = .quot η u α r ∨ e₂ = .quot η u α r) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem quot_formation_inv :
+    E[Γ] ⊢ₛ .quot η u α r : t →
     E[Γ] ⊢ₛ α : .sort u ∧ E[Γ] ⊢ₛ r : Quot.relType α := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t α r : Expr ζ ℓ n},
+      e₁ = .quot η u α r ∨ e₂ = .quot η u α r →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ α : .sort u ∧ E[Γ] ⊢ₛ r : Quot.relType α from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t α r he h
   induction h with
   | quotDF hα hr =>
     rcases he with he | he <;> cases he
@@ -362,13 +494,21 @@ theorem quot_formation_inv (he : e₁ = .quot η u α r ∨ e₂ = .quot η u α
         .defeqDF (Quot.relType_congr hα) hr.right⟩
   | _ => rigid he
 
-theorem app_inv (hd : e₁ = .app f e ∨ e₂ = .app f e) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem app_inv :
+    E[Γ] ⊢ₛ .app f e : t →
     ∃ (t₁ : Expr ζ ℓ n) (t' : Expr ζ ℓ (n + 1)),
     E[Γ] ⊢ₛ f : .forallE t₁ t' ∧
     E[Γ] ⊢ₛ e : t₁ ∧
     E[Γ] ⊢ₛ t ≡ t'.inst e typ := by
-  intro h
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t f e : Expr ζ ℓ n},
+      e₁ = .app f e ∨ e₂ = .app f e →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      ∃ (t₁ : Expr ζ ℓ n) (t' : Expr ζ ℓ (n + 1)),
+      E[Γ] ⊢ₛ f : .forallE t₁ t' ∧
+      E[Γ] ⊢ₛ e : t₁ ∧
+      E[Γ] ⊢ₛ t ≡ t'.inst e typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t f e hd h
   induction h with
   | etaStruct _ _ _ _ _ ih _ =>
     rcases hd with hd | hd
@@ -390,15 +530,26 @@ theorem app_inv (hd : e₁ = .app f e ∨ e₂ = .app f e) :
     · exact ihresult (Or.inl hd)
   | _ => rigid hd
 
-theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .letE t₁ v e') :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem letE_inv {v : Expr ζ ℓ n} :
+    E[Γ] ⊢ₛ .letE t₁ v e' : t →
     E[Γ] ⊢ₛ ok →
     ∃ r : Expr ζ ℓ n,
     E[Γ] ⊢ₛ t₁ typ ∧
     E[Γ] ⊢ₛ v : t₁ ∧
     E[Γ] ⊢ₛ e'.inst v : r ∧
     E[Γ] ⊢ₛ t ≡ r typ := by
-  intro h hΓ
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t t₁ v : Expr ζ ℓ n}
+      {e' : Expr ζ ℓ (n + 1)},
+      e₁ = .letE t₁ v e' ∨ e₂ = .letE t₁ v e' →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ ok →
+      ∃ r : Expr ζ ℓ n,
+      E[Γ] ⊢ₛ t₁ typ ∧
+      E[Γ] ⊢ₛ v : t₁ ∧
+      E[Γ] ⊢ₛ e'.inst v : r ∧
+      E[Γ] ⊢ₛ t ≡ r typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t t₁ v e' he h hΓ
   induction h with
   | defeqDF ht _ _ ih =>
     have ⟨t', ht₁, hv, he', hinst⟩ := ih he hΓ
@@ -414,13 +565,22 @@ theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .le
     · exact ih (Or.inl he) hΓ
   | _ => rigid he
 
-theorem lam_inv (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+theorem lam_inv :
+    E[Γ] ⊢ₛ .lam t₁ e' : t →
     E[Γ] ⊢ₛ ok →
     ∃ t' : Expr ζ ℓ (n + 1),
     E[Γ.snoc t₁] ⊢ₛ e' : t' ∧
     E[Γ] ⊢ₛ t ≡ .forallE t₁ t' typ := by
-  intro h hΓ
+  suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t t₁ : Expr ζ ℓ n}
+      {e' : Expr ζ ℓ (n + 1)},
+      e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e' →
+      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ₛ ok →
+      ∃ t' : Expr ζ ℓ (n + 1),
+      E[Γ.snoc t₁] ⊢ₛ e' : t' ∧
+      E[Γ] ⊢ₛ t ≡ .forallE t₁ t' typ from
+    hgen (Or.inl rfl)
+  intro n Γ e₁ e₂ t t₁ e' he h hΓ
   induction h with
   | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | forallEDF
   | quotDF | quotMkDF | quotLiftDF | quotIndDF | quotIota | delta =>

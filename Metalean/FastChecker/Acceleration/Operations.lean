@@ -145,7 +145,7 @@ theorem RedSpec.succArg {G : FCtx} {I : FInductive} {x y : FExpr}
     rw [hls0, hps0, hfds0]
     exact congr(Expr.ctor ηNat 0 1 ![] ![] ![] $hrec0)
   rw [heq] at he ⊢
-  have ⟨ps₁, fds₁, _, _, _, hrecTy, _⟩ := DefeqStrong.ctor_inv (Or.inl rfl) he
+  have ⟨ps₁, fds₁, _, _, _, hrecTy, _⟩ := he.ctor_inv
   obtain rfl : ps₁ = ![] := Fin.emptyFun _ _
   obtain rfl : fds₁ = ![] := Fin.emptyFun _ _
   have hty : ∀ f : Fin (Literals.Nat.sig.ctors 0 1).nrecFields,

@@ -380,7 +380,7 @@ partial def inferCore (G : FCtx) :
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
           have ⟨_, hindTy⟩ := hmaj₂.regular
-          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv (Or.inl rfl)
+          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
           have hB := (hS.ordered.entryWFStrong η₀).block
           have hind : E[Γ] ⊢ₛ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
               .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
@@ -745,7 +745,7 @@ partial def inferOnlyCore (G : FCtx) :
         have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
         cases hη.symm.trans hη₀
         have ⟨_, hl, hleq⟩ := hI.levelInst hls hls'
-        have ⟨_, _, _, _, ht⟩ := he.ind_inv (Or.inl rfl)
+        have ⟨_, _, _, _, ht⟩ := he.ind_inv
         refine ⟨_, .sort hl, ?_⟩
         rw [hleq]
         exact ht.convStrong he⟩
@@ -772,7 +772,7 @@ partial def inferOnlyCore (G : FCtx) :
         have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
         have hfdsA : ArgsDenote L ⟨_, _⟩ fds _ := ⟨hfds', hfds''⟩
         have hB := (hS.ordered.entryWFStrong η₀).block
-        have ⟨_, _, _, hpsw, hfdsw, _, _, ht⟩ := he.ctor_inv (Or.inl rfl)
+        have ⟨_, _, _, hpsw, hfdsw, _, _, ht⟩ := he.ctor_inv
         have hind := DefeqStrong.indDF hpsw fun i =>
           (hB.ctors _ _).targetIndex_congr hB.params i hpsw hfdsw
         exact ⟨_, .ind hls hps' hcd.instTargetIndices_size hη rfl hls' hps''
@@ -786,22 +786,22 @@ partial def inferOnlyCore (G : FCtx) :
         his'' hmajd := hden
       subst hs'
       have hB := (hS.ordered.entryWFStrong η).block
-      have ⟨_, _, _, _, _, _, hpsw, hmsw, _, hisw, hmajw, _, ht⟩ := he.recr_inv (Or.inl rfl)
+      have ⟨_, _, _, _, _, _, hpsw, hmsw, _, hisw, hmajw, _, ht⟩ := he.recr_inv
       have hres := hB.motiveResult_congr hS.wf hpsw hmsw hisw hmajw
       exact ⟨_, (hms'' s').motiveResult his' his'' hmajd,
         (ht.trans (.ofDefEq hres)).convStrong he⟩⟩
   | .quot pos l α r =>
     pure ⟨.sort l, fun {_ _ _ _ _ _} _ (.quot _ hl _ _) he =>
-      ⟨_, .sort hl, (he.quot_inv (Or.inl rfl)).convStrong he⟩⟩
+      ⟨_, .sort hl, he.quot_inv.convStrong he⟩⟩
   | .quotMk pos l α r a =>
     pure ⟨.quot pos l α r, fun {_ _ _ _ _ _} _ (.quotMk hη hl hαd hrd _) he =>
-      ⟨_, .quot hη hl hαd hrd, (he.quotMk_inv (Or.inl rfl)).convStrong he⟩⟩
+      ⟨_, .quot hη hl hαd hrd, he.quotMk_inv.convStrong he⟩⟩
   | .quotLift pos l₁ l₂ α r β f h a =>
     pure ⟨β, fun {_ _ _ _ _ _} _ (.quotLift _ _ _ _ _ hβd _ _ _) he =>
-      ⟨_, hβd, (he.quotLift_inv (Or.inl rfl)).convStrong he⟩⟩
+      ⟨_, hβd, he.quotLift_inv.convStrong he⟩⟩
   | .quotInd pos l α r β f a =>
     pure ⟨.app β a, fun {_ _ _ _ _ _} _ (.quotInd _ _ _ _ hβd _ had) he =>
-      have ⟨_, _, _, _, _, _, _, _, _, _, hres, ht⟩ := he.quotInd_prem (Or.inl rfl)
+      have ⟨_, _, _, _, _, _, _, _, _, _, hres, ht⟩ := he.quotInd_prem
       ⟨_, .app hβd had, (ht.trans (.ofDefEq hres)).convStrong he⟩⟩
   | .proj pos s idx e => do
     let ⟨te, hte⟩ ← inferOnly G e
@@ -821,7 +821,7 @@ partial def inferOnlyCore (G : FCtx) :
           subst hs' hidx'
           have he' := he
           rw [Inductive.IsStructure.projTerm_eq_recr] at he'
-          have ⟨_, _, _, _, _, _, _, _, _, _, hmajw, _, _⟩ := he'.recr_inv (Or.inl rfl)
+          have ⟨_, _, _, _, _, _, _, _, _, _, hmajw, _, _⟩ := he'.recr_inv
           have ⟨_, hted, hety⟩ := hte hS hed hmajw.right
           have ⟨_, hu⟩ := hety.regular
           have hred : RedSpec L F ℓ G te (.ind pos₂ s'.val ls₂ ps₂ is₂) := hq ▸ ht
@@ -833,7 +833,7 @@ partial def inferOnlyCore (G : FCtx) :
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
           have ⟨_, hindTy⟩ := hmaj₂.regular
-          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv (Or.inl rfl)
+          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
           have hB := (hS.ordered.entryWFStrong η₀).block
           have hind : E[Γ] ⊢ₛ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
               .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
@@ -899,9 +899,9 @@ partial def inferOnlyLamTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       subst hn
       have .lam htd hbd := hden
       have hd := htd.openBVars (base := G.size - k) (by omega)
-      have ⟨_, hb', hchain⟩ := he.lam_inv (Or.inl rfl) hS.wf
+      have ⟨_, hb', hchain⟩ := he.lam_inv hS.wf
       have ⟨_, hpi⟩ := hchain.isType.2
-      have ⟨_, hts⟩ := (hpi.forallE_inv (Or.inl rfl)).1
+      have ⟨_, hts⟩ := hpi.forallE_inv.1
       have ⟨_, htb', hbty⟩ := hr (hS.snoc hd hts) hbd hb'
       have ⟨_, htb''⟩ := hbty.regular
       simp only [Array.size_push] at htb'
@@ -934,7 +934,7 @@ partial def inferOnlyPiTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       subst hn
       have .forallE htd hbd := hden
       have hd := htd.openBVars (base := G.size - k) (by omega)
-      have ⟨⟨_, ht₀⟩, ⟨_, hb₀⟩⟩ := he.forallE_inv (Or.inl rfl)
+      have ⟨⟨_, ht₀⟩, ⟨_, hb₀⟩⟩ := he.forallE_inv
       have ⟨_, htt', htty⟩ := htt hS hd ht₀
       have ⟨_, hl₁', hconv₁⟩ := hl₁ hS htt' htty.regular
       have hts := hconv₁.convStrong htty
@@ -984,12 +984,12 @@ partial def isDefEqLamTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       subst hn
       have .lam hdt₁ hb₁ := hd₁
       have .lam hdt₂ hb₂ := hd₂
-      have ⟨_, hb₁', hchain₁⟩ := he₁.lam_inv (Or.inl rfl) hS.wf
-      have ⟨_, hb₂', hchain₂⟩ := he₂.lam_inv (Or.inl rfl) hS.wf
+      have ⟨_, hb₁', hchain₁⟩ := he₁.lam_inv hS.wf
+      have ⟨_, hb₂', hchain₂⟩ := he₂.lam_inv hS.wf
       have ⟨_, hpi₁⟩ := hchain₁.isType.2
       have ⟨_, hpi₂⟩ := hchain₂.isType.2
-      have ht₁ := (hpi₁.forallE_inv (Or.inl rfl)).1
-      have ht₂ := (hpi₂.forallE_inv (Or.inl rfl)).1
+      have ht₁ := hpi₁.forallE_inv.1
+      have ht₂ := hpi₂.forallE_inv.1
       have hd := hdom hS hdt₁ hdt₂ ht₁ ht₂
       have ⟨_, ht₁'⟩ := ht₁
       have hb₂'' := ((hd.symm.snocConv hS.ordered hS.wf).mp hb₂'.defeq).toStrongOrdered
@@ -1190,7 +1190,7 @@ partial def toCtorWhenK (G : FCtx) (pos s : Nat) (maj : FExpr) :
               ⟨fun r => (hK.recFields ▸ r : Fin 0).elim0⟩
             have hmajT := (IsTypeEq.ofDefEq hTc).convStrong hty
             have ⟨_, hindTy⟩ := hmajT.regular
-            have ⟨_, _, hpsw, _, hsortEq⟩ := hindTy.ind_inv (Or.inl rfl)
+            have ⟨_, _, hpsw, _, hsortEq⟩ := hindTy.ind_inv
             have hB := (hS.ordered.entryWFStrong η₀).block
             have hpsT p := Inductive.paramType_conv hB p hpsw
             have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
@@ -1281,7 +1281,7 @@ partial def etaStructCore (G : FCtx) (fe₁ : FExpr) :
           have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
           have hind := (IsTypeEq.ofDefEq hc).convStrong hty
           have ⟨_, hindTy⟩ := hind.regular
-          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv (Or.inl rfl)
+          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
           have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWFStrong η₀).block p hpsw
           have heta := Checker.structure_eta hS.ordered hstruct' hS.wf hpsT' hind
           exact ⟨_, FCtor.Denotes.rebuildTerm hls hls' hpsA hη hstruct' hd₁ hcd,
@@ -1344,7 +1344,7 @@ partial def isDefEqUnitLike (G : FCtx) (fe₁ fe₂ : FExpr) :
           ⟨fun f => absurd f.isLt (by omega)⟩
         have hind₁ := (IsTypeEq.ofDefEq hc).convStrong hty₁
         have ⟨_, hindTy⟩ := hind₁.regular
-        have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv (Or.inl rfl)
+        have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
         have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWFStrong η₀).block p hpsw
         have hteq' := hteq hS hdt₁ hdt₂ hty₁.regular hty₂.regular
         have hind₂ := (IsTypeEq.ofDefEq hc).convStrong (hteq'.symm.convStrong hty₂)
@@ -1548,8 +1548,8 @@ partial def isDefEqInd (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (ps
     cases hη₁.symm.trans hη₂
     obtain rfl := Fin.ext (hs₁'.trans hs₂'.symm)
     rw [← hl hls₁ hls₂ hls₁' hls₂'] at he₂ ⊢
-    have ⟨_, _, hpsw₁, hisw₁, _⟩ := he₁.ind_inv (Or.inl rfl)
-    have ⟨_, _, hpsw₂, hisw₂, _⟩ := he₂.ind_inv (Or.inl rfl)
+    have ⟨_, _, hpsw₁, hisw₁, _⟩ := he₁.ind_inv
+    have ⟨_, _, hpsw₂, hisw₂, _⟩ := he₂.ind_inv
     have hps p := (hpsw₁ p).trans (hpsD.down ⟨p.val, by omega⟩ hS (hps₁'' p) (hps₂'' p)
       (hpsw₁ p).right (hpsw₂ p).right)
     have his i := (hisw₁ i).trans (hisD.down ⟨i.val, by omega⟩ hS (his₁'' i) (his₂'' i)
@@ -1579,8 +1579,8 @@ partial def isDefEqCtor (G : FCtx) (pos₁ s₁ c₁ : Nat) (ls₁ : Array FLeve
     obtain rfl := Fin.ext (hc₁'.trans hc₂'.symm)
     rw [← hl hls₁ hls₂ hls₁' hls₂'] at he₂ ⊢
     have hB := (hS.ordered.entryWFStrong η).block
-    have ⟨_, _, _, hpsw₁, hfdsw₁, hrecFdsw₁, hindw₁, _⟩ := he₁.ctor_inv (Or.inl rfl)
-    have ⟨_, _, _, hpsw₂, hfdsw₂, hrecFdsw₂, _, _⟩ := he₂.ctor_inv (Or.inl rfl)
+    have ⟨_, _, _, hpsw₁, hfdsw₁, hrecFdsw₁, hindw₁, _⟩ := he₁.ctor_inv
+    have ⟨_, _, _, hpsw₂, hfdsw₂, hrecFdsw₂, _, _⟩ := he₂.ctor_inv
     have hps p := (hpsw₁ p).trans (hpsD.down ⟨p.val, by omega⟩ hS (hps₁'' p) (hps₂'' p)
       (hpsw₁ p).right (hpsw₂ p).right)
     have hfds f := (hfdsw₁ f).trans (hfdsD.down ⟨f.val, by omega⟩ hS (hfds₁'' f) (hfds₂'' f)
@@ -1624,9 +1624,9 @@ partial def isDefEqRecr (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (l
     rw [← hl hls₁ hls₂ hls₁' hls₂', ← hlv hl₁ hl₂] at he₂ ⊢
     have hB := (hS.ordered.entryWFStrong η).block
     have ⟨_, _, _, _, _, hallowed, hpsw₁, hmsw₁, hminsw₁, hisw₁, hmajw₁, hresw₁, _⟩ :=
-      he₁.recr_inv (Or.inl rfl)
+      he₁.recr_inv
     have ⟨_, _, _, _, _, _, hpsw₂, hmsw₂, hminsw₂, hisw₂, hmajw₂, _, _⟩ :=
-      he₂.recr_inv (Or.inl rfl)
+      he₂.recr_inv
     have hps p := (hpsw₁ p).trans (hpsD.down ⟨p.val, by omega⟩ hS (hps₁'' p) (hps₂'' p)
       (hpsw₁ p).right (hpsw₂ p).right)
     have hms t := (hmsw₁ t).trans (hmsD.down ⟨t.val, by omega⟩ hS (hms₁'' t) (hms₂'' t)
@@ -1667,7 +1667,7 @@ partial def isDefEqCore (G : FCtx) :
       have ⟨t₂, _, ht₂, _, hconv⟩ := hpi hS htf hfty.regular
       have hfty' := hconv.convStrong hfty
       have ⟨_, hty⟩ := hfty'.regular
-      have hinv := hty.forallE_inv (Or.inl rfl)
+      have hinv := hty.forallE_inv
       have ⟨_, ht₂'⟩ := hinv.1
       have ⟨_, ht₂''⟩ := hinv.2
       have heta := DefeqStrong.eta ht₂' ht₂'' (by simpa [Expr.wk] using ht₂'.wk t₂)
@@ -1702,8 +1702,8 @@ partial def isDefEqCore (G : FCtx) :
       have .quot hη₂ hl₂ hα₂ hr₂ := hd₂
       cases hη₁.symm.trans hη₂
       rw [← hl hl₁ hl₂] at he₂ ⊢
-      have ⟨hαt₁, hrt₁⟩ := he₁.quot_formation_inv (Or.inl rfl)
-      have ⟨hαt₂, hrt₂⟩ := he₂.quot_formation_inv (Or.inl rfl)
+      have ⟨hαt₁, hrt₁⟩ := he₁.quot_formation_inv
+      have ⟨hαt₂, hrt₂⟩ := he₂.quot_formation_inv
       exact DefeqStrong.retype hS.ordered hS.wf
         (.quotDF (hα hS hα₁ hα₂ hαt₁ hαt₂) (hr hS hr₁ hr₂ hrt₁ hrt₂)) he₁⟩
   | .quotMk pos₁ l₁ α₁ r₁ a₁, .quotMk pos₂ l₂ α₂ r₂ a₂ => do
@@ -1717,8 +1717,8 @@ partial def isDefEqCore (G : FCtx) :
       have .quotMk hη₂ hl₂ hα₂ hr₂ ha₂ := hd₂
       cases hη₁.symm.trans hη₂
       rw [← hl hl₁ hl₂] at he₂ ⊢
-      have ⟨_, _, _, hαw₁, hrw₁, haw₁, _⟩ := he₁.quotMk_prem (Or.inl rfl)
-      have ⟨_, _, _, hαw₂, hrw₂, haw₂, _⟩ := he₂.quotMk_prem (Or.inl rfl)
+      have ⟨_, _, _, hαw₁, hrw₁, haw₁, _⟩ := he₁.quotMk_prem
+      have ⟨_, _, _, hαw₂, hrw₂, haw₂, _⟩ := he₂.quotMk_prem
       have hleft := DefeqStrong.quotMkDF (η := η) hαw₁ hrw₁ haw₁
       have hright := DefeqStrong.quotMkDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
@@ -1741,9 +1741,9 @@ partial def isDefEqCore (G : FCtx) :
       cases hη₁.symm.trans hη₂
       rw [← hlv₁ hl₁ hl₁', ← hlv₂ hl₂ hl₂'] at he₂ ⊢
       have ⟨_, _, _, _, _, _, hαw₁, hrw₁, hβw₁, hfw₁, hhw₁, haw₁, _⟩ :=
-        he₁.quotLift_prem (Or.inl rfl)
+        he₁.quotLift_prem
       have ⟨_, _, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, hhw₂, haw₂, _⟩ :=
-        he₂.quotLift_prem (Or.inl rfl)
+        he₂.quotLift_prem
       have hleft := DefeqStrong.quotLiftDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
       have hright := DefeqStrong.quotLiftDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
@@ -1767,14 +1767,14 @@ partial def isDefEqCore (G : FCtx) :
       cases hη₁.symm.trans hη₂
       rw [← hl hl₁ hl₂] at he₂ ⊢
       have ⟨_, _, _, _, _, hαw₁, hrw₁, hβw₁, hfw₁, haw₁, hresw₁, _⟩ :=
-        he₁.quotInd_prem (Or.inl rfl)
+        he₁.quotInd_prem
       have ⟨_, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, haw₂, _, _⟩ :=
-        he₂.quotInd_prem (Or.inl rfl)
+        he₂.quotInd_prem
       have hleft := DefeqStrong.quotIndDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
       have hβ' := hβw₁.trans (hβ hS hβ₁ hβ₂ hβw₁.right hβw₂.right)
       have ha' := haw₁.trans (ha hS ha₁ ha₂ haw₁.right haw₂.right)
       have ⟨_, hmotive⟩ := hβ'.regular
-      have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv (Or.inl rfl)
+      have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv
       have hright := DefeqStrong.quotIndDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
         (hrw₁.trans (hr hS hr₁ hr₂ hrw₁.right hrw₂.right))

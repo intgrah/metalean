@@ -30,15 +30,15 @@ theorem conv {l : Level ℓ} :
   fun ht h _ hc => (IsTypeEq.ofDefEq ht).trans (h hc)
 
 theorem var {v : Var n} : E[Γ] ⊢ .var v !: Γ.get v :=
-  fun hc => (hc.var_inv (Or.inl rfl)).symm
+  fun hc => hc.var_inv.symm
 
 theorem sort {l : Level ℓ} : E[Γ] ⊢ .sort l !: .sort (.succ l) :=
-  fun hc => (hc.sort_inv (Or.inl rfl)).symm
+  fun hc => hc.sort_inv.symm
 
 theorem const {kind : ConstKind} {k : Nat} {η : Head ζ (.const kind k)}
     {ls : Fin k → Level ℓ} :
     E[Γ] ⊢ .const η ls !: ((E.get η).constType.instL ls).wkClosed :=
-  fun hc => (hc.const_inv (Or.inl rfl)).symm
+  fun hc => hc.const_inv.symm
 
 section
 
@@ -52,20 +52,20 @@ variable {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
 
 theorem ind : E[Γ] ⊢ .ind η s ls ps is !: .sort ((E.get η).block.level.inst ls) :=
   fun hc =>
-    have ⟨_, _, _, _, ht⟩ := hc.ind_inv (Or.inl rfl)
+    have ⟨_, _, _, _, ht⟩ := hc.ind_inv
     ht.symm
 
 theorem ctor :
     E[Γ] ⊢ .ctor η s c ls ps fds recFds !:
       .ind η s ls ps (((E.get η).block.ctors s c).targetIndex ls ps fds) :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, hresult, ht⟩ := hc.ctor_inv (Or.inl rfl)
+    have ⟨_, _, _, _, _, _, hresult, ht⟩ := hc.ctor_inv
     (ht.trans (.ofDefEq hresult)).symm
 
 theorem recr :
     E[Γ] ⊢ .recr η s ls l ps ms mins is maj !: Inductive.motiveResult (ms s) is maj :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.recr_inv (Or.inl rfl)
+    have ⟨_, _, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.recr_inv
     (ht.trans (.ofDefEq hresult)).symm
 
 end
@@ -75,17 +75,17 @@ section
 variable {η : Head ζ .quot} {l l₁ l₂ : Level ℓ} {α r β f h a : Expr ζ ℓ n}
 
 theorem quot : E[Γ] ⊢ .quot η l α r !: .sort l :=
-  fun hc => (hc.quot_inv (Or.inl rfl)).symm
+  fun hc => hc.quot_inv.symm
 
 theorem quotMk : E[Γ] ⊢ .quotMk η l α r a !: .quot η l α r :=
-  fun hc => (hc.quotMk_inv (Or.inl rfl)).symm
+  fun hc => hc.quotMk_inv.symm
 
 theorem quotLift : E[Γ] ⊢ .quotLift η l₁ l₂ α r β f h a !: β :=
-  fun hc => (hc.quotLift_inv (Or.inl rfl)).symm
+  fun hc => hc.quotLift_inv.symm
 
 theorem quotInd : E[Γ] ⊢ .quotInd η l α r β f a !: .app β a :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.quotInd_prem (Or.inl rfl)
+    have ⟨_, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.quotInd_prem
     (ht.trans (.ofDefEq hresult)).symm
 
 end
@@ -100,7 +100,7 @@ theorem lam :
     E[Γ.snoc t] ⊢ e' !: t' →
     E[Γ] ⊢ .lam t e' !: .forallE t t' :=
   fun hΓ ht hl _ hc =>
-    have ⟨_, he', hres⟩ := hc.lam_inv (Or.inl rfl) hΓ
+    have ⟨_, he', hres⟩ := hc.lam_inv hΓ
     (IsTypeEq.forallE_congr ht (hl he')).trans hres.symm
 
 theorem letE {v r : Expr ζ ℓ n} :
@@ -108,7 +108,7 @@ theorem letE {v r : Expr ζ ℓ n} :
     E[Γ] ⊢ e'.inst v !: r →
     E[Γ] ⊢ .letE t v e' !: r :=
   fun hΓ hl _ hc =>
-    have ⟨_, _, _, he, hres⟩ := hc.letE_inv (Or.inl rfl) hΓ
+    have ⟨_, _, _, he, hres⟩ := hc.letE_inv hΓ
     (hl he).trans hres.symm
 
 theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
@@ -118,7 +118,7 @@ theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
     E[Γ] ⊢ .app f a !: t₂ := by
   subst hinst
   intro hΓ hl ha _ hc
-  have ⟨_, _, hf, _, ht⟩ := hc.app_inv (Or.inl rfl)
+  have ⟨_, _, hf, _, ht⟩ := hc.app_inv
   have ⟨_, hcod⟩ := IsTypeEq.forallE_inj ho hΓ (hl hf)
   exact (IsTypeEq.instCongr hΓ ha hcod).trans ht.symm
 
@@ -128,7 +128,7 @@ theorem forallE (ho : E.Ordered) :
     E[Γ.snoc t] ⊢ t' !: .sort l₂ →
     E[Γ] ⊢ .forallE t t' !: .sort (.imax l₁ l₂) := by
   intro hΓ ht ht' _ hc
-  have ⟨_, _, hu, hv, hres⟩ := hc.forallE_ty_inv (Or.inl rfl)
+  have ⟨_, _, hu, hv, hres⟩ := hc.forallE_ty_inv
   obtain rfl := IsTypeEq.sort_inj ho hΓ (ht hu)
   obtain rfl := IsTypeEq.sort_inj ho (hΓ.snoc ⟨_, hu⟩) (ht' hv)
   exact hres.symm

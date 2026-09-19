@@ -194,7 +194,7 @@ theorem Defeq.toStrong
     have hf := ihf hΓ
     have he := ihe hΓ
     obtain ⟨_, hpi⟩ := hf.regular
-    obtain ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv (Or.inl rfl)
+    obtain ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
     exact .appDF ht ht' hf he (ht'.inst_congr he)
   | lamDF _ _ iht ihbody =>
     have ht := iht hΓ
@@ -221,7 +221,7 @@ theorem Defeq.toStrong
   | @eta _ _ _ t _ _ ih =>
     have he := ih hΓ
     obtain ⟨_, hpi⟩ := he.regular
-    obtain ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv (Or.inl rfl)
+    obtain ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
     exact .eta ht ht' (by simpa [Expr.wk] using ht.wk t)
       (by simpa [Expr.wk] using he.wk t) he
   | proofIrrel _ _ _ ihp ihh ihh' =>
@@ -262,7 +262,7 @@ theorem Defeq.toStrong
     have hβ := ihβ hΓ
     obtain ⟨_, hmotive⟩ := hβ.regular
     obtain ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ :=
-      hmotive.forallE_inv (Or.inl rfl)
+      hmotive.forallE_inv
     have hresultTy := hprop.substitution
       (SubstWFStrong.inst hΓ ha.left)
     have hresult := DefeqStrong.appDF hquot hprop hβ ha hresultTy

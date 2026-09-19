@@ -68,8 +68,8 @@ theorem IsTypeEq.forallE_model_inj (ho : E.Ordered)
     E[Δ] ⊢ₛ t₁ ≡ t₂ typ ∧ E[Δ.snoc t₁] ⊢ₛ t₁' ≡ t₂' typ ∧ E[Δ.snoc t₂] ⊢ₛ t₁' ≡ t₂' typ := by
   intro hΔ h
   have ⟨⟨_, hl⟩, ⟨_, hr⟩⟩ := h.isType
-  have ⟨⟨_, ht₁⟩, ⟨_, ht₁'⟩⟩ := hl.forallE_inv (Or.inl rfl)
-  have ⟨⟨_, ht₂⟩, ⟨_, ht₂'⟩⟩ := hr.forallE_inv (Or.inl rfl)
+  have ⟨⟨_, ht₁⟩, ⟨_, ht₁'⟩⟩ := hl.forallE_inv
+  have ⟨⟨_, ht₂⟩, ⟨_, ht₂'⟩⟩ := hr.forallE_inv
   have hp : ((rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) (.forallE t₁ t₁')).app _ (𝟙 _).op
       fun _ ↦ ⊥).mem (𝟙 _) (piAtom (Ty.pairOfTyping (⟨Δ, hΔ⟩ : CtxCat E ℓ).as ht₁ ht₁')) := by
     rw [rawInterpret_forallE _ ht₁ ht₁', RawFamily.mem_piAtom_pi_value_iff]

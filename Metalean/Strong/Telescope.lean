@@ -301,7 +301,7 @@ theorem Ctx.pi_isTypeStrong_inv (Δ : Ctx ζ ℓ n m) {e : Expr ζ ℓ m} {l : L
   | nil => exact ⟨hΓ, l, h⟩
   | snoc Δ t ih =>
     have ⟨hΓΔ, v, hforall⟩ := ih h
-    have ⟨ht, he⟩ := hforall.forallE_inv (Or.inl rfl)
+    have ⟨ht, he⟩ := hforall.forallE_inv
     exact ⟨hΓΔ.snoc ht, he⟩
 
 theorem Ctx.lam_congrStrong {e₁ e₂ t : Expr ζ ℓ m} :

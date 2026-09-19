@@ -239,7 +239,7 @@ def varLabel (Γ : CtxCat E ℓ) (v : Var Γ.as.len) : Tm_ Γ :=
 theorem label_eq_var {Γ : CtxCat E ℓ} {t e : Expr ζ ℓ Γ.as.len} {v : Var Γ.as.len}
     (he : E[Γ.as.ctx] ⊢ₛ e : t) (h : e = .var v) : label Γ.as he = varLabel Γ v := by
   subst e
-  exact label_eq (he.var_inv (Or.inl rfl)) he
+  exact label_eq he.var_inv he
 
 @[simp] theorem map_label {t e : Expr ζ ℓ Γ₁.as.len} (he : E[Γ₁.as.ctx] ⊢ₛ e : t)
     (σ : Γ₂.as ⟶ Γ₁.as) :

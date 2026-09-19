@@ -437,7 +437,7 @@ theorem InferSpec.app {G : FCtx} {f a tf t b : FExpr} :
     have ⟨_, _, ht₁, hb, hconv⟩ := hpi hS htf hfty.regular
     have hfty' := hconv.convStrong hfty
     have ⟨_, hty⟩ := hfty'.regular
-    have hinv := hty.forallE_inv (Or.inl rfl)
+    have hinv := hty.forallE_inv
     have ⟨_, had', haty⟩ := ha hS had ht₁ hinv.1
     have ⟨_, ht⟩ := hinv.1
     have ⟨_, ht'⟩ := hinv.2
@@ -562,7 +562,7 @@ theorem InferOnlySpec.app {G : FCtx} {f a tf t b : FExpr} :
     ForallSpec L F ℓ G tf t b →
     InferOnlySpec L F ℓ G (.app f a) (FExpr.instAt a 0 b) :=
   fun hf hpi {_ _ _ _ _ _} hS (.app hfd had) he =>
-    have ⟨_, _, hfty, haty, _⟩ := he.app_inv (Or.inl rfl)
+    have ⟨_, _, hfty, haty, _⟩ := he.app_inv
     have ⟨_, htf, hfty'⟩ := hf hS hfd hfty
     have ⟨_, _, _, hb, hconv⟩ := hpi hS htf hfty'.regular
     have hfAB := hconv.convStrong hfty'
@@ -570,7 +570,7 @@ theorem InferOnlySpec.app {G : FCtx} {f a tf t b : FExpr} :
       (DefeqStrong.uniqTy hS.ordered hS.wf hfty hfAB)
     have haA := hdom.convStrong haty
     have ⟨_, hty⟩ := hfAB.regular
-    have hinv := hty.forallE_inv (Or.inl rfl)
+    have hinv := hty.forallE_inv
     have ⟨_, ht⟩ := hinv.1
     have ⟨_, ht'⟩ := hinv.2
     ⟨_, hb.inst had, .appDF ht ht' hfAB haA (ht'.inst_congr haA)⟩
@@ -588,7 +588,7 @@ theorem InferOnlySpec.letE {G : FCtx} {t v b r : FExpr} :
     InferOnlySpec L F ℓ G (FExpr.instAt v 0 b) r →
     InferOnlySpec L F ℓ G (.letE t v b) r :=
   fun hr {_ _ _ _ _ _} hS (.letE _ hvd hbd) he =>
-    have ⟨_, ⟨_, hts⟩, hvty, hbody, _⟩ := he.letE_inv (Or.inl rfl) hS.wf
+    have ⟨_, ⟨_, hts⟩, hvty, hbody, _⟩ := he.letE_inv hS.wf
     have ⟨_, hr', hbty⟩ := hr hS (hbd.inst hvd) hbody
     have ⟨_, hrs⟩ := hbty.regular
     ⟨_, hr', (DefeqStrong.zeta hts hvty hrs hbty).left⟩
@@ -641,16 +641,16 @@ theorem RedSpec.frame {G : FCtx} {fe₁ fe₂ : FExpr} (K : FFrame) :
   have ⟨ft₁, ht₁⟩ : ∃ ft₁, E[Γ] ⊢ₛ e₁'' : ft₁ := by
     cases K' with
     | app fa =>
-      have ⟨_, _, hf, _, _⟩ := he.app_inv (Or.inl rfl)
+      have ⟨_, _, hf, _, _⟩ := he.app_inv
       exact ⟨_, hf⟩
     | recr =>
-      have ⟨_, _, _, _, _, _, _, _, _, _, hmaj, _, _⟩ := he.recr_inv (Or.inl rfl)
+      have ⟨_, _, _, _, _, _, _, _, _, _, hmaj, _, _⟩ := he.recr_inv
       exact ⟨_, hmaj.right⟩
     | quotLift =>
-      have ⟨_, _, _, _, _, _, _, _, _, _, _, ha, _⟩ := he.quotLift_prem (Or.inl rfl)
+      have ⟨_, _, _, _, _, _, _, _, _, _, _, ha, _⟩ := he.quotLift_prem
       exact ⟨_, ha.right⟩
     | quotInd =>
-      have ⟨_, _, _, _, _, _, _, _, _, ha, _, _⟩ := he.quotInd_prem (Or.inl rfl)
+      have ⟨_, _, _, _, _, _, _, _, _, ha, _, _⟩ := he.quotInd_prem
       exact ⟨_, ha.right⟩
   have ⟨e₂, hd₂, hc₀⟩ := h hS hd₁ ht₁
   exact ⟨_, hK hd₂, K'.plug_defeq hS.ordered hS.wf
@@ -705,9 +705,9 @@ theorem RedSpec.arg {G : FCtx} {ff a₁ a₂ : FExpr} :
     RedSpec L F ℓ G (.app ff a₁) (.app ff a₂) := by
   intro h _ _ _ _ _ _ hS hd he
   have .app (f' := f) hf ha := hd
-  have ⟨_, _, hfty, hay, ht⟩ := he.app_inv (Or.inl rfl)
+  have ⟨_, _, hfty, hay, ht⟩ := he.app_inv
   have ⟨_, hπ⟩ := hfty.regular
-  have ⟨⟨_, ht₁⟩, ⟨_, ht₂⟩⟩ := hπ.forallE_inv (Or.inl rfl)
+  have ⟨⟨_, ht₁⟩, ⟨_, ht₂⟩⟩ := hπ.forallE_inv
   have ⟨a₂', hd₂, hc⟩ := h hS ha hay
   exact ⟨.app f a₂', .app hf hd₂,
     ht.symm.convStrong (.appDF ht₁ ht₂ hfty hc (ht₂.inst_congr hc))⟩
@@ -746,14 +746,14 @@ theorem DefEqSpec.app {G : FCtx} {ff g fa fb : FExpr} :
   intro hf ha _ _ _ _ _ _ _ _ hS hd₁ hd₂ he₁ he₂
   have .app hdf hda := hd₁
   have .app hdg hdb := hd₂
-  have ⟨_, _, hf', ha', hty₁⟩ := he₁.app_inv (Or.inl rfl)
-  have ⟨_, _, hg', hb', _⟩ := he₂.app_inv (Or.inl rfl)
+  have ⟨_, _, hf', ha', hty₁⟩ := he₁.app_inv
+  have ⟨_, _, hg', hb', _⟩ := he₂.app_inv
   have hfg := hf hS hdf hdg hf' hg'
   have hteq := DefeqStrong.uniqTy hS.ordered hS.wf hfg.right hg'
   have ⟨hdom, _⟩ := IsTypeEq.forallE_inj hS.ordered hS.wf hteq
   have hab := ha hS hda hdb ha' (hdom.symm.convStrong hb')
   have ⟨_, hpi⟩ := hf'.regular
-  have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv (Or.inl rfl)
+  have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
   exact hty₁.symm.convStrong (DefeqStrong.appDF ht ht' hfg hab (ht'.inst_congr hab))
 
 theorem Sem.append {G ts : FCtx} {E : Env ζ} {n b : Nat} {Γ : Ctx ζ ℓ 0 n}
@@ -778,8 +778,8 @@ theorem TypeEqSpec.forallE {G : FCtx} {ft₁ ft₂ b₁ b₂ : FExpr}
   intro hdom hcod hS hd₁ hd₂ he₁ he₂
   have .forallE hdt₁ hb₁ := hd₁
   have .forallE hdt₂ hb₂ := hd₂
-  have hinv₁ := he₁.forallE_inv (Or.inl rfl)
-  have hinv₂ := he₂.forallE_inv (Or.inl rfl)
+  have hinv₁ := he₁.forallE_inv
+  have hinv₂ := he₂.forallE_inv
   have hd := hdom hS hdt₁ hdt₂ hinv₁.1 hinv₂.1
   have ⟨_, ht₁⟩ := hinv₁.1
   have ⟨u, hcl⟩ := hinv₂.2
@@ -799,8 +799,8 @@ theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FEx
   subst hn
   have .forallE hdt₁ hb₁ := hd₁
   have .forallE hdt₂ hb₂ := hd₂
-  have hinv₁ := he₁.forallE_inv (Or.inl rfl)
-  have hinv₂ := he₂.forallE_inv (Or.inl rfl)
+  have hinv₁ := he₁.forallE_inv
+  have hinv₂ := he₂.forallE_inv
   have hd := hdom hS hdt₁ hdt₂ hinv₁.1 hinv₂.1
   have ⟨_, ht₁⟩ := hinv₁.1
   have ⟨u, hcl⟩ := hinv₂.2
@@ -816,8 +816,8 @@ theorem TypeEqTeleSpec.toDefEq {G : FCtx} {ft₁ ft₂ b₁ b₂ : FExpr} :
   intro h ζ E n Γ e₁ e₂ t₁ t₂ hS hd₁ hd₂ he₁ he₂
   have .forallE hdt₁ hb₁ := hd₁
   have .forallE hdt₂ hb₂ := hd₂
-  have ⟨⟨_, ht₁⟩, ⟨_, hc₁⟩⟩ := he₁.forallE_inv (Or.inl rfl)
-  have ⟨⟨_, ht₂⟩, ⟨_, hc₂⟩⟩ := he₂.forallE_inv (Or.inl rfl)
+  have ⟨⟨_, ht₁⟩, ⟨_, hc₁⟩⟩ := he₁.forallE_inv
+  have ⟨⟨_, ht₂⟩, ⟨_, hc₂⟩⟩ := he₂.forallE_inv
   have ⟨_, hpi⟩ := (h hS (.forallE hdt₁ hb₁) (.forallE hdt₂ hb₂)
     ⟨_, .forallEDF ht₁ hc₁ hc₁⟩ ⟨_, .forallEDF ht₂ hc₂ hc₂⟩).sort_uniq hS.ordered hS.wf
   exact DefeqStrong.retype hS.ordered hS.wf hpi he₁

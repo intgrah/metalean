@@ -44,7 +44,7 @@ variable {ls : Fin ι.nlevels → Level ℓ} {ps₁ ps₂ : Fin ι.nparams → E
 
 theorem ofTyping (hB : (E.get η).block.WFStrong E) {t : Expr ζ ℓ Γ₁.as.len}
     (h : E[Γ₁.as.ctx] ⊢ₛ .ind η s ls ps₁ is₁ : t) : IndTyping Γ₁ η s ls ps₁ is₁ :=
-  have ⟨_, _, hps, his, _⟩ := DefeqStrong.ind_inv (Or.inl rfl) h
+  have ⟨_, _, hps, his, _⟩ := DefeqStrong.ind_inv h
   ⟨fun p => Inductive.paramType_conv hB p hps, fun i => Inductive.indexType_conv hB i hps his⟩
 
 theorem left (hps : ∀ p, E[Γ₁.as.ctx] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)

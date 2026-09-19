@@ -207,13 +207,13 @@ namespace QuotTyping
 variable (Γ₁) in
 theorem ofTyping {t : Expr ζ ℓ Γ₁.as.len} (h : E[Γ₁.as.ctx] ⊢ₛ .quot η u α r : t) :
     QuotTyping Γ₁ u α r :=
-  have ⟨hα, hr⟩ := h.quot_formation_inv (Or.inl rfl)
+  have ⟨hα, hr⟩ := h.quot_formation_inv
   ⟨hα, hr⟩
 
 theorem ofLift {v : Level ℓ} {β f h a t : Expr ζ ℓ Γ₁.as.len}
     (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : t) :
     QuotTyping Γ₁ u α r :=
-  have ⟨_, _, _, _, _, _, hα, hr, _⟩ := hlift.quotLift_prem (Or.inl rfl)
+  have ⟨_, _, _, _, _, _, hα, hr, _⟩ := hlift.quotLift_prem
   ⟨hα.right, .defeqDF (Quot.relType_congr hα) hr.right⟩
 
 noncomputable def code (h : QuotTyping Γ₁ u α r) (η : Head ζ .quot) : QuotCode Γ₁ :=

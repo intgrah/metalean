@@ -37,11 +37,11 @@ theorem WHRed.beta_defeq (ho : E.Ordered) {t e : Expr ζ ℓ n}
     E[Γ] ⊢ₛ ok →
     E[Γ] ⊢ₛ .app (.lam t e') e : t₁ ⤳ e'.inst e := by
   intro hΓ hty
-  have ⟨_, _, hf, he, _⟩ := DefeqStrong.app_inv (Or.inl rfl) hty
-  have ⟨_, he', hπ⟩ := DefeqStrong.lam_inv (Or.inl rfl) hf hΓ
+  have ⟨_, _, hf, he, _⟩ := DefeqStrong.app_inv hty
+  have ⟨_, he', hπ⟩ := DefeqStrong.lam_inv hf hΓ
   have ⟨_, hπTy⟩ := hπ.isType.2
   have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ :=
-    DefeqStrong.forallE_inv (Or.inl rfl) hπTy
+    DefeqStrong.forallE_inv hπTy
   have het := (hπ.forallE_inj ho hΓ).1.convStrong he
   exact DefeqStrong.retype ho hΓ (.beta ht ht' he' het (ht'.inst_congr het)
     (he'.inst_congr het)) hty
@@ -50,7 +50,7 @@ theorem WHRed.zeta_defeq (ho : E.Ordered) :
     E[Γ] ⊢ₛ ok →
     E[Γ] ⊢ₛ .letE t v e' : t₁ ⤳ e'.inst v := by
   intro hΓ hty
-  have ⟨_, ⟨_, ht⟩, hv, he', _⟩ := DefeqStrong.letE_inv (Or.inl rfl) hty hΓ
+  have ⟨_, ⟨_, ht⟩, hv, he', _⟩ := DefeqStrong.letE_inv hty hΓ
   have ⟨_, ht'⟩ := he'.regular
   exact DefeqStrong.retype ho hΓ
     (.zeta ht hv ht' he') hty
@@ -61,7 +61,7 @@ theorem WHRed.delta_defeq (ho : E.Ordered)
     E[Γ] ⊢ₛ .const η ls : t ⤳ ((E.get η).defValue.instL ls).wkClosed := by
   intro hty
   have ⟨u, htype⟩ := (ho.entryWFStrong η).constType (Γ := Γ) ls
-  exact (hty.const_inv (Or.inl rfl)).symm.convStrong
+  exact hty.const_inv.symm.convStrong
     (.delta htype ((ho.entryWFStrong η).defValue ls))
 
 theorem WHRed.quotIota_defeq (ho : E.Ordered)
@@ -71,9 +71,9 @@ theorem WHRed.quotIota_defeq (ho : E.Ordered)
     E[Γ] ⊢ₛ .quotLift η l₁ l₂ α r β f h (.quotMk η lq αq rq a) : t ⤳ .app f a := by
   intro hΓ hty
   have ⟨α', r', β', f', h', maj, hα, hr, hβ, hf, hh, hmaj, ht⟩ :=
-    DefeqStrong.quotLift_prem (Or.inl rfl) hty
+    DefeqStrong.quotLift_prem hty
   have ⟨_, _, a', _, _, ha, hquot⟩ :=
-    DefeqStrong.quotMk_prem (Or.inr rfl) hmaj
+    hmaj.right.quotMk_prem
   have hαeq := (hquot.quot_inj ho hΓ).2.1
   have ha' : E[Γ] ⊢ₛ a' ≡ a : α' := hαeq.symm.convStrong ha
   have haa := ha'.right
@@ -82,7 +82,7 @@ theorem WHRed.quotIota_defeq (ho : E.Ordered)
   have hβrefl := hβ.left
   have hfrefl := hf.left
   have hhrefl := hh.left
-  obtain ⟨rfl, hαq, hrq⟩ := (hmaj.quotMk_inv (Or.inr rfl)).quot_inj ho hΓ
+  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj ho hΓ
   have ⟨_, hαq⟩ := hαq.sort_uniq ho hΓ
   have hαq := DefeqStrong.retype ho hΓ hαq hαrefl
   have hmk : E[Γ] ⊢ₛ .quotMk η l₁ α' r' a ≡
@@ -116,24 +116,24 @@ theorem WHRed.quotIndIota_defeq (ho : E.Ordered) {η : Head ζ .quot}
     E[Γ] ⊢ₛ .quotInd η l α r β f (.quotMk η lq αq rq a) : t ⤳ .app f a := by
   intro hΓ hty
   have ⟨α', r', β', f', maj, hα, hr, hβ, hf, hmaj, hresult, ht⟩ :=
-    DefeqStrong.quotInd_prem (Or.inl rfl) hty
+    DefeqStrong.quotInd_prem hty
   have ⟨_, _, a', _, _, ha, hquot⟩ :=
-    DefeqStrong.quotMk_prem (Or.inr rfl) hmaj
+    hmaj.right.quotMk_prem
   have ha' : E[Γ] ⊢ₛ a' ≡ a : α' :=
     (hquot.quot_inj ho hΓ).2.1.symm.convStrong ha
   have haa := ha'.right
-  obtain ⟨rfl, hαq, hrq⟩ := (hmaj.quotMk_inv (Or.inr rfl)).quot_inj ho hΓ
+  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj ho hΓ
   have ⟨_, hαq⟩ := hαq.sort_uniq ho hΓ
   have hαq := DefeqStrong.retype ho hΓ hαq hα.left
   have hmaj' := hmaj.trans (DefeqStrong.quotMkDF hαq hrq haa).symm
   have ⟨_, hmotive⟩ := hβ.regular
-  have ⟨⟨_, hquotTy⟩, ⟨_, hprop⟩⟩ := DefeqStrong.forallE_inv (Or.inl rfl) hmotive
+  have ⟨⟨_, hquotTy⟩, ⟨_, hprop⟩⟩ := DefeqStrong.forallE_inv hmotive
   have hmotiveApp : E[Γ] ⊢ₛ .app β' maj ≡ .app β' (.quotMk η l α' r' a) : .prop :=
     .appDF hquotTy hprop hβ.left hmaj' (hprop.inst_congr hmaj')
   have hredex := DefeqStrong.quotIndDF hα hr hβ hf hmaj hresult
   have hfrefl := hf.right
   have ⟨_, hminor⟩ := hfrefl.regular
-  have ⟨⟨_, hα'⟩, ⟨_, hbody⟩⟩ := DefeqStrong.forallE_inv (Or.inl rfl) hminor
+  have ⟨⟨_, hα'⟩, ⟨_, hbody⟩⟩ := DefeqStrong.forallE_inv hminor
   have happ : E[Γ] ⊢ₛ .app f a : .app β' (.quotMk η l α' r' a) := by
     simpa using DefeqStrong.appDF hα' hbody hfrefl haa (hbody.inst_congr haa)
   exact ht.symm.convStrong (.proofIrrel hresult.left
@@ -155,9 +155,9 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
   have hB := (ho.entryWFStrong η).block
   have ⟨ps', ms', mins', is', maj',
     hallowed, hps, hms, hmins, his, hmaj, hresult, ht⟩ :=
-    DefeqStrong.recr_inv (Or.inl rfl) hty
+    DefeqStrong.recr_inv hty
   have ⟨psc, fdsc, recFdsc, hpsc, hfdsc, hrecFdsc, _, htc⟩ :=
-    DefeqStrong.ctor_inv (Or.inr rfl) hmaj
+    hmaj.right.ctor_inv
   have ⟨_, htcStrong⟩ := htc.sort_uniq ho hΓ
   have hindSelf := DefeqStrong.indDF (fun p => (hps p).left) (fun i => (his i).left)
   obtain ⟨rfl, hpsInj, hisInj⟩ := (htcStrong.retype ho hΓ hindSelf).ind_inj ho hΓ
@@ -216,9 +216,9 @@ theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
   have hty' := hty
   rw [Inductive.IsStructure.projTerm_eq_recr] at hty'
   have ⟨ps', _, _, is', maj', _, hps, _, _, his, hmaj, _, _⟩ :=
-    DefeqStrong.recr_inv (Or.inl rfl) hty'
+    DefeqStrong.recr_inv hty'
   have ⟨psc, fdsc, recFdsc, hpsc, hfdsc, hrecFdsc, _, htc⟩ :=
-    DefeqStrong.ctor_inv (Or.inr rfl) hmaj
+    hmaj.right.ctor_inv
   have ⟨_, htcStrong⟩ := htc.sort_uniq ho hΓ
   have hindSelf := DefeqStrong.indDF (fun p => (hps p).left) (fun i => (his i).left)
   obtain ⟨rfl, hpsInj, _⟩ := (htcStrong.retype ho hΓ hindSelf).ind_inj ho hΓ
@@ -272,9 +272,9 @@ theorem Inductive.IsStructure.projTerm_congr_defeq (ho : E.Ordered)
   have hty₂' := hty₂
   rw [Inductive.IsStructure.projTerm_eq_recr] at hty₁' hty₂'
   have ⟨ps₁', _, _, is₁', _, _, hps₁, _, _, _, hmaj₁, _, _⟩ :=
-    DefeqStrong.recr_inv (Or.inl rfl) hty₁'
+    DefeqStrong.recr_inv hty₁'
   have ⟨ps₂', _, _, is₂', _, _, hps₂, _, _, _, hmaj₂, _, _⟩ :=
-    DefeqStrong.recr_inv (Or.inl rfl) hty₂'
+    DefeqStrong.recr_inv hty₂'
   have hpsu₁ p := Inductive.paramType_conv hB p hps₁
   have hpsu₂ p := Inductive.paramType_conv hB p hps₂
   have hind₁ : E[Γ] ⊢ₛ .ind η s ls₁ ps₁' is₁' ≡ .ind η s ls₁ ps₁ h₁.indices typ :=
@@ -297,28 +297,28 @@ theorem Frame.plug_defeq (ho : E.Ordered) (K : Frame ζ ℓ n) :
   intro hΓ hred hty
   cases K with
   | app a =>
-    have ⟨t₁, t₂, hf, he, ht⟩ := hty.app_inv (Or.inl rfl)
+    have ⟨t₁, t₂, hf, he, ht⟩ := hty.app_inv
     have ⟨_, hπ⟩ := hf.regular
-    have ⟨⟨_, ht₁⟩, ⟨_, ht₂⟩⟩ := hπ.forallE_inv (Or.inl rfl)
+    have ⟨⟨_, ht₁⟩, ⟨_, ht₂⟩⟩ := hπ.forallE_inv
     exact ht.symm.convStrong (.appDF ht₁ ht₂ (hred hf) he (ht₂.inst_congr he))
   | recr η s ls l ps ms mins is =>
     have ⟨_, _, _, _, _, hallowed, hps, hms, hmins, his, hmaj, hresult, ht⟩ :=
-      hty.recr_inv (Or.inl rfl)
+      hty.recr_inv
     have hmaj₂ := hmaj.trans (hred hmaj.right)
     exact ht.symm.convStrong
       ((DefeqStrong.recrDF hallowed hps hms hmins his hmaj hresult).symm.trans
         (.recrDF hallowed hps hms hmins his hmaj₂
           ((ho.entryWFStrong η).block.motiveResult_congr hΓ hps hms his hmaj₂)))
   | quotLift η l₁ l₂ α r β f h =>
-    have ⟨_, _, _, _, _, _, hα, hr, hβ, hf, hh, ha, ht⟩ := hty.quotLift_prem (Or.inl rfl)
+    have ⟨_, _, _, _, _, _, hα, hr, hβ, hf, hh, ha, ht⟩ := hty.quotLift_prem
     exact ht.symm.convStrong
       ((DefeqStrong.quotLiftDF hα hr hβ hf hh ha).symm.trans
         (.quotLiftDF hα hr hβ hf hh (ha.trans (hred ha.right))))
   | quotInd η l α r β f =>
-    have ⟨_, _, _, _, _, hα, hr, hβ, hf, ha, hresult, ht⟩ := hty.quotInd_prem (Or.inl rfl)
+    have ⟨_, _, _, _, _, hα, hr, hβ, hf, ha, hresult, ht⟩ := hty.quotInd_prem
     have ha₂ := ha.trans (hred ha.right)
     have ⟨_, hmotive⟩ := hβ.regular
-    have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv (Or.inl rfl)
+    have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv
     exact ht.symm.convStrong
       ((DefeqStrong.quotIndDF hα hr hβ hf ha hresult).symm.trans
         (.quotIndDF hα hr hβ hf ha₂ (.appDF hquot hprop hβ ha₂ (hprop.inst_congr ha₂))))
