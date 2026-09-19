@@ -293,9 +293,6 @@ theorem quotLift_prem
       E[Γ] ⊢ₛ t ≡ β₁ typ := by
   intro hd
   induction hd with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | forallEDF | quotDF | quotMkDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | quotLiftDF hα hr hβ he hcompatType hcompat ha =>
     rcases he with he | he <;> cases he
     · exact ⟨_, _, _, _, _, _,
@@ -305,33 +302,12 @@ theorem quotLift_prem
         .ofDefEq hβ.left⟩
     · exact ⟨_, _, _, _, _, _, hα, hr, hβ, he,
         hcompatType, hcompat, .ofDefEq hβ.left⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     have ⟨α₁, r₁, β₁, f₁, h₁, a₁, hα,
       hr, hβ, he, hcompat, ha, hT⟩ := ih he
     exact ⟨α₁, r₁, β₁, f₁, h₁, a₁, hα,
       hr, hβ, he, hcompat, ha,
       (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
   | quotIota hα hr hβ he hcompat ha _ _ _ _ _ _ _ _ _ ih =>
     rcases he with he | he
     · cases he
@@ -342,6 +318,7 @@ theorem quotLift_prem
           ha.left,
         .ofDefEq hβ.left⟩
     · exact ih (Or.inl he)
+  | _ => rigid he
 
 theorem quotMk_inv
     (he : e₁ = .quotMk η l α r a ∨ e₂ = .quotMk η l α r a) :
@@ -393,12 +370,6 @@ theorem app_inv (hd : e₁ = .app f e ∨ e₂ = .app f e) :
     E[Γ] ⊢ₛ t ≡ t'.inst e typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | lamDF | forallEDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF | quotIota | delta =>
-    simp_all
-  | symm _ ih => exact ih hd.symm
-  | trans | eta | proofIrrel | iota =>
-    cases hd <;> simp_all
   | etaStruct _ _ _ _ _ ih _ =>
     rcases hd with hd | hd
     · simp [Inductive.IsStructure.rebuildTerm] at hd
@@ -417,10 +388,7 @@ theorem app_inv (hd : e₁ = .app f e ∨ e₂ = .app f e) :
     · cases hd
       exact ⟨_, _, .lamDF ht₁ ht' ht' hbody hbody, he, .ofDefEq hres⟩
     · exact ihresult (Or.inl hd)
-  | zeta _ _ _ _ _ _ _ ihresult =>
-    rcases hd with hd | hd
-    · cases hd
-    · exact ihresult (Or.inl hd)
+  | _ => rigid hd
 
 theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .letE t₁ v e') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -432,16 +400,6 @@ theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .le
     E[Γ] ⊢ₛ t ≡ r typ := by
   intro h hΓ
   induction h with
-  | symm _ ih => exact ih he.symm hΓ
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he) hΓ
-    · exact ih₂ (Or.inr he) hΓ
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he) hΓ
-    · exact ih₂ (Or.inl he) hΓ
   | defeqDF ht _ _ ih =>
     have ⟨t', ht₁, hv, he', hinst⟩ := ih he hΓ
     exact ⟨t', ht₁, hv, he', (IsTypeEq.ofDefEq ht).symm.trans hinst⟩
@@ -450,19 +408,11 @@ theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .le
     · cases he
       exact ⟨_, ⟨_, ht⟩, hv, hbody, .ofDefEq htype⟩
     · exact ihresult (Or.inl he) hΓ
-  | delta _ _ _ ih
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he) hΓ
   | etaStruct _ _ _ _ _ ih _ =>
     rcases he with he | he
     · simp [Inductive.IsStructure.rebuildTerm] at he
     · exact ih (Or.inl he) hΓ
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF | forallEDF | quotDF
-  | quotMkDF | quotLiftDF | quotIndDF | quotIota =>
-    rcases he with he | he <;> cases he
+  | _ => rigid he
 
 theorem lam_inv (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →

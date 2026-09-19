@@ -1486,8 +1486,7 @@ theorem WFStrong.caseType_congr
     (fun f => (hordinary f).choose_spec)
     (fun f => (hrecursive f).choose_spec)
     htarget
-  simpa [caseType] using
-    hB.motiveResult_congr hΓcase hps hms his hmaj
+  simpa [caseType] using hB.motiveResult_congr hΓcase hps hms his hmaj
 
 theorem WFStrong.motiveBinders
     {Γ : Ctx ζ ℓ 0 ι.nparams}

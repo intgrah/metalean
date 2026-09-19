@@ -1435,10 +1435,9 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
     p + d + 1 = m →
     FExpr.Denotes L E d (FExpr.instAtCore (.fvar p) d fb) b' →
     FExpr.Denotes L E k fb b' := by
-  intro h₀
-  induction h₀ with
+  intro h₀ d p b' hk hm h'
+  induction h₀ generalizing d with
   | @bvar m k i j hi hj =>
-    intro d p b' hk hm h'
     subst hk
     by_cases hjd : j < d
     · simp only [FExpr.instAtCore, hjd] at h'
@@ -1449,23 +1448,19 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
       cases h' with
       | fvar hi₂ => exact .bvar (i := p) (by omega) (by omega)
   | fvar hi =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | fvar hi₂ => exact .fvar hi
   | sort hl =>
-    intro d p b' hk hm h'
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | sort hl₂ => exact .sort hl₂
   | const hls hη hls' =>
-    intro d p b' hk hm h'
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | const hls₂ hη₂ hls'₂ => exact .const hls₂ hη₂ hls'₂
   | ind hls hps his hη hs hls' hps' his' ihps ihis =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1476,7 +1471,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
         (fun q => (hps' q).unopenStep hm (ihps q rfl hm) (by simpa using hps₂ q))
         (fun i => (his' i).unopenStep hm (ihis i rfl hm) (by simpa using his₂ i))
   | ctor hls hps hfds hrecFds hη hs hc hls' hps' hfds' hrecFds' ihps ihfds ihrecFds =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1490,7 +1484,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
         (fun r => (hrecFds' r).unopenStep hm (ihrecFds r rfl hm) (by simpa using hrecFds₂ r))
   | recr hls hps hms hmins his hη hs hls' hl hps' hms' hmins' his' hmaj ihps ihms ihmins ihis
       ihmaj =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1504,14 +1497,12 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
         (fun i => (his' i).unopenStep hm (ihis i rfl hm) (by simpa using his₂ i))
         (hmaj.unopenStep hm (ihmaj rfl hm) hmaj₂)
   | quot hη hl hα hr ihα ihr =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | quot hη₂ hl₂ hα₂ hr₂ =>
       exact .quot hη₂ hl₂ (hα.unopenStep hm (ihα rfl hm) hα₂) (hr.unopenStep hm (ihr rfl hm) hr₂)
   | quotMk hη hl hα hr ha ihα ihr iha =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1519,7 +1510,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
       exact .quotMk hη₂ hl₂ (hα.unopenStep hm (ihα rfl hm) hα₂)
         (hr.unopenStep hm (ihr rfl hm) hr₂) (ha.unopenStep hm (iha rfl hm) ha₂)
   | quotLift hη hl₁ hl₂ hα hr hβ hf hh ha ihα ihr ihβ ihf ihh iha =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1529,7 +1519,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
         (hf.unopenStep hm (ihf rfl hm) hf₂) (hh.unopenStep hm (ihh rfl hm) hh₂)
         (ha.unopenStep hm (iha rfl hm) ha₂)
   | quotInd hη hl hα hr hβ hf ha ihα ihr ihβ ihf iha =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1538,21 +1527,18 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
         (hr.unopenStep hm (ihr rfl hm) hr₂) (hβ.unopenStep hm (ihβ rfl hm) hβ₂)
         (hf.unopenStep hm (ihf rfl hm) hf₂) (ha.unopenStep hm (iha rfl hm) ha₂)
   | proj hstruct hη hs hidx he ihe =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | proj hstruct₂ hη₂ hs₂ hidx₂ he₂ =>
       exact .proj hstruct₂ hη₂ hs₂ hidx₂ (he.unopenStep hm (ihe rfl hm) he₂)
   | app hf ha ihf iha =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | app hf₂ ha₂ =>
       exact .app (hf.unopenStep hm (ihf rfl hm) hf₂) (ha.unopenStep hm (iha rfl hm) ha₂)
   | lam ht hb iht ihb =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1560,7 +1546,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
       exact .lam (ht.unopenStep hm (iht rfl hm) ht₂)
         (hb.unopenStep (by omega) (ihb rfl (by omega)) hb₂)
   | forallE ht hb iht ihb =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1568,7 +1553,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
       exact .forallE (ht.unopenStep hm (iht rfl hm) ht₂)
         (hb.unopenStep (by omega) (ihb rfl (by omega)) hb₂)
   | letE ht hv hb iht ihv ihb =>
-    intro d p b' hk hm h'
     subst hk
     simp only [FExpr.instAtCore] at h'
     cases h' with
@@ -1576,12 +1560,10 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
       exact .letE (ht.unopenStep hm (iht rfl hm) ht₂) (hv.unopenStep hm (ihv rfl hm) hv₂)
         (hb.unopenStep (by omega) (ihb rfl (by omega)) hb₂)
   | natLit hNat =>
-    intro d p b' hk hm h'
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | natLit hNat₂ => exact .natLit hNat₂
   | strLit hNat hList hChar hOfNat hString =>
-    intro d p b' hk hm h'
     simp only [FExpr.instAtCore] at h'
     cases h' with
     | strLit hNat₂ hList₂ hChar₂ hOfNat₂ hString₂ =>
@@ -1592,7 +1574,6 @@ theorem FExpr.Denotes.unopen {n : Nat} {fb : FExpr} {b₀ b' : Expr E.1 ℓ (n +
     FExpr.Denotes L E 0 (FExpr.instAt (.fvar n) 0 fb) b' →
     FExpr.Denotes L E 1 fb b' :=
   fun h₀ h' => h₀.unopenStep rfl (h₀.unopenCore rfl rfl) h'
-
 
 theorem FExpr.Denotes.unopenBVars {m k base : Nat} {fe : FExpr} {e₀ e' : Expr E.1 ℓ m}
     (hm : base + k = m) :
