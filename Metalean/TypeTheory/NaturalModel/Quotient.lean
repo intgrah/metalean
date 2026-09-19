@@ -60,10 +60,15 @@ class HasQuot (Ty : Cᵒᵖ ⥤ Type u) (Tm : outParam (Cᵒᵖ ⥤ Type u))
     (hR : HasSorts.IsSort R (Level.zero : Level ℓ)) (B : y Γ ⟶ Ty) (f : Sect (y (disp A) ≫ B))
     (hf : Tm.map (relFst A R).op f.term = Tm.map (relSnd A R).op f.term) :
     Tm.map (toQuot A R hR).op (lift A R hR B f hf).term = f.term
+  substRel {Γ Δ : C} (σ : Δ ⟶ Γ) (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) ≫ A)) ⟶ Ty)
+    (hR : HasSorts.IsSort R (Level.zero : Level ℓ)) :
+    y (ext (y (disp (y σ ≫ A)) ≫ y σ ≫ A)) ⟶ Ty
+  isSort_substRel {Γ Δ : C} (σ : Δ ⟶ Γ) (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) ≫ A)) ⟶ Ty)
+    (hR : HasSorts.IsSort R (Level.zero : Level ℓ)) :
+    HasSorts.IsSort (substRel σ A R hR) (Level.zero : Level ℓ)
   subst_quot {Γ Δ : C} (σ : Δ ⟶ Γ) (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) ≫ A)) ⟶ Ty)
     (hR : HasSorts.IsSort R (Level.zero : Level ℓ)) :
-    ∃ (R' : y (ext (y (disp (y σ ≫ A)) ≫ y σ ≫ A)) ⟶ Ty)
-      (hR' : HasSorts.IsSort R' (Level.zero : Level ℓ)),
-      y σ ≫ quot A R hR = quot (y σ ≫ A) R' hR'
+    y σ ≫ quot A R hR =
+      quot (y σ ≫ A) (substRel σ A R hR) (isSort_substRel σ A R hR)
 
 end Metalean.TypeTheory.NaturalModel

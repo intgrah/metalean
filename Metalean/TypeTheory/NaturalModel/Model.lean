@@ -5,6 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
+public import Metalean.Level.Order
 public import Metalean.TypeTheory.NaturalModel.Inductive
 public import Metalean.TypeTheory.NaturalModel.Quotient
 
@@ -21,6 +22,22 @@ universe u
 
 variable {C : Type u} [SmallCategory C] {Ty Tm : Cᵒᵖ ⥤ Type u} [ℳ : NaturalModel Ty Tm]
 
+inductive Tele.Bounded {ℓ : Nat} [HasSorts Ty Tm ℓ] (v : Level ℓ) :
+    {Γ : C} → Tele Ty Γ → Prop where
+  | nil {Γ : C} :
+    Bounded v (.nil : Tele Ty Γ)
+  | cons {Γ : C} {A : y Γ ⟶ Ty} {Θ : Tele Ty (ext A)} (u : Level ℓ)
+    (hA : HasSorts.IsSort A u) (hu : Level.imax u v ≤ v) :
+    Bounded v Θ →
+    Bounded v (.cons A Θ)
+
+structure IndSpec.Bounded {ℓ : Nat} [HasSorts Ty Tm ℓ] [HasPi Ty Tm] {n : Nat} {Γ : C}
+    (I : IndSpec Ty n Γ) (v : Level ℓ) : Prop where
+  fields {s : Fin n} (c : Fin (I.nctors s)) :
+    Tele.Bounded v (I.field c)
+  arities {s : Fin n} (c : Fin (I.nctors s)) (k : Fin (I.nrec c)) :
+    Tele.Bounded v (I.arity c k)
+
 class LeanModel (Ty : Cᵒᵖ ⥤ Type u) (Tm : outParam (Cᵒᵖ ⥤ Type u))
     [ℳ : NaturalModel Ty Tm] (ℓ : Nat) extends
     HasSorts Ty Tm ℓ, HasPi Ty Tm, HasQuot Ty Tm ℓ where
@@ -33,35 +50,21 @@ class LeanModel (Ty : Cᵒᵖ ⥤ Type u) (Tm : outParam (Cᵒᵖ ⥤ Type u))
     IsProp A
   empty : C
   emptyIsTerminal : IsTerminal empty
-  Const : Type u
-  constLevels (c : Const) : Nat
-  constType (c : Const) (vs : Fin (constLevels c) → Level ℓ) :
-    y empty ⟶ Ty
-  constTerm (c : Const) (vs : Fin (constLevels c) → Level ℓ) :
-    Sect (constType c vs)
-  Ind : Type u
-  indLevels (i : Ind) : Nat
-  indSorts (i : Ind) : Nat
-  indParams (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    Tele Ty empty
-  indSpec (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    IndSpec Ty (indSorts i) (extTele (indParams i vs))
-  indAlgebra (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    Algebra (indSpec i vs)
-  indLevel (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    Level ℓ
-  isSort_carrier (i : Ind) (vs : Fin (indLevels i) → Level ℓ) (s : Fin (indSorts i)) :
-    HasSorts.IsSort ((indAlgebra i vs).carrier s) (indLevel i vs)
-  indSmallElim (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    HasSmallElim (indAlgebra i vs)
-  indLargeElim (i : Ind) (vs : Fin (indLevels i) → Level ℓ) :
-    indLevel i vs ≠ Level.zero ∨ HasSingletonElim (indAlgebra i vs) →
-    HasLargeElim (indAlgebra i vs)
-  indEta (i : Ind) (vs : Fin (indLevels i) → Level ℓ) {s : Fin (indSorts i)}
-    (c : Fin ((indSpec i vs).nctors s)) :
-    (indSpec i vs).nctors s = 1 →
-    (indSpec i vs).nrec c = 0 →
-    (indSpec i vs).index s = .nil →
-    HasEta (indAlgebra i vs) c
+  algebra {n : Nat} {Γ : C} (I : IndSpec Ty n Γ) (v : Level ℓ) (hI : I.Bounded v) :
+    Algebra I
+  isSort_carrier {n : Nat} {Γ : C} (I : IndSpec Ty n Γ) (v : Level ℓ) (hI : I.Bounded v)
+    (s : Fin n) :
+    HasSorts.IsSort ((algebra I v hI).carrier s) v
+  smallElim {n : Nat} {Γ : C} (I : IndSpec Ty n Γ) (v : Level ℓ) (hI : I.Bounded v) :
+    HasSmallElim (algebra I v hI)
+  largeElim {n : Nat} {Γ : C} (I : IndSpec Ty n Γ) (v : Level ℓ) (hI : I.Bounded v) :
+    v ≠ Level.zero ∨ HasSingletonElim (algebra I v hI) →
+    HasLargeElim (algebra I v hI)
+  eta {n : Nat} {Γ : C} (I : IndSpec Ty n Γ) (v : Level ℓ) (hI : I.Bounded v) {s : Fin n}
+    (c : Fin (I.nctors s)) :
+    I.nctors s = 1 →
+    I.nrec c = 0 →
+    I.index s = .nil →
+    HasEta (algebra I v hI) c
 
 end Metalean.TypeTheory.NaturalModel

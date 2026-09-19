@@ -262,7 +262,8 @@ public import Metalean.Syntax.Substitution
 public import Metalean.Syntax.Var
 public import Metalean.Syntax.Weakening
 public import Metalean.Tele
-public import Metalean.TypeTheory.Consistency
+public import Metalean.TypeTheory.Initiality
+public import Metalean.TypeTheory.Interpretation
 public import Metalean.TypeTheory.NaturalModel.Comprehension
 public import Metalean.TypeTheory.NaturalModel.Defs
 public import Metalean.TypeTheory.NaturalModel.Discriminating
@@ -285,6 +286,7 @@ public import Metalean.TypeTheory.SetModel.Code
 public import Metalean.TypeTheory.SetModel.Consistency
 public import Metalean.TypeTheory.SetModel.False
 public import Metalean.TypeTheory.SetModel.Pi
+public import Metalean.TypeTheory.SetModel.Quotient
 public import Metalean.TypeTheory.SetModel.Sort
 public import Metalean.TypeTheory.Syntactic.Category
 public import Metalean.TypeTheory.Syntactic.Comprehension

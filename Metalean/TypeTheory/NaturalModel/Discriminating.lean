@@ -23,9 +23,12 @@ variable {C : Type u} [SmallCategory C] {Ty Tm : Cᵒᵖ ⥤ Type u} [ℳ : Natu
 
 variable (Ty ℓ) in
 structure IndArgs where
-  ind : LeanModel.Ind Ty ℓ
-  levels : Fin (LeanModel.indLevels ind) → Level ℓ
-  sort : Fin (LeanModel.indSorts ind)
+  {arity : Nat}
+  {base : C}
+  spec : IndSpec Ty arity base
+  level : Level ℓ
+  bounded : spec.Bounded level
+  sort : Fin arity
 
 variable (Ty ℓ) in
 inductive Canonical (Γ : C) where
@@ -34,13 +37,13 @@ inductive Canonical (Γ : C) where
   | quot (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) ≫ A)) ⟶ Ty)
     (hR : HasSorts.IsSort R (Level.zero : Level ℓ))
   | ind (a : IndArgs Ty ℓ)
-    (σ : Γ ⟶ extTele ((LeanModel.indSpec a.ind a.levels).index a.sort))
+    (σ : Γ ⟶ extTele (a.spec.index a.sort))
 
 def Canonical.decode : Canonical Ty ℓ Γ → (y Γ ⟶ Ty)
   | .sort v => HasSorts.sort v Γ
   | .pi P => yonedaEquiv.symm (HasPi.pi.app (op Γ) P)
   | .quot A R hR => HasQuot.quot A R hR
-  | .ind a σ => y σ ≫ (LeanModel.indAlgebra a.ind a.levels).carrier a.sort
+  | .ind a σ => y σ ≫ (LeanModel.algebra a.spec a.level a.bounded).carrier a.sort
 
 class Discriminating (Ty : Cᵒᵖ ⥤ Type u) (Tm : outParam (Cᵒᵖ ⥤ Type u))
     [ℳ : NaturalModel Ty Tm] (ℓ : Nat) [𝓛 : LeanModel Ty Tm ℓ] : Prop where
@@ -78,10 +81,10 @@ theorem quot_injective {A₁ A₂ : y Γ ⟶ Ty} {R₁ : y (ext (y (disp A₁) �
   exact congrArg (Sigma.mk A₁) (eq_of_heq h)
 
 theorem ind_injective {a₁ a₂ : IndArgs Ty ℓ}
-    {σ₁ : Γ ⟶ extTele ((LeanModel.indSpec a₁.ind a₁.levels).index a₁.sort)}
-    {σ₂ : Γ ⟶ extTele ((LeanModel.indSpec a₂.ind a₂.levels).index a₂.sort)}
-    (h : y σ₁ ≫ (LeanModel.indAlgebra a₁.ind a₁.levels).carrier a₁.sort =
-      y σ₂ ≫ (LeanModel.indAlgebra a₂.ind a₂.levels).carrier a₂.sort) :
+    {σ₁ : Γ ⟶ extTele (a₁.spec.index a₁.sort)}
+    {σ₂ : Γ ⟶ extTele (a₂.spec.index a₂.sort)}
+    (h : y σ₁ ≫ (LeanModel.algebra a₁.spec a₁.level a₁.bounded).carrier a₁.sort =
+      y σ₂ ≫ (LeanModel.algebra a₂.spec a₂.level a₂.bounded).carrier a₂.sort) :
     a₁ = a₂ ∧ σ₁ ≍ σ₂ :=
   Canonical.ind.inj (decode_inj (.ind a₁ σ₁) (.ind a₂ σ₂) h)
 
@@ -95,9 +98,9 @@ theorem sort_ne_quot (v : Level ℓ) (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) �
   cases decode_inj (.sort v) (.quot A R hR) h
 
 theorem sort_ne_ind (v : Level ℓ) (a : IndArgs Ty ℓ)
-    (σ : Γ ⟶ extTele ((LeanModel.indSpec a.ind a.levels).index a.sort)) :
+    (σ : Γ ⟶ extTele (a.spec.index a.sort)) :
     (HasSorts.sort v Γ : y Γ ⟶ Ty) ≠
-      y σ ≫ (LeanModel.indAlgebra a.ind a.levels).carrier a.sort := fun h => by
+      y σ ≫ (LeanModel.algebra a.spec a.level a.bounded).carrier a.sort := fun h => by
   cases decode_inj (.sort v) (.ind a σ) h
 
 theorem piCode_ne_quot (A₁ : y Γ ⟶ Ty) (B : y (ext A₁) ⟶ Ty) (A₂ : y Γ ⟶ Ty)
@@ -106,14 +109,14 @@ theorem piCode_ne_quot (A₁ : y Γ ⟶ Ty) (B : y (ext A₁) ⟶ Ty) (A₂ : y 
   cases decode_inj (.pi ((comprehension A₁).label (yonedaEquiv B))) (.quot A₂ R hR) h
 
 theorem piCode_ne_ind (A : y Γ ⟶ Ty) (B : y (ext A) ⟶ Ty) (a : IndArgs Ty ℓ)
-    (σ : Γ ⟶ extTele ((LeanModel.indSpec a.ind a.levels).index a.sort)) :
-    piCode A B ≠ y σ ≫ (LeanModel.indAlgebra a.ind a.levels).carrier a.sort := fun h => by
+    (σ : Γ ⟶ extTele (a.spec.index a.sort)) :
+    piCode A B ≠ y σ ≫ (LeanModel.algebra a.spec a.level a.bounded).carrier a.sort := fun h => by
   cases decode_inj (.pi ((comprehension A).label (yonedaEquiv B))) (.ind a σ) h
 
 theorem quot_ne_ind (A : y Γ ⟶ Ty) (R : y (ext (y (disp A) ≫ A)) ⟶ Ty)
     (hR : HasSorts.IsSort R (Level.zero : Level ℓ)) (a : IndArgs Ty ℓ)
-    (σ : Γ ⟶ extTele ((LeanModel.indSpec a.ind a.levels).index a.sort)) :
-    HasQuot.quot A R hR ≠ y σ ≫ (LeanModel.indAlgebra a.ind a.levels).carrier a.sort :=
+    (σ : Γ ⟶ extTele (a.spec.index a.sort)) :
+    HasQuot.quot A R hR ≠ y σ ≫ (LeanModel.algebra a.spec a.level a.bounded).carrier a.sort :=
     fun h => by
   cases decode_inj (.quot A R hR) (.ind a σ) h
 
