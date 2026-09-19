@@ -45,8 +45,7 @@ theorem natSuccDF {e₁ e₂ : Expr ζ ℓ n} :
     (fun ⟨0, _⟩ => by rw [hty]; exact he)
     nofun
     (fun ⟨0, _⟩ => by
-      change E[Γ] ⊢ₛ
-        (((E.get η).block.ctors 0 1).recursive ⟨0, _⟩).instantiatedType η ![] ![]
+      change E[Γ] ⊢ₛ (((E.get η).block.ctors 0 1).recursive ⟨0, _⟩).instantiatedType η ![] ![]
           (Fin.append ![] ![]) : _
       rw [hty]
       exact natTypeDF)

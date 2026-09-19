@@ -80,19 +80,16 @@ structure ProjectionStrong
     (maj : Expr ζ ℓ n) : Prop where
   type : E[Γ] ⊢ₛ h.projType η ls ps f maj :
     .sort (((I.ctors s c).ordinary f).level.inst ls)
-  result : E[Γ] ⊢ₛ
-    Inductive.motiveResult
+  result : E[Γ] ⊢ₛ Inductive.motiveResult
         (h.projectionMotives η ls ps f s) h.indices maj ≡
       h.projType η ls ps f maj :
         .sort (((I.ctors s c).ordinary f).level.inst ls)
   term : E[Γ] ⊢ₛ h.projTerm η ls ps f maj : h.projType η ls ps f maj
-  case : E[Γ] ⊢ₛ
-      h.projectionCases η ls ps f
+  case : E[Γ] ⊢ₛ h.projectionCases η ls ps f
         (h.projectionMotives η ls ps f) s c :
     I.caseFnType η ls ps
       (h.projectionMotives η ls ps f) s c
-  motive (other : Fin ι.nsorts) : E[Γ] ⊢ₛ
-    h.projectionMotives η ls ps f other :
+  motive (other : Fin ι.nsorts) : E[Γ] ⊢ₛ h.projectionMotives η ls ps f other :
       I.motiveType η ls ps (((I.ctors s c).ordinary f).level.inst ls) other
   iota (fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n)
       (heq : maj = .ctor η s c ls ps fds h.recursive)
@@ -262,13 +259,11 @@ theorem projectionStrong
       obtain rfl := h.sort_unique target
       obtain rfl := h.ctor_unique targetCtor
       exact hcase
-  have hresult : E[Γ] ⊢ₛ
-      Inductive.motiveResult (ms s) h.indices maj ≡
+  have hresult : E[Γ] ⊢ₛ Inductive.motiveResult (ms s) h.indices maj ≡
         h.projType η ls ps f maj : .sort u := by
     rw [Inductive.motiveResult, hmsDef, Expr.apps_eq_self_of_zero hni]
     exact hbeta hΓ hps hmaj
-  have hresultTy : E[Γ] ⊢ₛ
-      Inductive.motiveResult (ms s) h.indices maj : .sort u :=
+  have hresultTy : E[Γ] ⊢ₛ Inductive.motiveResult (ms s) h.indices maj : .sort u :=
     hB.motiveResult_congr hΓ (fun p => (hps p).left)
       (fun target => (hms target).left) h.no_indices.elim hmaj.left
   have hterm : E[Γ] ⊢ₛ h.projTerm η ls ps f maj :
@@ -283,12 +278,10 @@ theorem projectionStrong
   have htargetIdx : (fun index =>
       ((E.get η).block.ctors s c).targetIndex ls ps fds index) = h.indices :=
     h.indices_eq _
-  have htypeIota : E[Γ] ⊢ₛ
-      (E.get η).block.iotaType η ls ps ms s c fds h.recursive ≡
+  have htypeIota : E[Γ] ⊢ₛ (E.get η).block.iotaType η ls ps ms s c fds h.recursive ≡
         h.projType η ls ps f (.ctor η s c ls ps fds h.recursive) : .sort u := by
     simpa [Inductive.iotaType, htargetIdx] using hresult
-  have hlhs : E[Γ] ⊢ₛ
-      (E.get η).block.iotaLhs η ls u ps ms mins s c fds h.recursive :
+  have hlhs : E[Γ] ⊢ₛ (E.get η).block.iotaLhs η ls u ps ms mins s c fds h.recursive :
       (E.get η).block.iotaType η ls ps ms s c fds h.recursive := by
     have ht := DefeqStrong.defeqDF htypeIota.symm hterm
     rw [h.projTerm_eq_recr, ← htargetIdx] at ht
@@ -305,8 +298,7 @@ theorem projectionStrong
       Ctx.entry_append_right (E.get η).block.params _ (by omega) (by simp)
         (by omega)] at hv
     simpa [projTypeWith] using hv
-  have hrhsEq : E[Γ] ⊢ₛ
-      (E.get η).block.iotaRhs η ls u ps ms mins s c fds h.recursive ≡ fds f :
+  have hrhsEq : E[Γ] ⊢ₛ (E.get η).block.iotaRhs η ls u ps ms mins s c fds h.recursive ≡ fds f :
       projTypeWith ((E.get η).block) ls ps f fun previous =>
         fds (previous.castLE f.isLt.le) := by
     have happly := Ctx.lam_applyFamilyStrong hΓ hfieldsTele

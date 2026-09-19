@@ -307,8 +307,7 @@ def checkRecField (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
     have ⟨Δ, hΔ, hΔwf⟩ :=
       TeleWFSpec.of (fun hl hQ => levelOK_of_levelOKB hQ hI hl) htele hS₀ hfd.tele
     have hσ (p : Fin ι.nparams) :
-        E[I.params ++ ctor.ordinaryTele ++ Δ] ⊢ₛ
-          (.var ⟨p.val, by omega⟩ : Expr _ ι.nlevels _) :
+        E[I.params ++ ctor.ordinaryTele ++ Δ] ⊢ₛ (.var ⟨p.val, by omega⟩ : Expr _ ι.nlevels _) :
           I.paramType Level.param (fun q => .var ⟨q.val, by omega⟩) p := by
       simpa using Inductive.paramArgs_wkN (Δ := Δ) (Inductive.paramVars_typed hH.1) p
     have ⟨is', hisD, hisT⟩ := hidx (ls' := fun i => RawLevel.param i) (by simp)

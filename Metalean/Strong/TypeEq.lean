@@ -107,7 +107,7 @@ theorem IsTypeEq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ n}
 
 theorem IsTypeEq.forallE_dom {t₁ t₂ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)} {v : Level ℓ}
     (h : E[Γ] ⊢ₛ t₁ ≡ t₂ typ) :
-    E[Γ.snoc t₁] ⊢ₛ t' ≡ t' : .sort v →
+    E[Γ.snoc t₁] ⊢ₛ t' : .sort v →
     E[Γ] ⊢ₛ .forallE t₁ t' ≡ .forallE t₂ t' typ := by
   induction h using Relation.TransGen.trans_induction_on with
   | single h =>

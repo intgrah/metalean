@@ -211,7 +211,7 @@ theorem DefeqStrong.quotLift_prop :
   have hmk : E[Γ] ⊢ₛ .quotMk η .zero α r p : .quot η .zero α r := .quotMkDF hα hr hp
   have hqmk : E[Γ] ⊢ₛ q ≡ .quotMk η .zero α r p : .quot η .zero α r :=
     .proofIrrel (.quotDF hα hr) hq hmk
-  have hβinst : E[Γ] ⊢ₛ β.wk.inst p ≡ β.wk.inst p : .sort v := by
+  have hβinst : E[Γ] ⊢ₛ β.wk.inst p : .sort v := by
     rw [Expr.inst_wk]
     exact hβ
   have hrhs := DefeqStrong.appDF hα (hβ.wk α) hf hp hβinst

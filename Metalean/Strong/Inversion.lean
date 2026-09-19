@@ -46,8 +46,8 @@ theorem sort_inv (he : e₁ = .sort l ∨ e₂ = .sort l) :
 theorem forallE_ty_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     ∃ l₁ l₂ : Level ℓ,
-      E[Γ] ⊢ₛ t₁ ≡ t₁ : .sort l₁ ∧
-      E[Γ.snoc t₁] ⊢ₛ t' ≡ t' : .sort l₂ ∧
+      E[Γ] ⊢ₛ t₁ : .sort l₁ ∧
+      E[Γ.snoc t₁] ⊢ₛ t' : .sort l₂ ∧
       E[Γ] ⊢ₛ t ≡ .sort (.imax l₁ l₂) typ := by
   intro h
   induction h with
@@ -418,7 +418,7 @@ theorem lam_inv (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ ok →
     ∃ t' : Expr ζ ℓ (n + 1),
-    E[Γ.snoc t₁] ⊢ₛ e' ≡ e' : t' ∧
+    E[Γ.snoc t₁] ⊢ₛ e' : t' ∧
     E[Γ] ⊢ₛ t ≡ .forallE t₁ t' typ := by
   intro h hΓ
   induction h with
@@ -447,16 +447,12 @@ theorem lam_inv (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
     rcases he with he | he
     · cases he
       have hΓt : E[Γ.snoc t₁] ⊢ₛ ok := hΓ.snoc ⟨u, ht₁⟩
-      have hvar : E[Γ.snoc t₁] ⊢ₛ
-          .var (Fin.last n) ≡ .var (Fin.last n) : t₁.wk := by
+      have hvar : E[Γ.snoc t₁] ⊢ₛ .var (Fin.last n) : t₁.wk := by
         have hvar := hΓt.var (Fin.last n)
         rwa [Ctx.get_last] at hvar
-      have htwk' : E[(Γ.snoc t₁).snoc t₁.wk] ⊢ₛ
-          t'.wkFrom n ≡ t'.wkFrom n : .sort v :=
+      have htwk' : E[(Γ.snoc t₁).snoc t₁.wk] ⊢ₛ t'.wkFrom n : .sort v :=
         ht'.wkFrom Γ #t[t₁] t₁
-      have he' : E[Γ.snoc t₁] ⊢ₛ
-          .app e.wk (.var (Fin.last n)) ≡
-            .app e.wk (.var (Fin.last n)) : t' := by
+      have he' : E[Γ.snoc t₁] ⊢ₛ .app e.wk (.var (Fin.last n)) : t' := by
         have he' := appDF htw htwk' hew hvar
           (by rw [Expr.inst_wkFrom_last]; exact ht')
         rwa [Expr.inst_wkFrom_last] at he'

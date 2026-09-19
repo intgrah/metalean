@@ -156,11 +156,9 @@ theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E�
       (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f)) →
     (∀ f, RawJudgment Γ₁ (recFds₁ f) (recFds₂ f)
       (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f)) →
-    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ
-      ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
+    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
       ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₂ fds₂ f : .sort (fieldLevels f)) →
-    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ
-      ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
+    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
       ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₂ fds₂ f : .sort (recFieldLevels f)) →
     RawJudgment Γ₁
       (.ind η s ls ps₁ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i)

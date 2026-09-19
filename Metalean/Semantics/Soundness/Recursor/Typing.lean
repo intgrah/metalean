@@ -340,7 +340,7 @@ theorem CoherentShape.HasEquality.recr (h₁ : RecTyping Γ η s ls l ps₁ ms�
   | true =>
     have hσ : E₂[Γ.as.ctx] ⊢ₛ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ ≡
         Inductive.recrSubst ps₂ ms₂ mins₂ is₂ maj₂ ⊣ (CtxCat.recr h₁.toRecDecl ls s).as.ctx :=
-      fun v => (congrArg (fun X => E₂[Γ.as.ctx] ⊢ₛ _ ≡ _ : (Ctx.get v X).subst _)
+      fun v => (congrArg (fun X => E₂[Γ.as.ctx] ⊢ₛ _ : (Ctx.get v X).subst _)
         (Tele.nil_append _)).mpr (hargs v)
     rw [rawInterpret_recr _ h₁ hrel, rawInterpret_recr _ h₂ hrel, RawFamily.closedApps_value,
       RawFamily.closedApps_value]

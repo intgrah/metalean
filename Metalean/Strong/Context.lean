@@ -60,7 +60,7 @@ theorem CtxWFStrong.get
 theorem CtxWFStrong.var
     (v : Var n) :
     E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ .var v ≡ .var v : Γ.get v :=
+    E[Γ] ⊢ₛ .var v : Γ.get v :=
   fun hΓ =>
     have ⟨_, hv⟩ := hΓ.get v
     .var hv

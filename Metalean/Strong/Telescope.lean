@@ -98,11 +98,9 @@ theorem WFTeleStrong.substitution_congr {m : Nat}
       hσ'.left.extend hlast.left
     have hσfull' : E[Γ] ⊢ₛ Subst.extend (Subst.wk.comp σ₂) (σ₂ (Fin.last m)) ⊣ Δ.snoc t₁ :=
       hprefix'.extend hlast'
-    have htinst : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₁).lift).inst (σ₁ (Fin.last m)) ≡
-        (t.subst (Subst.wk.comp σ₁).lift).inst (σ₁ (Fin.last m)) : .sort u := by
+    have htinst : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₁).lift).inst (σ₁ (Fin.last m)) : .sort u := by
       simpa [Expr.inst] using ht.substitution hσfull
-    have htinst' : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₂).lift).inst (σ₂ (Fin.last m)) ≡
-        (t.subst (Subst.wk.comp σ₂).lift).inst (σ₂ (Fin.last m)) : .sort u := by
+    have htinst' : E[Γ] ⊢ₛ (t.subst (Subst.wk.comp σ₂).lift).inst (σ₂ (Fin.last m)) : .sort u := by
       simpa [Expr.inst] using ht.substitution hσfull'
     have htapp := DefeqStrong.appDF ht₁σ .sortDF
       (ih hσ' (.lamDF ht₁ .sortDF .sortDF ht ht)) hlast
@@ -333,9 +331,7 @@ theorem Ctx.pi_applyBoundStrong {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
       DefeqStrong.appDF (ht'.wk t₁) (ht.wkFrom (Γ ++ Δ) #t[t₁] t₁)
         (by simpa [Expr.wk] using (ih hΓΔ (.forallEDF ht' ht ht) he).wk t₁)
         (by simpa using CtxWFStrong.var (Fin.last (n + k)) (hΓΔ.snoc ⟨v, ht'⟩))
-        (show E[(Γ ++ Δ).snoc t₁] ⊢ₛ
-            (t.wkFrom (n + k)).inst (.var (Fin.last (n + k))) ≡
-            (t.wkFrom (n + k)).inst (.var (Fin.last (n + k))) : .sort l by
+        (show E[(Γ ++ Δ).snoc t₁] ⊢ₛ (t.wkFrom (n + k)).inst (.var (Fin.last (n + k))) : .sort l by
           simpa [Expr.inst_wkFrom_last])
 
 theorem Ctx.pi_applyFamilyStrong {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}

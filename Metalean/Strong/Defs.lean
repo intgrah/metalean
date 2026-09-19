@@ -58,12 +58,10 @@ judgement DefeqStrong (E : Env ζ) {ℓ : Nat} :
   ∀ f, E[Γ] ⊢ₛ recFds₁ f ≡ recFds₂ f :
     (((E.get η).block.ctors s c).recursive f).instantiatedType
       η ls ps₁ (Fin.append ps₁ fds₁)
-  ∀ f, E[Γ] ⊢ₛ
-    ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
+  ∀ f, E[Γ] ⊢ₛ ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
     ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₂ fds₂ f :
       .sort (fieldLevels f)
-  ∀ f, E[Γ] ⊢ₛ
-    ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
+  ∀ f, E[Γ] ⊢ₛ ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
     ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₂ fds₂ f :
       .sort (recFieldLevels f)
   E[Γ] ⊢ₛ .ind η s ls ps₁
@@ -299,7 +297,7 @@ variable {E : Env ζ} {ℓ n m : Nat} {Γ Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx �
 
 theorem DefeqStrong.regular {e₁ e₂ t : Expr ζ ℓ n} :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    ∃ l : Level ℓ, E[Γ] ⊢ₛ t ≡ t : .sort l := by
+    ∃ l : Level ℓ, E[Γ] ⊢ₛ t : .sort l := by
   intro h
   induction h with
   | var ht => exact ⟨_, ht⟩

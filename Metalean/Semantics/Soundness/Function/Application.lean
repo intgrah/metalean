@@ -134,8 +134,7 @@ theorem HasSubstitution.applyBound (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
     Ctx.pi_applyBoundStrong T.as.wf hbody he
   have happ : E[Γ₂.as.ctx] ⊢ₛ ((e.wkN k).subst σ₁.subst).apps
       (fun i : Fin k => σ₁.subst (Fin.natAdd Γ₁.as.len i)) : body.subst σ₁.subst :=
-    congr(E[Γ₂.as.ctx] ⊢ₛ
-      $((congrArg (Expr.subst σ₁.subst) (Expr.applyBound_eq_apps e k)).trans
+    congr(E[Γ₂.as.ctx] ⊢ₛ $((congrArg (Expr.subst σ₁.subst) (Expr.applyBound_eq_apps e k)).trans
         (((Expr.appSubstHom.finFold k).naturality_apply σ₁.subst
           ⟨e.wkN k, fun i => Expr.var (Fin.natAdd Γ₁.as.len i)⟩).symm)) : _).mp
       (hresult.substitution σ₁.typed)

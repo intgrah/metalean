@@ -93,8 +93,7 @@ theorem WHRed.quotIota_defeq (ho : E.Ordered)
       .quotLift η l₁ l₂ α' r' β' f' h' (.quotMk η l₁ α' r' a) : β' :=
     .quotLiftDF hαrefl hrrefl hβrefl hfrefl hhrefl hmaj'
   have hlhs : E[Γ] ⊢ₛ .quotLift η l₁ l₂ α' r' β' f' h'
-      (.quotMk η l₁ α' r' a) ≡ .quotLift η l₁ l₂ α' r' β' f' h'
-        (.quotMk η l₁ α' r' a) : β' :=
+      (.quotMk η l₁ α' r' a) : β' :=
     .quotLiftDF hαrefl hrrefl hβrefl hfrefl hhrefl (.quotMkDF hαrefl hrrefl haa)
   have hβwk := hβrefl.wk α'
   have hβinst : E[Γ] ⊢ₛ β'.wk.inst a : .sort l₂ := by simpa using hβrefl

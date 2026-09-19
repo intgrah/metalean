@@ -117,8 +117,7 @@ theorem RawCtx.Hom.applyTele_typed {Γ₁ Γ₂ : RawCtx E ℓ}
     have happ := DefeqStrong.appDF htσ hbodyσ hfun harg (hbodyσ.inst_congr harg)
     have hσ₂ : σ₃.subst.extend (σ₂.subst (Fin.last (Γ₁.len + k))) = σ₂.subst :=
       Fin.snoc_init_self σ₂.subst
-    change E[Γ₂.ctx] ⊢ₛ
-      (e.apps fun i => σ₂.subst (Fin.natAdd Γ₁.len i.castSucc)).app
+    change E[Γ₂.ctx] ⊢ₛ (e.apps fun i => σ₂.subst (Fin.natAdd Γ₁.len i.castSucc)).app
         (σ₂.subst (Fin.last (Γ₁.len + k))) :
       (body.subst σ₃.subst.lift).inst (σ₂.subst (Fin.last (Γ₁.len + k))) at happ
     rw [Expr.apps_last]

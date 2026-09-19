@@ -188,8 +188,7 @@ theorem generic (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) (s : F
       rwa [Inductive.recrTele_get_major_subst] at hp }
 
 theorem recrBody_typed (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
-    E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ
-      .recr η s ls l (fun p => .var (RecrBinder.param p).resolve)
+    E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .recr η s ls l (fun p => .var (RecrBinder.param p).resolve)
         (fun t => .var (RecrBinder.motive t).resolve) (fun t c => .var (RecrBinder.case t c).resolve)
         (fun i => .var (RecrBinder.index i).resolve) (.var RecrBinder.major.resolve) :
       ι.recrBody s :=

@@ -18,7 +18,7 @@ variable {ζ : Sigs} (E : Env ζ) {ℓ n m : Nat}
   (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m)
 
 private inductive SubstImage (v : Var n) : Prop where
-  | typed (h : E[Γ₂] ⊢ₛ σ v ≡ σ v : (Γ₁.get v).subst σ)
+  | typed (h : E[Γ₂] ⊢ₛ σ v : (Γ₁.get v).subst σ)
   | renamed (w : Var m) (hσ : σ v = .var w)
       (htype : Γ₂.get w = (Γ₁.get v).subst σ)
 

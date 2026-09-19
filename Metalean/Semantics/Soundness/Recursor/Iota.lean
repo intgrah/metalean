@@ -603,8 +603,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps inst.fds f))
     (prf : ∀ f, RawJudgment Γ₁ (inst.recFds f) (inst.recFds f)
       (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps inst.fds f))
-    (heq : E₂[Γ₁.as.ctx] ⊢ₛ
-      .recr η s ls l ps ms mins
+    (heq : E₂[Γ₁.as.ctx] ⊢ₛ .recr η s ls l ps ms mins
         (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)
         (.ctor η s c ls ps inst.fds inst.recFds) ≡
       (E₂.get η).block.iotaRhs η ls l ps ms mins s c inst.fds inst.recFds :
