@@ -254,8 +254,8 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       he₁.quotLift_prem
     have ⟨_, _, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, hhw₂, haw₂, _⟩ :=
       he₂.quotLift_prem
-    have hleft := DefeqStrong.quotLiftDF (η := ‹Head E.1 .quot›) hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
-    have hright := DefeqStrong.quotLiftDF (η := ‹Head E.1 .quot›)
+    have hleft := DefeqStrong.quotLiftDF hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
+    have hright := DefeqStrong.quotLiftDF
       (hαw₁.trans (ihα hα₂ hΔ hσ hαw₁.right hαw₂.right))
       (hrw₁.trans (ihr hr₂ hΔ hσ hrw₁.right hrw₂.right))
       (hβw₁.trans (ihβ hβ₂ hΔ hσ hβw₁.right hβw₂.right))
@@ -271,12 +271,12 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       he₁.quotInd_prem
     have ⟨_, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, haw₂, _, _⟩ :=
       he₂.quotInd_prem
-    have hleft := DefeqStrong.quotIndDF (η := ‹Head E.1 .quot›) hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
+    have hleft := DefeqStrong.quotIndDF hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
     have hβ' := hβw₁.trans (ihβ hβ₂ hΔ hσ hβw₁.right hβw₂.right)
     have ha' := haw₁.trans (iha ha₂ hΔ hσ haw₁.right haw₂.right)
     have ⟨_, hmotive⟩ := hβ'.regular
     have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv
-    have hright := DefeqStrong.quotIndDF (η := ‹Head E.1 .quot›)
+    have hright := DefeqStrong.quotIndDF
       (hαw₁.trans (ihα hα₂ hΔ hσ hαw₁.right hαw₂.right))
       (hrw₁.trans (ihr hr₂ hΔ hσ hrw₁.right hrw₂.right))
       hβ'
