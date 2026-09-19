@@ -185,7 +185,7 @@ theorem Defeq.toStrong
     have hps := fun p => ihps p hΓ
     have hms := fun s => ihms s hΓ
     have hmins := fun s c => ihmins s c hΓ
-    have his := fun index => ihis index hΓ
+    have his := fun i => ihis i hΓ
     have hmaj := ihmaj hΓ
     exact .recrDF hallowed hps hms hmins his hmaj
       (hwf _ |>.block.motiveResult_congr hΓ
@@ -236,7 +236,7 @@ theorem Defeq.toStrong
     have hB := (hwf η).block
     have hσ := Ctor.targetSubstWFStrong (ctor := (E.get η).block.ctors s c)
       hps hfields
-    have his := fun index => (hB.ctors s c).targetIndex index hσ
+    have his := fun i => (hB.ctors s c).targetIndex i hσ
     have hmaj := DefeqStrong.ctorDF hps hfields hrecFields
       (fun f => (hB.ctors s c).ordinaryFieldExprStrong f hps hfields)
       (fun f => ((hB.ctors s c).recursiveFieldExprStrong rfl f hΓ hps hfields).choose_spec)

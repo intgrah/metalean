@@ -136,7 +136,7 @@ theorem varMajor (hΓ : E[Γ] ⊢ₛ ok)
     hΓ.snoc ⟨_, h.indTypeStrong hps⟩
   have hv := hΓ'.var (Fin.last n)
   rw [Ctx.get_last, Expr.wk, Expr.wkFrom_ind,
-    h.indices_eq fun index => Expr.wkFrom n (h.indices index)] at hv
+    h.indices_eq fun i => Expr.wkFrom n (h.indices i)] at hv
   exact hv
 
 include hB
@@ -275,8 +275,8 @@ theorem projectionStrong
       h.no_indices.elim hmaj.left hresultTy)
   refine ⟨hresult.right, hresult, hterm, hcase, hms, ?_⟩
   intro fds rfl hfields
-  have htargetIdx : (fun index =>
-      ((E.get η).block.ctors s c).targetIndex ls ps fds index) = h.indices :=
+  have htargetIdx : (fun i =>
+      ((E.get η).block.ctors s c).targetIndex ls ps fds i) = h.indices :=
     h.indices_eq _
   have htypeIota : E[Γ] ⊢ₛ (E.get η).block.iotaType η ls ps ms s c fds h.recursive ≡
         h.projType η ls ps f (.ctor η s c ls ps fds h.recursive) : .sort u := by
@@ -363,7 +363,7 @@ theorem projTerm_substCongrStrong
   have hξ : E[Δ] ⊢ₛ β₁.extend maj₁ ≡ β₂.extend maj₂ ⊣
       Γ.snoc (.ind η s ls ps h.indices) := by
     refine hβ.extend ?_
-    rw [Expr.subst, h.indices_eq fun index => Expr.subst β₁ (h.indices index)]
+    rw [Expr.subst, h.indices_eq fun i => Expr.subst β₁ (h.indices i)]
     exact hmaj
   simpa [Expr.wk_subst_extend, Expr.subst, Subst.extend_last] using
     DefeqStrong.substitution_congr hΓ' hξ (h.projTerm_genericStrong hB f hΓ hps)

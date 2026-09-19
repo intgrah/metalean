@@ -113,15 +113,15 @@ theorem ctor_inv
           η ls ps₁
           (Fin.append ps₁ fds₁)) ∧
       E[Γ] ⊢ₛ .ind η s ls ps₁
-          (fun index => ((E.get η).block.ctors s c).targetIndex
-            ls ps₁ fds₁ index) ≡
+          (fun i => ((E.get η).block.ctors s c).targetIndex
+            ls ps₁ fds₁ i) ≡
         .ind η s ls ps₂
-          (fun index => ((E.get η).block.ctors s c).targetIndex
-            ls ps₂ fds₂ index) :
+          (fun i => ((E.get η).block.ctors s c).targetIndex
+            ls ps₂ fds₂ i) :
           .sort ((E.get η).block.level.inst ls) ∧
       E[Γ] ⊢ₛ t ≡ .ind η s ls ps₁
-        (fun index => ((E.get η).block.ctors s c).targetIndex
-          ls ps₁ fds₁ index) typ := by
+        (fun i => ((E.get η).block.ctors s c).targetIndex
+          ls ps₁ fds₁ i) typ := by
   intro h
   induction h with
   | ctorDF hps hfields hrecFields _ _ htype =>
@@ -158,8 +158,8 @@ theorem recr_inv
       (∀ s c,
         E[Γ] ⊢ₛ mins₁ s c ≡ mins₂ s c :
           (E.get η).block.caseFnType η ls ps₁ ms₁ s c) ∧
-      (∀ index, E[Γ] ⊢ₛ is₁ index ≡ is₂ index :
-        (E.get η).block.indexType ls s ps₁ is₁ index) ∧
+      (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i :
+        (E.get η).block.indexType ls s ps₁ is₁ i) ∧
       E[Γ] ⊢ₛ maj₁ ≡ maj₂ : .ind η s ls ps₁ is₁ ∧
       E[Γ] ⊢ₛ Inductive.motiveResult (ms₁ s) is₁ maj₁ ≡
         Inductive.motiveResult (ms₂ s) is₂ maj₂ : .sort l ∧
@@ -173,7 +173,7 @@ theorem recr_inv
         fun p => (hps p).left,
         fun s => (hms s).left,
         fun s c => (hmins s c).left,
-        fun index => (his index).left,
+        fun i => (his i).left,
         hmaj.left, hresult.left,
         .ofDefEq hresult.left⟩
     · exact ⟨_, _, _, _, _, hallowed, hps, hms,
@@ -195,8 +195,8 @@ theorem ind_inv
       (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n),
       (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
         (E.get η).block.paramType ls ps₁ p) ∧
-      (∀ index, E[Γ] ⊢ₛ is₁ index ≡ is₂ index :
-        (E.get η).block.indexType ls s ps₁ is₁ index) ∧
+      (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i :
+        (E.get η).block.indexType ls s ps₁ is₁ i) ∧
       E[Γ] ⊢ₛ t ≡ .sort ((E.get η).block.level.inst ls) typ := by
   intro h
   induction h with
@@ -204,7 +204,7 @@ theorem ind_inv
     rcases he with he | he <;> cases he
     · exact ⟨_, _,
         fun p => (hps p).left,
-        fun index => (his index).left,
+        fun i => (his i).left,
         .ofDefEq .sortDF⟩
     · exact ⟨_, _, hps, his, .ofDefEq .sortDF⟩
   | defeqDF ht _ _ ih =>
