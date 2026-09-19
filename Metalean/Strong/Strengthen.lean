@@ -363,7 +363,7 @@ theorem CtxWF.toStrongOf :
   induction hΓ with
   | nil => exact .nil
   | snoc hΓ ht ih =>
-    obtain ⟨u, ht⟩ := ht
+    have ⟨u, ht⟩ := ht
     exact .snoc ih ⟨u, tr ht ih⟩
 
 theorem CtxWF.toStrongOrdered (ho : E.Ordered) :

@@ -117,7 +117,6 @@ partial def prefixInfer (G : FCtx) (fe : FExpr) :
               | none => pure ()
   return none
 
-
 partial def prefixDefEq (G : FCtx) (fe₁ fe₂ : FExpr) :
     CheckM L F ℓ (Option ((G₀ : FCtx) × (ft₁ : FExpr) × (ft₂ : FExpr) ×'
       FCtx.Extends G₀ G ∧ fe₁.fvarRange ≤ G₀.size ∧ fe₂.fvarRange ≤ G₀.size ∧

@@ -90,15 +90,6 @@ def mkArr (h : UInt64) (hasLevelParam : Bool) (ds : Array Data) : Data :=
 def levelsHash (init : UInt64) (ls : Array FLevel) : UInt64 :=
   ls.foldl (fun h l => mixHash h (Hashable.hash l)) init
 
-theorem toNat_looseBVarRange_le (d : Data) : d.looseBVarRange.toNat ≤ maxRange := by
-  have : d.looseBVarRange < 1048576 := by
-    unfold looseBVarRange
-    bv_decide
-  rw [UInt32.lt_iff_toNat_lt] at this
-  unfold maxRange
-  simp at this
-  omega
-
 theorem toNat_looseBVarRange_mk (h : UInt64) (r : Nat) (dep : UInt32) (fv lp : Bool) :
     (mk h r dep fv lp).looseBVarRange.toNat = min r maxRange := by
   have hlt : min r maxRange < 1048576 := by

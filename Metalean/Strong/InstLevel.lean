@@ -20,6 +20,7 @@ theorem DefeqStrong.instLevel (levelSubst : Param ℓ → Level ℓ') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ.instL levelSubst] ⊢ₛ e₁.instL levelSubst ≡ e₂.instL levelSubst : t.instL levelSubst := by
   intro d
+  -- Lol
   induction_cases d with c =>
     simp -failIfUnchanged only [Ctx.get_instL, Expr.instL, Level.inst_succ, Expr.instL_wkClosed,
       Expr.instL_instL, Inductive.paramType_instL, Inductive.indexType_instL, Level.inst_inst,

@@ -105,7 +105,6 @@ def Decl.name : Decl → Name
     c.name
   | .inductive types _ _ => (types.head?.map (·.name)).getD .anonymous
 
-
 def refPatterns : Array ByteArray :=
   #["\"fn\":", "\"arg\":", "\"type\":", "\"body\":", "\"value\":", "\"struct\":", "\"rhs\":",
       "\"expr\":"].map String.toUTF8
@@ -152,6 +151,7 @@ def foldRefs {σ : Type} (b : ByteArray) (init : σ) (f : σ → Nat → σ) : �
       | some (n, j) => acc := f acc n; i := j
       | none => i := i + hit
   return acc
+
 structure Tables where
   names : Std.HashMap Nat Name := ∅
   levels : Std.HashMap Nat Level := ∅

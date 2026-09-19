@@ -80,12 +80,11 @@ theorem SubstWFStrong.inst
     rw [Expr.inst_wk]
     exact hΓ.var v
 
-theorem CtxWFStrong.varLast {t : Expr ζ ℓ n} :
+theorem CtxWFStrong.varLast :
     E[Γ.snoc t] ⊢ₛ ok →
     E[Γ.snoc t] ⊢ₛ .var (Fin.last n) : t.wk := by
   intro hΓ
-  have h := hΓ.var (Fin.last n)
-  rwa [Ctx.get_last] at h
+  simpa using hΓ.var (Fin.last n)
 
 theorem SubstWFStrong.id :
     E[Γ] ⊢ₛ ok →
@@ -103,7 +102,7 @@ theorem SubstWFStrong.wk (t : Expr ζ ℓ n) :
   rw [Expr.var_wk] at h
   exact h
 
-theorem DefeqStrong.lam_body {t : Expr ζ ℓ n} {t' e₁' e₂' : Expr ζ ℓ (n + 1)}
+theorem DefeqStrong.lam_body {t' e₁' e₂' : Expr ζ ℓ (n + 1)}
     {u v : Level ℓ} :
     E[Γ] ⊢ₛ ok →
     E[Γ] ⊢ₛ t : .sort u →

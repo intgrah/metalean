@@ -217,7 +217,6 @@ theorem unique {a b : Nat} {G : FCtx} {Δ₁ Δ₂ : Ctx E.1 ℓ a b} :
   exact Ctx.ext Δ₁ Δ₂ fun p hp hp' =>
     (h₁.entry hp hp').unique (h₂.entry hp hp') (hnp _ (Array.getElem_mem _))
 
-
 theorem push_elim {a b : Nat} {G : FCtx} {ft : FExpr} {Δ : Ctx E.1 ℓ a b}
     {motive : {b : Nat} → Ctx E.1 ℓ a b → Prop}
     (h : FCtx.Denotes L E (G.push ft) Δ)

@@ -35,7 +35,6 @@ def quotMotiveType (pos : Nat) (l : FLevel) (α r : FExpr) : FExpr :=
 def quotMinorType (pos : Nat) (l : FLevel) (α r β : FExpr) : FExpr :=
   .forallE α (.app β (.quotMk pos l α r (.bvar 0)))
 
-
 def quotTerm (pos eqPos : Nat) : Export.QuotKind → List FLevel → Except Failure FExpr
   | .type, [u] =>
     pure (lamTele 0 #[.sort u, relType (.fvar 0)] (.quot pos u (.fvar 0) (.fvar 1)))

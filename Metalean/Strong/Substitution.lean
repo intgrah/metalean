@@ -41,70 +41,42 @@ private theorem substOf
     E[Γ₂] ⊢ₛ e₁.subst σ ≡ e₂.subst σ : t.subst σ := by
   intro h
   induction h generalizing m Γ₂ with
+    try simp! [Expr.inst_subst, Expr.wk_subst_lift] at *
   | var _ ih =>
     cases image hσ _ with
     | typed d => exact d
     | renamed w hw htype =>
-      change E[Γ₂] ⊢ₛ σ _ ≡ σ _ : _
       simpa [hw, ← htype] using .var
         (by simpa [htype] using ih hσ)
   | symm _ ih => exact .symm (ih hσ)
   | trans _ _ ih₁ ih₂ => exact .trans (ih₁ hσ) (ih₂ hσ)
   | sortDF => exact .sortDF
   | constDF _ ihtype =>
-    simpa using .constDF (by simpa using ihtype hσ)
+    exact .constDF (ihtype hσ)
   | indDF _ _ ihps ihis =>
-    simpa! using .indDF
-      (fun p => by simpa using ihps p hσ)
-      (fun i => by simpa using ihis i hσ)
+    exact .indDF (ihps · hσ) (ihis · hσ)
   | ctorDF _ _ _ _ _ _ ihps ihfields ihrecFields ihfieldTypes ihrecFieldTypes ihtype =>
-    simpa! using .ctorDF
-      (fun p => by simpa using ihps p hσ)
-      (fun f => by simpa using ihfields f hσ)
-      (fun f => by simpa using ihrecFields f hσ)
-      (fun f => by simpa using ihfieldTypes f hσ)
-      (fun f => by simpa using ihrecFieldTypes f hσ)
-      (by simpa [Expr.subst] using ihtype hσ)
+    exact .ctorDF (ihps · hσ) (ihfields · hσ) (ihrecFields · hσ)
+      (ihfieldTypes · hσ) (ihrecFieldTypes · hσ) (ihtype hσ)
   | @recrDF _ _ ι head target ls u ps _ ms₁ ms₂ mins₁ mins₂
       is _ maj _ hallowed _ _ _ _ _ _ ihps ihms ihmins
       ihis ihmaj ihresult =>
-    rw [Inductive.motiveResult_subst]
-    exact .recrDF hallowed
-      (fun p => by simpa using ihps p hσ)
-      (fun s => by simpa using ihms s hσ)
-      (fun s c => by simpa using ihmins s c hσ)
-      (fun i => by simpa using ihis i hσ)
-      (ihmaj hσ)
-      (by simpa using ihresult hσ)
+    exact .recrDF hallowed (ihps · hσ) (ihms · hσ)
+      (ihmins · · hσ) (ihis · hσ) (ihmaj hσ) (ihresult hσ)
   | appDF _ _ _ _ _ iht iht' ihf ihe ihres =>
-    simpa [Expr.inst_subst] using .appDF
-      (iht hσ)
-      (iht' (lift hσ))
-      (ihf hσ)
-      (ihe hσ)
-      (by simpa [Expr.inst_subst] using ihres hσ)
+    exact .appDF
+      (iht hσ) (iht' (lift hσ)) (ihf hσ) (ihe hσ) (ihres hσ)
   | lamDF _ _ _ _ _ iht iht' iht₂' ihbody ihbody' =>
-    exact .lamDF
-      (iht hσ)
-      (iht' (lift hσ))
-      (iht₂' (lift hσ))
-      (ihbody (lift hσ))
-      (ihbody' (lift hσ))
+    exact .lamDF (iht hσ) (iht' (lift hσ)) (iht₂' (lift hσ))
+      (ihbody (lift hσ)) (ihbody' (lift hσ))
   | forallEDF _ _ _ iht ihbody ihbody' =>
     exact .forallEDF (iht hσ) (ihbody (lift hσ)) (ihbody' (lift hσ))
   | defeqDF _ _ iht ihe => exact .defeqDF (iht hσ) (ihe hσ)
   | beta _ _ _ _ _ _ iht iht' ihbody ihe ihres ihresult =>
-    simpa [Expr.inst_subst] using .beta
-      (iht hσ)
-      (iht' (lift hσ))
-      (ihbody (lift hσ))
-      (ihe hσ)
-      (by simpa [Expr.inst_subst] using ihres hσ)
-      (by simpa [Expr.inst_subst] using ihresult hσ)
+    exact .beta (iht hσ) (iht' (lift hσ)) (ihbody (lift hσ))
+      (ihe hσ) (ihres hσ) (ihresult hσ)
   | zeta _ _ _ _ iht ihv ihr ihbody =>
-    simpa! [Expr.inst_subst] using .zeta
-      (iht hσ) (ihv hσ) (ihr hσ)
-      (by simpa [Expr.inst_subst] using ihbody hσ)
+    exact .zeta (iht hσ) (ihv hσ) (ihr hσ) (ihbody hσ)
   | @eta n Γ₁ l₁ l₂ e t t' _ _ _ _ _ iht iht' ihtwk ihewk ihe =>
     have hlift : ((fun w => σ.lift.lift (Ren.wkFrom n w)) :
         Subst ζ ℓ (n + 1) (m + 2)) = fun v => (σ.lift v).wkFrom m := by
@@ -114,7 +86,7 @@ private theorem substOf
       | cast w =>
         simp
         rfl
-    simpa! [Expr.wk_subst_lift] using .eta
+    exact .eta
       (iht hσ) (iht' (lift hσ))
       (by simpa [Expr.wk_subst_lift] using ihtwk (lift hσ))
       (by
@@ -123,58 +95,28 @@ private theorem substOf
         rwa [hlift, ← Expr.subst_wkFrom σ.lift] at dewk)
       (ihe hσ)
   | etaStruct h _ _ _ ihps ihmaj ihrebuild =>
-    simpa using .etaStruct h
-      (fun p => by simpa using ihps p hσ)
-      (by simpa! using ihmaj hσ)
-      (by simpa! using ihrebuild hσ)
+    exact .etaStruct h
+      (fun p => ihps p hσ)
+      (ihmaj hσ)
+      (ihrebuild hσ)
   | proofIrrel _ _ _ ihp ihh ihh' =>
     exact .proofIrrel (ihp hσ) (ihh hσ) (ihh' hσ)
   | iota hallowed _ _ _ _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields ihtype ihlhs ihrhs =>
-    simpa using .iota hallowed
-      (fun p => by simpa using ihps p hσ)
-      (fun s => by simpa using ihms s hσ)
-      (fun s c => by simpa using ihmins s c hσ)
-      (fun f => by simpa using ihfields f hσ)
-      (fun f => by simpa using ihrecFields f hσ)
-      (by simpa using ihtype hσ)
-      (by simpa using ihlhs hσ)
-      (by simpa using ihrhs hσ)
+    exact .iota hallowed (ihps · hσ) (ihms · hσ) (ihmins · · hσ)
+      (ihfields · hσ) (ihrecFields · hσ) (ihtype hσ) (ihlhs hσ) (ihrhs hσ)
   | quotDF _ _ iht ihr =>
-    exact .quotDF
-      (iht hσ)
-      (by simpa using ihr hσ)
+    exact .quotDF (iht hσ) (ihr hσ)
   | quotMkDF _ _ _ ihα ihr iha =>
-    exact .quotMkDF
-      (ihα hσ)
-      (by simpa using ihr hσ)
-      (iha hσ)
+    exact .quotMkDF (ihα hσ) (ihr hσ) (iha hσ)
   | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    exact .quotLiftDF
-      (ihα hσ)
-      (by simpa using ihr hσ)
-      (ihβ hσ)
-      (by simpa [Expr.wk_subst_lift] using ihf hσ)
-      (by simpa using ihh hσ)
-      (iha hσ)
+    exact .quotLiftDF (ihα hσ) (ihr hσ) (ihβ hσ) (ihf hσ) (ihh hσ) (iha hσ)
   | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha ihresult =>
-    exact .quotIndDF (ihα hσ)
-      (by simpa using ihr hσ)
-      (by simpa using ihβ hσ)
-      (by simpa using ihf hσ)
-      (iha hσ)
-      (by simpa using ihresult hσ)
+    exact .quotIndDF (ihα hσ) (ihr hσ) (ihβ hσ) (ihf hσ) (iha hσ) (ihresult hσ)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
-    simpa! using .quotIota
-      (ihα hσ)
-      (by simpa using ihr hσ)
-      (ihβ hσ)
-      (by simpa [Expr.wk_subst_lift] using ihf hσ)
-      (by simpa using ihh hσ)
+    exact .quotIota (ihα hσ) (ihr hσ) (ihβ hσ) (ihf hσ) (ihh hσ)
       (iha hσ) (ihlhs hσ) (ihrhs hσ)
   | delta _ _ ihtype ihvalue =>
-    simpa! using .delta
-      (by simpa! using ihtype hσ)
-      (by simpa! using ihvalue hσ)
+    exact .delta (ihtype hσ) (ihvalue hσ)
 
 theorem wkFrom {cut n : Nat} {e₁ e₂ t : Expr ζ ℓ n}
     (Γ₀ : Ctx ζ ℓ 0 cut) (Δ : Ctx ζ ℓ cut n) (t₁ : Expr ζ ℓ cut) :
