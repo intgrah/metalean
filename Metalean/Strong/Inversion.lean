@@ -11,82 +11,39 @@ import Metalean.Syntax.Substitution
 
 @[expose] public section
 
-namespace Metalean
+namespace Metalean.DefeqStrong
 
-variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {e e₁ e₂ t : Expr ζ ℓ n}
+variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
+  {e e₁ e₂ t t₁ α r β f a α₂ r₂ β₂ f₂ h₂ a₂ : Expr ζ ℓ n}
+  {e' t' : Expr ζ ℓ (n + 1)} {η : Head ζ .quot} {l l₁ l₂ u : Level ℓ}
 
-theorem DefeqStrong.var_inv {v : Var n} (he : e₁ = .var v ∨ e₂ = .var v) :
+local macro "rigid " h:Lean.Parser.Tactic.elimTarget : tactic => `(tactic|
+  rcases $h with hside | hside <;>
+    first
+      | (cases hside; done)
+      | solve_by_elim [Or.inl, Or.inr])
+
+theorem var_inv {v : Var n} (he : e₁ = .var v ∨ e₂ = .var v) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ t ≡ Γ.get v typ := by
   intro h
   induction h with
-  | indDF | ctorDF | recrDF | quotDF | quotMkDF | quotLiftDF | quotIndDF | sortDF
-  | constDF | appDF | lamDF | forallEDF =>
-    rcases he with he | he <;> cases he
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂
-  | proofIrrel _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · cases he
-    · exact ih₂ (Or.inl he)
-  | delta _ _ _ ih
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | etaStruct _ _ _ _ _ ih _ =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | var hl => rcases he with he | he <;> cases he <;> exact .ofDefEq hl
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
-  | defeqDF ht _ _ ihe =>
-    exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+  | var => rcases he with he | he <;> cases he <;> exact .ofDefEq ‹_›
+  | defeqDF ht _ _ ihe => exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+  | _ => rigid he
 
-theorem DefeqStrong.sort_inv {l : Level ℓ} (he : e₁ = .sort l ∨ e₂ = .sort l) :
+theorem sort_inv (he : e₁ = .sort l ∨ e₂ = .sort l) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ t ≡ .sort (.succ l) typ := by
   intro h
   induction h with
-  | indDF | ctorDF | recrDF | quotDF | quotMkDF | quotLiftDF | quotIndDF
-  | var | constDF | appDF | lamDF | forallEDF =>
-    rcases he with he | he <;> cases he
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂
-  | proofIrrel _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · cases he
-    · exact ih₂ (Or.inl he)
-  | delta _ _ _ ih
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | etaStruct _ _ _ _ _ ih _ =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
   | sortDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ihe =>
     exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+  | _ => rigid he
 
-theorem DefeqStrong.forallE_ty_inv
-    {t₁ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)}
-    (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
+theorem forallE_ty_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     ∃ l₁ l₂ : Level ℓ,
       E[Γ] ⊢ₛ t₁ ≡ t₁ : .sort l₁ ∧
@@ -94,42 +51,16 @@ theorem DefeqStrong.forallE_ty_inv
       E[Γ] ⊢ₛ t ≡ .sort (.imax l₁ l₂) typ := by
   intro h
   induction h with
-  | indDF | ctorDF | recrDF | quotDF | quotMkDF | quotLiftDF | quotIndDF
-  | var | sortDF | constDF | appDF | lamDF =>
-    rcases he with he | he <;> cases he
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂
-  | proofIrrel _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · cases he
-    · exact ih₂ (Or.inl he)
-  | delta _ _ _ ih
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | etaStruct _ _ _ _ _ ih _ =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
   | forallEDF ht ht' ht₂' =>
     rcases he with he | he <;> cases he
-    · exact ⟨_, _, ht.left, ht'.left,
-        .ofDefEq .sortDF⟩
-    · exact ⟨_, _, ht.right, ht₂'.right,
-        .ofDefEq .sortDF⟩
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
+    · exact ⟨_, _, ht.left, ht'.left, .ofDefEq sortDF⟩
+    · exact ⟨_, _, ht.right, ht₂'.right, .ofDefEq sortDF⟩
   | defeqDF ht _ _ ihe =>
     have ⟨l₁, l₂, hdom, hcod, hres⟩ := ihe he
     exact ⟨l₁, l₂, hdom, hcod, (IsTypeEq.ofDefEq ht).symm.trans hres⟩
+  | _ => rigid he
 
-theorem DefeqStrong.const_inv {kind nlevels}
+theorem const_inv {kind nlevels}
     {η : Head ζ (.const kind nlevels)}
     {ls : Fin nlevels → Level ℓ}
     (he : e₁ = .const η ls ∨ e₂ = .const η ls) :
@@ -137,18 +68,6 @@ theorem DefeqStrong.const_inv {kind nlevels}
     E[Γ] ⊢ₛ t ≡ ((E.get η).constType.instL ls).wkClosed typ := by
   intro h
   induction h with
-  | indDF | ctorDF | recrDF | quotDF | quotMkDF | quotLiftDF | quotIndDF
-  | var | sortDF | appDF | lamDF | forallEDF =>
-    rcases he with he | he <;> cases he
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂
-  | proofIrrel _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · cases he
-    · exact ih₂ (Or.inl he)
   | delta htype _ _ ih =>
     rcases he with he | he
     · cases he
@@ -158,28 +77,24 @@ theorem DefeqStrong.const_inv {kind nlevels}
     rcases he with he | he <;> cases he
     · exact .ofDefEq htype.left
     · exact .ofDefEq htype
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | etaStruct _ _ _ _ _ ih _ =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
   | defeqDF ht _ _ ihe =>
     exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+  | _ => rigid he
 
-theorem DefeqStrong.ctor_inv
-    {ι : IndSig} {η : Head ζ (.inductive ι)}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {fds₂ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
-    {recFds₂ : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
+section Inductive
+
+variable {ι : IndSig} {η : Head ζ (.inductive ι)}
+  {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
+  {ls : Fin ι.nlevels → Level ℓ}
+  {ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+  {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
+  {fds₂ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
+  {recFds₂ : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
+  {ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
+  {mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
+  {maj₂ : Expr ζ ℓ n}
+
+theorem ctor_inv
     (he : e₁ = .ctor η s c ls ps₂ fds₂ recFds₂ ∨
       e₂ = .ctor η s c ls ps₂ fds₂ recFds₂) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -209,9 +124,6 @@ theorem DefeqStrong.ctor_inv
           ls ps₁ fds₁ index) typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | recrDF | appDF | lamDF | forallEDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | ctorDF hps hfields hrecFields _ _ htype =>
     rcases he with he | he <;> cases he
     · exact ⟨_, _, _,
@@ -221,47 +133,14 @@ theorem DefeqStrong.ctor_inv
         htype.left, .ofDefEq htype.left⟩
     · exact ⟨_, _, _, hps, hfields, hrecFields,
         htype, .ofDefEq htype.left⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     have ⟨ps₁, fds₁, recFds₁, hps,
       hfields, hrecFields, hresult, hT⟩ := ih he
     exact ⟨ps₁, fds₁, recFds₁, hps,
       hfields, hrecFields, hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.recr_inv
-    {ι : IndSig} {η : Head ζ (.inductive ι)}
-    {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
-    {ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
-    {mins₂ : (s : Fin ι.nsorts) →
-      Fin (ι.nctors s) → Expr ζ ℓ n}
-    {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
-    {maj₂ : Expr ζ ℓ n}
+theorem recr_inv
     (he : e₁ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ ∨
       e₂ = .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -288,9 +167,6 @@ theorem DefeqStrong.recr_inv
         Inductive.motiveResult (ms₁ s) is₁ maj₁ typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | appDF | lamDF | forallEDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | recrDF hallowed hps hms hmins his hmaj hresult =>
     rcases he with he | he <;> cases he
     · exact ⟨_, _, _, _, _, hallowed,
@@ -302,15 +178,6 @@ theorem DefeqStrong.recr_inv
         .ofDefEq hresult.left⟩
     · exact ⟨_, _, _, _, _, hallowed, hps, hms,
         hmins, his, hmaj, hresult, .ofDefEq hresult.left⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     have ⟨ps₁, ms₁, mins₁, is₁, maj₁,
       hallowed, hps, hms, hmins, his, hmaj,
@@ -318,67 +185,49 @@ theorem DefeqStrong.recr_inv
     exact ⟨ps₁, ms₁, mins₁, is₁, maj₁,
       hallowed, hps, hms, hmins, his, hmaj,
       hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.quot_inv
-    {η : Head ζ .quot} {l : Level ℓ}
-    {α r : Expr ζ ℓ n}
+theorem ind_inv
+    (he : e₁ = .ind η s ls ps₂ is₂ ∨
+      e₂ = .ind η s ls ps₂ is₂) :
+    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+    ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
+      (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n),
+      (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
+        (E.get η).block.paramType ls ps₁ p) ∧
+      (∀ index, E[Γ] ⊢ₛ is₁ index ≡ is₂ index :
+        (E.get η).block.indexType ls s ps₁ is₁ index) ∧
+      E[Γ] ⊢ₛ t ≡ .sort ((E.get η).block.level.inst ls) typ := by
+  intro h
+  induction h with
+  | indDF hps his =>
+    rcases he with he | he <;> cases he
+    · exact ⟨_, _,
+        fun p => (hps p).left,
+        fun index => (his index).left,
+        .ofDefEq .sortDF⟩
+    · exact ⟨_, _, hps, his, .ofDefEq .sortDF⟩
+  | defeqDF ht _ _ ih =>
+    have ⟨ps₁, is₁, hps, his, hT⟩ := ih he
+    exact ⟨ps₁, is₁, hps, his,
+      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+  | _ => rigid he
+
+end Inductive
+
+theorem quot_inv
     (he : e₁ = .quot η l α r ∨ e₂ = .quot η l α r) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ t ≡ .sort l typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | forallEDF | quotMkDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | quotDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     exact (IsTypeEq.ofDefEq ht).symm.trans (ih he)
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.quotInd_prem
-    {η : Head ζ .quot} {l : Level ℓ}
-    {α₂ r₂ β₂ f₂ a₂ : Expr ζ ℓ n}
+theorem quotInd_prem
     (he : e₁ = .quotInd η l α₂ r₂ β₂ f₂ a₂ ∨
       e₂ = .quotInd η l α₂ r₂ β₂ f₂ a₂) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -392,9 +241,6 @@ theorem DefeqStrong.quotInd_prem
       E[Γ] ⊢ₛ t ≡ .app β₁ a₁ typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | forallEDF | quotDF | quotMkDF | quotLiftDF =>
-    rcases he with he | he <;> cases he
   | quotIndDF hα hr hβ he ha hresult =>
     rcases he with he | he <;> cases he
     · exact ⟨_, _, _, _, _,
@@ -403,39 +249,13 @@ theorem DefeqStrong.quotInd_prem
         .ofDefEq hresult.left⟩
     · exact ⟨_, _, _, _, _, hα, hr, hβ, he, ha, hresult,
         .ofDefEq hresult.left⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     have ⟨α₁, r₁, β₁, f₁, a₁, hα, hr, hβ, he, ha, hresult, hT⟩ := ih he
     exact ⟨α₁, r₁, β₁, f₁, a₁, hα, hr, hβ, he, ha, hresult,
       (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.quotMk_prem
-    {η : Head ζ .quot} {l : Level ℓ}
-    {α₂ r₂ a₂ : Expr ζ ℓ n}
+theorem quotMk_prem
     (he : e₁ = .quotMk η l α₂ r₂ a₂ ∨ e₂ = .quotMk η l α₂ r₂ a₂) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     ∃ α₁ r₁ a₁ : Expr ζ ℓ n,
@@ -445,9 +265,6 @@ theorem DefeqStrong.quotMk_prem
       E[Γ] ⊢ₛ t ≡ .quot η l α₁ r₁ typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | forallEDF | quotDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | quotMkDF hα hr ha =>
     rcases he with he | he <;> cases he
     · exact ⟨_, _, _, hα.left, hr.left,
@@ -455,39 +272,13 @@ theorem DefeqStrong.quotMk_prem
         .ofDefEq (.quotDF hα.left hr.left)⟩
     · exact ⟨_, _, _, hα, hr, ha,
         .ofDefEq (.quotDF hα.left hr.left)⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
   | defeqDF ht _ _ ih =>
     have ⟨α₁, r₁, a₁, hα, hr, ha, hT⟩ := ih he
     exact ⟨α₁, r₁, a₁, hα, hr, ha,
       (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.quotLift_prem
-    {η : Head ζ .quot} {l₁ l₂ : Level ℓ}
-    {α₂ r₂ β₂ f₂ h₂ a₂ : Expr ζ ℓ n}
+theorem quotLift_prem
     (he : e₁ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ ∨
       e₂ = .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -552,9 +343,7 @@ theorem DefeqStrong.quotLift_prem
         .ofDefEq hβ.left⟩
     · exact ih (Or.inl he)
 
-theorem DefeqStrong.quotMk_inv
-    {η : Head ζ .quot} {l : Level ℓ}
-    {α r a : Expr ζ ℓ n}
+theorem quotMk_inv
     (he : e₁ = .quotMk η l α r a ∨ e₂ = .quotMk η l α r a) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ t ≡ .quot η l α r typ := by
@@ -562,9 +351,7 @@ theorem DefeqStrong.quotMk_inv
   have ⟨_, _, _, hα, hr, _, hres⟩ := h.quotMk_prem he
   exact hres.trans (.ofDefEq (.quotDF hα hr))
 
-theorem DefeqStrong.quotLift_inv
-    {η : Head ζ .quot} {l₁ l₂ : Level ℓ}
-    {α r β f h a : Expr ζ ℓ n}
+theorem quotLift_inv {h : Expr ζ ℓ n}
     (he : e₁ = .quotLift η l₁ l₂ α r β f h a ∨
       e₂ = .quotLift η l₁ l₂ α r β f h a) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -574,126 +361,31 @@ theorem DefeqStrong.quotLift_inv
     hd.quotLift_prem he
   exact hres.trans (.ofDefEq hβ)
 
-theorem DefeqStrong.ind_inv
-    {ι : IndSig} {η : Head ζ (.inductive ι)}
-    {s : Fin ι.nsorts} {ls : Fin ι.nlevels → Level ℓ}
-    {ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
-    (he : e₁ = .ind η s ls ps₂ is₂ ∨
-      e₂ = .ind η s ls ps₂ is₂) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    ∃ (ps₁ : Fin ι.nparams → Expr ζ ℓ n)
-      (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n),
-      (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
-        (E.get η).block.paramType ls ps₁ p) ∧
-      (∀ index, E[Γ] ⊢ₛ is₁ index ≡ is₂ index :
-        (E.get η).block.indexType ls s ps₁ is₁ index) ∧
-      E[Γ] ⊢ₛ t ≡ .sort ((E.get η).block.level.inst ls) typ := by
-  intro h
-  induction h with
-  | var | sortDF | constDF | ctorDF | recrDF | appDF | lamDF | forallEDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
-  | indDF hps his =>
-    rcases he with he | he <;> cases he
-    · exact ⟨_, _,
-        fun p => (hps p).left,
-        fun index => (his index).left,
-        .ofDefEq .sortDF⟩
-    · exact ⟨_, _, hps, his, .ofDefEq .sortDF⟩
-  | symm _ ih => exact ih he.symm
-  | etaStruct _ _ _ _ _ ihmaj ihrebuild =>
-    rcases he with he | he
-    · exact ihrebuild (Or.inl he)
-    · exact ihmaj (Or.inl he)
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
-  | defeqDF ht _ _ ih =>
-    have ⟨ps₁, is₁, hps, his, hT⟩ := ih he
-    exact ⟨ps₁, is₁, hps, his,
-      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-
-theorem DefeqStrong.forallE_inv {e₁ e₂ t t₁ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)}
-    (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
+theorem forallE_inv (he : e₁ = .forallE t₁ t' ∨ e₂ = .forallE t₁ t') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ t₁ typ ∧
     E[Γ.snoc t₁] ⊢ₛ t' typ := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF | quotIota
-  | beta | zeta | eta | etaStruct | delta | proofIrrel | iota =>
-    cases he <;> simp_all
   | forallEDF ht₁ ht' ht₂' =>
     rcases he with he | he <;> cases he
     · exact ⟨⟨_, ht₁.left⟩, ⟨_, ht'.left⟩⟩
     · exact ⟨⟨_, ht₁.right⟩, ⟨_, ht₂'.right⟩⟩
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
-  | defeqDF _ _ _ ih => exact ih he
+  | _ => rigid he
 
-theorem DefeqStrong.quot_formation_inv {η : Head ζ .quot} {u : Level ℓ}
-    {α r : Expr ζ ℓ n} (he : e₁ = .quot η u α r ∨ e₂ = .quot η u α r) :
+theorem quot_formation_inv (he : e₁ = .quot η u α r ∨ e₂ = .quot η u α r) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ α : .sort u ∧ E[Γ] ⊢ₛ r : Quot.relType α := by
   intro h
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF
-  | forallEDF | quotMkDF | quotLiftDF | quotIndDF =>
-    rcases he with he | he <;> cases he
   | quotDF hα hr =>
     rcases he with he | he <;> cases he
     · exact ⟨hα.left, hr.left⟩
     · exact ⟨hα.right,
         .defeqDF (Quot.relType_congr hα) hr.right⟩
-  | symm _ ih => exact ih he.symm
-  | trans _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inr he)
-  | defeqDF _ _ _ ih => exact ih he
-  | beta _ _ _ _ _ _ _ _ _ _ _ ih
-  | zeta _ _ _ _ _ _ _ ih
-  | eta _ _ _ _ _ _ _ _ _ ih
-  | etaStruct _ _ _ _ _ ih _
-  | delta _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
-  | proofIrrel _ _ _ _ ih₁ ih₂
-  | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih₁ ih₂ =>
-    rcases he with he | he
-    · exact ih₁ (Or.inl he)
-    · exact ih₂ (Or.inl he)
-  | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ih =>
-    rcases he with he | he
-    · cases he
-    · exact ih (Or.inl he)
+  | _ => rigid he
 
-theorem DefeqStrong.app_inv
-    {e₁ e₂ f e t : Expr ζ ℓ n}
-    (hd : e₁ = .app f e ∨ e₂ = .app f e) :
+theorem app_inv (hd : e₁ = .app f e ∨ e₂ = .app f e) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     ∃ (t₁ : Expr ζ ℓ n) (t' : Expr ζ ℓ (n + 1)),
     E[Γ] ⊢ₛ f : .forallE t₁ t' ∧
@@ -730,10 +422,7 @@ theorem DefeqStrong.app_inv
     · cases hd
     · exact ihresult (Or.inl hd)
 
-theorem DefeqStrong.letE_inv
-    {e₁ e₂ t : Expr ζ ℓ n} {t₁ v : Expr ζ ℓ n}
-    {e' : Expr ζ ℓ (n + 1)}
-    (he : e₁ = .letE t₁ v e' ∨ e₂ = .letE t₁ v e') :
+theorem letE_inv {v : Expr ζ ℓ n} (he : e₁ = .letE t₁ v e' ∨ e₂ = .letE t₁ v e') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ ok →
     ∃ r : Expr ζ ℓ n,
@@ -743,9 +432,6 @@ theorem DefeqStrong.letE_inv
     E[Γ] ⊢ₛ t ≡ r typ := by
   intro h hΓ
   induction h with
-  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF | forallEDF
-  | quotDF | quotMkDF | quotLiftDF | quotIndDF | quotIota =>
-    rcases he with he | he <;> cases he
   | symm _ ih => exact ih he.symm hΓ
   | trans _ _ ih₁ ih₂ =>
     rcases he with he | he
@@ -774,11 +460,11 @@ theorem DefeqStrong.letE_inv
     rcases he with he | he
     · simp [Inductive.IsStructure.rebuildTerm] at he
     · exact ih (Or.inl he) hΓ
+  | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | lamDF | forallEDF | quotDF
+  | quotMkDF | quotLiftDF | quotIndDF | quotIota =>
+    rcases he with he | he <;> cases he
 
-theorem DefeqStrong.lam_inv
-    {e₁ e₂ t : Expr ζ ℓ n} {t₁ : Expr ζ ℓ n}
-    {e' : Expr ζ ℓ (n + 1)}
-    (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
+theorem lam_inv (he : e₁ = .lam t₁ e' ∨ e₂ = .lam t₁ e') :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     E[Γ] ⊢ₛ ok →
     ∃ t' : Expr ζ ℓ (n + 1),
@@ -789,8 +475,6 @@ theorem DefeqStrong.lam_inv
   | var | sortDF | constDF | indDF | ctorDF | recrDF | appDF | forallEDF
   | quotDF | quotMkDF | quotLiftDF | quotIndDF | quotIota | delta =>
     simp_all
-  | trans | proofIrrel | iota =>
-    cases he <;> simp_all
   | etaStruct _ _ _ _ _ ih _ =>
     rcases he with he | he
     · simp [Inductive.IsStructure.rebuildTerm] at he
@@ -823,10 +507,11 @@ theorem DefeqStrong.lam_inv
       have he' : E[Γ.snoc t₁] ⊢ₛ
           .app e.wk (.var (Fin.last n)) ≡
             .app e.wk (.var (Fin.last n)) : t' := by
-        have he' := DefeqStrong.appDF htw htwk' hew hvar
+        have he' := appDF htw htwk' hew hvar
           (by rw [Expr.inst_wkFrom_last]; exact ht')
         rwa [Expr.inst_wkFrom_last] at he'
-      exact ⟨t', he', .ofDefEq (.forallEDF ht₁ ht' ht')⟩
+      exact ⟨t', he', .ofDefEq (forallEDF ht₁ ht' ht')⟩
     · exact ih (Or.inl he) hΓ
+  | trans | proofIrrel | iota => rigid he
 
-end Metalean
+end Metalean.DefeqStrong

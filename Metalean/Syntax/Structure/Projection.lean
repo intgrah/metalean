@@ -57,7 +57,7 @@ theorem IsStructure.projection_subst :
     have ihMotiveTerm := fun previous => congrArg Prod.snd
       (ihMotive previous (σ.liftN (ι.nindices s + 1)))
     simp [Expr.subst] at ihMajorTerm ihMotiveTerm
-    rw [projection.eq_1, Prod.map]
+    rw [projection, Prod.map]
     congr 1
     · rw [projTypeWith_subst]
       congr 1
@@ -88,6 +88,35 @@ theorem IsStructure.projection_wkFrom :
   simpa [Prod.map, Expr.wkFrom] using
     h.projection_subst η ls ps f maj fun v => .var (Ren.wkFrom cut v)
 
+theorem IsStructure.motiveTeleHead :
+    Expr.ind η s ls
+        (fun param => (ps param).wkN (ι.nindices s))
+        (fun index => .var ⟨n + index.val, by omega⟩) ≍
+      Expr.ind η s ls ps h.indices := by
+  have hni := Fin.eq_zero_of_isEmpty h.no_indices
+  have hps : (fun param => (ps param).wkN (ι.nindices s)) ≍ ps := by
+    refine Function.hfunext rfl ?_
+    intro param param' hparam
+    cases eq_of_heq hparam
+    rw [hni]
+    rfl
+  have his :
+      (fun index : Fin (ι.nindices s) =>
+        (.var ⟨n + index.val, by omega⟩ : Expr ζ ℓ (n + ι.nindices s))) ≍
+        (h.indices : Fin (ι.nindices s) → Expr ζ ℓ n) :=
+    Function.hfunext rfl fun index => h.no_indices.elim index
+  exact congr(Expr.ind (n := $(by omega)) $rfl $rfl $rfl $hps $his)
+
+theorem IsStructure.foldr_indexTele
+    {K : ∀ {k : Nat}, Expr ζ ℓ k → Expr ζ ℓ (k + 1) → Expr ζ ℓ k}
+    {e₁ : Expr ζ ℓ (n + ι.nindices s)} {e₂ : Expr ζ ℓ n} (he : e₁ ≍ e₂) :
+    Tele.foldr K e₁ (I.indexTele ls s ps) = e₂ := by
+  have hni := Fin.eq_zero_of_isEmpty h.no_indices
+  exact eq_of_heq
+    (show Tele.foldr K e₁ (I.indexTele ls s ps) ≍ Tele.foldr K e₂ #t[] from
+      congr(Tele.foldr (b := $(by omega)) $rfl $he
+        $((I.indexTele ls s ps).heq_nil (by omega))))
+
 theorem IsStructure.projectionMotiveLam :
     Ctx.lam
         (projTypeWith I ls
@@ -103,32 +132,7 @@ theorem IsStructure.projectionMotiveLam :
             (fun param => (ps param).wk)
             (previous.castLT (previous.isLt.trans f.isLt))
             (.var (Fin.last n)))) := by
-  have hni : ι.nindices s = 0 := by
-    by_contra hne
-    exact h.no_indices.elim ⟨0, Nat.pos_of_ne_zero hne⟩
-  have htele := (I.indexTele ls s ps).heq_nil (by omega)
-  have hhead :
-      Expr.ind η s ls
-          (fun param => (ps param).wkN (ι.nindices s))
-          (fun index => .var ⟨n + index.val, by omega⟩) ≍
-        Expr.ind η s ls ps h.indices := by
-    have hps :
-        (fun param => (ps param).wkN (ι.nindices s)) ≍ ps := by
-      refine Function.hfunext rfl ?_
-      intro param param' hparam
-      cases eq_of_heq hparam
-      rw [hni]
-      rfl
-    have his :
-        (fun index : Fin (ι.nindices s) =>
-          (.var ⟨n + index.val, by omega⟩ :
-            Expr ζ ℓ (n + ι.nindices s))) ≍
-          (h.indices : Fin (ι.nindices s) → Expr ζ ℓ n) := by
-      refine Function.hfunext rfl ?_
-      intro index
-      exact h.no_indices.elim index
-    exact congr(@Expr.ind $rfl $rfl $(by omega) $rfl $rfl
-      $rfl $rfl $hps $his)
+  have hni := Fin.eq_zero_of_isEmpty h.no_indices
   have hbody :
       projTypeWith I ls
           (fun param => (ps param).wkN (ι.nindices s + 1)) f
@@ -163,46 +167,21 @@ theorem IsStructure.projectionMotiveLam :
       cases eq_of_heq hprevious
       congr 1
       omega
-  let left := Expr.lam
-    (Expr.ind η s ls
-      (fun param => (ps param).wkN (ι.nindices s))
-      (fun index => .var ⟨n + index.val, by omega⟩))
-    (projTypeWith I ls
-      (fun param => (ps param).wkN (ι.nindices s + 1)) f
-      (fun previous => h.projTerm η ls
-        (fun param => (ps param).wkN (ι.nindices s + 1))
-        (previous.castLT (previous.isLt.trans f.isLt))
-        (.var (Fin.last (n + ι.nindices s)))))
-  let right := Expr.lam (Expr.ind η s ls ps h.indices)
-    (projTypeWith I ls (fun param => (ps param).wk) f
-      (fun previous => h.projTerm η ls
-        (fun param => (ps param).wk)
-        (previous.castLT (previous.isLt.trans f.isLt))
-        (.var (Fin.last n))))
-  have hlam : left ≍ right :=
-    congr(Expr.lam (n := $(by omega)) $hhead $hbody)
-  apply eq_of_heq
-  exact
-    show Tele.foldr (fun {c} => Expr.lam) left (I.indexTele ls s ps) ≍
-      Tele.foldr (fun {c} => Expr.lam) right #t[] from
-    congr(@Tele.foldr $rfl $rfl $rfl $(by omega) $rfl $hlam $htele)
+  exact h.foldr_indexTele ls ps
+    congr(Expr.lam (n := $(by omega)) $(h.motiveTeleHead η ls ps) $hbody)
 
 theorem IsStructure.projectionMotives_self :
     h.projectionMotives η ls ps f s =
       .lam (.ind η s ls ps h.indices)
         (h.projType η ls (fun p => (ps p).wk) f (.var (Fin.last n))) := by
   change Ctx.lam _ _ = _
-  rw [h.projectionMotiveLam]
-  unfold IsStructure.projType
-  rw [IsStructure.projection.eq_1]
+  rw [h.projectionMotiveLam, projType, projection]
   rfl
 
 theorem IsStructure.caseTeleOrdinary :
     I.caseTele η ls ps ms s c ≍
       (I.ctors s c).ordinaryFieldTele η ls ps := by
-  have hnr : (ι.ctors s c).nrecFields = 0 := by
-    by_contra hne
-    exact h.no_recursive.elim ⟨0, Nat.pos_of_ne_zero hne⟩
+  have hnr := Fin.eq_zero_of_isEmpty h.no_recursive
   unfold Inductive.caseTele Ctor.fieldTele
   rw [Tele.append_assoc]
   refine HEq.trans ?_ (heq_of_eq (Tele.append_nil _))
@@ -220,9 +199,7 @@ theorem IsStructure.caseOrdinaryField :
             (ι.ctors s c).nrecFields)) ≍
       (Expr.boundVars n (ι.ctors s c).nfields 0 f :
         Expr ζ ℓ (n + (ι.ctors s c).nfields)) := by
-  have hnr : (ι.ctors s c).nrecFields = 0 := by
-    by_contra hne
-    exact h.no_recursive.elim ⟨0, Nat.pos_of_ne_zero hne⟩
+  have hnr := Fin.eq_zero_of_isEmpty h.no_recursive
   simp [CtorSig.caseOrdinary, CtorSig.fieldOrdinary]
   congr 1
   · omega
@@ -231,16 +208,23 @@ theorem IsStructure.caseOrdinaryField :
 theorem IsStructure.projectionCases_self :
     h.projectionCases η ls ps f ms s c =
       Ctx.lam (Expr.boundVars n (ι.ctors s c).nfields 0 f)
-        ((I.ctors s c).ordinaryFieldTele η ls ps) := by
+        ((I.ctors s c).ordinaryFieldTele η ls ps) :=
   have hnr := Fin.eq_zero_of_isEmpty h.no_recursive
-  exact eq_of_heq (congr(@Ctx.lam $rfl $rfl $(by omega) $rfl
+  eq_of_heq (congr(Ctx.lam (n := $(by omega))
     $(h.caseOrdinaryField f) $(h.caseTeleOrdinary η ls ps ms)))
+
+theorem IsStructure.projType_eq_projTypeWith :
+    h.projType η ls ps f maj =
+      projTypeWith I ls ps f fun prior =>
+        h.projTerm η ls ps (prior.castLE f.isLt.le) maj := by
+  rw [projType, projection]
+  rfl
 
 theorem IsStructure.projType_eq :
     h.projType η ls ps f maj =
       (I.ctors s c).ordinaryFieldExpr ls ps
         (fun current => h.projTerm η ls ps current maj) f := by
-  rw [projType, projection.eq_1]
+  rw [projType, projection]
   rfl
 
 @[simp] theorem IsStructure.projType_subst :
@@ -279,47 +263,12 @@ theorem IsStructure.projectionMotives_wkN (k : Nat) (other : Fin ι.nsorts) :
 
 theorem IsStructure.motiveType_self (l : Level ℓ) :
     I.motiveType η ls ps l s = .forallE (.ind η s ls ps h.indices) (.sort l) := by
-  have hni : ι.nindices s = 0 := by
-    by_contra hne
-    exact h.no_indices.elim ⟨0, Nat.pos_of_ne_zero hne⟩
-  have htele := (I.indexTele ls s ps).heq_nil (by omega)
-  have hhead :
-      Expr.ind η s ls
-          (fun param => (ps param).wkN (ι.nindices s))
-          (fun index => .var ⟨n + index.val, by omega⟩) ≍
-        Expr.ind η s ls ps h.indices := by
-    have hps :
-        (fun param => (ps param).wkN (ι.nindices s)) ≍ ps := by
-      refine Function.hfunext rfl ?_
-      intro param param' hparam
-      cases eq_of_heq hparam
-      rw [hni]
-      rfl
-    have his :
-        (fun index : Fin (ι.nindices s) =>
-          (.var ⟨n + index.val, by omega⟩ :
-            Expr ζ ℓ (n + ι.nindices s))) ≍
-          (h.indices : Fin (ι.nindices s) → Expr ζ ℓ n) := by
-      refine Function.hfunext rfl ?_
-      intro index
-      exact h.no_indices.elim index
-    exact congr(@Expr.ind $rfl $rfl $(by omega) $rfl $rfl
-      $rfl $rfl $hps $his)
-  have hsort : (Expr.sort l : Expr ζ ℓ (n + ι.nindices s + 1)) ≍ (Expr.sort l : Expr ζ ℓ (n + 1)) :=
-    congr(@Expr.sort $rfl $rfl $(by omega) $rfl)
-  have hpi : Expr.forallE
-        (Expr.ind η s ls (fun param => (ps param).wkN (ι.nindices s))
-          (fun index => .var ⟨n + index.val, by omega⟩)) (Expr.sort l) ≍
-      Expr.forallE (Expr.ind η s ls ps h.indices) (Expr.sort l) :=
-    congr(Expr.forallE (n := $(by omega)) $hhead $hsort)
-  apply eq_of_heq
-  exact
-    show Tele.foldr (fun {c} => Expr.forallE)
-        (Expr.forallE (Expr.ind η s ls (fun param => (ps param).wkN (ι.nindices s))
-          (fun index => .var ⟨n + index.val, by omega⟩)) (Expr.sort l)) (I.indexTele ls s ps) ≍
-      Tele.foldr (fun {c} => Expr.forallE)
-        (Expr.forallE (Expr.ind η s ls ps h.indices) (Expr.sort l)) #t[] from
-    congr(@Tele.foldr $rfl $rfl $rfl $(by omega) $rfl $hpi $htele)
+  have hni := Fin.eq_zero_of_isEmpty h.no_indices
+  have hsort : (Expr.sort l : Expr ζ ℓ (n + ι.nindices s + 1)) ≍
+      (Expr.sort l : Expr ζ ℓ (n + 1)) :=
+    congr(Expr.sort (n := $(by omega)) $rfl)
+  exact h.foldr_indexTele ls ps
+    congr(Expr.forallE (n := $(by omega)) $(h.motiveTeleHead η ls ps) $hsort)
 
 @[simp] theorem IsStructure.rebuildTerm_subst :
     (h.rebuildTerm η ls ps maj).subst σ =

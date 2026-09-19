@@ -61,10 +61,9 @@ namespace RecField
 
 /-- Induction hypothesis for a recursive field BEFORE earlier binders weaken it -/
 def ihType : Expr ζ₁ ℓ n :=
-  Ctx.pi
+  (recFd.instantiatedTelescope ls fieldSubst).pi
     (Inductive.motiveResult ((ms target).wkN arity)
       (recFd.instantiatedIndices ls fieldSubst) (r.applyBound arity))
-    (recFd.instantiatedTelescope ls fieldSubst)
 
 @[simp] theorem ihType_map :
     (recFd.ihType ls ms fieldSubst r).map pre =
@@ -172,7 +171,7 @@ def motiveTele (s : Fin ι.nsorts) :
 
 def motiveType (l : Level ℓ)
     (s : Fin ι.nsorts) : Expr ζ₁ ℓ n :=
-  Ctx.pi (.sort l) (I.motiveTele η ls ps s)
+  (I.motiveTele η ls ps s).pi (.sort l)
 
 @[simp] theorem motiveTele_instL
     (s : Fin ι.nsorts) (levelSubst : Param ℓ → Level ℓ') :
@@ -180,7 +179,7 @@ def motiveType (l : Level ℓ)
       I.motiveTele η (fun i => (ls i).inst levelSubst)
         (fun i => (ps i).instL levelSubst) s := by
   unfold motiveTele
-  change (Ctx.instL levelSubst (I.indexTele ls s ps)).snoc
+  change ((I.indexTele ls s ps).instL levelSubst).snoc
       ((Expr.ind η s ls (fun i => (ps i).wkN (ι.nindices s))
         fun index => Expr.var ⟨n + index.val, by omega⟩).instL levelSubst) = _
   simp!
@@ -313,7 +312,7 @@ def caseType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
   simp! [caseType]
 
 def caseFnType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) : Expr ζ₁ ℓ n :=
-  Ctx.pi (I.caseType η ls ps ms s c) (I.caseTele η ls ps ms s c)
+  (I.caseTele η ls ps ms s c).pi (I.caseType η ls ps ms s c)
 
 @[simp] theorem caseFnType_map
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
@@ -384,7 +383,7 @@ def recrTele (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) (l : Level 
   · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
     · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
       · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
-        · exact Ctx.map_instL pre ls I.params
+        · exact I.params.map_instL pre ls
         · exact I.motiveBinders_map pre η ls l
       · exact I.caseBinders_map pre η ls
     · exact I.indexTele_map pre ls s _
@@ -404,7 +403,7 @@ def recrTele (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) (l : Level 
 @[simp] theorem recrTele_instL
     (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ)
     (l : Level ℓ) (levelSubst : Param ℓ → Level ℓ') :
-    Ctx.instL levelSubst (I.recrTele η s ls l) =
+    (I.recrTele η s ls l).instL levelSubst =
       I.recrTele η s (fun level => (ls level).inst levelSubst)
         (l.inst levelSubst) := by
   change (Ctx.instL levelSubst _).snoc _ = _

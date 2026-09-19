@@ -17,8 +17,8 @@ import Metalean.Typing.Weakening
 
 namespace Metalean
 
-variable {ζ : Sigs} {sig : Sig} {E : Env ζ}
-variable {ℓ n m : Nat} {Γ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ n m}
+variable {ζ : Sigs} {sig : Sig} {E : Env ζ} {ℓ n m : Nat}
+  {Γ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ n m}
 
 theorem WFTeleStrong.mono {P Q : Level ℓ → Prop}
     (hPQ : ∀ {u}, P u → Q u) (hΔ : WFTeleStrong E P Γ Δ) :
@@ -129,7 +129,10 @@ theorem WFTeleStrong.weakenEnv {P : Level ℓ → Prop}
 
 namespace Inductive
 
-variable {ι : IndSig} {I : Inductive ζ ι}
+variable {ι : IndSig} {I : Inductive ζ ι} {s : Fin ι.nsorts}
+  {ls : Fin ι.nlevels → Level ℓ}
+  {ps : Fin ι.nparams → Expr ζ ℓ n}
+  {is : Fin (ι.nindices s) → Expr ζ ℓ n}
 
 theorem paramSubstEqStrong {ls : Fin ι.nlevels → Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} :
@@ -144,18 +147,12 @@ theorem IdxWF.toStrong
       E[Γ] ⊢ e : t →
       E[Γ] ⊢ₛ ok →
       E[Γ] ⊢ₛ e : t)
-    {s : Fin ι.nsorts} {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {is : Fin (ι.nindices s) → Expr ζ ℓ n}
     (hΓ : E[Γ] ⊢ₛ ok)
     (h : I.IdxWF E Γ s ls ps is) :
     I.IdxWFStrong E Γ s ls ps is :=
   fun index => tr (h index) hΓ
 
-theorem IdxWFStrong.instLevel {ℓ' : Nat} {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {is : Fin (ι.nindices s) → Expr ζ ℓ n}
+theorem IdxWFStrong.instLevel {ℓ' : Nat}
     (h : I.IdxWFStrong E Γ s ls ps is)
     (levelSubst : Param ℓ → Level ℓ') :
     I.IdxWFStrong E (Γ.instL levelSubst) s (fun i => (ls i).inst levelSubst)
@@ -164,10 +161,7 @@ theorem IdxWFStrong.instLevel {ℓ' : Nat} {s : Fin ι.nsorts}
   simpa using (h index).instLevel levelSubst
 
 theorem IdxWFStrong.weakenEnv
-    {entry : Entry ζ sig} {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {is : Fin (ι.nindices s) → Expr ζ ℓ n}
+    {entry : Entry ζ sig}
     (h : I.IdxWFStrong E Γ s ls ps is) :
     (I.map (.step .refl)).IdxWFStrong (E.snoc entry) Γ.weakenEnv s ls
       (fun p => (ps p).weakenEnv)
@@ -180,10 +174,8 @@ end Inductive
 
 namespace Field
 
-variable {ι : IndSig} {I : Inductive ζ ι}
-variable {nfields : Nat}
-variable {Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
-variable {fd : Field ζ ι nfields}
+variable {ι : IndSig} {I : Inductive ζ ι} {nfields : Nat}
+  {Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)} {fd : Field ζ ι nfields}
 
 theorem WFStrong.type {fd : Field ζ ι nfields} :
     fd.WFStrong E I Γ →
@@ -211,11 +203,12 @@ end Field
 
 namespace RecField
 
-variable {ι : IndSig} {I : Inductive ζ ι}
-variable {nfields : Nat}
-variable {Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
-variable {arity : Nat} {target : Fin ι.nsorts}
-variable {fd : RecField ζ ι nfields arity target}
+variable {ι : IndSig} {I : Inductive ζ ι} {nfields arity : Nat}
+  {s target : Fin ι.nsorts} {fd : RecField ζ ι nfields arity target}
+  {Γ Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
+  {ls : Fin ι.nlevels → Level ℓ}
+  {ps : Fin ι.nparams → Expr ζ ℓ n}
+  {σ : Subst ζ ℓ (ι.nparams + nfields) n}
 
 theorem WF.toStrong
     (tr : ∀ {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {e t : Expr ζ ℓ n},
@@ -239,13 +232,9 @@ theorem WFStrong.weakenEnv {entry : Entry ζ sig} :
         (his.weakenEnv (entry := entry))⟩
 
 theorem WFStrong.instantiatedTelescope
-    {arity : Nat} {s : Fin ι.nsorts}
     {fd : RecField ζ ι nfields arity s}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
     (h : fd.WFStrong E I Δ)
     {Γ : Ctx ζ ℓ 0 n}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {σ : Subst ζ ℓ (ι.nparams + nfields) n}
     {P : Level ℓ → Prop}
     (hls : ∀ {level}, I.LevelOK level → P (level.inst ls))
     (hσ : E[Γ] ⊢ₛ σ ⊣ Δ.instL ls) :
@@ -253,14 +242,9 @@ theorem WFStrong.instantiatedTelescope
   (h.tele.instLevel ls hls).substitution hσ
 
 theorem WFStrong.instantiatedIndices
-    {arity : Nat} {s : Fin ι.nsorts}
     {fd : RecField ζ ι nfields arity s}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
     (h : fd.WFStrong E I Δ)
     {Γ : Ctx ζ ℓ 0 n}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {σ : Subst ζ ℓ (ι.nparams + nfields) n}
     (hσparams : ∀ p, σ (p.castAdd nfields) = ps p)
     (index) :
     E[Γ] ⊢ₛ σ ⊣ Δ.instL ls →
@@ -288,13 +272,9 @@ theorem WFStrong.instantiatedIndices
   rwa [hpsEq] at hi
 
 theorem WFStrong.instantiatedType
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
     {η : Head ζ (.inductive ι)}
     (h : fd.WFStrong E I Δ) (hhead : (E.get η).block = I)
     {Γ₁ : Ctx ζ ℓ 0 n}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {σ : Subst ζ ℓ (ι.nparams + nfields) n}
     (hσparams : ∀ p, σ (p.castAdd nfields) = ps p) :
     E[Γ₁] ⊢ₛ ok →
     (∀ p, E[Γ₁] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -326,12 +306,10 @@ theorem WFStrong.instantiatedType
       hpsWk his
 
 theorem WFStrong.recursiveIndex
-    {arity : Nat} {s : Fin ι.nsorts}
     {telescope : Ctx ζ ι.nlevels (ι.nparams + nfields)
       (ι.nparams + nfields + arity)}
     {is : Fin (ι.nindices s) →
       Expr ζ ι.nlevels (ι.nparams + nfields + arity)}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
     (h : RecField.WFStrong E I Δ ⟨telescope, is⟩)
     {ls : Fin ι.nlevels → Level ℓ} (index) :
     E[Ctx.instL ls Δ ++ Ctx.instL ls telescope] ⊢ₛ
@@ -346,9 +324,11 @@ end RecField
 
 section Constructors
 
-variable {ι : IndSig} {I : Inductive ζ ι}
-variable {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}
-variable {ctor : Ctor ζ ι s csig}
+variable {ι : IndSig} {I : Inductive ζ ι} {η : Head ζ (.inductive ι)}
+  {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts} {ctor : Ctor ζ ι s csig}
+  {ls : Fin ι.nlevels → Level ℓ}
+  {ps ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+  {fds fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
 
 namespace Ctor
 
@@ -418,8 +398,7 @@ theorem WFStrong.weakenEnv
       congr(_ ++ $(Ctor.ordinaryTele_map (.step .refl) ctor))) _ _ _ _).mp
       (h.targetIndices.weakenEnv (entry := entry))
 
-theorem ordinarySubstWFStrong {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
+theorem ordinarySubstWFStrong
     {count : Nat} (hcount : count ≤ csig.nfields)
     {previous : Fin count → Expr ζ ℓ n} :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -443,8 +422,7 @@ theorem ordinarySubstWFStrong {ls : Fin ι.nlevels → Level ℓ}
     rw [Ctx.entry_append_right I.params _ (by omega) hb (by omega)]
     simpa using hprevious f
 
-theorem targetSubstWFStrong {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
+theorem targetSubstWFStrong
     {fds : Fin csig.nfields → Expr ζ ℓ n} :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     (∀ f, E[Γ] ⊢ₛ fds f :
@@ -452,23 +430,10 @@ theorem targetSubstWFStrong {ls : Fin ι.nlevels → Level ℓ}
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ₛ Fin.append ps fds ⊣
-      Ctx.instL ls (I.params ++ ctor.ordinaryTele) := by
-  intro hps hfields v
-  rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
-  cases v using Fin.addCases with
-  | left param =>
-    simpa [Inductive.paramType] using
-      hps param
-  | right f =>
-    have hb : ι.nparams ≤ (Fin.natAdd ι.nparams f).val := by
-      simp
-    rw [Ctx.entry_append_right I.params _ (by omega) hb (by omega)]
-    simpa using hfields f
+      Ctx.instL ls (I.params ++ ctor.ordinaryTele) :=
+  ordinarySubstWFStrong le_rfl
 
 theorem WFStrong.ordinaryFieldExprStrong (hctor : ctor.WFStrong E I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {fds : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     (∀ f, E[Γ] ⊢ₛ fds f :
@@ -487,9 +452,6 @@ theorem WFStrong.ordinaryFieldExprStrong (hctor : ctor.WFStrong E I)
 
 theorem WFStrong.recursiveFieldExprStrong (hctor : ctor.WFStrong E I)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {fds : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nrecFields) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -517,9 +479,6 @@ private theorem WFStrong.ordinaryTeleAux
 private theorem WFStrong.ordinaryFieldTeleAux
     (h : ctor.WFStrong E I)
     {Q : Level ℓ → Prop}
-    {η : Head ζ (.inductive ι)}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
     (hls : ∀ {level}, I.LevelOK level → Q (level.inst ls))
     (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p)
     (count : Nat) (hcount : count ≤ csig.nfields) :
@@ -533,9 +492,6 @@ private theorem WFStrong.ordinaryFieldTeleAux
 
 theorem WFStrong.ordinaryFieldTele
     (h : ctor.WFStrong E I)
-    {η : Head ζ (.inductive ι)}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
     (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) :
     WFTeleStrong E (fun _ => True) Γ
       (ctor.ordinaryFieldTele η ls ps) :=
@@ -544,8 +500,6 @@ theorem WFStrong.ordinaryFieldTele
 
 theorem WFStrong.boundOrdinarySubstWFStrong
     (h : ctor.WFStrong E I)
-    {η : Head ζ (.inductive ι)}
-    {ls : Fin ι.nlevels → Level ℓ}
     {ps : Fin ι.nparams → Expr ζ ℓ n} :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     E[Γ ++ ctor.ordinaryFieldTele η ls ps] ⊢ₛ
@@ -562,8 +516,6 @@ theorem WFStrong.boundOrdinarySubstWFStrong
 private theorem WFStrong.recursiveFieldType
     (h : ctor.WFStrong E I)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
     (f : Fin csig.nrecFields) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -584,8 +536,6 @@ private theorem WFStrong.recursiveFieldType
 theorem WFStrong.fieldTele
     (h : ctor.WFStrong E I)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
     (hΓ : E[Γ] ⊢ₛ ok)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p)
     (stop : Fin (csig.nrecFields + 1) := ⟨csig.nrecFields, Nat.lt_succ_self _⟩) :
@@ -600,9 +550,6 @@ theorem WFStrong.fieldTele
 
 theorem WFStrong.targetIndex
     (h : ctor.WFStrong E I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {fds : Fin csig.nfields → Expr ζ ℓ n}
     (index : Fin (ι.nindices s)) :
     E[Γ] ⊢ₛ Fin.append ps fds ⊣
       Ctx.instL ls (I.params ++ ctor.ordinaryTele) →
@@ -622,9 +569,6 @@ theorem WFStrong.targetIndex
 theorem WFStrong.targetIndex_congr
     (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
     (index : Fin (ι.nindices s)) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
@@ -670,12 +614,8 @@ theorem WFStrong.targetIndex_congr
 end Ctor
 
 theorem RecField.WFStrong.instantiatedType_congr
-    {ι : IndSig} {I : Inductive ζ ι}
     {nfields arity : Nat} {target : Fin ι.nsorts}
     {fd : RecField ζ ι nfields arity target}
-    {η : Head ζ (.inductive ι)}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {Θ : Ctx ζ ι.nlevels ι.nparams
       (ι.nparams + nfields)}
     (hfield : fd.WFStrong E I (I.params ++ Θ))
@@ -725,8 +665,7 @@ theorem RecField.WFStrong.instantiatedType_congr
 
 namespace Ctor
 
-theorem targetSubstEqStrong {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+theorem targetSubstEqStrong
     {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n} :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
@@ -745,9 +684,6 @@ theorem targetSubstEqStrong {ls : Fin ι.nlevels → Level ℓ}
     simpa using hfields f
 
 theorem WFStrong.ordinarySubstEqStrong (h : ctor.WFStrong E I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
@@ -788,9 +724,6 @@ theorem WFStrong.ordinaryTeleAuxStrong
 
 theorem WFStrong.ordinaryFieldExpr_congr (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
@@ -814,9 +747,6 @@ theorem WFStrong.ordinaryFieldExpr_congr (h : ctor.WFStrong E I)
 
 theorem WFStrong.ordinaryFieldExpr_isTypeStrong (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {fds : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     (∀ g : Fin csig.nfields, g < f → E[Γ] ⊢ₛ fds g : ctor.ordinaryFieldExpr ls ps fds g) →
@@ -837,9 +767,6 @@ theorem WFStrong.ordinaryFieldExpr_isTypeStrong (h : ctor.WFStrong E I)
 theorem WFStrong.recursiveFieldExpr_congr (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
     (f : Fin csig.nrecFields) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
@@ -865,7 +792,10 @@ end Constructors
 
 namespace Inductive
 
-variable {ι : IndSig} {I : Inductive ζ ι}
+variable {ι : IndSig} {I : Inductive ζ ι} {η : Head ζ (.inductive ι)}
+  {s : Fin ι.nsorts} {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
+  {ps ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+  {is is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
 
 -- TODO fun _ => True
 structure WFStrong (E : Env ζ) (I : Inductive ζ ι) : Prop where
@@ -882,17 +812,13 @@ theorem WFStrong.paramClosedWF {ℓ : Nat} (hB : I.WFStrong E)
     (hB.params.instLevel (Q := fun _ => True) ls fun _ => trivial).appendCtxWFStrong .nil
 
 theorem WFStrong.indexTele
-    (hB : I.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
+    (hB : I.WFStrong E)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) :
     WFTeleStrong E (fun _ => True) Γ (I.indexTele ls s ps) :=
   ((hB.indices s).instLevel ls fun _ => trivial).substitution
     (paramSubstEqStrong hps).left
 
 theorem paramType_isTypeStrong (hB : I.WFStrong E)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
     (p : Fin ι.nparams) :
     (∀ q : Fin ι.nparams, q < p → E[Γ] ⊢ₛ ps q : I.paramType ls ps q) →
     E[Γ] ⊢ₛ I.paramType ls ps p typ := by
@@ -904,11 +830,8 @@ theorem paramType_isTypeStrong (hB : I.WFStrong E)
       simpa [Inductive.paramType] using this
   simpa [Inductive.paramType] using h
 
-theorem indexType_isTypeStrong {s : Fin ι.nsorts}
+theorem indexType_isTypeStrong
     (hidx : WFTeleStrong E (fun _ => True) I.params (I.indices s))
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {is : Fin (ι.nindices s) → Expr ζ ℓ n}
     (i : Fin (ι.nindices s)) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -925,8 +848,6 @@ theorem indexType_isTypeStrong {s : Fin ι.nsorts}
   simpa using h
 
 theorem paramType_congr (hB : I.WFStrong E)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     (p : Fin ι.nparams) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     E[Γ] ⊢ₛ I.paramType ls ps₁ p ≡ I.paramType ls ps₂ p typ := by
@@ -937,9 +858,7 @@ theorem paramType_congr (hB : I.WFStrong E)
     I.paramType_eq_get_subst ls ps₂ p] at h
   exact .ofDefEq h
 
-theorem indexSubstEqStrong (hB : I.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+theorem indexSubstEqStrong (hB : I.WFStrong E)
     {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n} :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i : I.indexType ls s ps₁ is₁ i) →
@@ -951,10 +870,7 @@ theorem indexSubstEqStrong (hB : I.WFStrong E) {s : Fin ι.nsorts}
   exact SubstEqStrong.extendFamily hindices (paramSubstEqStrong hps) fun i => by
     simpa [Inductive.indexType, Ctx.proj_eq_entry] using his i
 
-theorem indexType_congr (hB : I.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
+theorem indexType_congr (hB : I.WFStrong E)
     (i : Fin (ι.nindices s)) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i : I.indexType ls s ps₁ is₁ i) →
@@ -970,27 +886,20 @@ theorem indexType_congr (hB : I.WFStrong E) {s : Fin ι.nsorts}
   exact .ofDefEq h
 
 theorem paramType_conv (hB : I.WFStrong E)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     (p : Fin ι.nparams) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     E[Γ] ⊢ₛ ps₂ p ≡ ps₂ p : I.paramType ls ps₂ p :=
   fun hps => (paramType_congr hB p hps).convStrong (hps p).right
 
-theorem indexType_conv (hB : I.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
+theorem indexType_conv (hB : I.WFStrong E)
     (i : Fin (ι.nindices s)) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
     (∀ i, E[Γ] ⊢ₛ is₁ i ≡ is₂ i : I.indexType ls s ps₁ is₁ i) →
     E[Γ] ⊢ₛ is₂ i ≡ is₂ i : I.indexType ls s ps₂ is₂ i :=
   fun hps his => (indexType_congr hB i hps his).convStrong (his i).right
 
-theorem WFStrong.motiveTele {η : Head ζ (.inductive ι)}
-    (hB : (E.get η).block.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps : Fin ι.nparams → Expr ζ ℓ n}
+theorem WFStrong.motiveTele
+    (hB : (E.get η).block.WFStrong E)
     (hΓ : E[Γ] ⊢ₛ ok)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p) :
@@ -1009,9 +918,8 @@ theorem WFStrong.motiveTele {η : Head ζ (.inductive ι)}
         fun index => by
           simpa [Fin.natAdd] using hΓindices.var (Fin.natAdd n index)⟩
 
-theorem motiveType_congr {η : Head ζ (.inductive ι)}
-    (hB : (E.get η).block.WFStrong E) {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
+theorem motiveType_congr
+    (hB : (E.get η).block.WFStrong E)
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
@@ -1221,18 +1129,23 @@ theorem DefeqStrong.nullaryCtor {ι : IndSig} {η : Head ζ (.inductive ι)} {s 
 section Recursor
 
 variable {ι : IndSig} {I : Inductive ζ ι} {η : Head ζ (.inductive ι)}
-  {ls : Fin ι.nlevels → Level ℓ}
-  {ps : Fin ι.nparams → Expr ζ ℓ n}
-  {ms : Fin ι.nsorts → Expr ζ ℓ n}
+  {nfields arity : Nat} {s target : Fin ι.nsorts} {c : Fin (ι.nctors s)}
+  {csig : CtorSig ι.nsorts} {ctor : Ctor ζ ι s csig}
+  {fd : RecField ζ ι nfields arity target}
+  {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
+  {ps ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+  {ms ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
   {mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
+  {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
+  {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
+  {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
+  {σ : Subst ζ ℓ (ι.nparams + nfields) n}
   {r : Expr ζ ℓ n}
 
 namespace Inductive
 
 theorem WFStrong.motiveResult_congr {η : Head ζ (.inductive ι)}
     (hB : (E.get η).block.WFStrong E)
-    {s : Fin ι.nsorts} {ls : Fin ι.nlevels → Level ℓ}
-    {l : Level ℓ} {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
     {maj₁ maj₂ : Expr ζ ℓ n}
     {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n} :
@@ -1286,13 +1199,9 @@ theorem WFStrong.motiveResult_congr {η : Head ζ (.inductive ι)}
 end Inductive
 
 theorem RecField.WFStrong.ihType
-    {nfields arity : Nat} {target : Fin ι.nsorts}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
-    {fd : RecField ζ ι nfields arity target}
     (h : fd.WFStrong E I Δ) (hB : I.WFStrong E)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
     {ms : Fin ι.nsorts → Expr ζ ℓ n} {l : Level ℓ}
-    {σ : Subst ζ ℓ (ι.nparams + nfields) n}
     (hσparams : ∀ p, σ (p.castAdd nfields) = ps p) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -1328,14 +1237,9 @@ theorem RecField.WFStrong.ihType
         (.indDF hpsWk his) hr).left)
 
 theorem RecField.WFStrong.ihType_congr
-    {nfields arity : Nat} {target : Fin ι.nsorts}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
-    {fd : RecField ζ ι nfields arity target}
     (h : fd.WFStrong E I Δ) (hB : I.WFStrong E)
     (hΔ : WFTeleStrong E (fun _ => True) .nil Δ)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n} {l : Level ℓ}
     {σ₁ σ₂ : Subst ζ ℓ (ι.nparams + nfields) n}
     (hσparams : ∀ p, σ₁ (p.castAdd nfields) = ps₁ p) :
@@ -1402,14 +1306,9 @@ theorem RecField.WFStrong.ihType_congr
         (Ctx.pi_applyBoundStrong hΓtele hind hr))
 
 theorem RecField.WFStrong.iotaIH
-    {nfields arity : Nat} {target : Fin ι.nsorts}
-    {Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
-    {fd : RecField ζ ι nfields arity target}
     (h : fd.WFStrong E I Δ) (hB : I.WFStrong E)
     {η : Head ζ (.inductive ι)} (hhead : (E.get η).block = I)
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     (hallowed : I.RecAllowed l)
-    {σ : Subst ζ ℓ (ι.nparams + nfields) n}
     (hσparams : ∀ p, σ (p.castAdd nfields) = ps p) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
@@ -1458,11 +1357,8 @@ theorem RecField.WFStrong.iotaIH
     (.recrDF hallowed hpsWk hmsWk hminsWk his hmaj hresult)
 
 theorem Ctor.WFStrong.iotaIH
-    {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}
-    {ctor : Ctor ζ ι s csig}
     (hctor : ctor.WFStrong E (E.get η).block)
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     {fds : Fin csig.nfields → Expr ζ ℓ n}
     {recFds : Fin csig.nrecFields → Expr ζ ℓ n}
     (hallowed : (E.get η).block.RecAllowed l)
@@ -1492,8 +1388,6 @@ namespace Inductive
 
 theorem WFStrong.caseType_hasTypeStrong
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     {Γcase : Ctx ζ ℓ 0
       (n + (ι.ctors s c).nfields +
         (ι.ctors s c).nrecFields +
@@ -1545,10 +1439,6 @@ theorem WFStrong.caseType_hasTypeStrong
 
 theorem WFStrong.caseType_congr
     (hB : (E.get η).block.WFStrong E)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {l : Level ℓ} {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     {Γcase : Ctx ζ ℓ 0
       (n + (ι.ctors s c).nfields +
         (ι.ctors s c).nrecFields +
@@ -1600,7 +1490,6 @@ theorem WFStrong.caseType_congr
     hB.motiveResult_congr hΓcase hps hms his hmaj
 
 theorem WFStrong.motiveBinders
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {Γ : Ctx ζ ℓ 0 ι.nparams}
     (hB : (E.get η).block.WFStrong E)
     (hΓ : E[Γ] ⊢ₛ ok)
@@ -1616,7 +1505,6 @@ theorem WFStrong.motiveBinders
   exact ⟨v, trivial, ht⟩
 
 theorem WFStrong.motiveBinders_var
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {Γ : Ctx ζ ℓ 0 ι.nparams}
     (hB : (E.get η).block.WFStrong E)
     (s : Fin ι.nsorts) :
@@ -1636,11 +1524,8 @@ theorem WFStrong.motiveBinders_var
 end Inductive
 
 theorem Ctor.WFStrong.ihTeleAux
-    {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}
-    {ctor : Ctor ζ ι s csig}
     (hctor : ctor.WFStrong E (E.get η).block)
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     (hΓ : E[Γ] ⊢ₛ ok)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p)
@@ -1661,11 +1546,8 @@ theorem Ctor.WFStrong.ihTeleAux
   exact ⟨u, trivial, ht⟩
 
 theorem Ctor.WFStrong.ihTele
-    {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}
-    {ctor : Ctor ζ ι s csig}
     (hctor : ctor.WFStrong E (E.get η).block)
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     (hΓ : E[Γ] ⊢ₛ ok)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p)
@@ -1677,13 +1559,8 @@ theorem Ctor.WFStrong.ihTele
   hctor.ihTeleAux hB hΓ hps hms csig.nrecFields le_rfl
 
 theorem Ctor.WFStrong.ihType_congr
-    {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}
-    {ctor : Ctor ζ ι s csig}
     (hctor : ctor.WFStrong E (E.get η).block)
     (hB : (E.get η).block.WFStrong E)
-    {ls : Fin ι.nlevels → Level ℓ}
-    {l : Level ℓ} {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
-    {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
     (f : Fin csig.nrecFields) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
@@ -1717,8 +1594,6 @@ namespace Inductive
 
 theorem WFStrong.caseTele
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (hΓ : E[Γ] ⊢ₛ ok)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p)
@@ -1731,7 +1606,6 @@ theorem WFStrong.caseTele
   simpa [Inductive.caseTele] using hfields.append hihs
 
 theorem caseParams_typed
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (param : Fin ι.nparams) :
     (∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p) →
@@ -1755,8 +1629,6 @@ theorem caseParams_typed
   simpa [Tele.append_assoc, Inductive.caseTele, Ctor.fieldTele] using hp
 
 theorem caseMotives_typed
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (s₁ : Fin ι.nsorts) :
     (∀ s, E[Γ] ⊢ₛ ms s :
       (E.get η).block.motiveType η ls ps l s) →
@@ -1778,8 +1650,6 @@ theorem caseMotives_typed
   simpa [Tele.append_assoc, Inductive.caseTele, Ctor.fieldTele] using hm
 
 theorem caseParams_congr
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     (param : Fin ι.nparams) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       (E.get η).block.paramType ls ps₁ p) →
@@ -1809,7 +1679,6 @@ theorem caseParams_congr
 
 theorem caseMotives_congr
     {l : Level ℓ} {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (s₁ : Fin ι.nsorts) :
     (∀ s₁, E[Γ] ⊢ₛ ms₁ s₁ ≡ ms₂ s₁ :
       (E.get η).block.motiveType η ls ps l s₁) →
@@ -1841,7 +1710,6 @@ theorem caseMotives_congr
 
 theorem WFStrong.caseOrdinary_typed
     (hB : (E.get η).block.WFStrong E)
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (f : Fin (ι.ctors s c).nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p :
       (E.get η).block.paramType ls ps p) →
@@ -1860,7 +1728,6 @@ theorem WFStrong.caseOrdinary_typed
 
 theorem WFStrong.caseRecursive_typed
     (hB : (E.get η).block.WFStrong E)
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (f : Fin (ι.ctors s c).nrecFields) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p :
@@ -1897,7 +1764,6 @@ theorem WFStrong.caseRecursive_typed
 
 theorem WFStrong.caseFnType
     (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p :
@@ -1917,7 +1783,6 @@ theorem WFStrong.caseFnType
 
 theorem caseFnType_congr {η : Head ζ (.inductive ι)}
     (hB : (E.get η).block.WFStrong E) {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n} :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
@@ -1974,7 +1839,6 @@ theorem caseFnType_congr {η : Head ζ (.inductive ι)}
 
 theorem caseFnType_conv {η : Head ζ (.inductive ι)}
     (hB : (E.get η).block.WFStrong E) {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
     {mins₁ mins₂ : Expr ζ ℓ n} :
     E[Γ] ⊢ₛ ok →
@@ -1989,7 +1853,6 @@ theorem caseFnType_conv {η : Head ζ (.inductive ι)}
   fun hΓ hps hms hmin => (caseFnType_congr hB hΓ hps hms).convStrong hmin.right
 
 theorem WFStrong.caseBinders
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {Γ : Ctx ζ ℓ 0 (ι.nparams + ι.nsorts)}
     (hB : (E.get η).block.WFStrong E)
     (hΓ : E[Γ] ⊢ₛ ok)
@@ -2012,7 +1875,6 @@ theorem WFStrong.caseBinders
 
 theorem WFStrong.recrTele
     {s : Fin ι.nsorts}
-    {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     (hB : (E.get η).block.WFStrong E) :
     WFTeleStrong E (fun _ => True) .nil
       ((E.get η).block.recrTele η s ls l) := by
@@ -2144,12 +2006,8 @@ theorem WFStrong.weakenEnv
 
 theorem iotaLhs_hasTypeStrong
     {η : Head ζ (.inductive ι)} {ls : Fin ι.nlevels → Level ℓ}
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
       Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
-    {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
     (hctor : ((E.get η).block.ctors s c).WFStrong E (E.get η).block)
     (hallowed : (E.get η).block.RecAllowed l) :
     E[Γ] ⊢ₛ ok →
@@ -2191,12 +2049,8 @@ theorem iotaLhs_hasTypeStrong
 
 theorem WFStrong.iotaRhs_hasTypeStrong
     {η : Head ζ (.inductive ι)} (hB : (E.get η).block.WFStrong E)
-    {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ n}
     {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
       Expr ζ ℓ n}
-    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
-    {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
     (hallowed : (E.get η).block.RecAllowed l) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p ≡ ps p :
