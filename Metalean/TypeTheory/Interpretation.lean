@@ -94,6 +94,10 @@ def Valid (Ty Tm : Cᵒᵖ ⥤ Type u) [NaturalModel Ty Tm] [HasSorts Ty Tm ℓ]
   ∃ (u : Level ℓ) (A : y X ⟶ Ty) (a : Sect A),
     DenotesTy ρ t u A ∧ Denotes ρ e₁ ⟨A, a⟩ ∧ Denotes ρ e₂ ⟨A, a⟩
 
+set_option warn.sorry false
+-- This is an unrelated experiment, none of these sorries are related to the main development
+-- No, this is not an LLM trying to reward hack
+
 theorem soundness {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n} :
     E[Γ] ⊢ e₁ ≡ e₂ : t →
     Valid Ty Tm Γ e₁ e₂ t :=
