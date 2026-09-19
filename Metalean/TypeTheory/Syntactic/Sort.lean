@@ -92,7 +92,6 @@ theorem Ty.isProp_of_isSort_zero (A : y Γ ⟶ Ty E ℓ)
     obtain ⟨t, ht, rfl⟩ := h
     obtain ⟨e, he, rfl⟩ :=
       Tm.exists_label t (Ty.sortRepr _ .zero) (ht.trans (Ty.yonedaEquiv_sort .zero _))
-    have hel : Ty.el .zero (Tm.label _ he) ht = Ty.ofTyping _ he := Ty.el_label .zero he ht
     apply isProp_of_subsingleton
     intro Δ σ
     have hsub := Tm.subsingleton_of_prop he rfl σ

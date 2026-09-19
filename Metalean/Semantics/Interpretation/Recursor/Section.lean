@@ -51,7 +51,6 @@ theorem CtxCat.ctorFields_get_ordinary (f : Fin (ι.ctors s c).nfields) :
         (CtxCat.ctorFields h s c).as.ctx =
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls ((ι.ctors s c).fieldParams ps)
         (ι.ctors s c).fieldOrdinary f := by
-  have hf : f.val < (ι.ctors s c).nfields := f.isLt
   change Ctx.get ⟨Γ₁.as.len + f.val, by omega⟩
     (Γ₁.as.ctx ++ ((E.get η).block.ctors s c).fieldTele η ls ps) = _
   rw [← Expr.subst_id (Ctx.get _ _), Ctx.get_subst _ Subst.id _ (Γ₁.as.len + f.val) (by omega) rfl,

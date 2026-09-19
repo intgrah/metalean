@@ -709,14 +709,12 @@ attribute [local instance] Ren.category in
         ext n e
         exact map_instL ε σ e }
   map_id ζ := by
-    let := Level.category
     apply NatTrans.ext
     funext ℓ
     let := Ren.category
     ext n e
     exact (functor ℓ n).map_id_apply ζ e
   map_comp ε₁ ε₂ := by
-    let := Level.category
     apply NatTrans.ext
     funext ℓ
     let := Ren.category

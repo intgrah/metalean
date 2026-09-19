@@ -132,7 +132,6 @@ theorem apply_congr (T₁ T₂ : Ty.Repr Γ) (B₁ : Ty.Repr ⟨Γ.as.snoc T₁.
   have ⟨a, ha, hma⟩ := Tm.exists_label m _ hm₁
   have hpi : E[Γ.as.ctx] ⊢ₛ .forallE T₁.term B₁.term ≡ .forallE T₂.term B₂.term typ :=
     (ofRepr_eq_iff _ _).mp (hn₁.symm.trans hn₂)
-  have ⟨_, hB₁⟩ := B₁.wf
   rw [apply_eq T₁ B₁ n m hn₁ hm₁ hf ha hnf hma,
     apply_eq T₂ B₂ n m hn₂ hm₂ (hpi.convStrong hf) (hT.convStrong ha)
       (hnf.trans (label_eq hpi hf)) (hma.trans (label_eq hT ha))]

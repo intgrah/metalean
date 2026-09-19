@@ -31,8 +31,6 @@ noncomputable def ofFin {n : Nat} (args : Fin n → RawFamily Γ₁) : Valuation
     change RawValuation.pushFin (fun _ => ⊥)
       (fun i => (args i).app _ (σ₁ ≫ σ₂) (ρ.pullback σ₂.unop)) =
         (RawValuation.pushFin (fun _ => ⊥) fun i => (args i).app _ σ₁ ρ).pullback σ₂.unop
-    have hbot : RawValuation.pullback (fun _ => ⊥) σ₂.unop = fun _ => ⊥ :=
-      funext fun _ => Presheaf.ΩLower.presheaf_map_bot _
     rw [RawValuation.pullback_pushFin]
     exact congrArg (RawValuation.pushFin fun _ => ⊥)
       (funext fun i => (args i).naturality_apply σ₂ σ₁ ρ)

@@ -392,7 +392,6 @@ partial def inferCore (G : FCtx) :
             (fun p => Inductive.paramType_conv hB p hpsw) hmaj
           have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
           have hc0 : c'.val = 0 := by
-            have := c'.isLt
             omega
           obtain rfl : c' = ⟨0, hn1 ▸ Nat.zero_lt_one⟩ := Fin.ext hc0
           have hd := (hI.ctors _ ⟨0, hn1 ▸ Nat.zero_lt_one⟩).projType hls₂ hls₂'' ⟨hps₂, hps₂''⟩
@@ -514,7 +513,6 @@ partial def inferCore (G : FCtx) :
           (fun _ r _ => ⟨_, (hctor.recursiveFieldExpr_congr hB.params rfl r hepsT
             hefdsT).choose_spec⟩)
           (fun r => hrecFdsT r)
-        have ⟨_, hl, hleq⟩ := hI.levelInst hls hls'
         have hindD : FExpr.Denotes L ⟨_, _⟩ 0 (.ind pos s ls ps (ctor.instTargetIndices ls ps fds)) _ :=
           .ind hls hps' hcd.instTargetIndices_size hη rfl hls' hepsD
             (hcd.instTargetIndices hls hls' hpsA hfdsA)
@@ -557,7 +555,6 @@ partial def inferCore (G : FCtx) :
             (ι.ctors t c).nrecFields := fun t c => hrecsP.down t c
       have hminLt : ∀ (t : Fin ι.nsorts) (c : Fin (ι.nctors t)),
           (minorIndex ι t c).val < mins.size := fun t c => by
-        have := (minorIndex ι t c).isLt
         omega
       have hmsLt : ∀ t : Fin ι.nsorts, t.val < ms.size := fun t => by omega
       let ⟨hminsT⟩ ← Fin.sequenceM fun t : Fin ι.nsorts => Fin.sequenceM fun c : Fin (ι.nctors t) =>
@@ -849,7 +846,6 @@ partial def inferOnlyCore (G : FCtx) :
             f' f' rfl hS.wf he hty₂ fun ht₁ _ => ht₁
           have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
           have hc0 : c'.val = 0 := by
-            have := c'.isLt
             omega
           obtain rfl : c' = ⟨0, hn1 ▸ Nat.zero_lt_one⟩ := Fin.ext hc0
           have hd := (hI.ctors _ ⟨0, hn1 ▸ Nat.zero_lt_one⟩).projType hls₂ hls₂'' ⟨hps₂, hps₂''⟩
@@ -1342,7 +1338,6 @@ partial def isDefEqUnitLike (G : FCtx) (fe₁ fe₂ : FExpr) :
         have hc0 : 0 < ι.nctors _ := hI.ctorsRow _ ▸ hcc
         have hstruct' := hI.isStructure _ ⟨0, hc0⟩ hstruct
         have hcd := hI.ctors _ ⟨0, hc0⟩
-        have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
         have hnf : (ι.ctors _ ⟨0, hc0⟩).nfields = 0 := by
           rw [← hcd.ordinarySize]
           exact hfields

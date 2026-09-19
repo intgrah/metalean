@@ -79,7 +79,6 @@ theorem HasEquality.structure_eta_of_projections
           RawValue.proj ⟨η, s, c⟩ (Fin.castAdd _ f)
             ((rawInterpret (piLimit E ℓ) Γ₁ maj).app _ σ.op ρ)) :
     HasEquality Γ₁ (hs.rebuildTerm η ls ps maj) maj := by
-  have ht := hs.indTypeStrong fun p => (pps p).syntactic.left
   let hctor : CtorTyping Γ₁ η s c ls ps (fun f => hs.projTerm η ls ps f maj) hs.recursive := {
     ordinary f := by
       simpa [Inductive.IsStructure.projType_eq] using

@@ -1527,10 +1527,7 @@ theorem WFStrong.caseType_hasTypeStrong
       .sort l := by
   intro hΓcase hps hms hfields hrecFields
   let I := (E.get η).block
-  let csig := ι.ctors s c
-  let C := I.ctors s c
-  have hσ := Ctor.targetSubstWFStrong
-    (ctor := C) hps hfields
+  have hσ := Ctor.targetSubstWFStrong hps hfields
   have his := fun index => (hB.ctors s c).targetIndex index hσ
   have htarget := DefeqStrong.indDF hps his
   have hmaj := DefeqStrong.ctorDF hps hfields

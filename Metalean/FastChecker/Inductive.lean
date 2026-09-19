@@ -720,7 +720,6 @@ theorem FCtor.Denotes.rebuildTerm {fctor : FCtor}
       (hstruct.rebuildTerm η (⟦ls' ·⟧) ps' e) := by
   have hc0 : c.val = 0 := by
     have := Fin.eq_one_of_unique c hstruct.ctor_unique
-    have := c.isLt
     omega
   have hfds := FExpr.Denotes.projFields (ls' := ls') (ps' := ps') hη hstruct he hc.ordinarySize
   exact .ctor hus hps.size hfds.size

@@ -78,7 +78,6 @@ theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
         Reachable {vps} (model.ctors s c).source.ordinary.sem ∧
       model.ctorResult s c vps (model.fieldsOf s c vps vis vmaj) vrecFds = vmaj := by
   let fieldTele := (model.ctors s c).source.ordinary.sem
-  let rest := model.recursiveRest s c
   let carrier := fibreOp (model.toModel.block vps) (sortKey s.val (encode vis))
   have hcarrier : vmaj ∈ propSet model.toModel.level carrier := hmem
   let raw := propGet model.toModel.level carrier vmaj

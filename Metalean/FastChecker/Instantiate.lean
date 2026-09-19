@@ -256,7 +256,6 @@ theorem FExpr.Denotes.fvarRange_le {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
     · obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hy
       exact ihms ⟨i, by omega⟩
     · obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hy
-      have hx := Fin.encodeSigma_decodeSigma ι.nctors ⟨i, by omega⟩
       have := ihmins (Fin.decodeSigma ι.nctors ⟨i, by omega⟩).1
         (Fin.decodeSigma ι.nctors ⟨i, by omega⟩).2
       simpa using this
@@ -520,7 +519,6 @@ theorem Subst.Instantiates.lift {m n q p d : Nat} {a' : Expr E.1 ℓ q} {σ : Su
     funext w
     simp [Ren.comp, show w.val < n by omega]
   bound v hv := by
-    have := h.scope
     by_cases hvm : v.val < m
     · have ⟨w, hw, hwv⟩ := h.bound ⟨v.val, hvm⟩ hv
       refine ⟨w.castSucc, ?_, by simp at hwv ⊢; omega⟩
@@ -540,7 +538,6 @@ theorem FExpr.Denotes.drop {m k : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
   | @bvar m k i j hi hj =>
     rw [FExpr.data_bvar, Data.toNat_looseBVarRange_mk] at hc
     have := hσ.size
-    have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
     simpa [Expr.subst, hw] using .bvar (i := w.val) (by simp at hwv; omega) (by omega)
   | @fvar m k i hi =>
@@ -654,7 +651,6 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
   induction hb generalizing n p d with
   | @bvar m k i j hi hj =>
     have := hσ.size
-    have := hσ.scope
     by_cases hjd : j < d
     · have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
       simpa [FExpr.instAtCore, Expr.subst, hjd, hw] using .bvar (i := w.val) (by simp at hwv; omega) hjd
@@ -1082,7 +1078,6 @@ theorem append {m₂ : Nat} {args₂ : Array FExpr} {σ₂ : Subst E.1 ℓ m₂ 
   size := by simp [h.size, h₂.size]
   denotes v := by
     have hs := h.size
-    have hs₂ := h₂.size
     cases v using Fin.addCases with
     | left v =>
       simp only [Fin.append_left, Fin.val_castAdd]
@@ -1115,10 +1110,7 @@ theorem liftN (k : Nat) :
 theorem extract (h : ArgsDenote L E args σ) (j : Nat) (hj : j ≤ m) :
     ArgsDenote L E (args.extract 0 j) fun v : Fin j => σ (v.castLE hj) where
   size := by simp [h.size]; omega
-  denotes v := by
-    have hs := h.size
-    simp only [Array.getElem_extract, Nat.zero_add]
-    exact h.denotes (v.castLE hj)
+  denotes v := by simpa using h.denotes (v.castLE hj)
 
 end ArgsDenote
 

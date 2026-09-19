@@ -198,8 +198,6 @@ theorem packRecursive_mem {fields : Fin count → CtorRecCode.Packed n}
   | zero => exact htail
   | succ count ih =>
     let f := fields 0
-    let restFields : Fin count → CtorRecCode.Packed n :=
-      fun current => fields current.succ
     exact mem_argSet_recArg
       (recoverRecField_mem f.2.tele f.2.index (hvalues 0))
       (by simpa [Fin.tail_def] using ih (Fin.tail hvalues) htail)
@@ -285,7 +283,6 @@ theorem splitIhArgSet_prependRecursive
       fun _ => rfl, fun _ => rfl, fun _ _ => rfl⟩
   | succ count ih =>
     let recCode := fields 0
-    let rest : Fin count → CtorRecCode.Packed n := Fin.tail fields
     obtain ⟨fieldAndIh, hfieldAndIh, tail, htail, rfl⟩ := mem_sigma.mp hargs
     rw [app_map hfieldAndIh] at htail
     obtain ⟨rawHead, hrawHead, ihHead, hihHead, rfl⟩ := mem_sigma.mp hfieldAndIh

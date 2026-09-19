@@ -200,7 +200,6 @@ theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (�
       (model.recrCaseFieldsSem s c) := by
   let := Subst.category ζ₂ 0
   let source := (model.ctors s c).source
-  let C := I.ctors s c
   let σ : Subst ζ₂ 0 ι.nparams (ι.nparams + ι.nsorts) := fun param => .var (param.castAdd ι.nsorts)
   have hbase : Set.MapsTo (fun γ param => γ (param.castAdd ι.nsorts))
       (Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l))

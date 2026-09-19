@@ -93,7 +93,6 @@ theorem Reachable.apps_mem_of_base {k : Nat}
       domain final := by
   induction Δ using Tele.addInduction with
   | nil =>
-    have .nil _ := h
     obtain rfl : final = γ := funext hbase
     simpa [SemTele.pi, SemTele.fold, Aczel.apps] using hf
   | snoc k prior next ih =>
@@ -287,7 +286,6 @@ theorem Reachable.mem_type_of_domsIn {Δ : SemTele a b} {γ : Slots b} {level : 
     γ v ∈ U_ level := by
   induction h with
   | nil =>
-    have := v.isLt
     omega
   | @snoc b Δ domain γ _ hlast ih =>
     have .snoc hdoms hdomain := hdoms

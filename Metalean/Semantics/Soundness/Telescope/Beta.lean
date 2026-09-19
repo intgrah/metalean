@@ -97,10 +97,6 @@ theorem RawFamily.ctxLam_beta {P : Level ℓ → Prop} {b : Nat} {ctx : Ctx ζ �
         (rawInterpret_isFinitary _ G A) fB)
         (RawFamily.abstraction_isDirected_of hA pA.ideal iB)
         (σ ≫ CtxCat.rawProjection G hA) ρ.tail htail)).trans ?_
-    have hlast : (Tm E ℓ).map σ.op
-        (Tm.varLabel (CtxCat.extendTele (CtxCat.nil E ℓ) (ctx.snoc A) hctx) (Fin.last k)) =
-        (Tm E ℓ).map σ.op (CtxCat.rawComprehension hA).generic := by
-      rfl
     have hb := RawFamily.rawApplication_singleton_abstraction_eq_body (piLimit E ℓ)
       (CtxCat.rawComprehension hA) (rawInterpret (piLimit E ℓ) G A) fB
       (σ ≫ CtxCat.rawProjection G hA) ρ.tail

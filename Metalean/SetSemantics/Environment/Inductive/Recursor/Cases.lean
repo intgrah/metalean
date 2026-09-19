@@ -237,7 +237,6 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
       fun v => δ (v.castAdd sig.nrecFields)
     have hsource := model.recrCaseFieldsSem_base s c l fieldSlots
       (Reachable.base (Reachable.of_append hδ))
-    have hproject := model.recrCaseFieldBase_eq_append s c fieldSlots
     let ps : Fin ι.nparams → Expr ζ₂ 0 (ι.nparams + ι.nsorts) :=
       fun p => .var (p.castAdd ι.nsorts)
     have htarget (i : Fin (ι.nindices s)) :

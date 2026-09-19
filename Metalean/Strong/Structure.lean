@@ -267,11 +267,6 @@ theorem IsStructure.projectionStrong
       (fun target => by simpa using hms target))
     have hcaseOrdinary := (hB.caseOrdinary_typed (s := s) (c := c) (ms := ms) ·
       (fun param => by simpa using hps param))
-    have hcaseType := hB.caseType_hasTypeStrong hΓcase
-      (fun param => by simpa using hcaseParams param)
-      (fun target => by simpa using hcaseMotives target)
-      (fun current => by simpa using hcaseOrdinary current)
-      h.no_recursive.elim
     have hcaseIndices := fun index =>
       (hB.ctors s c).targetIndex index (by
         exact Ctor.targetSubstWFStrong hcaseParams hcaseOrdinary)
@@ -544,10 +539,8 @@ theorem IsStructure.projectionStrong
               Expr ζ ℓ (n + (ι.ctors s c).nfields)) ≍
               (fun index => ((E.get η).block.ctors s c).targetIndex ls
                 ((ι.ctors s c).caseParams ps)
-                (ι.ctors s c).caseOrdinary index) := by
-          refine Function.hfunext rfl ?_
-          intro index
-          exact h.no_indices.elim index
+                (ι.ctors s c).caseOrdinary index) :=
+          Function.hfunext rfl h.no_indices.elim
         have hheadBase :
             Expr.ind η s ls
                 (fun param => (ps param).wkN
@@ -567,8 +560,7 @@ theorem IsStructure.projectionStrong
           refine Function.hfunext rfl ?_
           intro param param' hparam
           cases eq_of_heq hparam
-          have hp := wkEmpty ((ps param).wkN
-            (ι.ctors s c).nfields)
+          have hp := wkEmpty ((ps param).wkN (ι.ctors s c).nfields)
           simpa [CtorSig.caseParams, CtorSig.fieldParams, Expr.wkN] using
             Expr.wkN_congr (by omega) hp.symm 1
         have hmajBase :
@@ -861,7 +853,7 @@ theorem IsStructure.projectionStrong
           (E.get η).block.iotaType η ls ps ms s c
             fds h.recursive := by
       exact
-        DefeqStrong.iota (E := E) (η := η) (by simpa using h.recAllowed u)
+        DefeqStrong.iota (by simpa using h.recAllowed u)
           (fun p => by simpa using hps p)
           (fun target => by simpa using hms target)
           (fun target targetCtor => by

@@ -242,7 +242,6 @@ theorem closed_of_binderRange {t b : Data} {k : Nat} (hle : min (binderRange t b
     (hlt : min (binderRange t b) maxRange < maxRange) :
     (t.looseBVarRange.toNat ≤ k ∧ t.looseBVarRange.toNat < maxRange) ∧
       b.looseBVarRange.toNat ≤ k + 1 ∧ b.looseBVarRange.toNat < maxRange := by
-  have := toNat_looseBVarRange_le b
   unfold binderRange at hle hlt
   by_cases hb : b.looseBVarRange.toNat = maxRange
   · simp only [hb, ↓reduceIte] at hlt
