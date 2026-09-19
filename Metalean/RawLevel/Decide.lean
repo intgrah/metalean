@@ -8,284 +8,335 @@ module
 public import Metalean.RawLevel.Order
 import Metalean.List
 
-public section
+/-!
+# Level algebra
+
+This file incorporates code from Lean4Lean.
+
+## References
+
+- Yoan Géran, _A Canonical Form for Universe Levels in Impredicative Type Theory_, CSL 2026,
+  <https://doi.org/10.4230/LIPIcs.CSL.2026.39>
+-/
 
 namespace Metalean.RawLevel
 
-abbrev Zeros (ℓ : Nat) : Type := Param ℓ → Bool
-
-abbrev Atom (ℓ : Nat) : Type := Option (Param ℓ) × Nat
-
 variable {ℓ : Nat}
 
-namespace Atom
+abbrev Guard (ℓ : Nat) : Type := List (Param ℓ)
 
-@[expose] def eval (ν : Param ℓ → Nat) : Atom ℓ → Nat
-  | (none, k) => k
-  | (some p, k) => ν p + k
+namespace Guard
 
-theorem eval_zero_le_eval (ν : Param ℓ → Nat) : ∀ a, eval (fun _ => 0) a ≤ eval ν a
-  | (none, _) => Nat.le_refl _
-  | (some _, _) => Nat.add_le_add_right (Nat.zero_le _) _
+def sat (G : Guard ℓ) (ν : Param ℓ → Nat) : Bool :=
+  G.all fun p => ν p != 0
 
-theorem eval_shift (ν : Param ℓ → Nat) (k : Nat) :
-    ∀ p, eval ν (p, k + 1) = eval ν (p, k) + 1
-  | none => rfl
-  | some _ => (Nat.add_assoc _ _ _).symm
+def subset (G₁ G₂ : Guard ℓ) : Bool :=
+  G₁.all fun p => G₂.contains p
 
-@[expose] def dominates : Atom ℓ → Atom ℓ → Bool
-  | (_, kb), (none, ka) => decide (ka ≤ kb)
-  | (some jb, kb), (some ja, ka) => decide (jb = ja) && decide (ka ≤ kb)
-  | (none, _), (some _, _) => false
+variable (ν : Param ℓ → Nat)
 
-theorem dominates_sound (ν : Param ℓ → Nat) : ∀ {b a : Atom ℓ}, dominates b a = true →
-    eval ν a ≤ eval ν b
-  | (none, _), (none, _) => decide_eq_true_eq.mp
-  | (some _, _), (none, _) => fun h => by
-    have := decide_eq_true_eq.mp h
-    simp only [eval]
-    omega
-  | (some _, _), (some _, _) => fun h => by
-    simp! at h
-    change _ + _ ≤ _ + _
-    lia
-  | (none, _), (some _, _) => fun h => by simp [dominates] at h
+@[simp] theorem sat_nil : sat [] ν = true := rfl
 
-theorem dominates_complete : ∀ b a : Atom ℓ,
-    (∀ ν, eval ν a ≤ eval ν b) → dominates b a = true
-  | (none, _), (none, _) => fun h => decide_eq_true_eq.mpr (h fun _ => 0)
-  | (some _, _), (none, _) => fun h => by
-    have := h fun _ => 0
-    simp only [eval] at this
-    exact decide_eq_true_eq.mpr (by omega)
-  | (none, kb), (some i, _) => fun h => by
-    have := h fun j => if j = i then kb + 1 else 0
-    simp [eval] at this
-    omega
-  | (some j, kb), (some i, ka) => fun h => by
-    simp [dominates]
-    by_cases hij : j = i
-    · subst hij
-      have := h fun _ => 0
-      simp only [eval] at this
-      exact ⟨rfl, by omega⟩
-    · exfalso
-      have := h fun k => if k = i then kb + 1 else 0
-      have hji : j ≠ i := hij
-      simp [eval, ite_eq_right hji] at this
-      omega
+@[simp] theorem sat_cons (p : Param ℓ) (G : Guard ℓ) :
+    sat (p :: G) ν = ((ν p != 0) && sat G ν) := by
+  simp [sat]
 
-end Atom
+theorem sat_iff {G : Guard ℓ} : sat G ν = true ↔ ∀ p ∈ G, ν p ≠ 0 := by
+  simp [sat]
 
-theorem Atom.extract_dominator (B : List (Atom ℓ)) (hB : B ≠ []) : ∀ a : Atom ℓ,
-    (∀ ν, eval ν a ≤ (B.map (eval ν)).foldr Nat.max 0) →
-    ∃ b ∈ B, ∀ ν, eval ν a ≤ eval ν b
-  | (none, ka) => fun h => by
-    by_cases hka : ka = 0
-    · have ⟨b, hb⟩ := List.exists_mem_of_ne_nil B hB
-      exact ⟨b, hb, fun _ => hka ▸ Nat.zero_le _⟩
-    rcases List.le_foldr_max_iff (h fun _ => 0) with heq | ⟨_, hymem, hyle⟩
-    · exact absurd heq hka
-    have ⟨b, hbmem, hbeq⟩ := List.mem_map.mp hymem
-    exact ⟨b, hbmem, fun ν => Nat.le_trans (hbeq ▸ hyle) (eval_zero_le_eval ν b)⟩
-  | (some i, ka) => fun h => by
-    let C := (B.map (eval fun _ => 0)).foldr Nat.max 0
-    let N := C + ka + 1
-    let ns_N : Param ℓ → Nat := fun j => if j = i then N else 0
-    have hnsi : ns_N i = N := ite_eq_left rfl
-    have hKey : N + ka ≤ (B.map (eval ns_N)).foldr Nat.max 0 := hnsi ▸ h ns_N
-    rcases List.le_foldr_max_iff hKey with hzero | ⟨y, hymem, hyle⟩
-    · exact absurd hzero (by change C + ka + 1 + ka ≠ 0; omega)
-    have ⟨b, hbmem, hbeq⟩ := List.mem_map.mp hymem
-    have hbBound : eval (fun _ => 0) b ≤ C :=
-      List.foldr_max_le_of_mem (List.mem_map_of_mem hbmem)
-    rcases b with ⟨_ | j, kb⟩
-    · simp only [eval] at hbeq hbBound
-      omega
-    · simp only [eval] at hbeq hbBound
-      by_cases hji : j = i
-      · subst hji
-        refine ⟨_, hbmem, fun ν => ?_⟩
-        change ν j + ka ≤ ν j + kb
-        rw [hnsi] at hbeq
+theorem subset_iff {G₁ G₂ : Guard ℓ} : subset G₁ G₂ = true ↔ ∀ p ∈ G₁, p ∈ G₂ := by
+  simp [subset]
+
+theorem sat_of_subset {G₁ G₂ : Guard ℓ} :
+    subset G₁ G₂ = true →
+    sat G₂ ν = true →
+    sat G₁ ν = true :=
+  fun h hs => (sat_iff ν).mpr fun p hp => (sat_iff ν).mp hs p (subset_iff.mp h p hp)
+
+end Guard
+
+inductive Sub (ℓ : Nat) where
+  | const (guard : Guard ℓ) (offset : Nat)
+  | var (p : Param ℓ) (guard : Guard ℓ) (offset : Nat)
+
+namespace Sub
+
+def offset : Sub ℓ → Nat
+  | const _ k | var _ _ k => k
+
+def eval (ν : Param ℓ → Nat) : Sub ℓ → Nat
+  | const G k => if Guard.sat G ν then k else 0
+  | var p G k => if Guard.sat (p :: G) ν then ν p + k else 0
+
+def nontrivial : Sub ℓ → Bool
+  | const _ k => k != 0
+  | var .. => true
+
+def dominates : Sub ℓ → Sub ℓ → Bool
+  | const G₂ k₂, const G₁ k₁ => Guard.subset G₂ G₁ && decide (k₁ ≤ k₂)
+  | var p₂ G₂ k₂, const G₁ k₁ => Guard.subset (p₂ :: G₂) G₁ && decide (k₁ ≤ k₂ + 1)
+  | const .., var .. => false
+  | var p₂ G₂ k₂, var p₁ G₁ k₁ =>
+    decide (p₂ = p₁) && Guard.subset G₂ (p₁ :: G₁) && decide (k₁ ≤ k₂)
+
+def atLeast (G : Guard ℓ) (k : Nat) : List (Sub ℓ) :=
+  if k = 0 then [] else [const G k]
+
+def evalMax (ν : Param ℓ → Nat) (S : List (Sub ℓ)) : Nat :=
+  (S.map (eval ν)).foldr Nat.max 0
+
+def subsLe (S₁ S₂ : List (Sub ℓ)) : Bool :=
+  S₁.all fun t₁ => S₂.any fun t₂ => dominates t₂ t₁
+
+variable (ν : Param ℓ → Nat)
+
+@[simp] theorem evalMax_nil : evalMax ν ([] : List (Sub ℓ)) = 0 := rfl
+
+@[simp] theorem evalMax_cons (t : Sub ℓ) (S : List (Sub ℓ)) :
+    evalMax ν (t :: S) = Nat.max (t.eval ν) (evalMax ν S) := rfl
+
+@[simp] theorem evalMax_append (S₁ S₂ : List (Sub ℓ)) :
+    evalMax ν (S₁ ++ S₂) = Nat.max (evalMax ν S₁) (evalMax ν S₂) := by
+  simp only [evalMax, List.map_append]
+  exact List.foldr_max_append _ _
+
+theorem le_evalMax {t : Sub ℓ} {S : List (Sub ℓ)} :
+    t ∈ S →
+    t.eval ν ≤ evalMax ν S :=
+  fun h => List.foldr_max_le_of_mem (List.mem_map_of_mem h)
+
+@[simp] theorem evalMax_atLeast (G : Guard ℓ) (k : Nat) :
+    evalMax ν (atLeast G k) = if Guard.sat G ν then k else 0 := by
+  unfold atLeast
+  split
+  · simp [*]
+  · simp [evalMax, eval]
+
+theorem eval_const_le (G : Guard ℓ) (k : Nat) : eval ν (const G k) ≤ k := by
+  simp only [eval]
+  split <;> simp
+
+theorem dominates_sound {t₁ t₂ : Sub ℓ} :
+    dominates t₂ t₁ = true →
+    t₁.eval ν ≤ t₂.eval ν := by
+  cases t₂ with
+  | const G₂ k₂ =>
+    cases t₁ with
+    | const G₁ k₁ =>
+      simp only [dominates, Bool.and_eq_true, decide_eq_true_eq, eval]
+      intro ⟨hsub, hk⟩
+      by_cases h₁ : Guard.sat G₁ ν = true
+      · simp [h₁, Guard.sat_of_subset ν hsub h₁]
+        exact hk
+      · simp [h₁]
+    | var p₁ G₁ k₁ => simp [dominates]
+  | var p₂ G₂ k₂ =>
+    cases t₁ with
+    | const G₁ k₁ =>
+      simp only [dominates, Bool.and_eq_true, decide_eq_true_eq, eval]
+      intro ⟨hsub, hk⟩
+      by_cases h₁ : Guard.sat G₁ ν = true
+      · have hsat := Guard.sat_of_subset ν hsub h₁
+        have hp : ν p₂ ≠ 0 := (Guard.sat_iff ν).mp hsat p₂ List.mem_cons_self
+        rw [ite_eq_left h₁, ite_eq_left hsat]
         omega
-      · have : ns_N j = 0 := ite_eq_right hji
-        rw [this] at hbeq
+      · simp [h₁]
+    | var p₁ G₁ k₁ =>
+      simp only [dominates, Bool.and_eq_true, decide_eq_true_eq, eval]
+      intro ⟨⟨rfl, hsub⟩, hk⟩
+      by_cases h₁ : Guard.sat (p₂ :: G₁) ν = true
+      · have hsat : Guard.sat (p₂ :: G₂) ν = true :=
+          (Guard.sat_iff ν).mpr fun q hq => match List.mem_cons.mp hq with
+            | .inl rfl => (Guard.sat_iff ν).mp h₁ q List.mem_cons_self
+            | .inr hq => (Guard.sat_iff ν).mp h₁ q (Guard.subset_iff.mp hsub q hq)
+        rw [ite_eq_left h₁, ite_eq_left hsat]
         omega
+      · simp [h₁]
 
-@[expose] def atomsLe (A B : List (Atom ℓ)) : Bool :=
-  A.all fun a => B.any fun b => Atom.dominates b a
+theorem exists_dominator {S : List (Sub ℓ)} {t : Sub ℓ} :
+    t.nontrivial = true →
+    (∀ ν, t.eval ν ≤ evalMax ν S) →
+    ∃ t' ∈ S, dominates t' t = true := by
+  intro hnt h
+  cases t with
+  | const G k =>
+    have hk : k ≠ 0 := by simpa [nontrivial] using hnt
+    let ν : Param ℓ → Nat := fun p => if p ∈ G then 1 else 0
+    have hmem (p : Param ℓ) : ν p ≠ 0 → p ∈ G := by
+      simp only [ν]
+      split <;> simp_all
+    have hle (p : Param ℓ) : ν p ≤ 1 := by
+      simp only [ν]
+      split <;> omega
+    have hsat : Guard.sat G ν = true := (Guard.sat_iff ν).mpr fun p hp => by simp [ν, hp]
+    have hval : eval ν (const G k) = k := by simp [eval, hsat]
+    obtain hz | ⟨y, hy, hyle⟩ := List.le_foldr_max_iff (hval ▸ h ν)
+    · exact absurd hz hk
+    obtain ⟨t', ht', rfl⟩ := List.mem_map.mp hy
+    refine ⟨t', ht', ?_⟩
+    cases t' with
+    | const G₂ k₂ =>
+      simp only [eval] at hyle
+      split at hyle
+      · simp only [dominates, Bool.and_eq_true, decide_eq_true_eq]
+        exact ⟨Guard.subset_iff.mpr fun p hp => hmem p ((Guard.sat_iff ν).mp ‹_› p hp), hyle⟩
+      · omega
+    | var p₂ G₂ k₂ =>
+      simp only [eval] at hyle
+      split at hyle
+      · rename_i hsat₂
+        have := hle p₂
+        simp only [dominates, Bool.and_eq_true, decide_eq_true_eq]
+        exact ⟨Guard.subset_iff.mpr fun p hp => hmem p ((Guard.sat_iff ν).mp hsat₂ p hp), by omega⟩
+      · omega
+  | var p G k =>
+    let N := (S.map offset).foldr Nat.max 0 + 2
+    let ν : Param ℓ → Nat := fun q => if q = p then N else if q ∈ G then 1 else 0
+    have hN : 2 ≤ N := by simp only [N]; omega
+    have hνp : ν p = N := by simp [ν]
+    have hmem (q : Param ℓ) : ν q ≠ 0 → q ∈ p :: G := by
+      simp only [ν, List.mem_cons]
+      split <;> [simp_all; (split <;> simp_all)]
+    have hne (q : Param ℓ) : q ≠ p → ν q ≤ 1 := by
+      simp only [ν]
+      intro hq
+      simp [hq]
+      split <;> omega
+    have hbound (t' : Sub ℓ) : t' ∈ S → t'.offset + 2 ≤ N := fun ht' => by
+      have := List.foldr_max_le_of_mem (List.mem_map_of_mem (f := offset) ht')
+      simp only [N]
+      omega
+    have hsat : Guard.sat (p :: G) ν = true := (Guard.sat_iff ν).mpr fun q hq => by
+      rcases List.mem_cons.mp hq with rfl | hq
+      · omega
+      · simp only [ν]
+        split
+        · omega
+        · simp
+    have hval : eval ν (var p G k) = N + k := by simp only [eval, ite_eq_left hsat, hνp]
+    obtain hz | ⟨y, hy, hyle⟩ := List.le_foldr_max_iff (hval ▸ h ν)
+    · omega
+    obtain ⟨t', ht', rfl⟩ := List.mem_map.mp hy
+    have hoff := hbound t' ht'
+    refine ⟨t', ht', ?_⟩
+    cases t' with
+    | const G₂ k₂ =>
+      have := eval_const_le ν G₂ k₂
+      simp only [offset] at hoff
+      omega
+    | var p₂ G₂ k₂ =>
+      simp only [offset] at hoff
+      simp only [eval] at hyle
+      split at hyle
+      · rename_i hsat₂
+        have hp₂ : p₂ = p := by
+          by_contra hc
+          have := hne p₂ hc
+          omega
+        subst hp₂
+        rw [hνp] at hyle
+        simp only [dominates, Bool.and_eq_true, decide_eq_true_eq]
+        exact ⟨⟨trivial, Guard.subset_iff.mpr fun q hq =>
+          hmem q ((Guard.sat_iff ν).mp hsat₂ q (List.mem_cons_of_mem _ hq))⟩, by omega⟩
+      · omega
 
-theorem atomsLe_iff (A B : List (Atom ℓ)) (hB : B ≠ []) :
-    atomsLe A B = true ↔
-      ∀ ν, (A.map (Atom.eval ν)).foldr Nat.max 0 ≤ (B.map (Atom.eval ν)).foldr Nat.max 0 := by
-  simp only [atomsLe, List.all_eq_true, List.any_eq_true]
-  refine ⟨fun h ν => ?_, fun h a ha => ?_⟩
-  · apply List.foldr_max_le_of_all
-    intro y hy
-    have ⟨a, ha, haeq⟩ := List.mem_map.mp hy
-    have ⟨b, hbmem, hdom⟩ := h a ha
-    exact haeq ▸ Nat.le_trans (Atom.dominates_sound ν hdom)
-      (List.foldr_max_le_of_mem (List.mem_map_of_mem hbmem))
-  · have hPoint : ∀ ν, Atom.eval ν a ≤ (B.map (Atom.eval ν)).foldr Nat.max 0 := fun ν =>
-      Nat.le_trans (List.foldr_max_le_of_mem (List.mem_map_of_mem ha)) (h ν)
-    have ⟨b, hbmem, hb⟩ := Atom.extract_dominator B hB a hPoint
-    exact ⟨b, hbmem, Atom.dominates_complete b a hb⟩
+end Sub
 
-@[expose] def Zeros.lift (Z : Zeros ℓ) (ν : Param ℓ → Nat) : Param ℓ → Nat :=
-  fun p => if Z p then 0 else ν p + 1
+def subs (G : Guard ℓ) (k : Nat) : RawLevel ℓ → List (Sub ℓ)
+  | zero => Sub.atLeast G k
+  | succ l => subs G (k + 1) l
+  | max l₁ l₂ => subs G k l₁ ++ subs G k l₂
+  | param p => Sub.atLeast G k ++ [.var p G k]
+  | imax _ zero => Sub.atLeast G k
+  | imax l₁ (succ l₂) => subs G k l₁ ++ subs G (k + 1) l₂
+  | imax l₁ (max l₂ l₃) => subs G k (l₁.imax l₂) ++ subs G k (l₁.imax l₃)
+  | imax l₁ (imax l₂ l₃) => subs G k (l₁.imax l₃) ++ subs G k (l₂.imax l₃)
+  | imax l₁ (param p) => Sub.atLeast G k ++ Sub.var p G k :: subs (p :: G) k l₁
+termination_by l => sizeOf l
 
-@[expose] def isZero (Z : Zeros ℓ) : RawLevel ℓ → Bool
-  | zero => true
-  | succ _ => false
-  | max l₁ l₂ => isZero Z l₁ && isZero Z l₂
-  | imax _ l₂ => isZero Z l₂
-  | param p => Z p
+theorem nontrivial_of_mem_subs {G : Guard ℓ} {k : Nat} {l : RawLevel ℓ} {t : Sub ℓ} :
+    t ∈ subs G k l →
+    t.nontrivial = true := by
+  fun_induction subs G k l <;> intro ht <;>
+    simp_all [Sub.atLeast, Sub.nontrivial] <;> grind
 
-theorem isZero_iff (Z : Zeros ℓ) (ν : Param ℓ → Nat) (l : RawLevel ℓ) :
-    isZero Z l = true ↔ l.eval (Z.lift ν) = 0 := by
-  induction l with
-  | zero | succ => simp [isZero]
-  | max _ _ ih₁ ih₂ => simp!; grind
-  | imax _ l₂ _ ih₂ =>
-    change isZero Z l₂ = true ↔ Nat.imax _ _ = 0
-    rw [ih₂, Nat.imax_eq_zero_iff]
-  | param p =>
-    change Z p = true ↔ (if Z p = true then 0 else ν p + 1) = 0
-    cases Z p <;> simp
+theorem evalMax_subs (ν : Param ℓ → Nat) (G : Guard ℓ) (k : Nat) (l : RawLevel ℓ) :
+    Sub.evalMax ν (subs G k l) = if Guard.sat G ν then l.eval ν + k else 0 := by
+  fun_induction subs G k l with
+  | case1 G k => simp
+  | case2 G k l ih =>
+    simp only [ih, eval_succ]
+    split_ifs <;> omega
+  | case3 G k l₁ l₂ ih₁ ih₂ =>
+    simp only [Sub.evalMax_append, ih₁, ih₂, eval_max, Nat.max_def]
+    split_ifs <;> omega
+  | case4 G k p =>
+    simp only [Sub.evalMax_append, Sub.evalMax_atLeast, Sub.evalMax_cons, Sub.evalMax_nil,
+      Sub.eval, Guard.sat_cons, eval_param, Nat.max_def]
+    by_cases hp : ν p = 0 <;> split_ifs <;> simp_all
+  | case5 G k l => simp
+  | case6 G k l₁ l₂ ih₁ ih₂ =>
+    simp only [Sub.evalMax_append, ih₁, ih₂, eval_imax, eval_succ, Nat.imax_succ_right,
+      Nat.max_def]
+    split_ifs <;> omega
+  | case7 G k l₁ l₂ l₃ ih₁ ih₂ =>
+    simp only [Sub.evalMax_append, ih₁, ih₂, eval_imax, eval_max, Nat.imax, Nat.max_def]
+    split_ifs <;> omega
+  | case8 G k l₁ l₂ l₃ ih₁ ih₂ =>
+    simp only [Sub.evalMax_append, ih₁, ih₂, eval_imax, Nat.imax, Nat.max_def]
+    split_ifs <;> omega
+  | case9 G k l₁ p ih =>
+    simp only [Sub.evalMax_append, Sub.evalMax_atLeast, Sub.evalMax_cons, Sub.eval, ih,
+      Guard.sat_cons, eval_imax, eval_param, Nat.imax, Nat.max_def]
+    by_cases hp : ν p = 0 <;> split_ifs <;> simp_all <;> omega
 
-@[expose] def atoms (Z : Zeros ℓ) : RawLevel ℓ → List (Atom ℓ)
-  | zero => [(none, 0)]
-  | succ l => (atoms Z l).map fun (p, k) => (p, k + 1)
-  | max l₁ l₂ => atoms Z l₁ ++ atoms Z l₂
-  | imax l₁ l₂ => if isZero Z l₂ then [(none, 0)] else atoms Z l₁ ++ atoms Z l₂
-  | param p => if Z p then [(none, 0)] else [(some p, 1)]
+public def decLe (l₁ l₂ : RawLevel ℓ) : Bool :=
+  Sub.subsLe (subs [] 0 l₁) (subs [] 0 l₂)
 
-theorem atoms_ne_nil (Z : Zeros ℓ) (l : RawLevel ℓ) : atoms Z l ≠ [] := by
-  induction l with
-  | zero => simp!
-  | succ _ ih => simp! [ih]
-  | max _ _ ih₁ _ => simp! [ih₁]
-  | imax _ _ ih₁ _ => simp!; split <;> simp [ih₁]
-  | param p => simp!; split <;> simp
+theorem evalMax_subs_nil (ν : Param ℓ → Nat) (l : RawLevel ℓ) :
+    Sub.evalMax ν (subs [] 0 l) = l.eval ν := by
+  simp [evalMax_subs]
 
-theorem foldr_atoms (Z : Zeros ℓ) (ν : Param ℓ → Nat) (l : RawLevel ℓ) :
-    ((atoms Z l).map (Atom.eval ν)).foldr Nat.max 0 = l.eval (Z.lift ν) := by
-  induction l with
-  | zero => rfl
-  | succ l ih =>
-    have hmap : ((atoms Z l).map fun (p, k) => (p, k + 1)).map (Atom.eval ν)
-        = ((atoms Z l).map (Atom.eval ν)).map (· + 1) := by
-      simp
-      intro p k _
-      exact Atom.eval_shift ν k p
-    change (((atoms Z l).map fun (p, k) => (p, k + 1)).map (Atom.eval ν)).foldr Nat.max 0 = _
-    rw [hmap, List.foldr_max_map_succ fun h => atoms_ne_nil Z l (List.map_eq_nil_iff.mp h), ih]
-    rfl
-  | max l₁ l₂ ih₁ ih₂ =>
-    change ((atoms Z l₁ ++ atoms Z l₂).map (Atom.eval ν)).foldr Nat.max 0 = _
-    rw [List.map_append, List.foldr_max_append, ih₁, ih₂]
-    rfl
-  | imax l₁ l₂ ih₁ ih₂ =>
-    change ((if isZero Z l₂ then _ else atoms Z l₁ ++ atoms Z l₂).map
-      (Atom.eval ν)).foldr Nat.max 0 = Nat.imax _ _
-    by_cases hz : isZero Z l₂ = true
-    · rw [ite_eq_left hz, Nat.imax_eq_zero_iff.mpr ((isZero_iff Z ν l₂).mp hz)]
-      rfl
-    · rw [ite_eq_right hz, Nat.imax_eq_max fun h => hz ((isZero_iff Z ν l₂).mpr h),
-        List.map_append, List.foldr_max_append, ih₁, ih₂]
-  | param p =>
-    change ((if Z p then [(none, 0)] else [(some p, 1)]).map (Atom.eval ν)).foldr Nat.max 0
-      = Z.lift ν p
-    simp only [Zeros.lift]
-    split <;> simp [Atom.eval]
-
-@[expose] def zerosOf : List (Param ℓ) → List (Zeros ℓ)
-  | [] => [fun _ => false]
-  | p :: ps => (zerosOf ps).flatMap fun Z => [Z, fun q => decide (q = p) || Z q]
-
-theorem exists_mem_zerosOf (Z : Zeros ℓ) (ps : List (Param ℓ)) :
-    ∃ Z' ∈ zerosOf ps, ∀ p, Z' p = true ↔ p ∈ ps ∧ Z p = true := by
-  induction ps with
-  | nil => exact ⟨fun _ => false, List.mem_singleton_self _, by simp⟩
-  | cons p ps ih =>
-    have ⟨Z', hmem, hZ'⟩ := ih
-    by_cases hp : Z p = true
-    · refine ⟨fun q => decide (q = p) || Z' q, List.mem_flatMap.mpr ⟨Z', hmem, by simp⟩, fun q => ?_⟩
-      simp only [Bool.or_eq_true, decide_eq_true_eq, hZ' q, List.mem_cons]
-      constructor
-      · rintro (rfl | ⟨hq, hZq⟩)
-        · exact ⟨Or.inl rfl, hp⟩
-        · exact ⟨Or.inr hq, hZq⟩
-      · rintro ⟨rfl | hq, hZq⟩
-        · exact Or.inl rfl
-        · exact Or.inr ⟨hq, hZq⟩
-    · refine ⟨Z', List.mem_flatMap.mpr ⟨Z', hmem, by simp⟩, fun q => ?_⟩
-      simp only [hZ' q, List.mem_cons]
-      constructor
-      · exact fun ⟨hq, hZq⟩ => ⟨Or.inr hq, hZq⟩
-      · rintro ⟨rfl | hq, hZq⟩
-        · exact absurd hZq hp
-        · exact ⟨hq, hZq⟩
-
-@[expose] def allZeros (ℓ : Nat) : List (Zeros ℓ) := zerosOf (List.finRange ℓ)
-
-theorem exists_mem_allZeros (Z : Zeros ℓ) : ∃ Z' ∈ allZeros ℓ, ∀ p, Z' p = Z p :=
-  have ⟨Z', hmem, hZ'⟩ := exists_mem_zerosOf Z (List.finRange ℓ)
-  ⟨Z', hmem, fun p => Bool.eq_iff_iff.mpr
-    ⟨fun h => ((hZ' p).mp h).2, fun h => (hZ' p).mpr ⟨List.mem_finRange p, h⟩⟩⟩
-
-@[expose] def decLe (l₁ l₂ : RawLevel ℓ) : Bool :=
-  (allZeros ℓ).all fun Z => atomsLe (atoms Z l₁) (atoms Z l₂)
-
-theorem decLe_iff (l₁ l₂ : RawLevel ℓ) : decLe l₁ l₂ = true ↔ l₁ ≤ l₂ := by
-  simp only [decLe, List.all_eq_true]
+public theorem decLe_iff (l₁ l₂ : RawLevel ℓ) : decLe l₁ l₂ = true ↔ l₁ ≤ l₂ := by
+  simp only [decLe, Sub.subsLe, List.all_eq_true, List.any_eq_true]
   constructor
   · intro h ν
-    have ⟨Z, hmem, hZ⟩ := exists_mem_allZeros (ℓ := ℓ) fun p => decide (ν p = 0)
-    have hle := (atomsLe_iff _ _ (atoms_ne_nil Z l₂)).mp (h Z hmem) fun p => ν p - 1
-    rw [foldr_atoms, foldr_atoms] at hle
-    have hlift : Z.lift (fun p => ν p - 1) = ν := funext fun p => by
-      change (if Z p = true then 0 else ν p - 1 + 1) = ν p
-      rw [hZ p]
-      by_cases hns : ν p = 0
-      · simp [hns]
-      · rw [ite_eq_right (by simp [hns])]
-        omega
-    rwa [hlift] at hle
-  · intro h Z _
-    refine (atomsLe_iff _ _ (atoms_ne_nil Z l₂)).mpr fun ν => ?_
-    rw [foldr_atoms, foldr_atoms]
-    exact h _
+    rw [← evalMax_subs_nil ν l₁, ← evalMax_subs_nil ν l₂]
+    refine List.foldr_max_le_of_all fun y hy => ?_
+    obtain ⟨t₁, ht₁, rfl⟩ := List.mem_map.mp hy
+    have ⟨t₂, ht₂, hd⟩ := h t₁ ht₁
+    calc Sub.eval ν t₁
+      _ ≤ Sub.eval ν t₂ := Sub.dominates_sound ν hd
+      _ ≤ Sub.evalMax ν (subs [] 0 l₂) := Sub.le_evalMax ν ht₂
+  · intro h t₁ ht₁
+    refine Sub.exists_dominator (nontrivial_of_mem_subs ht₁) fun ν => ?_
+    calc Sub.eval ν t₁
+      _ ≤ Sub.evalMax ν (subs [] 0 l₁) := Sub.le_evalMax ν ht₁
+      _ = eval ν l₁ := evalMax_subs_nil ν l₁
+      _ ≤ eval ν l₂ := h ν
+      _ = Sub.evalMax ν (subs [] 0 l₂) := (evalMax_subs_nil ν l₂).symm
 
-@[expose] def decZeroLe (l₁ l₂ : RawLevel ℓ) : Bool :=
-  (allZeros ℓ).all fun Z => !isZero Z l₁ || isZero Z l₂
+public def decZeroLe (l₁ l₂ : RawLevel ℓ) : Bool :=
+  decLe l₂ (l₂.imax l₁)
 
-theorem decZeroLe_iff (l₁ l₂ : RawLevel ℓ) :
+public theorem decZeroLe_iff (l₁ l₂ : RawLevel ℓ) :
     decZeroLe l₁ l₂ = true ↔ ∀ ν, l₁.eval ν = 0 → l₂.eval ν = 0 := by
-  simp only [decZeroLe, List.all_eq_true, Bool.or_eq_true]
+  rw [decZeroLe, decLe_iff]
   constructor
-  · intro h ν hzero
-    have ⟨Z, hmem, hZ⟩ := exists_mem_allZeros (ℓ := ℓ) fun p => decide (ν p = 0)
-    have hlift : Z.lift (fun p => ν p - 1) = ν := funext fun p => by
-      change (if Z p = true then 0 else ν p - 1 + 1) = ν p
-      rw [hZ p]
-      by_cases hns : ν p = 0
-      · simp [hns]
-      · rw [ite_eq_right (by simp [hns])]
-        omega
-    have hl : isZero Z l₁ = true := (isZero_iff Z _ l₁).mpr (hlift ▸ hzero)
-    exact hlift ▸ (isZero_iff Z _ l₂).mp ((h Z hmem).resolve_left (by simp [hl]))
-  · intro h Z _
-    by_cases hl : isZero Z l₁ = true
-    · exact Or.inr ((isZero_iff Z (fun _ => 0) l₂).mpr
-        (h _ ((isZero_iff Z (fun _ => 0) l₁).mp hl)))
-    · exact Or.inl (by simpa using hl)
+  · intro h ν hz
+    have := h ν
+    simp [hz] at this
+    omega
+  · intro h ν
+    rw [eval_imax]
+    by_cases hz : l₁.eval ν = 0
+    · simp [hz, h ν hz]
+    · exact Nat.le_imax_left hz
 
-instance : DecidableLE (RawLevel ℓ) :=
+public instance : DecidableLE (RawLevel ℓ) :=
   fun l₁ l₂ => decidable_of_iff _ (decLe_iff l₁ l₂)
 
-instance (l₁ l₂ : RawLevel ℓ) : Decidable (l₁ ≈ l₂) :=
+public instance (l₁ l₂ : RawLevel ℓ) : Decidable (l₁ ≈ l₂) :=
   decidable_of_iff _ RawLevel.equiv_iff_le_le.symm
 
 end Metalean.RawLevel
