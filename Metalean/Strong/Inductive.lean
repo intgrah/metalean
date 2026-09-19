@@ -1089,29 +1089,29 @@ theorem WFStrong.motiveResult_congr
     (by simpa! using hfun) hmaj
     (by simpa! using .sortDF)
 
-end Inductive
-
-theorem Inductive.paramsWkN {Θ : Ctx ζ ℓ n (n + arity)}
+theorem paramsWkN {Θ : Ctx ζ ℓ n (n + arity)}
     (hps : ∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       (E.get η).block.paramType ls ps₁ p) (p) :
     E[Γ ++ Θ] ⊢ₛ (ps₁ p).wkN arity ≡ (ps₂ p).wkN arity :
       (E.get η).block.paramType ls (fun p => (ps₁ p).wkN arity) p := by
   simpa using (hps p).wkN
 
-theorem Inductive.motivesWkN {Θ : Ctx ζ ℓ n (n + arity)}
+theorem motivesWkN {Θ : Ctx ζ ℓ n (n + arity)}
     (hms : ∀ s, E[Γ] ⊢ₛ ms₁ s ≡ ms₂ s :
       (E.get η).block.motiveType η ls ps₁ l s) (s) :
     E[Γ ++ Θ] ⊢ₛ (ms₁ s).wkN arity ≡ (ms₂ s).wkN arity :
       (E.get η).block.motiveType η ls (fun p => (ps₁ p).wkN arity) l s := by
   simpa using (hms s).wkN
 
-theorem Inductive.casesWkN {Θ : Ctx ζ ℓ n (n + arity)}
+theorem casesWkN {Θ : Ctx ζ ℓ n (n + arity)}
     (hmins : ∀ s c, E[Γ] ⊢ₛ mins s c :
       (E.get η).block.caseFnType η ls ps ms s c) (s c) :
     E[Γ ++ Θ] ⊢ₛ (mins s c).wkN arity :
       (E.get η).block.caseFnType η ls (fun p => (ps p).wkN arity)
         (fun s => (ms s).wkN arity) s c := by
   simpa using (hmins s c).wkN
+
+end Inductive
 
 theorem RecField.WFStrong.ihType
     (h : fd.WFStrong E I Δ) (hB : I.WFStrong E)
