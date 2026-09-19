@@ -99,7 +99,7 @@ namespace Ty.Repr
 variable {X : (CtxCat E ℓ)ᵒᵖ ⥤ Type}
 
 theorem eval_conversion (T₁ T₂ : Repr Γ₁) (h : E[Γ₁.as.ctx] ⊢ₛ T₁.term ≡ T₂.term typ)
-    (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ X)
+    (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ X)
     (h₁ : A = T₁.comprehension.type) (h₂ : A = T₂.comprehension.type) :
     T₂.comprehension.eval A B h₂ =
       X.map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ₁.as h)).op (T₁.comprehension.eval A B h₁) :=
@@ -110,10 +110,10 @@ theorem eval_conversion (T₁ T₂ : Repr Γ₁) (h : E[Γ₁.as.ctx] ⊢ₛ T�
     (CtxCat.contextConversion_binderVar h ht₁ ht₂) A B h₁ h₂
 
 theorem eval_reindex (T : Repr Γ₁) (σ : Γ₂.as ⟶ Γ₁.as)
-    (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ X)
+    (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ X)
     (hT : A = T.comprehension.type) :
     (T.reindex σ).comprehension.eval (y (RawCtx.toCtx.map σ) ≫ A)
-        (fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B)
+        (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B)
         (by rw [hT]; exact T.comprehension_type_reindex σ) =
       X.map (RawCtx.toCtx.map (σ.lift T.wf)).op (T.comprehension.eval A B hT) :=
   have ⟨_, ht⟩ := T.wf

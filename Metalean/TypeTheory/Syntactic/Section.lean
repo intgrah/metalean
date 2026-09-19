@@ -19,7 +19,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
 abbrev Raw.ContextSection {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     (σ : Γ₂ ⟶ Γ₁) (label : Tm_ Γ₂) :=
-  Section (CtxCat.rawExtensionIsRepresented ht) σ label
+  Section (ℳ := ℒ) (CtxCat.rawExtensionIsRepresented ht) σ label
 
 namespace Raw.ContextSection
 

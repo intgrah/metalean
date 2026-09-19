@@ -5,13 +5,18 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import Mathlib.CategoryTheory.Limits.Shapes.Terminal
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Yoneda
 
 public noncomputable section
 
 namespace Metalean.TypeTheory
 
 open CategoryTheory
+
+local notation "y" => yoneda.obj
+local notation "y" => yoneda.map
 
 universe u
 
@@ -22,8 +27,16 @@ A natural model of type theory is a representable natural transformation
 `typing` between presheaves `Tm Ty : Cᵒᵖ ⥤ Type u`, whose component on `Γ : C` is
 interpreted to mean the typing of a term.
 -/
-class NaturalModel (Ty : Cᵒᵖ ⥤ Type u) (Tm : outParam (Cᵒᵖ ⥤ Type u)) where
+structure NaturalModel (Ty Tm : Cᵒᵖ ⥤ Type u) where
   typing : Tm ⟶ Ty
-  representable : yoneda.relativelyRepresentable typing
+  ext {Γ : C} (A : y Γ ⟶ Ty) : C
+  disp {Γ : C} (A : y Γ ⟶ Ty) : ext A ⟶ Γ
+  var {Γ : C} (A : y Γ ⟶ Ty) : y (ext A) ⟶ Tm
+  isPullback {Γ : C} (A : y Γ ⟶ Ty) :
+    IsPullback (var A) (y (disp A)) typing A
+
+class HasEmptyCtx (C : Type u) [SmallCategory C] where
+  empty : C
+  isTerminal : Limits.IsTerminal empty
 
 end Metalean.TypeTheory

@@ -54,19 +54,19 @@ end Ty.Repr
 
 namespace Tm
 
-def lamApp (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Tm E ℓ) : Tm_ Γ :=
+def lamApp (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Tm E ℓ) : Tm_ Γ :=
   Ty.elim (yonedaEquiv A) (fun T hT => T.lam (T.comprehension.eval A B (Ty.comprehension_type_eq hT)))
     fun T₁ T₂ h₁ h₂ => by
       have h := (Ty.ofRepr_eq_iff _ _).mp (h₁.symm.trans h₂)
       rw [Ty.Repr.eval_conversion T₁ T₂ h A B _ _, Ty.Repr.lam_conversion]
 
-theorem lamApp_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Tm E ℓ)
+theorem lamApp_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Tm E ℓ)
     (T : Ty.Repr Γ) (hT : yonedaEquiv A = Ty.ofRepr T) :
     lamApp A B = T.lam (T.comprehension.eval A B (Ty.comprehension_type_eq hT)) :=
   Ty.elim_eq _ _ _ T hT
 
 def lam (E : Env ζ) (ℓ : Nat) :
-    (polynomial (Ty E ℓ)).obj (Tm E ℓ) ⟶ Tm E ℓ where
+    ℒ.polynomial.obj (Tm E ℓ) ⟶ Tm E ℓ where
   app Γ := ↾fun ⟨A, B⟩ => lamApp A B
   naturality := by
     intro ⟨Γ₁⟩ ⟨Γ₂⟩ ⟨σ⟩
@@ -75,7 +75,7 @@ def lam (E : Env ζ) (ℓ : Nat) :
     intro ⟨A, B⟩
     obtain ⟨T, hT⟩ := Ty.exists_ofRepr (yonedaEquiv A)
     change lamApp (y (RawCtx.toCtx.map σ) ≫ A)
-        (fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
+        (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
       (Tm E ℓ).map (RawCtx.toCtx.map σ).op (lamApp A B)
     rw [lamApp_eq _ _ (T.reindex σ) (Ty.reindex_yonedaEquiv hT σ), lamApp_eq A B T hT,
       Ty.Repr.eval_reindex T σ A B (Ty.comprehension_type_eq hT)]
@@ -139,7 +139,7 @@ theorem apply_congr (T₁ T₂ : Ty.Repr Γ) (B₁ : Ty.Repr ⟨Γ.as.snoc T₁.
 
 end Repr
 
-def apply (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ) (n m : Tm_ Γ)
+def apply (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) (n m : Tm_ Γ)
     (h : Tm.type n = Ty.piApp A B) (hm : Tm.type m = yonedaEquiv A) : Tm_ Γ :=
   Ty.elim (yonedaEquiv A)
     (fun T hT => Quotient.liftFibre (T.comprehension.eval A B (Ty.comprehension_type_eq hT))
@@ -160,7 +160,7 @@ def apply (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ
         ((congrArg (E[Γ.as.ctx.snoc T₁.term] ⊢ₛ C₁.term ≡ · typ) (Expr.subst_id C₁.term)).mpr
           C₁.wf.isTypeEq) n m _ _ _ _
 
-theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (n m : Tm_ Γ) (h : Tm.type n = Ty.piApp A B)
     (hm : Tm.type m = yonedaEquiv A) (T : Ty.Repr Γ) (hT : yonedaEquiv A = ofRepr T)
     (C : Ty.Repr ⟨Γ.as.snoc T.wf⟩) (hC : ⟦C⟧ = T.comprehension.eval A B (Ty.comprehension_type_eq hT))
@@ -170,7 +170,7 @@ theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ T
   rw [apply, Ty.elim_eq _ _ _ T hT, Quotient.liftFibre_eq _ _ _ C hC]
   exact Repr.apply_eq T C n m _ _ hf ha hnf hma
 
-theorem apply_congr {A A' : y Γ ⟶ Ty E ℓ} {B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ}
+theorem apply_congr {A A' : y Γ ⟶ Ty E ℓ} {B : pullback A ℒ.typing ⟶ Ty E ℓ}
     {B' : pullback A' (Tm.typing E ℓ) ⟶ Ty E ℓ}
     (e : (⟨A, B⟩ : Ty.Pair Γ) = ⟨A', B'⟩) {n n' m m' : Tm_ Γ} (en : n = n') (em : m = m')
     (h : Tm.type n = Ty.piApp A B) (hm : Tm.type m = yonedaEquiv A)
@@ -194,14 +194,14 @@ theorem apply_label (Γ : RawCtx E ℓ) {t e f : Expr ζ ℓ Γ.len}
   apply_eq (Γ := ⟨Γ⟩) _ _ _ _ h hm ⟨t, u, ht⟩ (yonedaEquiv.apply_symm_apply _) ⟨t', v, ht'⟩
     (Ty.eval_familyOfTyping Γ ht ht').symm hf he rfl rfl
 
-theorem map_apply (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem map_apply (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (n m : Tm_ Γ₁) (h : Tm.type n = Ty.piApp A B)
     (hm : Tm.type m = yonedaEquiv A) (σ : Γ₂ ⟶ Γ₁)
     (h' : Tm.type ((Tm E ℓ).map σ.op n) =
-      Ty.piApp (y σ ≫ A) (fibreMap A (y σ) ≫ B))
+      Ty.piApp (y σ ≫ A) (ℒ.fibreMap A (y σ) ≫ B))
     (hm' : Tm.type ((Tm E ℓ).map σ.op m) = yonedaEquiv (y σ ≫ A)) :
     (Tm E ℓ).map σ.op (apply A B n m h hm) =
-      apply (y σ ≫ A) (fibreMap A (y σ) ≫ B)
+      apply (y σ ≫ A) (ℒ.fibreMap A (y σ) ≫ B)
         ((Tm E ℓ).map σ.op n) ((Tm E ℓ).map σ.op m) h' hm' := by
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
   have ⟨T, hT⟩ := exists_ofRepr (yonedaEquiv A)
@@ -213,7 +213,7 @@ theorem map_apply (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) �
   have hCσ : ⟦(⟨C.term.subst σ.subst.lift, C.wf.substitution (σ.lift T.wf).typed⟩ :
       Ty.Repr ⟨Γ₂.as.snoc (T.reindex σ).wf⟩)⟧ =
       (T.reindex σ).comprehension.eval (y (RawCtx.toCtx.map σ) ≫ A)
-        (fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B)
+        (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B)
         (Ty.comprehension_type_eq hTσ) := by
     refine Eq.trans ?_ (T.eval_reindex σ A B (Ty.comprehension_type_eq hT)).symm
     rw [← hC]

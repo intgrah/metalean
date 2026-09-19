@@ -277,7 +277,7 @@ theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁'
           (Tm.label Γ₁.as (.lamDF ht₁ ht₁' ht₁' he₁' he₁'))))) =
         Ty.piApp (yoneda.map σ₃ ≫ ((Ty.pairPresheaf E ℓ).map σ₂.op
             ((Ty.pairPresheaf E ℓ).map σ₁.op (Ty.pairOfTyping Γ₁.as ht₁ ht₁'))).1)
-          (fibreMap ((Ty.pairPresheaf E ℓ).map σ₂.op
+          (ℒ.fibreMap ((Ty.pairPresheaf E ℓ).map σ₂.op
             ((Ty.pairPresheaf E ℓ).map σ₁.op (Ty.pairOfTyping Γ₁.as ht₁ ht₁'))).1
               (yoneda.map σ₃) ≫ ((Ty.pairPresheaf E ℓ).map σ₂.op
                 ((Ty.pairPresheaf E ℓ).map σ₁.op (Ty.pairOfTyping Γ₁.as ht₁ ht₁'))).2) := by

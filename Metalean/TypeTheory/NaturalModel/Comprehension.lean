@@ -18,7 +18,7 @@ local notation "y" => yoneda.map
 
 universe u
 
-variable {C : Type u} [SmallCategory C] {Ty Tm X Y : Cᵒᵖ ⥤ Type u} [ℳ : NaturalModel Ty Tm]
+variable {C : Type u} [SmallCategory C] {Ty Tm X Y : Cᵒᵖ ⥤ Type u} {ℳ : NaturalModel Ty Tm}
   {Γ Γ' ΓA ΓA' Δ Δ' ΔA : C} {A : y Γ ⟶ Ty} {π : ΓA ⟶ Γ} {q : Tm.obj (op ΓA)}
 
 structure Section (h : IsPullback (yonedaEquiv.symm q) (y π) ℳ.typing A) (σ : Δ ⟶ Γ)
@@ -88,19 +88,19 @@ def lift {f : ΓA' ⟶ ΓA} {g : Γ' ⟶ Γ} (hf : IsPullback f π' π g) (hq : 
 
 end Section
 
-variable (Ty Γ ΓA) in
+variable (ℳ Γ ΓA) in
 structure Comprehension where
   type : y Γ ⟶ Ty
   disp : ΓA ⟶ Γ
   generic : Tm.obj (op ΓA)
   isPullback : IsPullback (yonedaEquiv.symm generic) (y disp) ℳ.typing type
 
-abbrev Comprehension.Section (K : Comprehension Ty Γ ΓA) (σ : Δ ⟶ Γ) (a : Tm.obj (op Δ)) :=
+abbrev Comprehension.Section (K : Comprehension ℳ Γ ΓA) (σ : Δ ⟶ Γ) (a : Tm.obj (op Δ)) :=
   Metalean.TypeTheory.NaturalModel.Section K.isPullback σ a
 
 namespace Comprehension
 
-variable (K : Comprehension Ty Γ ΓA)
+variable (K : Comprehension ℳ Γ ΓA)
 
 def toFibre (A : y Γ ⟶ Ty) (hA : A = K.type) : y ΓA ⟶ pullback A ℳ.typing :=
   pullback.lift (y K.disp) (yonedaEquiv.symm K.generic)
@@ -147,7 +147,7 @@ theorem eval_eq_equiv (B : pullback K.type ℳ.typing ⟶ X) :
 @[simp] theorem label_eval (A : y Γ ⟶ Ty) (B : pullback A ℳ.typing ⟶ X) (hA : A = K.type) :
     K.label (K.eval A B hA) = ⟨A, B⟩ := by
   subst hA
-  exact congrArg (Sigma.mk K.type) (K.family_eval B)
+  exact congr(Sigma.mk K.type $(K.family_eval B))
 
 theorem map_eval (f : X ⟶ Y) (A : y Γ ⟶ Ty) (B : pullback A ℳ.typing ⟶ X) (hA : A = K.type) :
     f.app (op ΓA) (K.eval A B hA) = K.eval A (B ≫ f) hA :=
@@ -168,10 +168,10 @@ theorem map_family (f : X ⟶ Y) (b : X.obj (op ΓA)) :
       (congrArg (f.app (op ΓA)) (K.eval_family b))))
 
 theorem map_label (f : X ⟶ Y) (b : X.obj (op ΓA)) :
-    ((polynomial Ty).map f).app (op Γ) (K.label b) = K.label (f.app (op ΓA) b) :=
-  congrArg (Sigma.mk K.type) (K.map_family f b)
+    (ℳ.polynomial.map f).app (op Γ) (K.label b) = K.label (f.app (op ΓA) b) :=
+  congr(Sigma.mk K.type $(K.map_family f b))
 
-theorem eval_eq (K' : Comprehension Ty Γ ΓA') (f : ΓA' ⟶ ΓA)
+theorem eval_eq (K' : Comprehension ℳ Γ ΓA') (f : ΓA' ⟶ ΓA)
     (hf : f ≫ K.disp = K'.disp) (hq : Tm.map f.op K.generic = K'.generic)
     (A : y Γ ⟶ Ty) (B : pullback A ℳ.typing ⟶ X) (hA : A = K.type) (hA' : A = K'.type) :
     K'.eval A B hA' = X.map f.op (K.eval A B hA) := by
@@ -181,23 +181,23 @@ theorem eval_eq (K' : Comprehension Ty Γ ΓA') (f : ΓA' ⟶ ΓA)
       (by simp [← hq, yonedaEquiv_symm_naturality_left])
   simp [eval, hto, ← yonedaEquiv_naturality]
 
-theorem eval_reindex (K' : Comprehension Ty Δ ΔA) (σ : Δ ⟶ Γ) (f : ΔA ⟶ ΓA)
+theorem eval_reindex (K' : Comprehension ℳ Δ ΔA) (σ : Δ ⟶ Γ) (f : ΔA ⟶ ΓA)
     (hf : f ≫ K.disp = K'.disp ≫ σ) (hq : Tm.map f.op K.generic = K'.generic)
     (A : y Γ ⟶ Ty) (B : pullback A ℳ.typing ⟶ X) (hA : A = K.type)
     (hA' : y σ ≫ A = K'.type) :
-    K'.eval (y σ ≫ A) (fibreMap A (y σ) ≫ B) hA' = X.map f.op (K.eval A B hA) := by
-  have hto : K'.toFibre (y σ ≫ A) hA' ≫ fibreMap A (y σ) = y f ≫ K.toFibre A hA :=
+    K'.eval (y σ ≫ A) (ℳ.fibreMap A (y σ) ≫ B) hA' = X.map f.op (K.eval A B hA) := by
+  have hto : K'.toFibre (y σ ≫ A) hA' ≫ ℳ.fibreMap A (y σ) = y f ≫ K.toFibre A hA :=
     pullback.hom_ext
       (by simp [← Functor.map_comp, hf])
       (by simp [← hq, yonedaEquiv_symm_naturality_left])
   rw [eval, ← Category.assoc, hto, Category.assoc, eval, ← yonedaEquiv_naturality]
 
-theorem label_reindex (K' : Comprehension Ty Δ ΔA) (σ : Δ ⟶ Γ) (f : ΔA ⟶ ΓA)
+theorem label_reindex (K' : Comprehension ℳ Δ ΔA) (σ : Δ ⟶ Γ) (f : ΔA ⟶ ΓA)
     (hf : f ≫ K.disp = K'.disp ≫ σ) (hq : Tm.map f.op K.generic = K'.generic)
     (hA : y σ ≫ K.type = K'.type) (b : X.obj (op ΓA)) :
-    ((polynomial Ty).obj X).map σ.op (K.label b) = K'.label (X.map f.op b) := by
+    (ℳ.polynomial.obj X).map σ.op (K.label b) = K'.label (X.map f.op b) := by
   rw [label, polynomial_obj_map, ← K'.label_eval (y σ ≫ K.type)
-    (fibreMap K.type (y σ) ≫ K.family b) hA,
+    (ℳ.fibreMap K.type (y σ) ≫ K.family b) hA,
     K.eval_reindex K' σ f hf hq K.type (K.family b) rfl hA, eval_family]
 
 end Comprehension

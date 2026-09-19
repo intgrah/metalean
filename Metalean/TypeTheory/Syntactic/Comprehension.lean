@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.TypeTheory.NaturalModel.Comprehension
+public import Metalean.TypeTheory.NaturalModel.Extension
 public import Metalean.TypeTheory.Syntactic.Universe
 import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 import Metalean.Strong
@@ -96,21 +97,31 @@ theorem rawExtensionIsRepresented {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
 
 end CtxCat
 
-theorem Tm.typing_relativelyRepresentable :
-    yoneda.relativelyRepresentable (Tm.typing E ℓ) := by
-  intro Γ₁ A
-  obtain ⟨T, hT⟩ := Ty.exists_ofRepr (yonedaEquiv A)
-  obtain rfl : A = yonedaEquiv.symm (Ty.ofRepr T) := by
-    rw [← hT, Equiv.symm_apply_apply]
-  have ⟨_, ht⟩ := T.wf
-  exact ⟨_, _, _, CtxCat.rawExtensionIsRepresented ht⟩
+def Ty.chosen (A : y Γ₁ ⟶ Ty E ℓ) : Ty.Repr Γ₁ :=
+  (Ty.exists_ofRepr (yonedaEquiv A)).choose
 
-instance : NaturalModel (Ty E ℓ) (Tm E ℓ) where
+theorem Ty.yonedaEquiv_chosen (A : y Γ₁ ⟶ Ty E ℓ) :
+    yonedaEquiv A = Ty.ofRepr (Ty.chosen A) :=
+  (Ty.exists_ofRepr (yonedaEquiv A)).choose_spec
+
+instance : HasEmptyCtx (CtxCat E ℓ) where
+  empty := CtxCat.nil E ℓ
+  isTerminal := .ofUniqueHom CtxCat.toNil fun _ _ => CtxCat.hom_nil_eq _ _
+
+def ℒ : NaturalModel (Ty E ℓ) (Tm E ℓ) where
   typing := Tm.typing E ℓ
-  representable := Tm.typing_relativelyRepresentable
+  ext {Γ} A := ⟨Γ.as.snoc (Ty.chosen A).wf⟩
+  disp {Γ} A := RawCtx.toCtx.map ⟨Subst.wk, SubstWFStrong.wk (Ty.chosen A).term Γ.as.wf⟩
+  var {Γ} A := yonedaEquiv.symm (Tm.varLabel ⟨Γ.as.snoc (Ty.chosen A).wf⟩ (Fin.last Γ.as.len))
+  isPullback {Γ} A := by
+    have ⟨u, ht⟩ := (Ty.chosen A).wf
+    have h := CtxCat.rawExtensionIsRepresented (Γ₁ := Γ) ht
+    rw [show Ty.ofTyping Γ.as ht = yonedaEquiv A from (Ty.yonedaEquiv_chosen A).symm,
+      Equiv.symm_apply_apply] at h
+    exact h
 
 def Ty.Repr.comprehension (T : Ty.Repr Γ₁) :
-    Comprehension (Ty E ℓ) Γ₁ ⟨Γ₁.as.snoc T.wf⟩ where
+    ℒ.Comprehension Γ₁ ⟨Γ₁.as.snoc T.wf⟩ where
   type := yonedaEquiv.symm (Ty.ofRepr T)
   disp := RawCtx.toCtx.map ⟨Subst.wk, SubstWFStrong.wk T.term Γ₁.as.wf⟩
   generic := Tm.varLabel ⟨Γ₁.as.snoc T.wf⟩ (Fin.last Γ₁.as.len)
@@ -122,8 +133,12 @@ theorem Ty.comprehension_type_eq {A : y Γ₁ ⟶ Ty E ℓ} {T : Ty.Repr Γ₁}
     (hT : yonedaEquiv A = Ty.ofRepr T) : A = T.comprehension.type := by
   simp [Repr.comprehension, ← hT]
 
+theorem Ty.comprehension_type_chosen (A : y Γ₁ ⟶ Ty E ℓ) :
+    A = (Ty.chosen A).comprehension.type :=
+  Ty.comprehension_type_eq (Ty.yonedaEquiv_chosen A)
+
 abbrev CtxCat.rawComprehension {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) :
-    Comprehension (Ty E ℓ) Γ₁ (Γ₁.extension ht) :=
+    ℒ.Comprehension Γ₁ (Γ₁.extension ht) :=
   (⟨t, u, ht⟩ : Ty.Repr Γ₁).comprehension
 
 namespace Ty.Repr

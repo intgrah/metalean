@@ -16,7 +16,7 @@ open CategoryTheory CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ ΓA : CtxCat E ℓ}
 
-theorem normalizedBodyAction_isIdealValued (hA : Comprehension (Ty E ℓ) Γ₁ ΓA)
+theorem normalizedBodyAction_isIdealValued (hA : ℒ.Comprehension Γ₁ ΓA)
     (C : RawFamily Γ₁) (B : RawFamily ΓA)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (hC : (C.app _ σ₁.op ρ).IsDirected)

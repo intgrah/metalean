@@ -51,14 +51,14 @@ noncomputable def rawPiHom (E : Env ζ) (ℓ : Nat) : Functor.HomObj (ΩLower.pr
 namespace RawFamily
 
 noncomputable def pi
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (label : Ty.Pair Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (label : Ty.Pair Γ₁)
     (C : RawFamily Γ₁) (B : RawFamily ΓA) : RawFamily Γ₁ :=
   (C.pair (RawActionFamily.normalizedBody D hA C B)).comp
     ((rawPiHom E ℓ).map (coyonedaEquiv.symm label))
 
 @[simp]
 theorem pi_value
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (label : Ty.Pair Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (label : Ty.Pair Γ₁)
     (C : RawFamily Γ₁) (B : RawFamily ΓA)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) :
     (pi D hA label C B).app _ σ.op ρ =
@@ -66,7 +66,7 @@ theorem pi_value
         (normalizedBodyAction D hA C B σ ρ) := rfl
 
 theorem IsFinitary.pi
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (label : Ty.Pair Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (label : Ty.Pair Γ₁)
     {C : RawFamily Γ₁} (hC : C.IsFinitary)
     {B : RawFamily ΓA} (hB : B.IsFinitary) :
     (pi D hA label C B).IsFinitary := by
@@ -82,7 +82,7 @@ theorem IsFinitary.pi
 
 @[simp]
 theorem mem_piAtom_pi_value_iff
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (label : Ty.Pair Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (label : Ty.Pair Γ₁)
     (C : RawFamily Γ₁) (B : RawFamily ΓA)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (σ₂ : Γ₃ ⟶ Γ₂) (label' : Ty.Pair Γ₃) :
     ((pi D hA label C B).app _ σ₁.op ρ).mem σ₂ (piAtom label') ↔

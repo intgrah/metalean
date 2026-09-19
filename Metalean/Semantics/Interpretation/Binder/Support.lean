@@ -65,7 +65,7 @@ namespace RawFamily
 variable (D : CodeAssignment E ℓ)
 
 theorem rawApplication_normalizedAbstraction_eq_value
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (C : RawFamily Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (C : RawFamily Γ₁)
     {B : RawFamily ΓA} (hB : B.IsFinitary)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (hD : (normalizedBodyAction D hA C B σ₁ ρ).IsIdealValued)
@@ -120,7 +120,7 @@ theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
       exact sourceQuery_eq_of_section ht he (σ₂ ≫ σ₁) (by simpa using hname) hs
 
 theorem rawApplication_singleton_abstraction_eq_body
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (C : RawFamily Γ₁)
+    (hA : ℒ.Comprehension Γ₁ ΓA) (C : RawFamily Γ₁)
     {B : RawFamily ΓA} (hB : B.IsFinitary) (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (hD : (normalizedBodyAction D hA C B σ₁ ρ).IsIdealValued) (X : Domain Γ₂)
     {label : Tm_ Γ₂} (sect : hA.Section σ₁ label) :

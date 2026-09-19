@@ -23,7 +23,7 @@ namespace RawFamily
 
 open CodeAssignment
 
-def BodyAgreesOnFixed (hA' : Comprehension (Ty E ℓ) Γ₂ ΓA') (σ₁ : Γ₂ ⟶ Γ₁) (f : ΓA' ⟶ ΓA)
+def BodyAgreesOnFixed (hA' : ℒ.Comprehension Γ₂ ΓA') (σ₁ : Γ₂ ⟶ Γ₁) (f : ΓA' ⟶ ΓA)
     (C : RawFamily Γ₁) (B : RawFamily ΓA)
     (B' : RawFamily ΓA')
     (σ₂ : Γ₃ ⟶ Γ₂) (ρ ρ' : RawValuation Γ₃) : Prop :=
@@ -36,7 +36,7 @@ def BodyAgreesOnFixed (hA' : Comprehension (Ty E ℓ) Γ₂ ΓA') (σ₁ : Γ₂
       B'.app _ s.hom.op ((ρ'.pullback σ₃).push J.val)
 
 theorem normalizedBodyAction_substitution_eq_on_ideals
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (hA' : Comprehension (Ty E ℓ) Γ₂ ΓA')
+    (hA : ℒ.Comprehension Γ₁ ΓA) (hA' : ℒ.Comprehension Γ₂ ΓA')
     (hπ : IsPullback f hA'.disp hA.disp σ₁)
     (hq : (Tm E ℓ).map f.op hA.generic = hA'.generic)
     (C : RawFamily Γ₁) (C' : RawFamily Γ₂)
@@ -110,7 +110,7 @@ namespace RawFamily
 open CodeAssignment
 
 theorem abstraction_substitution_eq
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (hA' : Comprehension (Ty E ℓ) Γ₂ ΓA')
+    (hA : ℒ.Comprehension Γ₁ ΓA) (hA' : ℒ.Comprehension Γ₂ ΓA')
     (hπ : IsPullback f hA'.disp hA.disp σ₁)
     (hq : (Tm E ℓ).map f.op hA.generic = hA'.generic)
     (C : RawFamily Γ₁) (C' : RawFamily Γ₂)
@@ -126,7 +126,7 @@ theorem abstraction_substitution_eq
     hA hA' hπ hq C C' B B' σ₂ ρ ρ' hC hcode hbody)
 
 theorem pi_substitution_eq
-    (hA : Comprehension (Ty E ℓ) Γ₁ ΓA) (hA' : Comprehension (Ty E ℓ) Γ₂ ΓA')
+    (hA : ℒ.Comprehension Γ₁ ΓA) (hA' : ℒ.Comprehension Γ₂ ΓA')
     (hπ : IsPullback f hA'.disp hA.disp σ₁)
     (hq : (Tm E ℓ).map f.op hA.generic = hA'.generic)
     (label : Ty.Pair Γ₁) (C : RawFamily Γ₁) (C' : RawFamily Γ₂)

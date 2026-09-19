@@ -22,7 +22,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ Γ₁ Γ₂ : CtxCat E ℓ}
 namespace Ty
 
 @[implicit_reducible] def pairPresheaf (E : Env ζ) (ℓ : Nat) : (CtxCat E ℓ)ᵒᵖ ⥤ Type :=
-  (polynomial (Ty E ℓ)).obj (Ty E ℓ)
+  (ℒ (E := E) (ℓ := ℓ)).polynomial.obj (Ty E ℓ)
 
 abbrev Pair (Γ : CtxCat E ℓ) := (pairPresheaf E ℓ).obj (op Γ)
 
@@ -56,13 +56,13 @@ theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ₛ T₁.term �
 
 end Repr
 
-def piApp (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ) : Ty_ Γ :=
+def piApp (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) : Ty_ Γ :=
   elim (yonedaEquiv A) (fun T hT => T.pi (T.comprehension.eval A B (comprehension_type_eq hT)))
     fun T₁ T₂ h₁ h₂ => by
       have h := (ofRepr_eq_iff _ _).mp (h₁.symm.trans h₂)
       rw [Repr.eval_conversion T₁ T₂ h A B _ _, Repr.pi_conversion]
 
-theorem piApp_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem piApp_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) :
     piApp A B = T.pi (T.comprehension.eval A B (comprehension_type_eq hT)) :=
   elim_eq _ _ _ T hT
@@ -81,7 +81,7 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
     ext ⟨A, B⟩
     obtain ⟨T, hT⟩ := exists_ofRepr (yonedaEquiv A)
     change piApp (y (RawCtx.toCtx.map σ) ≫ A)
-        (fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
+        (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
       (Ty E ℓ).map (RawCtx.toCtx.map σ).op (piApp A B)
     rw [piApp_eq _ _ (T.reindex σ) (reindex_yonedaEquiv hT σ), piApp_eq A B T hT,
       Repr.eval_reindex T σ A B (comprehension_type_eq hT)]
@@ -89,10 +89,10 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
     induction b using Quotient.inductionOn with
     | h B => rfl
 
-@[simp] theorem map_piApp (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+@[simp] theorem map_piApp (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (σ : Γ₂ ⟶ Γ₁) :
     (Ty E ℓ).map σ.op (piApp A B) =
-      piApp (y σ ≫ A) (fibreMap A (y σ) ≫ B) :=
+      piApp (y σ ≫ A) (ℒ.fibreMap A (y σ) ≫ B) :=
   (NatTrans.naturality_apply (pi E ℓ) σ.op ⟨A, B⟩).symm
 
 @[simp] theorem piApp_pairPresheaf_map (L : Pair Γ₁) (σ : Γ₂ ⟶ Γ₁) :
@@ -100,28 +100,28 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
       (Ty E ℓ).map σ.op (piApp L.1 L.2) :=
   (map_piApp L.1 L.2 σ).symm
 
-theorem piApp_eq_ofRepr (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem piApp_eq_ofRepr (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) (C : Repr ⟨Γ.as.snoc T.wf⟩)
     (hC : ⟦C⟧ = T.comprehension.eval A B (comprehension_type_eq hT)) :
     piApp A B = ofRepr (T.forallE C) := by
   rw [piApp_eq A B T hT, ← hC]
   rfl
 
-def forallE (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ) :
+def forallE (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) :
     y Γ ⟶ Ty E ℓ :=
   yonedaEquiv.symm (piApp A B)
 
-theorem forallE_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem forallE_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) (C : Repr ⟨Γ.as.snoc T.wf⟩)
     (hC : ⟦C⟧ = T.comprehension.eval A B (comprehension_type_eq hT)) :
     yonedaEquiv (forallE A B) = ofRepr (T.forallE C) := by
   rw [forallE, Equiv.apply_symm_apply, piApp_eq A B T hT, ← hC]
   rfl
 
-theorem map_forallE (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A (Tm.typing E ℓ) ⟶ Ty E ℓ)
+theorem map_forallE (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (σ : Γ₂ ⟶ Γ₁) :
     y σ ≫ forallE A B =
-      forallE (y σ ≫ A) (fibreMap A (y σ) ≫ B) :=
+      forallE (y σ ≫ A) (ℒ.fibreMap A (y σ) ≫ B) :=
   (yonedaEquiv_symm_naturality_left σ (Ty E ℓ) (piApp A B)).trans
     (congrArg yonedaEquiv.symm
       (NatTrans.naturality_apply (pi E ℓ) σ.op ⟨A, B⟩).symm)
