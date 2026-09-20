@@ -266,9 +266,9 @@ abbrev TranslateM (n : Nat) :=
 
 def liftCheck {n : Nat} {α : Type} (x : CheckM L F lps.length α) : TranslateM F L lps n α := do
   let st ← get
-  let (r, caches) := (x.run).run st.caches
-  set { st with caches }
-  liftM r
+  match x.run st.caches with
+  | .ok a caches => set { st with caches }; pure a
+  | .error f caches => set { st with caches }; throw f
 
 def liftWF {n : Nat} {α : Type} (x : WFM L F lps.length α) : TranslateM F L lps n α := do
   let st ← get

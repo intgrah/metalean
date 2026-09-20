@@ -245,28 +245,35 @@ def UnfoldsTo (F : FEnv) (pos : Nat) (ls : Array FLevel) (v : FExpr) : Prop :=
   ∀ nlevels t v₀, F[pos]? = some (.def nlevels t v₀) → v = v₀.instL ls
 
 structure Caches where
-  whnfCore : Std.HashMap (FCtx × FExpr)
-    ((k : FCtx × FExpr) × {fe₂ : FExpr // RedSpec L F ℓ k.1 k.2 fe₂}) := ∅
-  whnf : Std.HashMap (FCtx × FExpr)
-    ((k : FCtx × FExpr) × {fe₂ : FExpr // RedSpec L F ℓ k.1 k.2 fe₂}) := ∅
-  infer : Std.HashMap (FCtx × FExpr)
-    ((k : FCtx × FExpr) × {ft : FExpr // InferSpec L F ℓ k.1 k.2 ft}) := ∅
-  inferOnly : Std.HashMap (FCtx × FExpr)
-    ((k : FCtx × FExpr) × {ft : FExpr // InferOnlySpec L F ℓ k.1 k.2 ft}) := ∅
-  defEq : Std.HashMap (FCtx × FExpr × FExpr)
-    ((k : FCtx × FExpr × FExpr) × PLift (DefEqSpec L F ℓ k.1 k.2.1 k.2.2)) := ∅
+  whnfCore : Std.DHashMap (FCtx × FExpr)
+    (fun ⟨G, fe⟩ => {fe₂ : FExpr // RedSpec L F ℓ G fe fe₂}) := ∅
+  whnf : Std.DHashMap (FCtx × FExpr)
+    (fun ⟨G, fe⟩ => {fe₂ : FExpr // RedSpec L F ℓ G fe fe₂}) := ∅
+  infer : Std.DHashMap (FCtx × FExpr)
+    (fun ⟨G, fe⟩ => {ft : FExpr // InferSpec L F ℓ G fe ft}) := ∅
+  inferOnly : Std.DHashMap (FCtx × FExpr)
+    (fun ⟨G, fe⟩ => {ft : FExpr // InferOnlySpec L F ℓ G fe ft}) := ∅
+  defEq : Std.DHashMap (FCtx × FExpr × FExpr)
+    (fun ⟨G, fe₁, fe₂⟩ => PLift (DefEqSpec L F ℓ G fe₁ fe₂)) := ∅
   failure : Std.HashSet (FExpr × FExpr) := ∅
-  unfold : Std.HashMap (Nat × Array FLevel)
-    ((k : Nat × Array FLevel) × {v : FExpr // UnfoldsTo F k.1 k.2 v}) := ∅
+  unfold : Std.DHashMap (Nat × Array FLevel)
+    (fun ⟨pos, ls⟩ => {v : FExpr // UnfoldsTo F pos ls v}) := ∅
   intern : Std.HashMap FExpr FExpr := ∅
   ancestors : Std.HashMap USize ((G : FCtx) × FCtx.Ancestors G) := ∅
   push : Std.HashMap (USize × USize)
     ((k : FCtx × FExpr) × {G : FCtx // G = k.1.push k.2}) := ∅
 
-abbrev CheckM := ExceptT Failure (StateM (Caches L F ℓ))
+abbrev CheckM := EStateM Failure (Caches L F ℓ)
+
+instance : MonadLiftT (Except Failure) (CheckM L F ℓ) where
+  monadLift
+    | .ok a => pure a
+    | .error f => throw f
 
 def CheckM.eval {α : Type} (x : CheckM L F ℓ α) : Except Failure α :=
-  Id.run (StateT.run' x.run {})
+  match x.run {} with
+  | .ok a _ => .ok a
+  | .error e _ => .error e
 
 instance {α : Type} : Inhabited (CheckM L F ℓ α) := ⟨throw .internal⟩
 

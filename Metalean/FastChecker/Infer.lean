@@ -147,12 +147,11 @@ partial def whnf (G : FCtx) (fe₁ : FExpr) :
     let ⟨fe₂, h⟩ ← whnf G₀ fe₁
     return ⟨fe₂, h.extend hr hc hinf hx⟩
   match (← get).whnf.get? (G, fe₁) with
-  | some ⟨k, fe₂, h⟩ =>
-    if heq : k = (G, fe₁) then return ⟨fe₂, by subst heq; exact h⟩
+  | some r => return r
   | none => pure ()
   let ⟨fe₂, h⟩ ← whnfLoop G fe₁
   modify fun c =>
-    { c with whnf := c.whnf.insert (G, fe₁) ⟨(G, fe₁), fe₂, h⟩ }
+    { c with whnf := c.whnf.insert (G, fe₁) ⟨fe₂, h⟩ }
   pure ⟨fe₂, h⟩
 
 partial def whnfLoop (G : FCtx) (fe₁ : FExpr) :
@@ -207,13 +206,12 @@ partial def whnfCore (G : FCtx) (cheapProj : Bool) (fe₁ : FExpr) :
         let ⟨fe₂, h⟩ ← whnfCore G₀ cheapProj fe₁
         return ⟨fe₂, h.extend hr hc hinf hx⟩
       match (← get).whnfCore.get? (G, fe₁) with
-      | some ⟨k, fe₂, h⟩ =>
-        if heq : k = (G, fe₁) then return ⟨fe₂, by subst heq; exact h⟩
+      | some r => return r
       | none => pure ()
     let r ← whnfCoreNode G cheapProj fe₁
     if !cheapProj then
       modify fun c =>
-        { c with whnfCore := c.whnfCore.insert (G, fe₁) ⟨(G, fe₁), r.1, r.2⟩ }
+        { c with whnfCore := c.whnfCore.insert (G, fe₁) r }
     return r
   return ⟨fe₁, RedSpec.refl fe₁⟩
 
@@ -291,13 +289,11 @@ partial def unfoldHeadM (G : FCtx) :
     | some (.def nlevels t v) =>
       if hsize : ls.size = nlevels then
         if ls.isEmpty then return some ⟨v.instL ls, .single (.delta hfe hsize)⟩
-        if let some ⟨k, r, hr⟩ := (← get).unfold.get? (pos, ls) then
-          if hk : k = (pos, ls) then
-            have hr' : UnfoldsTo F pos ls r := by subst hk; exact hr
-            return some ⟨r, by rw [hr' nlevels t v hfe]; exact .single (.delta hfe hsize)⟩
+        if let some ⟨r, hr⟩ := (← get).unfold.get? (pos, ls) then
+          return some ⟨r, by rw [hr nlevels t v hfe]; exact .single (.delta hfe hsize)⟩
         let r := v.instL ls
-        let entry : (k : Nat × Array FLevel) × {v : FExpr // UnfoldsTo F k.1 k.2 v} :=
-          ⟨(pos, ls), r, fun _ _ _ h => by rw [hfe] at h; cases h; rfl⟩
+        let entry : {v' : FExpr // UnfoldsTo F pos ls v'} :=
+          ⟨r, fun _ _ _ h => by rw [hfe] at h; cases h; rfl⟩
         modify fun c => { c with unfold := c.unfold.insert (pos, ls) entry }
         return some ⟨r, .single (.delta hfe hsize)⟩
       else return none
@@ -325,12 +321,11 @@ partial def infer (G : FCtx) (fe : FExpr) :
               let ⟨ft, h⟩ ← infer (a.arr[fe.fvarRange]'hi) fe
               return ⟨ft, h.extend (a.spec _ hi).1 hc (hG ▸ (a.spec _ hi).2)⟩
   match (← get).infer.get? (G, fe) with
-  | some ⟨k, ft, h⟩ =>
-    if heq : k = (G, fe) then return ⟨ft, by subst heq; exact h⟩
+  | some r => return r
   | none => pure ()
   let r ← inferCore G fe
   modify fun c =>
-    { c with infer := c.infer.insert (G, fe) ⟨(G, fe), r.1, r.2⟩ }
+    { c with infer := c.infer.insert (G, fe) r }
   pure r
 
 partial def inferCore (G : FCtx) :
@@ -704,12 +699,11 @@ partial def inferCore (G : FCtx) :
 partial def inferOnly (G : FCtx) (fe : FExpr) :
     CheckM L F ℓ {ft : FExpr // InferOnlySpec L F ℓ G fe ft} := do
   match (← get).inferOnly.get? (G, fe) with
-  | some ⟨k, ft, h⟩ =>
-    if heq : k = (G, fe) then return ⟨ft, by subst heq; exact h⟩
+  | some r => return r
   | none => pure ()
   let r ← inferOnlyCore G fe
   modify fun c =>
-    { c with inferOnly := c.inferOnly.insert (G, fe) ⟨(G, fe), r.1, r.2⟩ }
+    { c with inferOnly := c.inferOnly.insert (G, fe) r }
   pure r
 
 partial def inferOnlyArgs (G : FCtx) (f : FExpr) (rev : List FExpr) (ftype : FExpr)
@@ -1061,7 +1055,7 @@ partial def isDefEq (G : FCtx) (fe₁ fe₂ : FExpr) :
     return ⟨h.extend hr₁ hr₂ hc₁ hc₂ hi₁ hi₂ hx⟩
   let r ← isDefEqMain G fe₁ fe₂
   modify fun c =>
-    { c with defEq := c.defEq.insert (G, fe₁, fe₂) ⟨(G, fe₁, fe₂), r⟩ }
+    { c with defEq := c.defEq.insert (G, fe₁, fe₂) r }
   pure r
 
 partial def quickDefEq (G : FCtx) (fe₁ fe₂ : FExpr) :
@@ -1471,12 +1465,10 @@ partial def lazyStep (G : FCtx) (offsets : Bool) (fe₁ fe₂ : FExpr) :
 partial def succeededBefore (G : FCtx) (fe₁ fe₂ : FExpr) :
     CheckM L F ℓ (Option (PLift (DefEqSpec L F ℓ G fe₁ fe₂))) := do
   match (← get).defEq.get? (G, fe₁, fe₂) with
-  | some ⟨k, h⟩ =>
-    if hk : k = (G, fe₁, fe₂) then return some (by subst hk; exact h)
+  | some h => return some h
   | none => pure ()
   match (← get).defEq.get? (G, fe₂, fe₁) with
-  | some ⟨k, h⟩ =>
-    if hk : k = (G, fe₂, fe₁) then return some (by subst hk; exact ⟨h.down.symm⟩)
+  | some h => return some ⟨h.down.symm⟩
   | none => pure ()
   return none
 
