@@ -146,12 +146,6 @@ theorem heq_nil {a b} (Δ : Tele T a b) (h : b ≤ a) :
   | nil => rfl
   | snoc Δ _ => have := Δ.le; omega
 
-theorem exists_snoc {a b} (h : a ≤ b) (Δ : Tele T a (b + 1)) :
-    ∃ (Γ : Tele T a b) (A : T b), Δ = Γ.snoc A := by
-  cases Δ with
-  | nil => exact absurd h (Nat.not_succ_le_self b)
-  | snoc Γ A => exact ⟨Γ, A, rfl⟩
-
 @[elab_as_elim] def addInduction {a}
     {motive : {k : Nat} → Tele T a (a + k) → Sort v}
     (nil : @motive 0 nil)
@@ -207,18 +201,6 @@ theorem append_split {a b} (h : a ≤ b) {k} (Δ : Tele T a (b + k)) :
   inv := ↾split h k
   hom_inv_id := ConcreteCategory.hom_ext _ _ fun ⟨Γ, Δ⟩ => split_append h Γ Δ
   inv_hom_id := ConcreteCategory.hom_ext _ _ (append_split h)
-
-theorem front {a b} (hlt : a < b) :
-    ∀ Δ : Tele T a b, ∃ (A : T a) (Δ' : Tele T (a + 1) b), Δ = #t[A] ++ Δ'
-  | nil => by omega
-  | snoc (b := d) Δ₀ A₀ => by
-    rcases Nat.lt_or_ge a d with h | h
-    · obtain ⟨A, Δ', rfl⟩ := front h Δ₀
-      exact ⟨A, snoc Δ' A₀, rfl⟩
-    · obtain rfl : a = d := Nat.le_antisymm Δ₀.le h
-      cases Δ₀ with
-      | nil => exact ⟨A₀, #t[], rfl⟩
-      | snoc Γ _ => have := Γ.le; omega
 
 variable {a} (P : {b : Nat} → Tele T a b → T b → Prop) in
 inductive Forall : {b : Nat} → Tele T a b → Prop
