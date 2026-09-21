@@ -16,7 +16,8 @@ namespace Metalean
 
 open CategoryTheory ZFSet
 
-variable {ζ₁ : Sigs}
+variable {ζ₁ ζ₂ ζ₃ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {E₃ : Env ζ₃}
+  {ε₁ : Atom ζ₁ 0 → ZFSet.{v}} {ε₂ : Atom ζ₂ 0 → ZFSet.{v}}
 
 structure Quot.RulesSound (E₁ : Env ζ₁)
     (ε₁ : Atom ζ₁ 0 → ZFSet.{v}) (η : Head ζ₁ .quot) : Prop where
@@ -100,8 +101,7 @@ private theorem denote_compatType {ε : Atom ζ₁ 0 → ZFSet.{v}}
   simp! [Quot.compatType, quotientCompat, Quot.eqApp, heq,
     Fin.snoc, Fin.last, apply_ite]
 
-private theorem denote_compatType_map {ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
-    {ε₁ : Atom ζ₁ 0 → ZFSet.{v}} {ε₂ : Atom ζ₂ 0 → ZFSet.{v}} {η : Head ζ₁ .quot}
+private theorem denote_compatType_map {η : Head ζ₁ .quot}
     {pre : E₁.as ⟶ E₂.as} (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     {equality : Level 0 → ZFSet → ZFSet → ZFSet → ZFSet}
     (hequality : ∀ l b xv yv, ε₁ (.ind (E₁.get η).eqHead ⟨0, by decide⟩ (fun _ => l)
@@ -116,7 +116,7 @@ private theorem denote_compatType_map {ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : 
 
 namespace Quot.RulesSound
 
-theorem ofValues {E₁ : Env ζ₁} {ε₁ : Atom ζ₁ 0 → ZFSet.{v}} (η : Head ζ₁ .quot)
+theorem ofValues (η : Head ζ₁ .quot)
     (equality : Level 0 → ZFSet → ZFSet → ZFSet → ZFSet)
     (hseparates : ∀ l, EqualitySeparates (l.eval zeroNs) (equality l))
     (hequality : ∀ l b xv yv, ε₁ (.ind (E₁.get η).eqHead ⟨0, by decide⟩ (fun _ => l)
@@ -186,11 +186,10 @@ theorem ofValues {E₁ : Env ζ₁} {ε₁ : Atom ζ₁ 0 → ZFSet.{v}} (η : H
         (by simpa [Expr.denote, quotientArrow] using hf.mem) hhmem ha.mem
     exact ⟨heq, heq.symm ▸ happ.mem⟩
 
-theorem map {E₁ : Env ζ₁} {ε₁ : Atom ζ₁ 0 → ZFSet.{v}}
-    {η : Head ζ₁ .quot} (h : Quot.RulesSound E₁ ε₁ η)
-    {ζ₂ : Sigs} {E₂ : Env ζ₂} {ε₂ : Atom ζ₂ 0 → ZFSet.{v}}
-    (pre : E₁.as ⟶ E₂.as) (hatoms₁ : AtomsMap pre.sigs ε₁ ε₂) :
-    Quot.RulesSound E₂ ε₂ (η.map pre.sigs) := by
+theorem map {η : Head ζ₁ .quot} (pre : E₁.as ⟶ E₂.as) :
+    AtomsMap pre.sigs ε₁ ε₂ →
+    Quot.RulesSound E₁ ε₁ η →
+    Quot.RulesSound E₂ ε₂ (η.map pre.sigs) := fun hatoms₁ rules =>
   have trans {ζ₃ : Sigs} {E₃ : Env ζ₃} {ε₃ : Atom ζ₃ 0 → ZFSet.{v}}
       (suffix : E₂.as ⟶ E₃.as) (hatoms₂ : AtomsMap suffix.sigs ε₂ ε₃) :
       AtomsMap (pre ≫ suffix).sigs ε₁ ε₃ := by
@@ -198,30 +197,27 @@ theorem map {E₁ : Env ζ₁} {ε₁ : Atom ζ₁ 0 → ZFSet.{v}}
   have hhead {ζ₃ : Sigs} {E₃ : Env ζ₃} (suffix : E₂.as ⟶ E₃.as) :
       (η.map pre.sigs).map suffix.sigs = η.map (pre ≫ suffix).sigs :=
     ((Env.forget ⋙ Head.functor _).map_comp_apply pre suffix η).symm
-  refine
-    { quotAtom := fun u a r => (congrFun hatoms₁ _).trans (h.quotAtom u a r)
-      quotMkAtom := fun u a r x => (congrFun hatoms₁ _).trans (h.quotMkAtom u a r x)
-      quot := ?_
-      quotMk := ?_
-      quotLift := ?_
-      quotInd := ?_
-      quotIota := ?_ }
-  all_goals intros
-  case refine_1 suffix hatoms₂ _ _ _ _ _ _ _ hα hr =>
-    simpa [hhead suffix] using h.quot (pre ≫ suffix) (trans suffix hatoms₂) hα hr
-  case refine_2 suffix hatoms₂ _ _ _ _ _ _ _ _ _ hα hr ha =>
-    simpa [hhead suffix] using h.quotMk (pre ≫ suffix) (trans suffix hatoms₂) hα hr ha
-  case refine_3 suffix hatoms₂ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hα hr hβ hf hh ha =>
-    simp [hhead suffix] at hh ha
-    simpa [hhead suffix] using h.quotLift (pre ≫ suffix) (trans suffix hatoms₂)
-      hα hr hβ hf hh ha
-  case refine_4 suffix hatoms₂ _ _ _ _ _ _ _ _ _ _ _ _ _ hα hr hβ hf ha =>
-    simp [hhead suffix] at hβ hf ha
-    simpa [hhead suffix] using h.quotInd (pre ≫ suffix) (trans suffix hatoms₂) hα hr hβ hf ha
-  case refine_5 suffix hatoms₂ _ _ _ _ _ _ _ _ _ _ hα hr hβ hf hh ha hlift happ =>
-    simp [hhead suffix] at hh hlift
-    simpa [hhead suffix] using h.quotIota (pre ≫ suffix) (trans suffix hatoms₂)
-      hα hr hβ hf hh ha hlift happ
+  { quotAtom u a r := (congrFun hatoms₁ _).trans (rules.quotAtom u a r)
+    quotMkAtom u a r x := (congrFun hatoms₁ _).trans (rules.quotMkAtom u a r x)
+    quot {ζ₃ E₃ ε₃} suffix hatoms₂ {n γ l α α' r r'} hα hr := by
+      simpa [hhead] using rules.quot (pre ≫ suffix) (trans suffix hatoms₂) hα hr
+    quotMk {ζ₃ E₃ ε₃} suffix hatoms₂ {n γ l α α' r r' a₁ a₂} hα hr ha := by
+      simpa [hhead] using rules.quotMk (pre ≫ suffix) (trans suffix hatoms₂) hα hr ha
+    quotLift {ζ₃ E₃ ε₃} suffix hatoms₂
+      {n γ l₁ l₂ α α' r r' β β' f f' h h' a₁ a₂} hα hr hβ hf hh ha := by
+      simp [hhead] at hh ha
+      simpa [hhead] using rules.quotLift (pre ≫ suffix) (trans suffix hatoms₂)
+        hα hr hβ hf hh ha
+    quotInd {ζ₃ E₃ ε₃} suffix hatoms₂
+      {n γ l α α' r r' β β' f f' a₁ a₂} hα hr hβ hf ha := by
+      simp [hhead] at hβ hf ha
+      simpa [hhead] using rules.quotInd (pre ≫ suffix) (trans suffix hatoms₂)
+        hα hr hβ hf ha
+    quotIota {ζ₃ E₃ ε₃} suffix hatoms₂
+      {n γ l₁ l₂ α r β f h a} hα hr hβ hf hh ha hlift happ := by
+      simp [hhead] at hh hlift
+      simpa [hhead] using rules.quotIota (pre ≫ suffix) (trans suffix hatoms₂)
+        hα hr hβ hf hh ha hlift happ }
 
 end Quot.RulesSound
 
