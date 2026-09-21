@@ -7,7 +7,7 @@ module
 
 public import Metalean.SetSemantics.SemanticTelescope
 public import Metalean.SetTheory.ZFC.Erasure
-import Metalean.Fin
+import Metalean.Data.Fin
 
 @[expose] public section
 

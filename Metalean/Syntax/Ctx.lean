@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
+public import Metalean.Data.Tele
 public import Metalean.Syntax.Expr.Application
-public import Metalean.Tele
 import Metalean.Meta.DeriveFunctor
 
 @[expose] public section

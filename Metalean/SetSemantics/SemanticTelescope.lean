@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Nat
 public import Mathlib.Data.Nat.SuccPred
 public import Metalean.Meta.ZF
-public import Metalean.Tele
+public import Metalean.Data.Tele
 
 @[expose] public section
 

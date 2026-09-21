@@ -7,8 +7,6 @@ module
 
 public import Metalean.TypeTheory.Syntactic.Category
 public import Metalean.TypeTheory.NaturalModel.Defs
-public import Metalean.Quotient
-import Metalean.Strong
 
 @[expose] public noncomputable section
 
@@ -73,12 +71,13 @@ theorem exists_ofRepr (A : Ty_ Γ) : ∃ T, A = ofRepr T :=
 
 def elim {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
     (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂) : β :=
-  Quotient.liftFibre A (fun T h => f T h.symm) fun _ _ _ _ => hf _ _ _ _
+  Quotient.pliftOn A f fun _ _ _ _ _ => hf _ _ _ _
 
 theorem elim_eq {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
     (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂)
-    (T : Repr Γ) (h : A = ofRepr T) : elim A f hf = f T h :=
-  Quotient.liftFibre_eq _ _ _ T h.symm
+    (T : Repr Γ) (h : A = ofRepr T) : elim A f hf = f T h := by
+  subst h
+  rfl
 
 def ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {u : Level ℓ}
     (ht : E[Γ.ctx] ⊢ₛ t : .sort u) : Ty_ (⟨Γ⟩ : CtxCat E ℓ) :=
@@ -202,9 +201,9 @@ def elim {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
     (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
     (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ₛ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ₛ e₂ : T.term),
       E[Γ.as.ctx] ⊢ₛ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂) : β :=
-  Quotient.liftFibre n (fun R hR => f R.val ((type_eq_of_mk hn hR).convStrong R.valWF))
-    fun _ _ h₁ h₂ => hf _ _ _ _ <|
-      (type_eq_of_mk hn h₁).convStrong (Quotient.exact (h₁.trans h₂.symm)).2
+  Quotient.pliftOn n (fun R hR => f R.val ((type_eq_of_mk hn hR.symm).convStrong R.valWF))
+    fun _ _ h₁ _ h => hf _ _ _ _ <|
+      (type_eq_of_mk hn h₁.symm).convStrong h.2
 
 theorem elim_eq {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
     (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
@@ -213,7 +212,7 @@ theorem elim_eq {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofR
     {e : Expr ζ ℓ Γ.as.len} (he : E[Γ.as.ctx] ⊢ₛ e : T.term) (h : n = label Γ.as he) :
     elim n T hn f hf = f e he := by
   subst h
-  exact Quotient.liftFibre_eq _ _ _ (⟨T.term, e, T.wf, he⟩ : Repr Γ) rfl
+  rfl
 
 theorem exists_label (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T) :
     ∃ e, ∃ he : E[Γ.as.ctx] ⊢ₛ e : T.term, n = label Γ.as he := by

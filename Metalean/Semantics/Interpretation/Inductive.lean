@@ -13,7 +13,6 @@ public import Metalean.Semantics.Interpretation.Family.Basic
 public import Metalean.Semantics.Interpretation.Family.Substitution
 public import Metalean.Semantics.Syntax.Rank
 import Mathlib.Order.Filter.Finite
-import Metalean.Strong
 
 @[expose] public section
 

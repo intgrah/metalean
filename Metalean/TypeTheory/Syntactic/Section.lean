@@ -6,7 +6,6 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.TypeTheory.Syntactic.Substitution
-import Metalean.Strong
 
 @[expose] public noncomputable section
 

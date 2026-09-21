@@ -11,7 +11,6 @@ public import Metalean.Semantics.Interpretation.Recursor.Recovery
 public import Metalean.Semantics.Interpretation.Recursor.Section
 public import Metalean.Semantics.Soundness.Judgment
 public import Metalean.Semantics.Soundness.Recursor.Fields
-import Metalean.Strong
 import Metalean.Typing.Weakening
 
 @[expose] public section

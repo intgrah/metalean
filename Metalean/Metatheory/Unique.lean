@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Metatheory.Injectivity
-import Metalean.Strong
+import Metalean.Strong.Inversion
 import Metalean.Syntax.Substitution
 
 @[expose] public section

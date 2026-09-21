@@ -7,7 +7,6 @@ module
 
 public import Metalean.Strong.Telescope
 public import Metalean.TypeTheory.Syntactic.Substitution
-import Metalean.Strong
 import Metalean.Strong.Substitution
 
 @[expose] public section

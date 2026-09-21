@@ -9,7 +9,6 @@ public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Strong.Structure
 public import Metalean.Semantics.Interpretation.Recursor.Fields
 public import Metalean.TypeTheory.Syntactic.Telescope
-import Metalean.Strong
 import Metalean.TypeTheory.Syntactic.Comprehension
 import Metalean.Syntax.Structure.Projection
 import Metalean.Typing.Weakening

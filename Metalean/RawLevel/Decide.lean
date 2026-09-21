@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.RawLevel.Order
-import Metalean.List
+import Metalean.Data.List
 
 /-!
 # Level algebra

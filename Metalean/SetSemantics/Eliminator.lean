@@ -7,7 +7,7 @@ module
 
 public import Metalean.SetSemantics.InductiveBlock
 public import Metalean.SetTheory.ZFC.Accessibility
-import Metalean.Fin
+import Metalean.Data.Fin
 
 @[expose] public section
 

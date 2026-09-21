@@ -7,7 +7,7 @@ module
 
 public import Metalean.SetSemantics.ConstructorCode
 public import Metalean.SetTheory.ZFC.Coding
-import Metalean.Fin
+import Metalean.Data.Fin
 
 @[expose] public section
 

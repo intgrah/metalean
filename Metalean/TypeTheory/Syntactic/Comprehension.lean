@@ -9,7 +9,7 @@ public import Metalean.TypeTheory.NaturalModel.Comprehension
 public import Metalean.TypeTheory.NaturalModel.Extension
 public import Metalean.TypeTheory.Syntactic.Universe
 import Mathlib.CategoryTheory.Limits.Types.Pullbacks
-import Metalean.Strong
+import Metalean.Strong.Defs
 
 @[expose] public noncomputable section
 

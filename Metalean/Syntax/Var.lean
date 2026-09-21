@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Fin
+public import Metalean.Data.Fin
 
 @[expose] public section
 

@@ -19,6 +19,9 @@ public import Metalean.Checker.Loader
 public import Metalean.Checker.Projection
 public import Metalean.Checker.Whnf
 public import Metalean.Control
+public import Metalean.Data.Fin
+public import Metalean.Data.List
+public import Metalean.Data.Tele
 public import Metalean.Decide
 public import Metalean.Export.Basic
 public import Metalean.Export.Driver
@@ -48,7 +51,6 @@ public import Metalean.FastChecker.Spec
 public import Metalean.FastChecker.Translate
 public import Metalean.FastChecker.WF
 public import Metalean.FastChecker.Whnf
-public import Metalean.Fin
 public import Metalean.Frontend.Failure
 public import Metalean.Frontend.Inductive
 public import Metalean.Frontend.Lookup
@@ -61,7 +63,6 @@ public import Metalean.Level.Decide
 public import Metalean.Level.Nat
 public import Metalean.Level.Order
 public import Metalean.Level.Relevance
-public import Metalean.List
 public import Metalean.Meta.DeriveFunctor
 public import Metalean.Meta.IfRfl
 public import Metalean.Meta.InductionCases
@@ -81,7 +82,6 @@ public import Metalean.Order.Presheaf.Finitary
 public import Metalean.Order.Presheaf.Ideal
 public import Metalean.Order.Presheaf.Lower
 public import Metalean.Order.Presheaf.Partial
-public import Metalean.Quotient
 public import Metalean.RawLevel.Basic
 public import Metalean.RawLevel.Decide
 public import Metalean.RawLevel.Equiv
@@ -223,7 +223,6 @@ public import Metalean.SetTheory.ZFC.SmallSupport
 public import Metalean.SetTheory.ZFC.Truth
 public import Metalean.SetTheory.ZFC.Universe.Sort
 public import Metalean.SetTheory.ZFC.Universe.Type
-public import Metalean.Strong
 public import Metalean.Strong.Context
 public import Metalean.Strong.Defs
 public import Metalean.Strong.Inductive
@@ -261,7 +260,6 @@ public import Metalean.Syntax.Structure.Projection
 public import Metalean.Syntax.Substitution
 public import Metalean.Syntax.Var
 public import Metalean.Syntax.Weakening
-public import Metalean.Tele
 public import Metalean.TypeTheory.NaturalModel.Comprehension
 public import Metalean.TypeTheory.NaturalModel.Defs
 public import Metalean.TypeTheory.NaturalModel.Extension

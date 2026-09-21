@@ -10,7 +10,6 @@ public import Metalean.Semantics.Domain.Quotient.Basic
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.Semantics.Interpretation.Family.Basic
 import Mathlib.Order.Filter.Basic
-import Metalean.Strong
 import Metalean.Strong.Quot
 
 @[expose] public section

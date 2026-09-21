@@ -8,7 +8,6 @@ module
 public import Metalean.Strong.InstLevel
 public import Metalean.Semantics.Interpretation.Recursor.Typing
 public import Metalean.TypeTheory.Syntactic.Telescope
-import Metalean.Strong
 import Metalean.Typing.Weakening
 
 @[expose] public section

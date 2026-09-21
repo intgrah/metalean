@@ -8,7 +8,9 @@ module
 public import Metalean.Strong.Defs
 public import Metalean.Syntax.Reduction
 public import Metalean.Syntax.Structure
-import Metalean.Strong
+import Metalean.Strong.Inversion
+import Metalean.Strong.Strengthen
+import Metalean.Strong.Structure
 import Metalean.Strong.Substitution
 import Metalean.Syntax.Substitution
 import Metalean.Metatheory.Unique

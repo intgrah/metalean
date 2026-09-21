@@ -8,7 +8,7 @@ module
 public import Batteries.Data.Fin.Coding
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.Data.Fintype.Basic
-public import Metalean.Fin
+public import Metalean.Data.Fin
 import Metalean.Meta.DeriveFunctor
 
 @[expose] public section

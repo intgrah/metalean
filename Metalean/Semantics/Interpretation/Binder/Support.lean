@@ -10,7 +10,6 @@ public import Metalean.Semantics.Domain.Decoder.Stages
 public import Metalean.Semantics.Interpretation.Binder.Basic
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.TypeTheory.Syntactic.Comprehension
-import Metalean.Strong
 import Metalean.Semantics.Domain.Decoder.FixedPoint
 import Metalean.Semantics.Interpretation.Binder.Abstraction
 

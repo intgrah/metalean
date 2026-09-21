@@ -6,7 +6,6 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.TypeTheory.Syntactic.Pi.Type
-import Metalean.Strong
 
 @[expose] public noncomputable section
 
@@ -142,10 +141,10 @@ end Repr
 def apply (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) (n m : Tm_ Γ)
     (h : Tm.type n = Ty.piApp A B) (hm : Tm.type m = yonedaEquiv A) : Tm_ Γ :=
   Ty.elim (yonedaEquiv A)
-    (fun T hT => Quotient.liftFibre (T.comprehension.eval A B (Ty.comprehension_type_eq hT))
-      (fun C hC => Repr.apply T C n m (h.trans (Ty.piApp_eq_ofRepr A B T hT C hC)) (hm.trans hT))
+    (fun T hT => Ty.elim (T.comprehension.eval A B (Ty.comprehension_type_eq hT))
+      (fun C hC => Repr.apply T C n m (h.trans (Ty.piApp_eq_ofRepr A B T hT C hC.symm)) (hm.trans hT))
       fun C₁ C₂ hC₁ hC₂ => Repr.apply_congr T T C₁ C₂ T.wf.isTypeEq
-        (Quotient.exact (hC₁.trans hC₂.symm)) n m _ _ _ _)
+        (Quotient.exact (hC₁.symm.trans hC₂)) n m _ _ _ _)
     fun T₁ T₂ h₁ h₂ => by
       have hT := (ofRepr_eq_iff _ _).mp (h₁.symm.trans h₂)
       have ⟨C₁, hC₁⟩ := Quotient.exists_rep (T₁.comprehension.eval A B (Ty.comprehension_type_eq h₁))
@@ -155,7 +154,7 @@ def apply (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) (n m 
         rw [T₁.eval_conversion T₂ hT A B (Ty.comprehension_type_eq h₁) (Ty.comprehension_type_eq h₂),
           ← hC₁]
         rfl
-      rw [Quotient.liftFibre_eq _ _ _ C₁ hC₁, Quotient.liftFibre_eq _ _ _ _ hC₂]
+      rw [Ty.elim_eq _ _ _ C₁ hC₁.symm, Ty.elim_eq _ _ _ _ hC₂.symm]
       exact Repr.apply_congr T₁ T₂ C₁ _ hT
         ((congrArg (E[Γ.as.ctx.snoc T₁.term] ⊢ₛ C₁.term ≡ · typ) (Expr.subst_id C₁.term)).mpr
           C₁.wf.isTypeEq) n m _ _ _ _
@@ -167,7 +166,7 @@ theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ
     {f a : Expr ζ ℓ Γ.as.len} (hf : E[Γ.as.ctx] ⊢ₛ f : .forallE T.term C.term)
     (ha : E[Γ.as.ctx] ⊢ₛ a : T.term) (hnf : n = label Γ.as hf) (hma : m = label Γ.as ha) :
     apply A B n m h hm = label Γ.as (Repr.app_wf T C hf ha) := by
-  rw [apply, Ty.elim_eq _ _ _ T hT, Quotient.liftFibre_eq _ _ _ C hC]
+  rw [apply, Ty.elim_eq _ _ _ T hT, Ty.elim_eq _ _ _ C hC.symm]
   exact Repr.apply_eq T C n m _ _ hf ha hnf hma
 
 theorem apply_congr {A A' : y Γ ⟶ Ty E ℓ} {B : pullback A ℒ.typing ⟶ Ty E ℓ}
