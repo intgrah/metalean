@@ -12,7 +12,7 @@ public import Metalean.Semantics.Basis.Coherence
 
 namespace Metalean
 
-open CategoryTheory Opposite Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Opposite Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ Γ₁ Γ₂ : CtxCat E ℓ}
 

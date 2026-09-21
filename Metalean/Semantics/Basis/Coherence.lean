@@ -14,7 +14,7 @@ import Metalean.Meta.Judgement
 
 namespace Metalean
 
-open CategoryTheory Opposite TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Opposite
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ Γ₄ : CtxCat E ℓ}
 

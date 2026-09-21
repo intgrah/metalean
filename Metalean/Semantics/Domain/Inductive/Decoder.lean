@@ -12,7 +12,7 @@ import Metalean.Semantics.Domain.Decoder.FixedPoint
 
 namespace Metalean.CoherentShape.CodeAssignment
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ : CtxCat E ℓ}
 

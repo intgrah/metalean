@@ -18,7 +18,7 @@ import Mathlib.Order.Filter.Finite
 
 namespace Metalean
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 namespace CoherentShape
 

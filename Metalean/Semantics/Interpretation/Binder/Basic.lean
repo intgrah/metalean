@@ -19,7 +19,7 @@ import Metalean.Semantics.Interpretation.Family.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Opposite MonoidalCategory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Opposite MonoidalCategory Presheaf TypeTheory NaturalModel
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ ΓA : CtxCat E ℓ}
 

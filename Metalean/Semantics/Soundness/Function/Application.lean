@@ -12,7 +12,7 @@ public import Metalean.Semantics.Soundness.Telescope.Transport
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
   {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)}

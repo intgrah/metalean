@@ -12,7 +12,7 @@ public import Metalean.TypeTheory.Syntactic.Pi.Type
 
 namespace Metalean
 
-open CategoryTheory TypeTheory TypeTheory.NaturalModel
+open CategoryTheory
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} {k : Nat}
 

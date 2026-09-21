@@ -14,7 +14,7 @@ import Metalean.Semantics.Soundness.Rules.Core
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}

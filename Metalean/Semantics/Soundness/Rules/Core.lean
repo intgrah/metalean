@@ -16,7 +16,7 @@ namespace Metalean.CoherentShape
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ : CtxCat E ℓ} {t e e₁ e₂ p r : Expr ζ ℓ Γ₁.as.len}
   {e' : Expr ζ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}
 
-open CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
+open CodeAssignment Presheaf
 
 theorem HasIdeality.sort (Γ : CtxCat E ℓ) (u : Level ℓ) : HasIdeality Γ (.sort u) := by
   intro _ σ ρ _

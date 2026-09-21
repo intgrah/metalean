@@ -13,7 +13,7 @@ public import Metalean.Syntax.Structure.Projection
 
 namespace Metalean
 
-open CategoryTheory TypeTheory TypeTheory.NaturalModel
+open CategoryTheory
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {ι : IndSig}
   {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {η : Head ζ (.inductive ι)} {Γ Γ₁ Γ₂ : CtxCat E ℓ}

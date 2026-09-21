@@ -14,7 +14,7 @@ import Metalean.TypeTheory.Syntactic.Category
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Src Tgt Γ : CtxCat E ℓ}
 

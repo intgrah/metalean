@@ -11,7 +11,7 @@ public import Metalean.Semantics.Basis.Coherence
 
 namespace Metalean
 
-open CategoryTheory TypeTheory TypeTheory.NaturalModel
+open CategoryTheory
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ Γ₁ Γ₂ : CtxCat E ℓ}
 

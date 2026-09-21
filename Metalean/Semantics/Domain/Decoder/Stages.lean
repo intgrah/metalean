@@ -18,7 +18,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ Γ₄ : CtxCat E ℓ}
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 def universeIdeal (r : Bool) (X : Domain Γ₁) : Domain Γ₁ where
   val.mem σ a := X.mem σ a ∧ Shape.IsCode r a.1

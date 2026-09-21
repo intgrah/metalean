@@ -11,7 +11,7 @@ public import Metalean.Semantics.Interpretation
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory IndSig TypeTheory TypeTheory.NaturalModel
+open CategoryTheory IndSig
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ b m : Nat} {P : Level ℓ → Prop}
 

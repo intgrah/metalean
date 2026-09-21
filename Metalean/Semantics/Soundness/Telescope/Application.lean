@@ -17,7 +17,7 @@ import Metalean.Syntax.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Src Tgt Γ : CtxCat E ℓ}
   {t : Expr ζ ℓ Src.as.len} {t' : Expr ζ ℓ (Src.as.len + 1)} {u v : Level ℓ}

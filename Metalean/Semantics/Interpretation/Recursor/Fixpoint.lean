@@ -14,7 +14,7 @@ public import Metalean.Semantics.Interpretation.Recursor.Recovery
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf IndSig TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf IndSig
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {ι : IndSig} {η : Head ζ (.inductive ι)}
   {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}

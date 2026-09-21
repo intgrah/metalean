@@ -11,7 +11,7 @@ public import Metalean.Semantics.Soundness.Telescope.Basic
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Src Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
   {σ₁ : Γ₂.as ⟶ Γ₁.as} {e t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}

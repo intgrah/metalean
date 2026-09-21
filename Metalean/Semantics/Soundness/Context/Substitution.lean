@@ -12,7 +12,7 @@ public import Metalean.TypeTheory.Syntactic.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ Γ₄ Γ₅ : CtxCat E ℓ}
   {σ₁ : Γ₂.as ⟶ Γ₁.as} {σ₂ : Γ₃ ⟶ Γ₂} {ρ₁ ρ₂ : RawValuation Γ₃}

@@ -16,7 +16,7 @@ import Metalean.Typing.Weakening
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
   {ι : IndSig} {η : Head ζ (.inductive ι)}

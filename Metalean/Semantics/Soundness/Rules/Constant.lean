@@ -15,7 +15,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ : CtxCat E ℓ} {nlevels : Nat} {u : Level ℓ}
 
-open CategoryTheory CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment Presheaf
 
 theorem RawJudgment.delta (η : Head ζ (.const .def nlevels)) {ls : Fin nlevels → Level ℓ}
     (p : RawJudgment (CtxCat.nil E ℓ) ((E.get η).defValue.instL ls)

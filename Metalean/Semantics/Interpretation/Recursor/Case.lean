@@ -14,7 +14,7 @@ import Mathlib.Order.Filter.Finite
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
   {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} {ι : IndSig} {η : Head ζ (.inductive ι)}

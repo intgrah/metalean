@@ -15,7 +15,7 @@ import Metalean.Strong.Substitution
 
 namespace Metalean
 
-open CategoryTheory CoherentShape CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CoherentShape CodeAssignment
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.as ⟶ E₂.as} {ℓ n m : Nat}
   {Γ : Ctx ζ₂ ℓ 0 n} {Δ : Ctx ζ₂ ℓ n m} {A : Expr ζ₂ ℓ m}

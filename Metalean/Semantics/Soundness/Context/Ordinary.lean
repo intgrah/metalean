@@ -13,7 +13,7 @@ import Metalean.Semantics.Interpretation.Family.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {ι : IndSig} {I : Inductive ζ ι} {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts}

@@ -15,7 +15,7 @@ import Metalean.Semantics.Interpretation.Binder.Support
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory TypeTheory TypeTheory.NaturalModel
+open CategoryTheory
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {t e : Expr ζ ℓ Γ₁.as.len} {e' : Expr ζ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}

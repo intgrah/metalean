@@ -23,7 +23,7 @@ import Metalean.Syntax.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CodeAssignment Presheaf TypeTheory NaturalModel
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
   {t t₁ t₂ e e₁ e₂ f f' : Expr ζ ℓ Γ₁.as.len}
@@ -96,9 +96,7 @@ theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ₁.as.ctx.
       _ _ _ _ σ₂ ρs ρt (htI _ _ hρ) (hts σ₁ σ₂ ρs ρt hσ₁ hρ).symm
       (binder_body ht htI hts' σ₁ σ₂ ρs ρt hσ₁ hρ)
 
-end HasSubstitution
-
-theorem HasSubstitution.app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+theorem app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
     (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (htI : HasIdeality Γ₁ t)
     (htI' : HasIdeality (Γ₁.extension ht) t')
@@ -110,6 +108,8 @@ theorem HasSubstitution.app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   fun _ _ σ₁ σ₂ ρs ρt hσ₁ hρ => rawInterpret_app_subst ht ht' he σ₁ σ₂ ρs ρt
     (htI _ _ hρ) (HasIdeality.bodyAction ht htI htI' _ _ hρ) (hfI _ _ hρ) (heI _ _ hρ) _
     (hfF hf _ _ hρ) (hfs σ₁ σ₂ ρs ρt hσ₁ hρ) (has σ₁ σ₂ ρs ρt hσ₁ hρ)
+
+end HasSubstitution
 
 theorem piLimit_rawExtend_sort_le (r : Level ℓ) (n : Tm_ Γ₁)
     {I : RawValue Γ₁} :

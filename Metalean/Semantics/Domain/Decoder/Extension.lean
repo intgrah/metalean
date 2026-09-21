@@ -17,7 +17,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 
 section CodeExtension
 
-open CategoryTheory MonoidalCategory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory MonoidalCategory Presheaf
 
 abbrev CodeAssignment (E : Env ζ) (ℓ : Nat) := order E ℓ ⟶ IdealAction.presheaf E ℓ
 

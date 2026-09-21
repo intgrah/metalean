@@ -16,7 +16,7 @@ import Metalean.TypeTheory.Syntactic.Substitution
 
 namespace Metalean
 
-open CategoryTheory CoherentShape CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CoherentShape CodeAssignment
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.as ⟶ E₂.as} {ℓ n : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)} {Γ₁ Γ₂ : CtxCat E₂ ℓ}

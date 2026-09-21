@@ -18,7 +18,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
-open CategoryTheory MonoidalCategory Opposite Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory MonoidalCategory Opposite Presheaf
 
 abbrev RawValuation (Γ₁ : CtxCat E ℓ) := ℕ → RawValue Γ₁
 

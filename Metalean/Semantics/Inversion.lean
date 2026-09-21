@@ -15,7 +15,7 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Δ : Ctx ζ ℓ 0 n}
 
-open CategoryTheory CoherentShape CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CoherentShape CodeAssignment Presheaf
 
 theorem DefeqStrong.ind_model_inv (ho : E.Ordered) {ι : IndSig}
     {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {ls₁ ls₂ : Fin ι.nlevels → Level ℓ}

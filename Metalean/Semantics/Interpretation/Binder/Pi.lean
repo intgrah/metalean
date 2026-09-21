@@ -17,7 +17,7 @@ import Metalean.Semantics.Interpretation.Binder.Support
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory MonoidalCategory Presheaf CodeAssignment TypeTheory TypeTheory.NaturalModel
+open CategoryTheory MonoidalCategory Presheaf CodeAssignment
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 

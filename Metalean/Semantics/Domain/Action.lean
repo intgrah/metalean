@@ -14,7 +14,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
-open CategoryTheory Opposite Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Opposite Presheaf
 
 noncomputable abbrev BasisAction.presheaf (E : Env ζ) (ℓ : Nat) := Functor.parameterizedHom (order E ℓ)
   (ΩLower.presheaf (pointedOrder E ℓ)) (Tm E ℓ)

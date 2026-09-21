@@ -16,7 +16,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 
-open CategoryTheory Presheaf IndSig TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf IndSig
 
 variable {Γ₁ Γ₂ : CtxCat E ℓ} {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
   {c : Fin (ι.nctors s)} {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}

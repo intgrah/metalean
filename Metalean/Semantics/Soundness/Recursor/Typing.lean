@@ -17,7 +17,7 @@ import Metalean.Typing.Weakening
 
 namespace Metalean
 
-open CoherentShape CodeAssignment CategoryTheory Presheaf IndSig TypeTheory TypeTheory.NaturalModel
+open CoherentShape CodeAssignment CategoryTheory Presheaf IndSig
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.as ⟶ E₂.as} {ℓ : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)}

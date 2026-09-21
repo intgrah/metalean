@@ -14,7 +14,7 @@ import Metalean.Syntax.Substitution
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ} {ι : IndSig}
   {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {ls : Fin ι.nlevels → Level ℓ}

@@ -20,7 +20,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 
 section Application
 
-open CategoryTheory MonoidalCategory Opposite Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory MonoidalCategory Opposite Presheaf
 
 variable {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 

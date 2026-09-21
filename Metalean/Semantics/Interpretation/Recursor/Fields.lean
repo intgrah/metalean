@@ -57,7 +57,7 @@ theorem SubstWFStrong.wkN {n m k : Nat} {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ
 
 namespace CoherentShape
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {Γ₁ Γ₂ : CtxCat E ℓ} {ι : IndSig} {η : Head ζ (.inductive ι)} {ls : Fin ι.nlevels → Level ℓ}
   {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len}

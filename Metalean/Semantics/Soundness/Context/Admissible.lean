@@ -13,7 +13,7 @@ import Metalean.Meta.Judgement
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {ctx : Ctx ζ ℓ 0 n} {hctx : E[ctx] ⊢ₛ ok}
   {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}

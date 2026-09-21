@@ -11,7 +11,7 @@ public import Metalean.Semantics.Interpretation.Binder.Basic
 
 namespace Metalean.CoherentShape.RawFamily
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ ΓA : CtxCat E ℓ}
   (D : CodeAssignment E ℓ)

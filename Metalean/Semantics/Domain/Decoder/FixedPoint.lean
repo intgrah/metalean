@@ -14,7 +14,7 @@ namespace Metalean.CoherentShape
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ Γ₄ : CtxCat E ℓ}
 
-open CategoryTheory Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Presheaf
 
 theorem Evaluates.isCode {g : CoherentGraph Γ₁} (hg : ∀ i, Shape.IsCode false (g.val.outs i))
     {name : Tm_ Γ₁} {x w : CoherentShape Γ₁} :

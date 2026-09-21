@@ -24,7 +24,7 @@ import Mathlib.CategoryTheory.Whiskering
 
 namespace Metalean
 
-open CategoryTheory CoherentShape CodeAssignment Presheaf TypeTheory TypeTheory.NaturalModel
+open CategoryTheory CoherentShape CodeAssignment Presheaf
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Δ : Ctx ζ₂ ℓ 0 n}
 
