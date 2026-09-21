@@ -165,9 +165,7 @@ theorem evalMax_perm {ls₁ ls₂ : List (RawLevel ℓ)} :
   (repeat' split) <;> omega
 
 @[simp] theorem eval_succN (l : RawLevel ℓ) (k : Nat) : eval ν (succN l k) = eval ν l + k := by
-  induction k with
-  | zero => rfl
-  | succ k ih => simp [succN, ih, Nat.add_assoc]
+  induction k <;> simp [succN, Nat.add_assoc, *]
 
 theorem eval_toOffset (l : RawLevel ℓ) : eval ν l = eval ν (toOffset l).1 + (toOffset l).2 := by
   induction l with

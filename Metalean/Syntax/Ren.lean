@@ -67,9 +67,7 @@ def liftN (ρ : Ren m n) : (k : Nat) → Ren (m + k) (n + k)
   cases v using Fin.lastCases <;> simp [id]
 
 @[simp] theorem liftN_id (k : Nat) : (Ren.id : Ren n n).liftN k = Ren.id := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [liftN, ih, lift_id]
+  induction k <;> simp_all!
 
 @[simp] theorem lift_comp (ρ₂ : Ren n k) (ρ₁ : Ren m n) :
     (ρ₂.comp ρ₁).lift = ρ₂.lift.comp ρ₁.lift := by
@@ -89,9 +87,7 @@ attribute [local instance] category in
 
 @[simp] theorem liftN_comp (ρ₂ : Ren n k) (ρ₁ : Ren m n) (count : Nat) :
     (ρ₂.comp ρ₁).liftN count = (ρ₂.liftN count).comp (ρ₁.liftN count) := by
-  induction count with
-  | zero => rfl
-  | succ count ih => rw [liftN, liftN, liftN, ih, lift_comp]
+  induction count <;> simp_all!
 
 @[simp] theorem wkFrom_lift (cut : Nat) (h : cut ≤ n) :
     (wkFrom cut : Ren n (n + 1)).lift =

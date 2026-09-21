@@ -90,30 +90,17 @@ def inst : RawLevel ℓ → RawLevel ℓ₁
 
 theorem inst_of_hasParam_eq_false (levelSubst : Param ℓ → RawLevel ℓ) {l : RawLevel ℓ}
     (h : l.hasParam = false) : l.inst levelSubst = l := by
-  induction l with
-  | zero => rfl
-  | succ _ ih => simp [hasParam] at h; simp [ih h]
-  | max _ _ ih₁ ih₂ | imax _ _ ih₁ ih₂ =>
-    simp [hasParam] at h
-    simp [ih₁ h.1, ih₂ h.2]
-  | param => simp [hasParam] at h
+  induction l <;> simp_all [hasParam]
+
 
 @[simp] theorem inst_id (l : RawLevel ℓ) : l.inst param = l := by
-  induction l with
-  | zero | param => rfl
-  | succ _ ih => simp [ih]
-  | max _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | imax _ _ ih₁ ih₂ => simp [ih₁, ih₂]
+  induction l <;> simp [*]
 
 @[simp] theorem inst_inst (levelSubst₁ : Param ℓ → RawLevel ℓ₁)
     (levelSubst₂ : Param ℓ₁ → RawLevel ℓ₂) (l : RawLevel ℓ) :
     (l.inst levelSubst₁).inst levelSubst₂ =
       l.inst fun p => (levelSubst₁ p).inst levelSubst₂ := by
-  induction l with
-  | zero | param => rfl
-  | succ _ ih => simp [ih]
-  | max _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | imax _ _ ih₁ ih₂ => simp [ih₁, ih₂]
+  induction l <;> simp [*]
 
 end RawLevel
 
