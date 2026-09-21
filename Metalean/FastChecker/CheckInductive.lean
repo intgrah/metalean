@@ -111,11 +111,10 @@ def checkIdx (G : FCtx) (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts)
       (fI.indexType us ps s.val hsI is i.val (hrow i))
   pure ⟨fun {_ _ _ _ I ls' σ _} hus hS hI hidx hus' hps hσ his₀ =>
     have ⟨is', hisD, hisT⟩ := TypedSpec.fixArgs hS his₀.size
-      (fts := fun i => fI.indexType us ps s.val hsI is i.val (hrow i))
       (fun e i => I.indexType (⟦ls' ·⟧) s σ e i) his₀.denotes
       (fun _ he i => hI.indexType hus hus' hps s ⟨his₀.size, he⟩ i)
       (fun _ i he => Inductive.indexType_isTypeStrong hidx i hS.wf hσ he)
-      (fun i => h i)
+      h
     ⟨is', ⟨his₀.size, hisD⟩, fun i => (hisT i).defeq⟩⟩
 
 def levelOKB (ι : IndSig) (fI : FInductive) (l : FLevel) : Bool :=
