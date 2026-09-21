@@ -68,36 +68,13 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
       checkAgainst ho hΓ (ps p) ((E.get η).block.paramType ls ps p)
     let ⟨hfds⟩ ← Fin.sequenceM fun f =>
       checkAgainst ho hΓ (fds f)
-        (((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
-          (Fin.append ps fun previous : Fin f.val =>
-            fds (previous.castLE f.isLt.le)))
+        (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
     let ⟨hrecFds⟩ ← Fin.sequenceM fun f =>
       checkAgainst ho hΓ (recFds f)
-        ((((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps
-          (Fin.append ps fds))
-    let ⟨hfieldLevels⟩ ← Fin.sequenceM fun f =>
-      (do
-        let ⟨_, hty⟩ ← infer ho hΓ (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
-        let ⟨l, h⟩ ← ensureSort ho hΓ hty
-        pure ⟨l, h⟩ :
-        Except Failure (PLift (∃ l : Level ℓ,
-          E[Γ] ⊢ₛ ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f : .sort l)))
-    let ⟨hrecFieldLevels⟩ ← Fin.sequenceM fun f =>
-      (do
-        let ⟨_, hty⟩ ←
-          infer ho hΓ (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
-        let ⟨l, h⟩ ← ensureSort ho hΓ hty
-        pure ⟨l, h⟩ :
-        Except Failure (PLift (∃ l : Level ℓ,
-          E[Γ] ⊢ₛ ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f : .sort l)))
-    let ⟨hind⟩ ← checkAgainst ho hΓ
-      (.ind η s ls ps fun index => ((E.get η).block.ctors s c).targetIndex ls ps fds index)
-      (.sort ((E.get η).block.level.inst ls))
+        (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
     pure ⟨.ind η s ls ps fun index => ((E.get η).block.ctors s c).targetIndex ls ps fds index,
-      .ctorDF (fieldLevels := fun f => (hfieldLevels f).choose)
-        (recFieldLevels := fun f => (hrecFieldLevels f).choose) hps hfds
-        hrecFds (fun f => (hfieldLevels f).choose_spec)
-        (fun f => (hrecFieldLevels f).choose_spec) hind⟩
+      (Defeq.ctorDF (fun p => (hps p).defeq) (fun f => (hfds f).defeq)
+        (fun f => (hrecFds f).defeq)).toStrongOrdered ho hΓ⟩
   | .recr η s ls l ps ms mins is maj => do
     let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed l) (.reject .recursorLevel)
     let ⟨hps⟩ ← Fin.sequenceM fun p =>
@@ -109,11 +86,10 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
     let ⟨his⟩ ← Fin.sequenceM fun i =>
       checkAgainst ho hΓ (is i) ((E.get η).block.indexType ls s ps is i)
     let ⟨hmaj⟩ ← checkAgainst ho hΓ maj (.ind η s ls ps is)
-    let ⟨hres⟩ ← checkAgainst ho hΓ (Inductive.motiveResult (ms s) is maj) (.sort l)
     pure ⟨Inductive.motiveResult (ms s) is maj,
-      .recrDF hrec hps
-        hms hmins his
-        hmaj hres⟩
+      (Defeq.recrDF hrec (fun p => (hps p).defeq) (fun s => (hms s).defeq)
+        (fun s c => (hmins s c).defeq) (fun i => (his i).defeq)
+        hmaj.defeq).toStrongOrdered ho hΓ⟩
   | .quot _ l α r => do
     let ⟨hα⟩ ← checkAgainst ho hΓ α (.sort l)
     let ⟨hr⟩ ← checkAgainst ho hΓ r (Quot.relType α)
@@ -137,8 +113,8 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
     let ⟨hβ⟩ ← checkAgainst ho hΓ β (Quot.motiveType η l α r)
     let ⟨hf⟩ ← checkAgainst ho hΓ f (Quot.minorType η l α r β)
     let ⟨he⟩ ← checkAgainst ho hΓ e (.quot η l α r)
-    let ⟨happ⟩ ← checkAgainst ho hΓ (.app β e) .prop
-    pure ⟨.app β e, .quotIndDF hα hr hβ hf he happ⟩
+    pure ⟨.app β e,
+      (Defeq.quotIndDF hα.defeq hr.defeq hβ.defeq hf.defeq he.defeq).toStrongOrdered ho hΓ⟩
   | .app e e₁ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e
     let ⟨t, t', hpi⟩ ← ensureForall ho hΓ hfn
@@ -147,45 +123,41 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
       have ⟨_, hty⟩ := hpi.regular
       hty.forallE_inv
     let ⟨hconv⟩ ← isTypeEq ho hΓ t₁ t harg.regular hinv.1
-    pure ⟨t'.inst e₁,
-      have harg₁ := hconv.convStrong harg
-      have ⟨_, ht⟩ := hinv.1
-      have ⟨_, ht'⟩ := hinv.2
-      .appDF ht ht' hpi harg₁ (ht'.inst_congr harg₁)⟩
+    pure ⟨t'.inst e₁, (hpi.defeq.appDF (hconv.convStrong harg).defeq).toStrongOrdered ho hΓ⟩
   | .lam t e' => do
-    let ⟨_, ht₁⟩ ← infer ho hΓ t
-    let ⟨l, ht⟩ ← ensureSort ho hΓ ht₁
+    let ⟨l, ht⟩ ← checkIsType ho hΓ t
     let ⟨t', he'⟩ ← infer ho (hΓ.snoc ⟨l, ht⟩) e'
     pure ⟨.forallE t t',
       have ⟨_, ht'⟩ := he'.regular
       .lamDF ht ht' ht' he' he'⟩
   | .forallE t t' => do
-    let ⟨_, ht₁⟩ ← infer ho hΓ t
-    let ⟨l, ht⟩ ← ensureSort ho hΓ ht₁
-    let ⟨_, ht₂⟩ ← infer ho (hΓ.snoc ⟨l, ht⟩) t'
-    let ⟨l₁, ht'⟩ ← ensureSort ho (hΓ.snoc ⟨l, ht⟩) ht₂
+    let ⟨l, ht⟩ ← checkIsType ho hΓ t
+    let ⟨l₁, ht'⟩ ← checkIsType ho (hΓ.snoc ⟨l, ht⟩) t'
     pure ⟨.sort (.imax l l₁), .forallEDF ht ht' ht'⟩
   | .letE t v e' => do
-    let ⟨_, ht₁⟩ ← infer ho hΓ t
-    let ⟨_, ht⟩ ← ensureSort ho hΓ ht₁
+    let ⟨_, ht⟩ ← checkIsType ho hΓ t
     let ⟨hv⟩ ← checkAgainst ho hΓ v t
     let ⟨r, hb⟩ ← infer ho hΓ (e'.inst v)
     pure ⟨r,
       have ⟨_, hr⟩ := hb.regular
       (DefeqStrong.zeta ht hv hr hb).left⟩
 
+partial def checkIsType (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
+    (hΓ : E[Γ] ⊢ₛ ok) (t : Expr ζ ℓ n) :
+    Except Failure {l : Level ℓ // E[Γ] ⊢ₛ t : .sort l} := do
+  let ⟨_, hts⟩ ← infer ho hΓ t
+  ensureSort ho hΓ hts
+
 partial def checkAgainst (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ₛ ok)
     (e t₁ : Expr ζ ℓ n) : Except Failure (PLift (E[Γ] ⊢ₛ e : t₁)) := do
-  let ⟨_, hts⟩ ← infer ho hΓ t₁
-  let ⟨l, ht⟩ ← ensureSort ho hΓ hts
+  let ⟨l, ht⟩ ← checkIsType ho hΓ t₁
   let ⟨t₂, he⟩ ← infer ho hΓ e
   let ⟨hconv⟩ ← isTypeEq ho hΓ t₂ t₁ he.regular ⟨l, ht⟩
   pure ⟨hconv.convStrong he⟩
 
 partial def isDefEqAt (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ₛ ok)
     (t e₁ e₂ : Expr ζ ℓ n) : Except Failure (PLift (E[Γ] ⊢ₛ e₁ ≡ e₂ : t)) := do
-  let ⟨_, hts⟩ ← infer ho hΓ t
-  let ⟨l, ht⟩ ← ensureSort ho hΓ hts
+  let ⟨l, ht⟩ ← checkIsType ho hΓ t
   let ⟨he₁⟩ ← checkAgainst ho hΓ e₁ t
   let ⟨he₂⟩ ← checkAgainst ho hΓ e₂ t
   isDefEq ho hΓ l t e₁ e₂ ht he₁ he₂
@@ -208,22 +180,27 @@ partial def isTypeEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[�
       have hinv₁ : E[Γ] ⊢ₛ t₃ typ ∧ E[Γ.snoc t₃] ⊢ₛ t₃' typ :=
         have ⟨_, hpi⟩ := hred₁.isType.2
         hpi.forallE_inv
-      let ⟨hdom⟩ ← isTypeEq ho hΓ t₂ t₃ hinv.1 hinv₁.1
-      have hcod₁ : E[Γ.snoc t₂] ⊢ₛ t₃' typ :=
-        have ⟨u, hcl⟩ := hinv₁.2
-        ⟨u, ((hdom.symm.snocConv ho hΓ).mp hcl.defeq).toStrongOrdered ho
-          (hΓ.snoc hinv.1)⟩
-      let ⟨hcod⟩ ← isTypeEq ho (hΓ.snoc hinv.1) t₂' t₃' hinv.2 hcod₁
-      pure ⟨hred.trans ((IsTypeEq.forallE_congr' ho hΓ hdom hcod).trans hred₁.symm)⟩
+      let ⟨hpi⟩ ← isForallEq ho hΓ t₂ t₃ t₂' t₃' hinv hinv₁
+      pure ⟨hred.trans (hpi.trans hred₁.symm)⟩
     | _, _ => do
-      let ⟨_, hts⟩ ← infer ho hΓ t
-      let ⟨l, htl⟩ ← ensureSort ho hΓ hts
-      let ⟨_, hts₁⟩ ← infer ho hΓ t₁
-      let ⟨l₁, htl₁⟩ ← ensureSort ho hΓ hts₁
+      let ⟨l, htl⟩ ← checkIsType ho hΓ t
+      let ⟨l₁, htl₁⟩ ← checkIsType ho hΓ t₁
       let ⟨rfl⟩ ← guardProofOr (l = l₁) (.reject .notDefEq)
       let ⟨hc⟩ ← isDefEq ho hΓ (.succ l) (.sort l) t t₁
         .sortDF htl htl₁
       pure ⟨.ofDefEq hc⟩
+
+partial def isForallEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
+    (hΓ : E[Γ] ⊢ₛ ok) (t₁ t₂ : Expr ζ ℓ n) (t₁' t₂' : Expr ζ ℓ (n + 1))
+    (ht₁ : E[Γ] ⊢ₛ t₁ typ ∧ E[Γ.snoc t₁] ⊢ₛ t₁' typ)
+    (ht₂ : E[Γ] ⊢ₛ t₂ typ ∧ E[Γ.snoc t₂] ⊢ₛ t₂' typ) :
+    Except Failure (PLift (E[Γ] ⊢ₛ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ)) := do
+  let ⟨hdom⟩ ← isTypeEq ho hΓ t₁ t₂ ht₁.1 ht₂.1
+  have hcod₂ : E[Γ.snoc t₁] ⊢ₛ t₂' typ :=
+    have ⟨u, hcl⟩ := ht₂.2
+    ⟨u, ((hdom.symm.snocConv ho hΓ).mp hcl.defeq).toStrongOrdered ho (hΓ.snoc ht₁.1)⟩
+  let ⟨hcod⟩ ← isTypeEq ho (hΓ.snoc ht₁.1) t₁' t₂' ht₁.2 hcod₂
+  pure ⟨IsTypeEq.forallE_congr' ho hΓ hdom hcod⟩
 
 partial def isDefEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ₛ ok)
     (l : Level ℓ) (t e₁ e₂ : Expr ζ ℓ n) (ht : E[Γ] ⊢ₛ t : .sort l)
@@ -377,16 +354,9 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨rfl⟩ ← guardProofOr (l₁ = l₂) (.reject .notDefEq)
     pure ⟨DefeqStrong.retype ho hΓ .sortDF he⟩
   | .forallE t₂ t₂', .forallE t₃ t₃' => fun he he₁ => do
-    have hinv := he.forallE_inv
-    have hinv₁ := he₁.forallE_inv
-    let ⟨hdom⟩ ← isTypeEq ho hΓ t₂ t₃ hinv.1 hinv₁.1
-    have hcod₁ : E[Γ.snoc t₂] ⊢ₛ t₃' typ :=
-      have ⟨u, hcl⟩ := hinv₁.2
-      ⟨u, ((hdom.symm.snocConv ho hΓ).1 hcl.defeq).toStrongOrdered ho
-        (hΓ.snoc hinv.1)⟩
-    let ⟨hcod⟩ ← isTypeEq ho (hΓ.snoc hinv.1) t₂' t₃' hinv.2 hcod₁
+    let ⟨hpi⟩ ← isForallEq ho hΓ t₂ t₃ t₂' t₃' he.forallE_inv he₁.forallE_inv
     pure ⟨by
-      have ⟨_, hpi⟩ := (hdom.forallE_congr' ho hΓ hcod).sort_uniq ho hΓ
+      have ⟨_, hpi⟩ := hpi.sort_uniq ho hΓ
       exact DefeqStrong.retype ho hΓ hpi he⟩
   | .lam t₂ b, .lam t₃ b₁ => fun he he₁ => do
     have ht₂ : E[Γ] ⊢ₛ t₂ typ :=
@@ -401,40 +371,23 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨tb, hb⟩ ← infer ho (hΓ.snoc ht₂) b
     let ⟨tb₁, hb₁⟩ ← infer ho (hΓ.snoc ht₂) b₁
     let ⟨hbt⟩ ← isTypeEq ho (hΓ.snoc ht₂) tb₁ tb hb₁.regular hb.regular
-    let ⟨_, htbty⟩ ← infer ho (hΓ.snoc ht₂) tb
-    let ⟨lb, htb⟩ ← ensureSort ho (hΓ.snoc ht₂) htbty
+    let ⟨lb, htb⟩ ← checkIsType ho (hΓ.snoc ht₂) tb
     let ⟨hbEq⟩ ← isDefEq ho (hΓ.snoc ht₂) lb tb b b₁ htb hb (hbt.convStrong hb₁)
     pure ⟨by
       have ⟨_, hdomStrong⟩ := hdom.sort_uniq ho hΓ
-      have ⟨_, htbl⟩ := hb.regular
-      have htbl₁ := ((hdom.snocConv ho hΓ).mp htbl.defeq).toStrongOrdered ho (hΓ.snoc ht₃)
-      have hbEq₁ := ((hdom.snocConv ho hΓ).mp hbEq.defeq).toStrongOrdered ho (hΓ.snoc ht₃)
-      exact DefeqStrong.retype ho hΓ (.lamDF hdomStrong htbl htbl₁ hbEq hbEq₁) he⟩
+      exact DefeqStrong.retype ho hΓ
+        ((Defeq.lamDF hdomStrong.defeq hbEq.defeq).toStrongOrdered ho hΓ) he⟩
   | .lam t₂ b, e₁ => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e₁
     let ⟨t₃, t₃', hpi⟩ ← ensureForall ho hΓ hfn
-    have hinv : E[Γ] ⊢ₛ t₃ typ ∧ E[Γ.snoc t₃] ⊢ₛ t₃' typ :=
-      have ⟨_, hty⟩ := hpi.regular
-      hty.forallE_inv
-    have heta : E[Γ] ⊢ₛ .lam t₃ (.app e₁.wk (.var (Fin.last n))) ≡ e₁ : .forallE t₃ t₃' :=
-      have ⟨_, ht₃⟩ := hinv.1
-      have ⟨_, ht₃'⟩ := hinv.2
-      .eta ht₃ ht₃' (by simpa [Expr.wk] using ht₃.wk t₃)
-        (by simpa [Expr.wk] using hpi.wk t₃) hpi
+    have heta := hpi.defeq.eta.toStrongOrdered ho hΓ
     let ⟨hlam⟩ ← isDefEqAt ho hΓ (.forallE t₃ t₃') (.lam t₂ b)
       (.lam t₃ (.app e₁.wk (.var (Fin.last n))))
     pure ⟨DefeqStrong.retype ho hΓ (hlam.trans heta) he⟩
   | e, .lam t₂ b => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e
     let ⟨t₃, t₃', hpi⟩ ← ensureForall ho hΓ hfn
-    have hinv : E[Γ] ⊢ₛ t₃ typ ∧ E[Γ.snoc t₃] ⊢ₛ t₃' typ :=
-      have ⟨_, hty⟩ := hpi.regular
-      hty.forallE_inv
-    have heta : E[Γ] ⊢ₛ .lam t₃ (.app e.wk (.var (Fin.last n))) ≡ e : .forallE t₃ t₃' :=
-      have ⟨_, ht₃⟩ := hinv.1
-      have ⟨_, ht₃'⟩ := hinv.2
-      .eta ht₃ ht₃' (by simpa [Expr.wk] using ht₃.wk t₃)
-        (by simpa [Expr.wk] using hpi.wk t₃) hpi
+    have heta := hpi.defeq.eta.toStrongOrdered ho hΓ
     let ⟨hlam⟩ ← isDefEqAt ho hΓ (.forallE t₃ t₃')
       (.lam t₃ (.app e.wk (.var (Fin.last n)))) (.lam t₂ b)
     pure ⟨DefeqStrong.retype ho hΓ (heta.symm.trans hlam) he⟩
@@ -444,9 +397,7 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨rfl⟩ ← guardProofOr (nlevels = nlevels₁) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (η = η₁) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (ls = ls₁) (.reject .notDefEq)
-    let ⟨_, htype⟩ ← infer ho hΓ ((E.get η).constType.instL ls).wkClosed
-    let ⟨_, hty⟩ ← ensureSort ho hΓ htype
-    pure ⟨DefeqStrong.retype ho hΓ (.constDF hty) he⟩
+    pure ⟨he⟩
   | .ind η s ls ps is, .ind η₁ s₁ ls₁ ps₁ is₁ => fun he _ => do
     let ⟨rfl, rfl⟩ ← η.indDecEq? η₁
     let ⟨rfl⟩ ← guardProofOr (s = s₁) (.reject .notDefEq)
@@ -465,49 +416,16 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
       isDefEqAt ho hΓ ((E.get η).block.paramType ls ps p) (ps p) (ps₁ p)
     let ⟨hfds⟩ ← Fin.sequenceM fun f =>
       isDefEqAt ho hΓ
-        (((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
-          (Fin.append ps fun previous : Fin f.val =>
-            fds (previous.castLE f.isLt.le)))
+        (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
         (fds f) (fds₁ f)
     let ⟨hrecFds⟩ ← Fin.sequenceM fun f =>
       isDefEqAt ho hΓ
-        ((((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps
-          (Fin.append ps fds))
-        (recFds f) (recFds₁ f)
-    let ⟨hfieldLevels⟩ ← Fin.sequenceM fun f => do
-      let ⟨_, hty⟩ ←
-        infer ho hΓ (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
-      let ⟨l, _⟩ ← ensureSort ho hΓ hty
-      let ⟨hd⟩ ← isDefEqAt ho hΓ (.sort l)
-        (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
-        (((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f)
-      pure (⟨l, hd⟩ : PLift (∃ l : Level ℓ,
-        E[Γ] ⊢ₛ ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f ≡
-          ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f :
-          .sort l))
-    let ⟨hrecFieldLevels⟩ ← Fin.sequenceM fun f => do
-      let ⟨_, hty⟩ ←
-        infer ho hΓ
-          (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
-      let ⟨l, _⟩ ← ensureSort ho hΓ hty
-      let ⟨hd⟩ ← isDefEqAt ho hΓ (.sort l)
         (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
-        (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f)
-      pure (⟨l, hd⟩ : PLift (∃ l : Level ℓ,
-        E[Γ] ⊢ₛ ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f ≡
-          ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f :
-          .sort l))
-    let ⟨hind⟩ ← isDefEqAt ho hΓ (.sort ((E.get η).block.level.inst ls))
-      (.ind η s ls ps fun index =>
-        ((E.get η).block.ctors s c).targetIndex ls ps fds index)
-      (.ind η s ls ps₁ fun index =>
-        ((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁ index)
+        (recFds f) (recFds₁ f)
     let ⟨rfl⟩ ← guardProofOr (ls = ls₁) (.reject .notDefEq)
     pure ⟨DefeqStrong.retype ho hΓ
-      (.ctorDF (fieldLevels := fun f => (hfieldLevels f).choose)
-        (recFieldLevels := fun f => (hrecFieldLevels f).choose) hps hfds
-        hrecFds (fun f => (hfieldLevels f).choose_spec)
-        (fun f => (hrecFieldLevels f).choose_spec) hind) he⟩
+      ((Defeq.ctorDF (fun p => (hps p).defeq) (fun f => (hfds f).defeq)
+        (fun f => (hrecFds f).defeq)).toStrongOrdered ho hΓ) he⟩
   | .recr η s ls l ps ms mins is maj, .recr η₁ s₁ ls₁ l₁ ps₁ ms₁ mins₁ is₁ maj₁ => fun he _ => do
     let ⟨rfl, rfl⟩ ← η.indDecEq? η₁
     let ⟨rfl⟩ ← guardProofOr (s = s₁) (.reject .notDefEq)
@@ -522,14 +440,12 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨his⟩ ← Fin.sequenceM fun i =>
       isDefEqAt ho hΓ ((E.get η).block.indexType ls s ps is i) (is i) (is₁ i)
     let ⟨hmaj⟩ ← isDefEqAt ho hΓ (.ind η s ls ps is) maj maj₁
-    let ⟨hres⟩ ← isDefEqAt ho hΓ (.sort l)
-      (Inductive.motiveResult (ms s) is maj)
-      (Inductive.motiveResult (ms₁ s) is₁ maj₁)
     let ⟨rfl⟩ ← guardProofOr (l = l₁) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (ls = ls₁) (.reject .notDefEq)
     pure ⟨DefeqStrong.retype ho hΓ
-      (.recrDF hrec hps hms
-        hmins his hmaj hres) he⟩
+      ((Defeq.recrDF hrec (fun p => (hps p).defeq) (fun s => (hms s).defeq)
+        (fun s c => (hmins s c).defeq) (fun i => (his i).defeq)
+        hmaj.defeq).toStrongOrdered ho hΓ) he⟩
   | .quot η l₁ α r, .quot η₁ l₂ α₁ r₁ => fun he _ => do
     let ⟨hα⟩ ← isDefEqAt ho hΓ (.sort l₁) α α₁
     let ⟨hr⟩ ← isDefEqAt ho hΓ (Quot.relType α) r r₁
@@ -561,10 +477,10 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨hβ⟩ ← isDefEqAt ho hΓ (Quot.motiveType η l₁ α r) β β₁
     let ⟨hf⟩ ← isDefEqAt ho hΓ (Quot.minorType η l₁ α r β) f f₁
     let ⟨ha⟩ ← isDefEqAt ho hΓ (.quot η l₁ α r) a a₁
-    let ⟨happ⟩ ← isDefEqAt ho hΓ .prop (.app β a) (.app β₁ a₁)
     let ⟨rfl⟩ ← guardProofOr (l₁ = l₂) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (η = η₁) (.reject .notDefEq)
-    pure ⟨DefeqStrong.retype ho hΓ (.quotIndDF hα hr hβ hf ha happ) he⟩
+    pure ⟨DefeqStrong.retype ho hΓ
+      ((Defeq.quotIndDF hα.defeq hr.defeq hβ.defeq hf.defeq ha.defeq).toStrongOrdered ho hΓ) he⟩
   | .app f a, .app f₁ a₁ => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ f
     let ⟨t₂, t₂', hpi⟩ ← ensureForall ho hΓ hfn
@@ -572,8 +488,7 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨t₃, t₃', hpi₁⟩ ← ensureForall ho hΓ hfn₁
     let ⟨hpiEq⟩ ← isTypeEq ho hΓ (.forallE t₃ t₃') (.forallE t₂ t₂')
       hpi₁.regular hpi.regular
-    let ⟨_, hπty⟩ ← infer ho hΓ (.forallE t₂ t₂')
-    let ⟨lπ, hπ⟩ ← ensureSort ho hΓ hπty
+    let ⟨lπ, hπ⟩ ← checkIsType ho hΓ (.forallE t₂ t₂')
     let ⟨hfeq⟩ ← isDefEq ho hΓ lπ (.forallE t₂ t₂') f f₁ hπ hpi (hpiEq.convStrong hpi₁)
     have hinv : E[Γ] ⊢ₛ t₂ typ ∧ E[Γ.snoc t₂] ⊢ₛ t₂' typ :=
       have ⟨_, hty⟩ := hpi.regular
@@ -582,41 +497,33 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨hac⟩ ← isTypeEq ho hΓ ta t₂ harg.regular hinv.1
     let ⟨ta₁, harg₁⟩ ← infer ho hΓ a₁
     let ⟨hac₁⟩ ← isTypeEq ho hΓ ta₁ t₂ harg₁.regular hinv.1
-    let ⟨_, hdomty⟩ ← infer ho hΓ t₂
-    let ⟨ldom, hdom⟩ ← ensureSort ho hΓ hdomty
+    let ⟨ldom, hdom⟩ ← checkIsType ho hΓ t₂
     let ⟨haeq⟩ ← isDefEq ho hΓ ldom t₂ a a₁ hdom
       (hac.convStrong harg) (hac₁.convStrong harg₁)
-    pure ⟨
-      have ⟨⟨_, ht₂⟩, ⟨_, ht₂'⟩⟩ := hinv
-      DefeqStrong.retype ho hΓ
-        (.appDF ht₂ ht₂' hfeq haeq (ht₂'.inst_congr haeq)) he⟩
+    pure ⟨DefeqStrong.retype ho hΓ
+      ((hfeq.defeq.appDF haeq.defeq).toStrongOrdered ho hΓ) he⟩
   | _, _ => fun _ _ => throw (.reject .notDefEq)
 
 end
 
-def checkIsType (ho : E.Ordered) (t : Expr ζ ℓ 0) :
-    Except Failure {l : Level ℓ // E[.nil] ⊢ₛ t : .sort l} := do
-  let ⟨_, hts⟩ ← infer ho .nil t
-  ensureSort ho .nil hts
-
 def isProp (ho : E.Ordered) (t : Expr ζ ℓ 0) : Except Failure Bool := do
-  let ⟨l, _⟩ ← checkIsType ho t
+  let ⟨l, _⟩ ← checkIsType ho .nil t
   pure (decide (l = .zero))
 
 def checkAxiom (ho : E.Ordered) (t : Expr ζ ℓ 0) :
     Except Failure (PLift (Entry.WF E (.axiom t))) := do
-  let ⟨l, ht⟩ ← checkIsType ho t
+  let ⟨l, ht⟩ ← checkIsType ho .nil t
   pure ⟨.axiom ⟨l, ht.defeq⟩⟩
 
 def checkDef (ho : E.Ordered) (t e : Expr ζ ℓ 0) :
     Except Failure (PLift (Entry.WF E (.def t e))) := do
-  let ⟨l, ht⟩ ← checkIsType ho t
+  let ⟨l, ht⟩ ← checkIsType ho .nil t
   let ⟨hvalue⟩ ← checkAgainst ho .nil e t
   pure ⟨.def ⟨l, ht.defeq⟩ hvalue.defeq⟩
 
 def checkOpaque (ho : E.Ordered) (t e : Expr ζ ℓ 0) :
     Except Failure (PLift (Entry.WF E (.opaque t))) := do
-  let ⟨l, ht⟩ ← checkIsType ho t
+  let ⟨l, ht⟩ ← checkIsType ho .nil t
   let ⟨hvalue⟩ ← checkAgainst ho .nil e t
   pure ⟨.opaque hvalue.defeq ⟨l, ht.defeq⟩⟩
 

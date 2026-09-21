@@ -23,8 +23,7 @@ def checkTele (ho : E.Ordered) {P : Level ℓ → Prop} [DecidablePred P]
   | .nil => pure ⟨.nil⟩
   | .snoc Δ t => do
     let ⟨hΔ⟩ ← checkTele ho hΓ Δ
-    let ⟨_, hty⟩ ← infer ho (CtxWFStrong.append ho hΓ hΔ) t
-    let ⟨l, ht⟩ ← ensureSort ho (CtxWFStrong.append ho hΓ hΔ) hty
+    let ⟨l, ht⟩ ← checkIsType ho (CtxWFStrong.append ho hΓ hΔ) t
     let ⟨hP⟩ ← guardProofOr (P l) (.reject .fieldLevel)
     pure ⟨.snoc hΔ ⟨l, ht.defeq, hP⟩⟩
 
@@ -104,8 +103,7 @@ def inferOrdLevels (ho : E.Ordered) (pre : PreInductive ζ ι) :
     simpa using CtxWFStrong.append (P := fun _ => True) ho Tele.Forall.nil hparams
   Fin.mapM fun s => Fin.mapM fun c => Fin.mapM fun f => do
     let ⟨hΓf⟩ ← checkCtx ho hΓp ((pre.ctors s c).ordinaryTeleAux f.val (Nat.le_of_lt f.isLt))
-    let ⟨_, hty⟩ ← infer ho hΓf ((pre.ctors s c).ordinary f)
-    let ⟨l, _⟩ ← ensureSort ho hΓf hty
+    let ⟨l, _⟩ ← checkIsType ho hΓf ((pre.ctors s c).ordinary f)
     pure l
 
 def checkPreInductive (ho : E.Ordered) (pre : PreInductive ζ ι) :
