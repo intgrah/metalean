@@ -12,7 +12,7 @@ public import Metalean.Semantics.Interpretation.Family.Basic
 
 namespace Metalean.CoherentShape
 
-open CategoryTheory Opposite TypeTheory TypeTheory.NaturalModel
+open CategoryTheory Opposite
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
