@@ -32,6 +32,6 @@ theorem eval_le_of_imax_le {ν : Param ℓ → Nat} (h : l₁.imax l₂ ≤ l₂
 
 instance : DecidableLE (Level ℓ) := fun u v =>
   Quotient.recOnSubsingleton₂ u v fun a b =>
-    decidable_of_iff (a ≤ b) ⟨fun h => h, fun h => h⟩
+    decidable_of_iff (a ≤ b) Iff.rfl
 
 end Metalean.Level

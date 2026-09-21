@@ -25,18 +25,18 @@ instance : DecidableEq (Level ℓ) := fun u v =>
   Quotient.recOnSubsingleton₂ u v fun a b =>
     decidable_of_iff (a ≈ b) ⟨Quotient.sound, Quotient.exact⟩
 
-def zero : Level ℓ := ⟦RawLevel.zero⟧
-def param (p : Param ℓ) : Level ℓ := ⟦RawLevel.param p⟧
+def zero : Level ℓ := ⟦.zero⟧
+def param (p : Param ℓ) : Level ℓ := ⟦.param p⟧
 def succ (u : Level ℓ) : Level ℓ :=
-  Quotient.liftOn u (⟦RawLevel.succ ·⟧)
+  Quotient.liftOn u (⟦.succ ·⟧)
     fun _ _ h => Quotient.sound h.succ
 
 def max (u v : Level ℓ) : Level ℓ :=
-  Quotient.liftOn₂ u v (⟦RawLevel.max · ·⟧)
+  Quotient.liftOn₂ u v (⟦.max · ·⟧)
     fun _ _ _ _ ha hb => Quotient.sound (ha.max hb)
 
 def imax (u v : Level ℓ) : Level ℓ :=
-  Quotient.liftOn₂ u v (⟦RawLevel.imax · ·⟧)
+  Quotient.liftOn₂ u v (⟦.imax · ·⟧)
     fun _ _ _ _ ha hb => Quotient.sound (ha.imax hb)
 
 def one : Level ℓ := succ zero
@@ -46,13 +46,12 @@ def ofNat : Nat → Level ℓ
   | n + 1 => succ (ofNat n)
 
 def eval (ν : Param ℓ → Nat) (u : Level ℓ) : Nat :=
-  Quotient.liftOn u (RawLevel.eval ν) fun _ _ h => h.eval ν
+  Quotient.liftOn u (·.eval ν) fun _ _ h => h.eval ν
 
 @[ext] theorem ext {u v : Level ℓ} (h : ∀ ν, eval ν u = eval ν v) : u = v := by
-  induction u using Quotient.inductionOn with
-  | h a =>
-    induction v using Quotient.inductionOn with
-    | h b => exact Quotient.sound (RawLevel.Equiv.of_eval h)
+  rcases u
+  rcases v
+  exact Quotient.sound (RawLevel.Equiv.of_eval h)
 
 @[simp] theorem eval_zero (ν : Param ℓ → Nat) : eval ν zero = 0 := rfl
 @[simp] theorem eval_param (ν : Param ℓ → Nat) (p : Param ℓ) : eval ν (param p) = ν p := rfl
@@ -64,22 +63,20 @@ def eval (ν : Param ℓ → Nat) (u : Level ℓ) : Nat :=
 
 @[simp] theorem eval_max (ν : Param ℓ → Nat) (u v : Level ℓ) :
     eval ν (u.max v) = Nat.max (eval ν u) (eval ν v) := by
-  obtain ⟨u⟩ := u
-  obtain ⟨v⟩ := v
+  rcases u
+  rcases v
   rfl
 
 @[simp] theorem eval_imax (ν : Param ℓ → Nat) (u v : Level ℓ) :
     eval ν (u.imax v) = Nat.imax (eval ν u) (eval ν v) := by
-  obtain ⟨u⟩ := u
-  obtain ⟨v⟩ := v
+  rcases u
+  rcases v
   rfl
 
 @[simp] theorem eval_one (ν : Param ℓ → Nat) : eval ν (one : Level ℓ) = 1 := rfl
 
 @[simp] theorem eval_ofNat (ν : Param ℓ → Nat) (n : Nat) : (ofNat n).eval ν = n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [ofNat, ih]
+  induction n <;> simp! [*]
 
 @[simp] theorem succ_ne_zero (u : Level ℓ) : u.succ ≠ zero :=
   fun h => by simpa using congrArg (eval fun _ => 0) h
@@ -100,7 +97,7 @@ private theorem eval_instRaw (σ : Param ℓ → Level ℓ₁) (ν : Param ℓ�
   induction u <;> simp! [*]
 
 def inst (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) : Level ℓ₁ :=
-  Quotient.liftOn u (instRaw σ) fun a b h => ext fun ν => by
+  u.liftOn (instRaw σ) fun a b h => ext fun ν => by
     rw [eval_instRaw, eval_instRaw]
     exact h.eval _
 
@@ -117,24 +114,24 @@ theorem mk_inst (σ : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
 
 @[simp] theorem inst_succ (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) :
     u.succ.inst σ = (u.inst σ).succ := by
-  obtain ⟨u⟩ := u
+  rcases u
   rfl
 
 @[simp] theorem inst_max (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :
     (u.max v).inst σ = (u.inst σ).max (v.inst σ) := by
-  obtain ⟨u⟩ := u
-  obtain ⟨v⟩ := v
+  rcases u
+  rcases v
   rfl
 
 @[simp] theorem inst_imax (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :
     (u.imax v).inst σ = (u.inst σ).imax (v.inst σ) := by
-  obtain ⟨u⟩ := u
-  obtain ⟨v⟩ := v
+  rcases u
+  rcases v
   rfl
 
 theorem eval_inst (σ : Param ℓ → Level ℓ₁) (ν : Param ℓ₁ → Nat) (u : Level ℓ) :
     eval ν (u.inst σ) = eval (eval ν ∘ σ) u := by
-  obtain ⟨u⟩ := u
+  rcases u with ⟨u⟩
   exact eval_instRaw σ ν u
 
 @[simp] theorem inst_id (u : Level ℓ) : u.inst param = u := by
