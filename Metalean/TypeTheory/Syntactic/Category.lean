@@ -76,6 +76,17 @@ def snoc (σ : Γ₁ ⟶ Γ₂) {e : Expr ζ ℓ Γ₁.len} {t : Expr ζ ℓ Γ�
   subst := σ.subst.extend e
   typed := σ.typed.extend he
 
+theorem exists_snoc {t : Expr ζ ℓ Γ₂.len} (ht : E[Γ₂.ctx] ⊢ₛ t typ)
+    (σ : Γ₁ ⟶ Γ₂.snoc ht) :
+    ∃ (τ : Γ₁ ⟶ Γ₂) (e : Expr ζ ℓ Γ₁.len) (he : E[Γ₁.ctx] ⊢ₛ e : t.subst τ.subst),
+      σ = τ.snoc ht he :=
+  let τ : Γ₁ ⟶ Γ₂ := ⟨fun v => σ.subst v.castSucc, (SubstWFStrong.wk t Γ₂.wf).comp σ.typed⟩
+  have he : E[Γ₁.ctx] ⊢ₛ σ.subst (Fin.last Γ₂.len) : t.subst τ.subst := by
+    have h := σ.typed (Fin.last Γ₂.len)
+    rw [Ctx.get_last, Expr.wk_subst] at h
+    exact h
+  ⟨τ, _, he, Hom.ext (Fin.snoc_init_self σ.subst).symm⟩
+
 def one {t e : Expr ζ ℓ Γ₂.len} (ht : E[Γ₂.ctx] ⊢ₛ t typ) (he : E[Γ₂.ctx] ⊢ₛ e : t) :
     Γ₂ ⟶ Γ₂.snoc ht where
   subst := Subst.id.extend e
@@ -121,8 +132,6 @@ instance : Congruence (homRel E ℓ) where
 
 end RawCtx
 
-section Quotient
-
 abbrev CtxCat (E : Env ζ) (ℓ : Nat) := Quotient (RawCtx.homRel E ℓ)
 
 abbrev RawCtx.toCtx : RawCtx E ℓ ⥤ CtxCat E ℓ := Quotient.functor (RawCtx.homRel E ℓ)
@@ -137,8 +146,8 @@ def CtxCat.toNil (Γ : CtxCat E ℓ) : Γ ⟶ CtxCat.nil E ℓ :=
   RawCtx.toCtx.map ⟨Fin.elim0, fun v => v.elim0⟩
 
 theorem CtxCat.hom_nil_eq {Γ : CtxCat E ℓ} (σ₁ σ₂ : Γ ⟶ CtxCat.nil E ℓ) : σ₁ = σ₂ := by
-  induction σ₁ using Quot.ind
-  induction σ₂ using Quot.ind
+  rcases σ₁
+  rcases σ₂
   exact congrArg _ (RawCtx.Hom.ext (funext fun v => v.elim0))
 
 instance : HasTerminal (CtxCat E ℓ) :=
@@ -155,7 +164,5 @@ def RawCtx.Hom.convert (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
 abbrev CtxCat.extension (Γ : CtxCat E ℓ) {t : Expr ζ ℓ Γ.as.len}
     {u : Level ℓ} (ht : E[Γ.as.ctx] ⊢ₛ t : .sort u) : CtxCat E ℓ :=
   ⟨Γ.as.snoc ⟨u, ht⟩⟩
-
-end Quotient
 
 end Metalean

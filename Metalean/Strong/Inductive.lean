@@ -219,16 +219,6 @@ theorem WFStrong.weakenEnv {entry : Entry ζ sig} :
       congr(Inductive.IdxWFStrong _ _ $(Ctx.map_append (.step .refl) Γ _) _ _ _ _).mp
         his.weakenEnv⟩
 
-theorem WFStrong.instantiatedTelescope
-    {fd : RecField ζ ι nfields arity s}
-    (h : fd.WFStrong E I Δ)
-    {Γ : Ctx ζ ℓ 0 n}
-    {P : Level ℓ → Prop}
-    (hls : ∀ {level}, I.LevelOK level → P (level.inst ls))
-    (hσ : E[Γ] ⊢ₛ σ ⊣ Δ.instL ls) :
-    WFTeleStrong E P Γ (fd.instantiatedTelescope ls σ) :=
-  (h.tele.instLevel ls hls).substitution hσ
-
 theorem WFStrong.instantiatedIndices
     {fd : RecField ζ ι nfields arity s}
     (h : fd.WFStrong E I Δ)
@@ -270,8 +260,7 @@ theorem WFStrong.instantiatedType
   intro hΓ hps hσ
   cases hhead
   have ⟨telescope, is⟩ := fd
-  have htele' := h.instantiatedTelescope (P := fun _ => True)
-    (fun _ => trivial) hσ
+  have htele' := (h.tele.instLevel (Q := fun _ => True) ls fun _ => trivial).substitution hσ
   have hΓtele := htele'.appendCtxWFStrong hΓ
   have his := (h.instantiatedIndices hσparams · hσ)
   have hpsWk p :
@@ -282,8 +271,6 @@ theorem WFStrong.instantiatedType
   exact Ctx.pi_isTypeStrong hΓtele <| DefeqStrong.indDF hpsWk his
 
 end RecField
-
-section Constructors
 
 variable {fds fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
 
@@ -320,13 +307,13 @@ include tr in
 theorem WF.toStrong
     (hps : WFTeleStrong E (fun _ => True) .nil I.params)
     (h : ctor.WF E I) :
-    ctor.WFStrong E I := by
+    ctor.WFStrong E I :=
   have ⟨hfields, hfieldTele⟩ := h.ordinaryToStrongAux tr hps
     csig.nfields le_rfl
   have hΓparams : E[I.params] ⊢ₛ ok := by
     simpa using hps.appendCtxWFStrong .nil
   have hΓfields := hfieldTele.appendCtxWFStrong hΓparams
-  exact {
+  {
     ordinary := hfields
     recursive := fun f => (h.recursive f).toStrong tr hΓfields
     targetIndices := h.targetIndices.toStrong tr hΓfields
@@ -342,62 +329,27 @@ theorem WFStrong.weakenEnv
       (h.ordinary f).weakenEnv
   recursive f :=
     congr(RecField.WFStrong _ _ $((Ctx.map_append (.step .refl) I.params _).trans
-      congr(_ ++ $(Ctor.ordinaryTele_map (.step .refl) ctor))) _).mp
+      congr(_ ++ $(Ctor.ordinaryTeleAux_map (.step .refl) ctor _ _))) _).mp
       (h.recursive f).weakenEnv
   targetIndices :=
     congr(Inductive.IdxWFStrong _ _ $((Ctx.map_append (.step .refl) I.params _).trans
-      congr(_ ++ $(Ctor.ordinaryTele_map (.step .refl) ctor))) _ _ _ _).mp
+      congr(_ ++ $(Ctor.ordinaryTeleAux_map (.step .refl) ctor _ _))) _ _ _ _).mp
       h.targetIndices.weakenEnv
-
-theorem ordinarySubstWFStrong
-    {count : Nat} (hcount : count ≤ csig.nfields)
-    {previous : Fin count → Expr ζ ℓ n} :
-    (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
-    (∀ f : Fin count,
-      E[Γ] ⊢ₛ previous f :
-        ((ctor.ordinaryType (f.castLE hcount)).instL ls).subst
-          (Fin.append ps fun earlier : Fin f.val =>
-            previous (earlier.castLE f.isLt.le))) →
-    E[Γ] ⊢ₛ Fin.append ps previous ⊣
-      Ctx.instL ls (I.params ++
-        ctor.ordinaryTeleAux count hcount) := by
-  intro hps hprevious v
-  rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
-  cases v using Fin.addCases with
-  | left p =>
-    simpa [Inductive.paramType] using
-      hps p
-  | right f =>
-    have hb : ι.nparams ≤ (Fin.natAdd ι.nparams f).val := by
-      simp
-    rw [Ctx.entry_append_right I.params _ (by omega) hb (by omega)]
-    simpa using hprevious f
-
-theorem targetSubstWFStrong
-    {fds : Fin csig.nfields → Expr ζ ℓ n} :
-    (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
-    (∀ f, E[Γ] ⊢ₛ fds f :
-      ((ctor.ordinaryType f).instL ls).subst
-        (Fin.append ps fun previous : Fin f.val =>
-          fds (previous.castLE f.isLt.le))) →
-    E[Γ] ⊢ₛ Fin.append ps fds ⊣
-      Ctx.instL ls (I.params ++ ctor.ordinaryTele) :=
-  ordinarySubstWFStrong le_rfl
 
 theorem WFStrong.ordinaryFieldExprStrong (hctor : ctor.WFStrong E I)
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     (∀ f, E[Γ] ⊢ₛ fds f :
-      ((ctor.ordinaryType f).instL ls).subst
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ₛ ctor.ordinaryFieldExpr ls ps fds f :
       .sort ((ctor.ordinary f).level.inst ls) := by
   intro hps hfields
-  have hσ := ordinarySubstWFStrong f.isLt.le hps
+  have hσ := Ctor.forall_ordinarySubst f.isLt.le hps
     fun prior => hfields (prior.castLE f.isLt.le)
   have htype := ((hctor.ordinary f).typeExact.instLevel ls).substitution hσ
-  simpa [Ctor.ordinaryFieldExpr, Ctor.ordinaryType, Expr.instL] using htype
+  simpa! [ordinaryFieldExpr] using htype
 
 theorem WFStrong.recursiveFieldExprStrong (hctor : ctor.WFStrong E I)
     (hhead : (E.get η).block = I)
@@ -405,15 +357,15 @@ theorem WFStrong.recursiveFieldExprStrong (hctor : ctor.WFStrong E I)
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
     (∀ f, E[Γ] ⊢ₛ fds f :
-      ((ctor.ordinaryType f).instL ls).subst
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ₛ ctor.recursiveFieldExpr η ls ps fds f typ :=
   fun hΓ hps hfields =>
     (hctor.recursive f).instantiatedType hhead (by simp) hΓ hps
-      (targetSubstWFStrong hps hfields)
+      (Ctor.forall_ordinarySubst le_rfl hps hfields)
 
-private theorem WFStrong.ordinaryTeleAux
+theorem WFStrong.ordinaryTeleAux
     (h : ctor.WFStrong E I)
     (count : Nat) (hcount : count ≤ csig.nfields) :
     WFTeleStrong E I.LevelOK I.params
@@ -425,26 +377,13 @@ private theorem WFStrong.ordinaryTeleAux
     exact .snoc (ih (by omega))
       ⟨_, hfield.levelOK, hfield.typeExact⟩
 
-private theorem WFStrong.ordinaryFieldTeleAux
-    (h : ctor.WFStrong E I)
-    {Q : Level ℓ → Prop}
-    (hls : ∀ {level}, I.LevelOK level → Q (level.inst ls))
-    (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p)
-    (count : Nat) (hcount : count ≤ csig.nfields) :
-    WFTeleStrong E Q Γ
-      (ctor.ordinaryFieldTeleAux η ls ps count hcount) := by
-  have hσ := (Inductive.paramSubstEqStrong hps).left
-  have htele := (h.ordinaryTeleAux count hcount).instLevel ls hls
-  have htele := htele.substitution hσ
-  exact htele
-
 theorem WFStrong.ordinaryFieldTele
     (h : ctor.WFStrong E I)
     (hps : ∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) :
     WFTeleStrong E (fun _ => True) Γ
       (ctor.ordinaryFieldTele η ls ps) :=
-  h.ordinaryFieldTeleAux (fun _ => trivial) hps
-    csig.nfields le_rfl
+  (((h.ordinaryTeleAux csig.nfields le_rfl).instLevel ls fun _ => trivial).substitution
+    (Inductive.paramSubstEqStrong hps).left)
 
 theorem WFStrong.boundOrdinarySubstWFStrong
     (h : ctor.WFStrong E I) :
@@ -470,9 +409,7 @@ private theorem WFStrong.recursiveFieldType
         (Fin.append (fun p => (ps p).wkN csig.nfields)
           fun fds => .var ⟨n + fds.val, by omega⟩) typ :=
   fun hΓ hps =>
-    have htele := h.ordinaryFieldTeleAux (Q := fun _ => True)
-      (fun _ => trivial) hps
-      csig.nfields le_rfl
+    have htele := h.ordinaryFieldTele (η := η) hps
     (h.recursive f).instantiatedType hhead (by simp)
       (htele.appendCtxWFStrong hΓ)
       (fun p => by simpa using (hps p).wkN)
@@ -486,8 +423,7 @@ theorem WFStrong.fieldTele
     (stop : Fin (csig.nrecFields + 1) := ⟨csig.nrecFields, Nat.lt_succ_self _⟩) :
     WFTeleStrong E (fun _ => True) Γ
       (ctor.fieldTele η ls ps stop) := by
-  refine (h.ordinaryFieldTeleAux (Q := fun _ => True) (fun _ => trivial)
-    hps csig.nfields le_rfl).append ?_
+  refine (h.ordinaryFieldTele (η := η) hps).append ?_
   apply WFTeleStrong.ofTypes
   intro f
   have ⟨u, ht⟩ := h.recursiveFieldType hhead (f.castLE (Nat.le_of_lt_succ stop.isLt)) hΓ hps
@@ -518,7 +454,7 @@ theorem WFStrong.targetIndex_congr
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
     (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-      ((ctor.ordinaryType f).instL ls).subst
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append ps₁ fun previous : Fin f.val =>
           fds₁ (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ₛ ctor.targetIndex ls ps₁ fds₁ i ≡
@@ -534,18 +470,7 @@ theorem WFStrong.targetIndex_congr
   have hsource := hBparams.append hfieldsTele
   have hsource := hsource.instLevel (Q := fun _ => True)
     ls fun _ => trivial
-  have hσ : E[Γ] ⊢ₛ Fin.append ps₁ fds₁ ≡ Fin.append ps₂ fds₂ ⊣
-      Ctx.instL ls (I.params ++ ctor.ordinaryTele) := by
-    intro v
-    rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
-    cases v using Fin.addCases with
-    | left p =>
-      simpa [Inductive.paramType] using hps p
-    | right f =>
-      have hb : ι.nparams ≤ (Fin.natAdd ι.nparams f).val := by
-        simp
-      rw [Ctx.entry_append_right I.params _ (by omega) hb (by omega)]
-      simpa using hfields f
+  have hσ := Ctor.forall_ordinarySubst le_rfl hps hfields
   have hpsEq :
       (fun p : Fin ι.nparams =>
         ((Expr.var ⟨p.val, by omega⟩ :
@@ -605,68 +530,12 @@ theorem RecField.WFStrong.instantiatedType_congr
 
 namespace Ctor
 
-theorem targetSubstEqStrong
-    {fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n} :
-    (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
-    (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-      ((ctor.ordinaryType f).instL ls).subst
-        (Fin.append ps₁ fun previous : Fin f.val =>
-          fds₁ (previous.castLE f.isLt.le))) →
-    E[Γ] ⊢ₛ Fin.append ps₁ fds₁ ≡ Fin.append ps₂ fds₂ ⊣
-      Ctx.instL ls (I.params ++ ctor.ordinaryTele) := by
-  intro hps hfields v
-  rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
-  cases v using Fin.addCases with
-  | left p =>
-    simpa [Inductive.paramType] using hps p
-  | right f =>
-    rw [I.params.entry_append_right _ (by simp) (by simp) (by simp)]
-    simpa using hfields f
-
-theorem WFStrong.ordinarySubstEqStrong (h : ctor.WFStrong E I)
-    (f : Fin csig.nfields) :
-    (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
-      I.paramType ls ps₁ p) →
-    (∀ g : Fin csig.nfields, g < f → E[Γ] ⊢ₛ fds₁ g ≡ fds₂ g :
-      ((ctor.ordinaryType g).instL ls).subst
-        (Fin.append ps₁ fun previous : Fin g.val =>
-          fds₁ (previous.castLE g.isLt.le))) →
-    E[Γ] ⊢ₛ Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le) ≡
-      (Fin.append ps₂ fun previous : Fin f.val => fds₂ (previous.castLE f.isLt.le)) ⊣
-      Ctx.instL ls (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) := by
-  intro hps hfields
-  have hpsEq := Inductive.paramSubstEqStrong hps
-  have hres := SubstEqStrong.extendFamily
-    ((h.ordinaryTeleAux f.val f.isLt.le).instLevel
-      (Q := fun _ => True) ls fun _ => trivial) hpsEq
-    (xs₁ := fun previous : Fin f.val =>
-      fds₁ (previous.castLE f.isLt.le))
-    (xs₂ := fun previous : Fin f.val =>
-      fds₂ (previous.castLE f.isLt.le))
-    fun previous => by
-      rw [← Ctx.entry_instL]
-      simpa using
-        hfields (previous.castLE f.isLt.le) (by simp [Fin.lt_def])
-  simpa using hres
-
-theorem WFStrong.ordinaryTeleAuxStrong
-    (hctor : ctor.WFStrong E I) (count : Nat)
-    (hcount : count ≤ csig.nfields) :
-    WFTeleStrong E (fun _ => True) I.params
-      (ctor.ordinaryTeleAux count hcount) := by
-  induction count with
-  | zero => exact .nil
-  | succ count ih =>
-    have htele := ih (by omega)
-    have ⟨u, ht⟩ := (hctor.ordinary ⟨count, by omega⟩).type
-    exact .snoc htele ⟨u, trivial, by simpa [ordinaryType] using ht⟩
-
-theorem WFStrong.ordinaryFieldExprAux (h : ctor.WFStrong E I)
+theorem WFStrong.ordinaryFieldExpr_congr (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
     (f : Fin csig.nfields)
     (hps : ∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p)
     (hfields : ∀ g : Fin csig.nfields, g < f → E[Γ] ⊢ₛ fds₁ g ≡ fds₂ g :
-      ((ctor.ordinaryType g).instL ls).subst
+      (((ctor.ordinary g).type).instL ls).subst
         (Fin.append ps₁ fun previous : Fin g.val =>
           fds₁ (previous.castLE g.isLt.le))) :
     E[Γ] ⊢ₛ ctor.ordinaryFieldExpr ls ps₁ fds₁ f ≡
@@ -676,35 +545,12 @@ theorem WFStrong.ordinaryFieldExprAux (h : ctor.WFStrong E I)
       ((#t[] : Ctx ζ ι.nlevels 0 0) ++ I.params)
       (ctor.ordinaryTeleAux f.val f.isLt.le) := by
     simpa using (h.ordinaryTeleAux f.val f.isLt.le).mono fun _ => trivial
-  simpa! [ordinaryFieldExpr, ordinaryType] using
+  simpa! [ordinaryFieldExpr] using
     ((hBparams.append hfieldsTele).instLevel (Q := fun _ => True) ls
       fun _ => trivial).substitution_congr
-        (h.ordinarySubstEqStrong f hps hfields)
+        (Ctor.forall_ordinarySubst f.isLt.le hps fun g =>
+          hfields (g.castLE f.isLt.le) g.isLt)
         ((h.ordinary f).typeExact.instLevel ls)
-
-theorem WFStrong.ordinaryFieldExpr_congr (h : ctor.WFStrong E I)
-    (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
-    (f : Fin csig.nfields) :
-    (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
-      I.paramType ls ps₁ p) →
-    (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-      ((ctor.ordinaryType f).instL ls).subst
-        (Fin.append ps₁ fun previous : Fin f.val =>
-          fds₁ (previous.castLE f.isLt.le))) →
-    ∃ u : Level ℓ, E[Γ] ⊢ₛ ctor.ordinaryFieldExpr ls ps₁ fds₁ f ≡
-      ctor.ordinaryFieldExpr ls ps₂ fds₂ f : .sort u :=
-  fun hps hfields =>
-    ⟨_, h.ordinaryFieldExprAux hBparams f hps fun g _ => hfields g⟩
-
-theorem WFStrong.ordinaryFieldExpr_isTypeStrong (h : ctor.WFStrong E I)
-    (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
-    (f : Fin csig.nfields) :
-    (∀ p, E[Γ] ⊢ₛ ps p : I.paramType ls ps p) →
-    (∀ g : Fin csig.nfields, g < f → E[Γ] ⊢ₛ fds g : ctor.ordinaryFieldExpr ls ps fds g) →
-    E[Γ] ⊢ₛ ctor.ordinaryFieldExpr ls ps fds f typ :=
-  fun hps hfields =>
-    ⟨_, h.ordinaryFieldExprAux hBparams f hps fun g hg => by
-      simpa [ordinaryFieldExpr] using hfields g hg⟩
 
 theorem WFStrong.recursiveFieldExpr_congr (h : ctor.WFStrong E I)
     (hBparams : WFTeleStrong E (fun _ => True) .nil I.params)
@@ -713,7 +559,7 @@ theorem WFStrong.recursiveFieldExpr_congr (h : ctor.WFStrong E I)
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       I.paramType ls ps₁ p) →
     (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-      ((ctor.ordinaryType f).instL ls).subst
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append ps₁ fun previous : Fin f.val =>
           fds₁ (previous.castLE f.isLt.le))) →
     ∃ u : Level ℓ, E[Γ] ⊢ₛ ctor.recursiveFieldExpr η ls ps₁ fds₁ f ≡
@@ -723,14 +569,10 @@ theorem WFStrong.recursiveFieldExpr_congr (h : ctor.WFStrong E I)
       hBparams
       (hBparams.append <| by simpa using
         (h.ordinaryTeleAux csig.nfields le_rfl).mono fun _ => trivial)
-      hhead
-      (by simp)
-      (by simp)
-      (targetSubstEqStrong hps hfields)
+      hhead (by simp) (by simp)
+      (Ctor.forall_ordinarySubst le_rfl hps hfields)
 
 end Ctor
-
-end Constructors
 
 namespace Inductive
 
@@ -761,11 +603,11 @@ theorem paramType_isTypeStrong (hB : I.WFStrong E)
     E[Γ] ⊢ₛ I.paramType ls ps p typ := by
   intro hps
   have hΘ := hB.params.instLevel (Q := fun _ : Level ℓ => True) ls fun _ => trivial
-  have h := WFTeleStrong.entry_isTypeStrong_nil hΘ p.val p.isLt
-    fun q hq => by
-      have := hps ⟨q, by omega⟩ (by simpa [Fin.lt_def] using hq)
-      simpa [Inductive.paramType] using this
-  simpa [Inductive.paramType] using h
+  simpa [Inductive.paramType] using
+    WFTeleStrong.entry_isTypeStrong_nil hΘ p.val p.isLt
+      fun q hq => by
+        simpa [Inductive.paramType] using
+          hps ⟨q, by omega⟩ (by simpa [Fin.lt_def] using hq)
 
 theorem indexType_isTypeStrong
     (hidx : WFTeleStrong E (fun _ => True) I.params (I.indices s))
@@ -848,7 +690,9 @@ theorem WFStrong.motiveTele
       DefeqStrong.indDF
         (fun p => by simpa using (hps p).wkN)
         fun i => by
-          simpa [Fin.natAdd] using hΓindices.var (Fin.natAdd n i)⟩
+          have hv := hΓindices.var (Fin.natAdd n i)
+          rw [Inductive.indexTele_get] at hv
+          simpa [Fin.natAdd] using hv⟩
 
 theorem motiveType_congr
     (hB : (E.get η).block.WFStrong E) :
@@ -871,7 +715,9 @@ theorem motiveType_congr
     DefeqStrong.indDF
       (fun p => by simpa using (hps p).wkN)
       fun i => by
-        simpa [Fin.natAdd] using hΓindices.var (Fin.natAdd n i)
+        have hv := hΓindices.var (Fin.natAdd n i)
+        rw [Inductive.indexTele_get] at hv
+        exact hv
   have hsort : E[(Γ ++ (E.get η).block.indexTele ls s ps₁).snoc
       (.ind η s ls (fun p => (ps₁ p).wkN (ι.nindices s))
         fun i => .var (Fin.natAdd n i))] ⊢ₛ Expr.sort l ≡ .sort l : .sort l.succ :=
@@ -885,7 +731,7 @@ end Inductive
 
 namespace Ctor.WFStrong
 
-theorem fieldParams_congr (ctor : Ctor ζ ι s csig)
+theorem fieldParams (ctor : Ctor ζ ι s csig)
     (p : Fin ι.nparams) :
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
     E[Γ ++ ctor.fieldTele η ls ps₁] ⊢ₛ csig.fieldParams ps₁ p ≡ csig.fieldParams ps₂ p :
@@ -900,14 +746,7 @@ theorem fieldParams_congr (ctor : Ctor ζ ι s csig)
       (fun p => ((ps₁ p).wkN csig.nfields).wkN csig.nrecFields) p
   simpa [Tele.append_assoc, Ctor.fieldTele] using hp
 
-theorem fieldParams (ctor : Ctor ζ ι s csig)
-    (p : Fin ι.nparams) :
-    (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
-    E[Γ ++ ctor.fieldTele η ls ps] ⊢ₛ csig.fieldParams ps p :
-      (E.get η).block.paramType ls (csig.fieldParams ps) p :=
-  fieldParams_congr ctor p
-
-theorem fieldMotive_congr (ctor : Ctor ζ ι s csig)
+theorem fieldMotive (ctor : Ctor ζ ι s csig)
     (s₁ : Fin ι.nsorts) :
     (∀ s, E[Γ] ⊢ₛ ms₁ s ≡ ms₂ s :
       (E.get η).block.motiveType η ls ps l s) →
@@ -919,15 +758,7 @@ theorem fieldMotive_congr (ctor : Ctor ζ ι s csig)
       ((ms₂ s₁).wkN csig.nfields).wkN csig.nrecFields :
     (E.get η).block.motiveType η ls
       (fun p => ((ps p).wkN csig.nfields).wkN csig.nrecFields) l s₁
-  simpa [Tele.append_assoc, Ctor.fieldTele] using
-    (hms s₁).wkN.wkN
-
-theorem fieldMotive (ctor : Ctor ζ ι s csig)
-    (s₁ : Fin ι.nsorts) :
-    (∀ s, E[Γ] ⊢ₛ ms s : (E.get η).block.motiveType η ls ps l s) →
-    E[Γ ++ ctor.fieldTele η ls ps] ⊢ₛ ((ms s₁).wkN csig.nfields).wkN csig.nrecFields :
-        (E.get η).block.motiveType η ls (csig.fieldParams ps) l s₁ :=
-  fieldMotive_congr ctor s₁
+  simpa [Tele.append_assoc, Ctor.fieldTele] using (hms s₁).wkN.wkN
 
 theorem fieldCase (ctor : Ctor ζ ι s csig)
     (s₁ : Fin ι.nsorts) (c₁ : Fin (ι.nctors s₁)) :
@@ -947,7 +778,7 @@ theorem fieldOrdinary (hctor : ctor.WFStrong E (E.get η).block)
     (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ ++ ctor.fieldTele η ls ps] ⊢ₛ csig.fieldOrdinary f :
-      ((ctor.ordinaryType f).instL ls).subst
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append (csig.fieldParams ps) fun previous : Fin f.val =>
           csig.fieldOrdinary (previous.castLE f.isLt.le)) := by
   intro hps
@@ -957,7 +788,7 @@ theorem fieldOrdinary (hctor : ctor.WFStrong E (E.get η).block)
     simp
   rw [(E.get η).block.params.entry_append_right _ (by omega) hb (by omega)] at hl
   have hl : E[Γ ++ ctor.ordinaryFieldTele η ls ps] ⊢ₛ Expr.boundVars n csig.nfields 0 f :
-        ((ctor.ordinaryType f).instL ls).subst
+        (((ctor.ordinary f).type).instL ls).subst
           (Fin.append (fun p => (ps p).wkN csig.nfields)
             fun previous => Expr.boundVars n csig.nfields 0
               (previous.castLE f.isLt.le)) := by
@@ -972,7 +803,7 @@ theorem fieldTargetSubst (hctor : ctor.WFStrong E (E.get η).block) :
     E[Γ ++ ctor.fieldTele η ls ps] ⊢ₛ Fin.append (csig.fieldParams ps) csig.fieldOrdinary ⊣
         Ctx.instL ls ((E.get η).block.params ++ ctor.ordinaryTele) :=
   fun hps =>
-    Ctor.targetSubstWFStrong (Ctor.WFStrong.fieldParams ctor · hps)
+    Ctor.forall_ordinarySubst le_rfl (Ctor.WFStrong.fieldParams ctor · hps)
       (hctor.fieldOrdinary · hps)
 
 theorem fieldRecursive (hctor : ctor.WFStrong E (E.get η).block)
@@ -1013,7 +844,7 @@ theorem DefeqStrong.nullaryCtor
     E[Γ] ⊢ₛ .ctor η s c ls ps fds recFds :
       .ind η s ls ps fun i => ((E.get η).block.ctors s c).targetIndex ls ps fds i := by
   intro hps
-  have hσ := Ctor.targetSubstWFStrong (ctor := (E.get η).block.ctors s c) (fds := fds) hps
+  have hσ := Ctor.forall_ordinarySubst le_rfl (ctor := (E.get η).block.ctors s c) (fds₁ := fds) (fds₂ := fds) hps
     fun f => hf.elim f
   exact .ctorDF (fieldLevels := hf.elim) (recFieldLevels := hr.elim)
     hps hf.elim hr.elim hf.elim hr.elim
@@ -1112,8 +943,7 @@ theorem RecField.WFStrong.ihType
     E[Γ] ⊢ₛ fd.ihType ls ms σ r typ := by
   intro hΓ hps hms hσ hr
   cases hhead
-  have hΓtele := (h.instantiatedTelescope (P := fun _ => True)
-    (fun _ => trivial) hσ).appendCtxWFStrong hΓ
+  have hΓtele := ((h.tele.instLevel (Q := fun _ => True) ls fun _ => trivial).substitution hσ).appendCtxWFStrong hΓ
   have his := (h.instantiatedIndices hσparams · hσ)
   have hpsWk := Inductive.paramsWkN (Θ := fd.instantiatedTelescope ls σ) hps
   have hmsWk := Inductive.motivesWkN (Θ := fd.instantiatedTelescope ls σ) hms
@@ -1206,8 +1036,7 @@ theorem RecField.WFStrong.iotaIH
       fd.ihType ls ms σ r := by
   intro hΓ hps hms hmins hσ hr
   cases hhead
-  have hΓtele := (h.instantiatedTelescope (P := fun _ => True)
-    (fun _ => trivial) hσ).appendCtxWFStrong hΓ
+  have hΓtele := ((h.tele.instLevel (Q := fun _ => True) ls fun _ => trivial).substitution hσ).appendCtxWFStrong hΓ
   have his := (h.instantiatedIndices hσparams · hσ)
   have hpsWk := Inductive.paramsWkN (Θ := fd.instantiatedTelescope ls σ) hps
   have hind := DefeqStrong.indDF hpsWk his
@@ -1223,34 +1052,6 @@ theorem RecField.WFStrong.iotaIH
     hmaj.left
   exact Ctx.lam_congrStrong hΓtele
     (.recrDF hallowed hpsWk hmsWk hminsWk his hmaj hresult)
-
-theorem Ctor.WFStrong.iotaIH
-    (hctor : ctor.WFStrong E (E.get η).block)
-    (hB : (E.get η).block.WFStrong E)
-    {fds : Fin csig.nfields → Expr ζ ℓ n}
-    {recFds : Fin csig.nrecFields → Expr ζ ℓ n}
-    (hallowed : (E.get η).block.RecAllowed l)
-    (f : Fin csig.nrecFields) :
-    E[Γ] ⊢ₛ ok →
-    (∀ p, E[Γ] ⊢ₛ ps p :
-      (E.get η).block.paramType ls ps p) →
-    (∀ s, E[Γ] ⊢ₛ ms s :
-      (E.get η).block.motiveType η ls ps l s) →
-    (∀ s c, E[Γ] ⊢ₛ mins s c :
-      (E.get η).block.caseFnType η ls ps ms s c) →
-    (∀ f, E[Γ] ⊢ₛ fds f :
-      ((ctor.ordinaryType f).instL ls).subst
-        (Fin.append ps fun previous : Fin f.val =>
-          fds (previous.castLE f.isLt.le))) →
-    (∀ f, E[Γ] ⊢ₛ recFds f :
-      (ctor.recursive f).instantiatedType η ls ps
-        (Fin.append ps fds)) →
-    E[Γ] ⊢ₛ ctor.iotaIH η ls l ps ms mins fds recFds f :
-      ctor.ihTypeWith ls ms ps fds recFds f :=
-  fun hΓ hps hms hmins hfields hrecFields =>
-    (hctor.recursive f).iotaIH hB rfl hallowed
-      (by simp) hΓ hps hms hmins
-      (Ctor.targetSubstWFStrong hps hfields) (hrecFields f)
 
 namespace Inductive
 
@@ -1274,7 +1075,7 @@ theorem WFStrong.caseType_congr
       (E.get η).block.motiveType η ls
         ((ι.ctors s c).caseParams ps₁) l s₁) →
     (∀ f, E[Γcase] ⊢ₛ (ι.ctors s c).caseOrdinary f :
-        ((((E.get η).block.ctors s c).ordinaryType f).instL
+        (((((E.get η).block.ctors s c).ordinary f).type).instL
           ls).subst (Fin.append
             ((ι.ctors s c).caseParams ps₁)
             fun previous : Fin f.val =>
@@ -1293,46 +1094,14 @@ theorem WFStrong.caseType_congr
     (hB.ctors s c).targetIndex_congr hB.params i hps hfields
   have htarget := DefeqStrong.indDF hps his
   have hordinary := fun f =>
-    (hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps hfields
+    (hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps (fun g _ => hfields g)
   have hrecursive := fun f =>
     (hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f hps hfields
   have hmaj := DefeqStrong.ctorDF hps hfields hrecFields
-    (fun f => (hordinary f).choose_spec)
+    hordinary
     (fun f => (hrecursive f).choose_spec)
     htarget
   simpa [caseType] using hB.motiveResult_congr hΓcase hps hms his hmaj
-
-theorem WFStrong.caseType_hasTypeStrong
-    (hB : (E.get η).block.WFStrong E)
-    {Γcase : Ctx ζ ℓ 0
-      (n + (ι.ctors s c).nfields +
-        (ι.ctors s c).nrecFields +
-        (ι.ctors s c).nrecFields)} :
-    E[Γcase] ⊢ₛ ok →
-    (∀ p, E[Γcase] ⊢ₛ (ι.ctors s c).caseParams ps p :
-      (E.get η).block.paramType ls
-        ((ι.ctors s c).caseParams ps) p) →
-    (∀ s₁, E[Γcase] ⊢ₛ (((ms s₁).wkN (ι.ctors s c).nfields).wkN
-          (ι.ctors s c).nrecFields).wkN
-        (ι.ctors s c).nrecFields :
-      (E.get η).block.motiveType η ls
-        ((ι.ctors s c).caseParams ps) l s₁) →
-    (∀ f, E[Γcase] ⊢ₛ (ι.ctors s c).caseOrdinary f :
-        ((((E.get η).block.ctors s c).ordinaryType f).instL
-          ls).subst (Fin.append
-            ((ι.ctors s c).caseParams ps)
-            fun previous : Fin f.val =>
-              (ι.ctors s c).caseOrdinary
-                (previous.castLE f.isLt.le))) →
-    (∀ f, E[Γcase] ⊢ₛ (ι.ctors s c).caseRecursive f :
-        (((E.get η).block.ctors s c).recursive f).instantiatedType
-          η ls ((ι.ctors s c).caseParams ps)
-            (Fin.append
-              ((ι.ctors s c).caseParams ps)
-              (ι.ctors s c).caseOrdinary)) →
-    E[Γcase] ⊢ₛ (E.get η).block.caseType η ls ps ms s c :
-      .sort l :=
-  hB.caseType_congr
 
 theorem WFStrong.motiveBinders
     {Γ : Ctx ζ ℓ 0 ι.nparams}
@@ -1367,27 +1136,6 @@ theorem WFStrong.motiveBinders_var
 
 end Inductive
 
-theorem Ctor.WFStrong.ihTeleAux
-    (hctor : ctor.WFStrong E (E.get η).block)
-    (hB : (E.get η).block.WFStrong E)
-    (hΓ : E[Γ] ⊢ₛ ok)
-    (hps : ∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p)
-    (hms : ∀ s, E[Γ] ⊢ₛ ms s :
-      (E.get η).block.motiveType η ls ps l s)
-    (count : Nat) (hcount : count ≤ csig.nrecFields) :
-    WFTeleStrong E (fun _ => True)
-      (Γ ++ ctor.fieldTele η ls ps)
-      (ctor.ihTeleAux ls ps ms count hcount) := by
-  apply WFTeleStrong.ofTypes
-  intro f
-  have ⟨u, ht⟩ := (hctor.recursive (f.castLE hcount)).ihType hB
-    rfl
-    (by simp)
-    ((hctor.fieldTele rfl hΓ hps).appendCtxWFStrong hΓ) (Ctor.WFStrong.fieldParams ctor · hps)
-    (Ctor.WFStrong.fieldMotive ctor · hms) (hctor.fieldTargetSubst hps)
-    (hctor.fieldRecursive (f.castLE hcount) hΓ hps)
-  exact ⟨u, trivial, ht⟩
-
 theorem Ctor.WFStrong.ihTele
     (hctor : ctor.WFStrong E (E.get η).block)
     (hB : (E.get η).block.WFStrong E)
@@ -1396,8 +1144,16 @@ theorem Ctor.WFStrong.ihTele
     (hms : ∀ s₁, E[Γ] ⊢ₛ ms s₁ : (E.get η).block.motiveType η ls ps l s₁) :
     WFTeleStrong E (fun _ => True)
       (Γ ++ ctor.fieldTele η ls ps)
-      (ctor.ihTele ls ps ms) :=
-  hctor.ihTeleAux hB hΓ hps hms csig.nrecFields le_rfl
+      (ctor.ihTele ls ps ms) := by
+  apply WFTeleStrong.ofTypes
+  intro f
+  have ⟨u, ht⟩ := (hctor.recursive f).ihType hB
+    rfl
+    (by simp)
+    ((hctor.fieldTele rfl hΓ hps).appendCtxWFStrong hΓ) (Ctor.WFStrong.fieldParams ctor · hps)
+    (Ctor.WFStrong.fieldMotive ctor · hms) (hctor.fieldTargetSubst hps)
+    (hctor.fieldRecursive f hΓ hps)
+  exact ⟨u, trivial, ht⟩
 
 theorem Ctor.WFStrong.ihType_congr
     (hctor : ctor.WFStrong E (E.get η).block)
@@ -1418,18 +1174,17 @@ theorem Ctor.WFStrong.ihType_congr
       ((#t[] : Ctx ζ ι.nlevels 0 0) ++ (E.get η).block.params)
       ctor.ordinaryTele := by
     simpa using
-      hctor.ordinaryTeleAuxStrong csig.nfields le_rfl
+      (hctor.ordinaryTeleAux csig.nfields le_rfl).mono fun _ => trivial
   have hΔ := hB.params.append hordinaryTele
   have ⟨u, hih⟩ := (hctor.recursive f).ihType_congr hB hΔ
     rfl (by simp) hΓfield
-    (Ctor.WFStrong.fieldParams_congr ctor · hps)
-    (Ctor.WFStrong.fieldMotive_congr ctor · hms)
-    (Ctor.targetSubstEqStrong
-      (Ctor.WFStrong.fieldParams_congr ctor · hps)
+    (Ctor.WFStrong.fieldParams ctor · hps)
+    (Ctor.WFStrong.fieldMotive ctor · hms)
+    (Ctor.forall_ordinarySubst le_rfl
+      (Ctor.WFStrong.fieldParams ctor · hps)
       (hctor.fieldOrdinary · hpsSelf))
     (hctor.fieldRecursive f hΓ hpsSelf)
-  exact ⟨u, by
-    simpa [Ctor.ihType, Ctor.ihTypeWith] using hih⟩
+  exact ⟨u, by simpa [Ctor.ihType, Ctor.ihTypeWith] using hih⟩
 
 namespace Inductive
 
@@ -1440,9 +1195,8 @@ theorem WFStrong.caseTele
     (hms : ∀ s, E[Γ] ⊢ₛ ms s : (E.get η).block.motiveType η ls ps l s) :
     WFTeleStrong E (fun _ => True) Γ
       ((E.get η).block.caseTele η ls ps ms s c) := by
-  have hfields := (hB.ctors s c).fieldTele rfl hΓ hps
-  have hihs := (hB.ctors s c).ihTele hB hΓ hps hms
-  simpa [Inductive.caseTele] using hfields.append hihs
+  simpa [Inductive.caseTele] using
+    ((hB.ctors s c).fieldTele rfl hΓ hps).append ((hB.ctors s c).ihTele hB hΓ hps hms)
 
 theorem caseParams_congr
     (p : Fin ι.nparams) :
@@ -1471,14 +1225,6 @@ theorem caseParams_congr
         (ι.ctors s c).nrecFields).wkN (ι.ctors s c).nrecFields) p
   simpa [Tele.append_assoc, Inductive.caseTele, Ctor.fieldTele] using hp
 
-theorem caseParams_typed
-    (p : Fin ι.nparams) :
-    (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
-    E[Γ ++ (E.get η).block.caseTele η ls ps ms s c] ⊢ₛ (ι.ctors s c).caseParams ps p :
-        (E.get η).block.paramType ls
-          ((ι.ctors s c).caseParams ps) p :=
-  caseParams_congr p
-
 theorem caseMotives_congr
     (s₁ : Fin ι.nsorts) :
     (∀ s₁, E[Γ] ⊢ₛ ms₁ s₁ ≡ ms₂ s₁ :
@@ -1490,14 +1236,6 @@ theorem caseMotives_congr
         (E.get η).block.motiveType η ls
           ((ι.ctors s c).caseParams ps) l s₁ := by
   intro hms
-  have hm := (hms s₁).wkN
-    (Δ := ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps)
-  have hm := hm.wkN
-    (Δ := ((E.get η).block.ctors s c).recursiveFieldTele η ls
-      (fun p => (ps p).wkN (ι.ctors s c).nfields)
-      (Expr.boundVars n (ι.ctors s c).nfields 0))
-  have hm := hm.wkN
-    (Δ := ((E.get η).block.ctors s c).ihTele ls ps ms₁)
   change E[Γ ++ (E.get η).block.caseTele η ls ps ms₁ s c] ⊢ₛ
     (((ms₁ s₁).wkN (ι.ctors s c).nfields).wkN
       (ι.ctors s c).nrecFields).wkN (ι.ctors s c).nrecFields ≡
@@ -1506,33 +1244,22 @@ theorem caseMotives_congr
     (E.get η).block.motiveType η ls
       (fun p => (((ps p).wkN (ι.ctors s c).nfields).wkN
         (ι.ctors s c).nrecFields).wkN (ι.ctors s c).nrecFields) l s₁
-  simpa [Tele.append_assoc, Inductive.caseTele, Ctor.fieldTele] using hm
-
-theorem caseMotives_typed
-    (s₁ : Fin ι.nsorts) :
-    (∀ s, E[Γ] ⊢ₛ ms s :
-      (E.get η).block.motiveType η ls ps l s) →
-    E[Γ ++ (E.get η).block.caseTele η ls ps ms s c] ⊢ₛ (((ms s₁).wkN (ι.ctors s c).nfields).wkN
-        (ι.ctors s c).nrecFields).wkN (ι.ctors s c).nrecFields :
-        (E.get η).block.motiveType η ls
-          ((ι.ctors s c).caseParams ps) l s₁ :=
-  caseMotives_congr s₁
+  simpa [Tele.append_assoc, Inductive.caseTele, Ctor.fieldTele] using (hms s₁).wkN.wkN.wkN
 
 theorem WFStrong.caseOrdinary_typed
     (hB : (E.get η).block.WFStrong E)
     (f : Fin (ι.ctors s c).nfields) :
     (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ ++ (E.get η).block.caseTele η ls ps ms s c] ⊢ₛ (ι.ctors s c).caseOrdinary f :
-        ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+        (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
           (Fin.append ((ι.ctors s c).caseParams ps)
             fun previous : Fin f.val =>
               (ι.ctors s c).caseOrdinary
                 (previous.castLE f.isLt.le)) := by
   intro hps
-  have hv := ((hB.ctors s c).fieldOrdinary f hps).wkN
-    (Δ := ((E.get η).block.ctors s c).ihTele ls ps ms)
   unfold CtorSig.caseOrdinary CtorSig.caseParams
-  simpa [Inductive.caseTele, Tele.append_assoc] using hv
+  simpa [Inductive.caseTele, Tele.append_assoc] using
+    ((hB.ctors s c).fieldOrdinary f hps).wkN
 
 theorem WFStrong.caseRecursive_typed
     (hB : (E.get η).block.WFStrong E)
@@ -1552,15 +1279,12 @@ theorem WFStrong.caseRecursive_typed
   rw [RecField.instantiatedType_wkN] at hv
   have hpsEq :
       (fun p => ((ι.ctors s c).fieldParams ps p).wkN
-        (ι.ctors s c).nrecFields) =
-        (ι.ctors s c).caseParams ps := rfl
+        (ι.ctors s c).nrecFields) =(ι.ctors s c).caseParams ps := rfl
   have hsubstEq :
       (fun v => (Fin.append
         ((ι.ctors s c).fieldParams ps)
         (ι.ctors s c).fieldOrdinary v).wkN (ι.ctors s c).nrecFields) =
-        Fin.append
-          ((ι.ctors s c).caseParams ps)
-          (ι.ctors s c).caseOrdinary := by
+        Fin.append ((ι.ctors s c).caseParams ps) (ι.ctors s c).caseOrdinary := by
     funext v
     cases v using Fin.addCases with
     | left p => simp [CtorSig.caseParams]
@@ -1597,7 +1321,7 @@ theorem caseFnType_congr (hB : (E.get η).block.WFStrong E) :
       (Δ := ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps₁)
   have hfields (f) : E[Γ ++ ((E.get η).block.ctors s c).ordinaryFieldTele
       η ls ps₁] ⊢ₛ Expr.boundVars n (ι.ctors s c).nfields 0 f :
-        ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+        (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
           (Fin.append
             (fun p => (ps₁ p).wkN (ι.ctors s c).nfields)
             fun previous => Expr.boundVars n (ι.ctors s c).nfields 0
@@ -1614,31 +1338,20 @@ theorem caseFnType_congr (hB : (E.get η).block.WFStrong E) :
   have ⟨v, hrec⟩ := Ctx.pi_ofTypes_congrStrong
     (fun f => (hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f hpsWk hfields) hihs
   have ⟨_, hpi⟩ := WFTeleStrong.pi_instL_substN_congr hB.params
-    ((hB.ctors s c).ordinaryTeleAuxStrong (ι.ctors s c).nfields le_rfl)
+    (((hB.ctors s c).ordinaryTeleAux (ι.ctors s c).nfields le_rfl).mono fun _ => trivial)
     ls (paramSubstEqStrong hps) hrec
   exact IsTypeEq.ofDefEq <| by
     simpa [caseFnType, caseTele, Ctor.fieldTele, Ctx.pi, Tele.foldr_append]
-
-theorem WFStrong.caseFnType (hB : (E.get η).block.WFStrong E) :
-    E[Γ] ⊢ₛ ok →
-    (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
-    (∀ s, E[Γ] ⊢ₛ ms s : (E.get η).block.motiveType η ls ps l s) →
-    E[Γ] ⊢ₛ (E.get η).block.caseFnType η ls ps ms s c typ :=
-  fun hΓ hps hms => (caseFnType_congr hB hΓ hps hms).isType.1
 
 theorem caseFnType_conv
     (hB : (E.get η).block.WFStrong E) {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {ms₁ ms₂ : Fin ι.nsorts → Expr ζ ℓ n}
     {mins₁ mins₂ : Expr ζ ℓ n} :
     E[Γ] ⊢ₛ ok →
-    (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
-      (E.get η).block.paramType ls ps₁ p) →
-    (∀ s₁, E[Γ] ⊢ₛ ms₁ s₁ ≡ ms₂ s₁ :
-      (E.get η).block.motiveType η ls ps₁ l s₁) →
-    E[Γ] ⊢ₛ mins₁ ≡ mins₂ :
-      (E.get η).block.caseFnType η ls ps₁ ms₁ s c →
-    E[Γ] ⊢ₛ mins₂ :
-      (E.get η).block.caseFnType η ls ps₂ ms₂ s c :=
+    (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
+    (∀ s₁, E[Γ] ⊢ₛ ms₁ s₁ ≡ ms₂ s₁ : (E.get η).block.motiveType η ls ps₁ l s₁) →
+    E[Γ] ⊢ₛ mins₁ ≡ mins₂ : (E.get η).block.caseFnType η ls ps₁ ms₁ s c →
+    E[Γ] ⊢ₛ mins₂ : (E.get η).block.caseFnType η ls ps₂ ms₂ s c :=
   fun hΓ hps hms hmin => (caseFnType_congr hB hΓ hps hms).convStrong hmin.right
 
 theorem WFStrong.caseBinders
@@ -1657,7 +1370,7 @@ theorem WFStrong.caseBinders
   intro tag
   obtain ⟨⟨s, c⟩, rfl⟩ : ∃ point, Fin.encodeSigma ι.nctors point = tag :=
     ⟨_, Fin.encodeSigma_decodeSigma ..⟩
-  have ⟨v, ht⟩ := hB.caseFnType (c := c) hΓ hps hms
+  have ⟨v, ht⟩ := (caseFnType_congr hB (c := c) hΓ hps hms).isType.1
   rw [Fin.decodeSigma_encodeSigma]
   exact ⟨v, trivial, ht⟩
 
@@ -1708,7 +1421,6 @@ theorem WFStrong.recrTele
           (E.get η).block.paramType ls
             (fun p => (ps p).wkN (ι.nindices s)) p := by
     simpa using (hparamCases p).wkN
-      (Δ := (E.get η).block.indexTele ls s ps)
   have hindexVars (i : Fin (ι.nindices s)) :
       E[Ctx.instL ls (E.get η).block.params ++
           (E.get η).block.motiveBinders η ls l ++
@@ -1717,20 +1429,14 @@ theorem WFStrong.recrTele
           (E.get η).block.indexType ls s
             (fun p => (ps p).wkN (ι.nindices s))
             (fun i => Expr.var ⟨casesEnd + i.val, by omega⟩) i := by
-    have hv := hΓindices.var ⟨casesEnd + i.val, by omega⟩
+    have hv := hΓindices.var (Fin.natAdd casesEnd i)
     rw [Inductive.indexTele_get] at hv
-    simpa using hv
-  have hmaj := DefeqStrong.indDF
-    hparamIndices hindexVars
+    simpa [Fin.natAdd] using hv
+  have hmaj := DefeqStrong.indDF hparamIndices hindexVars
   have hpsMotives : WFTeleStrong E (fun _ => True) .nil
       (Ctx.instL ls (E.get η).block.params ++
-        (E.get η).block.motiveBinders η ls l) := by
-    have hmsTele : WFTeleStrong E (fun _ => True)
-        ((#t[] : Ctx ζ ℓ 0 0) ++
-          Ctx.instL ls (E.get η).block.params)
-        ((E.get η).block.motiveBinders η ls l) := by
-      simpa using hms
-    exact hpsTele.append hmsTele
+        (E.get η).block.motiveBinders η ls l) :=
+    hpsTele.append <| by simpa using hms
   have hminsTele : WFTeleStrong E (fun _ => True)
       ((#t[] : Ctx ζ ℓ 0 0) ++
         (Ctx.instL ls (E.get η).block.params ++
@@ -1745,41 +1451,28 @@ theorem WFStrong.recrTele
           (E.get η).block.caseBinders η ls))
       ((E.get η).block.indexTele ls s ps) := by
     simpa using his
-  have htele := hpsMotivesCases.append hisTele
-  exact .snoc htele ⟨(E.get η).block.level.inst ls, trivial, by
-    simpa [casesEnd, ps] using hmaj⟩
+  exact .snoc (hpsMotivesCases.append hisTele)
+    ⟨(E.get η).block.level.inst ls, trivial, by
+      simpa [casesEnd, ps] using hmaj⟩
 
 include tr in
 theorem WF.toStrong
     (h : I.WF E) :
     I.WFStrong E := by
   have hps := h.params.toStrong tr .nil
-  have hΓparams : E[I.params] ⊢ₛ ok := by
-    simpa using hps.appendCtxWFStrong .nil
   exact {
     params := hps
-    indices := fun s => (h.indices s).toStrong tr hΓparams
-    ctors := fun s c => (h.ctors s c).toStrong tr hps
+    indices s := (h.indices s).toStrong tr <| by
+      simpa using hps.appendCtxWFStrong .nil
+    ctors s c := (h.ctors s c).toStrong tr hps
   }
 
 theorem WFStrong.weakenEnv
     {entry : Entry ζ sig} (h : I.WFStrong E) :
-    (I.map (.step .refl)).WFStrong (E.snoc entry) := by
-  have his (s : Fin ι.nsorts) :
-      WFTeleStrong (E.snoc entry) (fun _ => True)
-        (I.map (.step .refl)).params
-        ((I.map (.step .refl)).indices s) := by
-    simpa [Inductive.map, Ctx.weakenEnv] using (h.indices s).weakenEnv
-  have hctors (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-      ((I.map (.step .refl)).ctors s c).WFStrong (E.snoc entry)
-        (I.map (.step .refl)) := by
-    simpa [Inductive.map] using (h.ctors s c).weakenEnv
-  exact {
-    params := by
-      simpa [Inductive.map, Ctx.weakenEnv] using h.params.weakenEnv
-    indices := his
-    ctors := hctors
-  }
+    (I.map (.step .refl)).WFStrong (E.snoc entry) where
+  params := by simpa [map, Ctx.weakenEnv] using h.params.weakenEnv
+  indices s := by simpa [map, Ctx.weakenEnv] using (h.indices s).weakenEnv
+  ctors s c := by simpa [map] using (h.ctors s c).weakenEnv
 
 theorem iotaLhs_hasTypeStrong
     {η : Head ζ (.inductive ι)} {ls : Fin ι.nlevels → Level ℓ}
@@ -1792,7 +1485,7 @@ theorem iotaLhs_hasTypeStrong
     (∀ s, E[Γ] ⊢ₛ ms s : (E.get η).block.motiveType η ls ps l s) →
     (∀ s c, E[Γ] ⊢ₛ mins s c : (E.get η).block.caseFnType η ls ps ms s c) →
     (∀ f, E[Γ] ⊢ₛ fds f :
-      ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     (∀ f, E[Γ] ⊢ₛ recFds f :
@@ -1806,18 +1499,15 @@ theorem iotaLhs_hasTypeStrong
         (E.get η).block.iotaType η ls ps ms s c fds recFds := by
   intro hΓ hps hms hmins hfields hrecFields hσ hresult
   have his := fun i => hctor.targetIndex i hσ
-  have htarget := DefeqStrong.indDF hps his
   have hmaj := DefeqStrong.ctorDF hps hfields hrecFields
     (fun f => hctor.ordinaryFieldExprStrong f hps hfields)
     (fun f => (hctor.recursiveFieldExprStrong rfl f hΓ hps hfields).choose_spec)
-    htarget
-  exact .recrDF hallowed hps hms hmins
-    his hmaj hresult
+    (DefeqStrong.indDF hps his)
+  exact .recrDF hallowed hps hms hmins his hmaj hresult
 
 theorem WFStrong.iotaRhs_hasTypeStrong
     {η : Head ζ (.inductive ι)} (hB : (E.get η).block.WFStrong E)
-    {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
-      Expr ζ ℓ n}
+    {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) → Expr ζ ℓ n}
     (hallowed : (E.get η).block.RecAllowed l) :
     E[Γ] ⊢ₛ ok →
     (∀ p, E[Γ] ⊢ₛ ps p : (E.get η).block.paramType ls ps p) →
@@ -1825,7 +1515,7 @@ theorem WFStrong.iotaRhs_hasTypeStrong
     (∀ s c, E[Γ] ⊢ₛ mins s c :
       (E.get η).block.caseFnType η ls ps ms s c) →
     (∀ f, E[Γ] ⊢ₛ fds f :
-      ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     (∀ f, E[Γ] ⊢ₛ recFds f :
@@ -1841,8 +1531,7 @@ theorem WFStrong.iotaRhs_hasTypeStrong
           (fun i => (ps i).wkN (ι.ctors s c).nfields)
           (Expr.boundVars n (ι.ctors s c).nfields 0)))
         (((E.get η).block.ctors s c).ordinaryFieldTele η ls ps) := by
-    unfold Inductive.caseFnType Inductive.caseTele Ctor.fieldTele
-    unfold Ctx.pi
+    unfold Inductive.caseFnType Inductive.caseTele Ctor.fieldTele Ctx.pi
     rw [Tele.foldr_append, Tele.foldr_append]
   have hΔord := (hB.ctors s c).ordinaryFieldTele (η := η) hps
   have hΓord := hΔord.appendCtxWFStrong hΓ
@@ -1876,10 +1565,10 @@ theorem WFStrong.iotaRhs_hasTypeStrong
           (Expr.boundVars n (ι.ctors s c).nfields 0) ++
         ((E.get η).block.ctors s c).ihTele ls ps ms] ⊢ₛ
       (E.get η).block.caseType η ls ps ms s c : .sort l := by
-    have h := hB.caseType_hasTypeStrong
+    have h := hB.caseType_congr
       ((hB.caseTele hΓ hps hms).appendCtxWFStrong hΓ)
-      (Inductive.caseParams_typed · hps)
-      (Inductive.caseMotives_typed (c := c) · hms)
+      (Inductive.caseParams_congr · hps)
+      (Inductive.caseMotives_congr (c := c) · hms)
       (hB.caseOrdinary_typed · hps)
       (hB.caseRecursive_typed · hΓ hps)
     rwa [show Γ ++ (E.get η).block.caseTele η ls ps ms s c =
@@ -1941,10 +1630,9 @@ theorem WFStrong.iotaRhs_hasTypeStrong
   have htB : E[Γ ++ ((E.get η).block.ctors s c).recursiveFieldTele η ls ps fds] ⊢ₛ
       (Ctx.pi ((E.get η).block.caseType η ls ps ms s c)
         (((E.get η).block.ctors s c).ihTele ls ps ms)).subst
-        (Subst.liftN (Fin.append Subst.id fds) (ι.ctors s c).nrecFields) typ := by
-    have ⟨u, h⟩ := Ctx.pi_isTypeStrong
-      (Δ := ((E.get η).block.ctors s c).ihTele ls ps ms) hΓcase hcaseType
-    exact ⟨u, h.substitution hσAlift⟩
+        (Subst.liftN (Fin.append Subst.id fds) (ι.ctors s c).nrecFields) typ :=
+    have ⟨u, h⟩ := Ctx.pi_isTypeStrong hΓcase hcaseType
+    ⟨u, h.substitution hσAlift⟩
   have hxsB : ∀ f : Fin (ι.ctors s c).nrecFields, E[Γ] ⊢ₛ recFds f :
       ((((E.get η).block.ctors s c).recursiveFieldTele η ls ps fds).entry
         (by omega) (by omega)).subst
@@ -1983,18 +1671,19 @@ theorem WFStrong.iotaRhs_hasTypeStrong
             (previous.castLE f.isLt.le)) := by
     intro f
     rw [Ctx.entry_substN _ _ _ f.val (by omega) (by omega) (by omega) (by omega), Ctor.ihTele,
-      Ctor.ihTeleAux, Ctx.entry_ofTypes, Ctor.ihType]
-    simpa [Inductive.iotaIHs, CtorSig.fieldParams, CtorSig.fieldOrdinary,
+      Ctx.entry_ofTypes, Ctor.ihType]
+    simpa [iotaIHs, Ctor.iotaIH, Ctor.ihTypeWith, CtorSig.fieldParams, CtorSig.fieldOrdinary,
       CtorSig.fieldRecursive, Expr.subst] using
-      (hB.ctors s c).iotaIH hB hallowed f hΓ hps hms hmins hfields hrecFields
+      ((hB.ctors s c).recursive f).iotaIH hB rfl hallowed (by simp) hΓ hps hms hmins
+        (Ctor.forall_ordinarySubst le_rfl hps hfields) (hrecFields f)
   have hC := Ctx.pi_applyFamilyStrong (P := fun _ => True) hΓ (hΔih.substitution hσAB)
     ⟨l, hcaseType.substitution (SubstWFStrong.liftN hΔih hσAB)⟩ hxsC hB'
-  rw [Expr.subst_subst, Subst.liftN_comp_append, Subst.comp_id] at hC
+  simp at hC
   change E[Γ] ⊢ₛ (E.get η).block.iotaRhs η ls l ps ms mins s c fds recFds :
     ((E.get η).block.caseType η ls ps ms s c).subst
       ((ι.ctors s c).caseSubst fds recFds
         ((E.get η).block.iotaIHs η ls l ps ms mins s c fds recFds)) at hC
-  simpa [Inductive.caseType, Inductive.iotaType, Expr.subst] using hC
+  simpa! [caseType, iotaType] using hC
 
 end Inductive
 
@@ -2009,17 +1698,16 @@ def Inductive.ctorTypeFn (I : Inductive ζ ι) (s : Fin ι.nsorts) (c : Fin (ι.
 @[simp] theorem Inductive.ctorTypeFn_map (I : Inductive ζ₁ ι) (pre : ζ₁ ⟶ ζ₂)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     (I.ctorTypeFn s c).map pre = (I.map pre).ctorTypeFn s c := by
-  simp [ctorTypeFn, Expr.map, map]
+  simp! [ctorTypeFn, map]
 
 theorem Inductive.WFStrong.ctorTypeFn {I : Inductive ζ ι} (hI : I.WFStrong E)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    ∃ u, E[(#t[] : Ctx ζ ι.nlevels 0 0)] ⊢ₛ I.ctorTypeFn s c : I.params.pi (.sort u) := by
+    ∃ u, E[(#t[] : Ctx ζ ι.nlevels 0 0)] ⊢ₛ I.ctorTypeFn s c : I.params.pi (.sort u) :=
   have hparams : E[I.params] ⊢ₛ ok := by
-    simpa using WFTeleStrong.appendCtxWFStrong hI.params .nil
-  have hfields := WFTeleStrong.appendCtxWFStrong
-    ((hI.ctors s c).ordinaryTeleAuxStrong _ le_rfl) hparams
+    simpa using hI.params.appendCtxWFStrong .nil
+  have hfields :=
+    ((hI.ctors s c).ordinaryTeleAux _ le_rfl).appendCtxWFStrong hparams
   have ⟨u, ht⟩ := Ctx.pi_isTypeStrong hfields (.sortDF (l := I.level))
-  exact ⟨u, Ctx.lam_congrStrong (by simpa using hparams)
-    (by simpa using ht)⟩
+  ⟨u, Ctx.lam_congrStrong (by simpa using hparams) (by simpa using ht)⟩
 
 end Metalean

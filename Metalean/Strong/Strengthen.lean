@@ -132,7 +132,7 @@ theorem WFStrong.ctorType
     (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
       (E.get η).block.paramType ls ps₁ p) →
     (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-      ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps₁ fun previous : Fin f.val =>
           fds₁ (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ₛ .ind η s ls ps₁ (((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁) ≡
@@ -176,7 +176,7 @@ theorem Defeq.toStrong
     have hB := (hwf η).block
     exact .ctorDF hps hfields hrecFields
       (fun f => ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f
-        hps hfields).choose_spec)
+        hps (fun g _ => hfields g)))
       (fun f => ((hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f
         hps hfields).choose_spec)
       (hwf _ |>.ctorType _ _ hps hfields)
@@ -234,7 +234,7 @@ theorem Defeq.toStrong
     have hfields := fun f => ihfields f hΓ
     have hrecFields := fun f => ihrecFields f hΓ
     have hB := (hwf η).block
-    have hσ := Ctor.targetSubstWFStrong (ctor := (E.get η).block.ctors s c)
+    have hσ := Ctor.forall_ordinarySubst le_rfl (ctor := (E.get η).block.ctors s c)
       hps hfields
     have his := fun i => (hB.ctors s c).targetIndex i hσ
     have hmaj := DefeqStrong.ctorDF hps hfields hrecFields

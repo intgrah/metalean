@@ -57,8 +57,9 @@ theorem extension_hom_ext {Γ₁ Γ₂ : CtxCat E ℓ} {t : Expr ζ ℓ Γ₂.as
   have htail : E[Γ₁.as.ctx] ⊢ₛ Subst.wk.comp σ₁.subst ≡ Subst.wk.comp σ₂.subst ⊣ Γ₂.as.ctx :=
     (RawCtx.toCtx_map_eq_iff (σ₁ ≫ projectionRaw Γ₂ ht)
       (σ₂ ≫ projectionRaw Γ₂ ht)).mp hover
-  have h := (Tm.label_eq_iff.mp ((Tm.map_varLabel σ₁ _).symm.trans
+  have h := (Quotient.exact ((Tm.map_varLabel σ₁ _).symm.trans
     (hgeneric.trans (Tm.map_varLabel σ₂ _)))).2
+  dsimp only [Tm.Repr.ty, Tm.Repr.val] at h
   rw [Ctx.get_last, ← Expr.subst_wk, Expr.subst_subst] at h
   simpa using htail.extend h
 
@@ -74,7 +75,7 @@ theorem rawExtensionIsRepresented {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
   · apply ConcreteCategory.hom_ext
     intro σ
     obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-    apply (Ty.ofRepr_eq_iff _ _).mpr
+    apply Quotient.sound
     change E[Γ₂.as.ctx] ⊢ₛ ((Γ₁.as.ctx.snoc t).get (Fin.last _)).subst σ.subst ≡
       t.subst (σ ≫ projectionRaw Γ₁ ht).subst typ
     rw [Ctx.get_last, ← Expr.subst_wk, Expr.subst_subst]
@@ -84,7 +85,7 @@ theorem rawExtensionIsRepresented {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
   · intro a σ h
     obtain ⟨a⟩ := a
     obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-    have hty : E[Γ₂.as.ctx] ⊢ₛ a.ty ≡ t.subst σ.subst typ := (Ty.ofRepr_eq_iff _ _).mp h
+    have hty : E[Γ₂.as.ctx] ⊢ₛ a.ty ≡ t.subst σ.subst typ := Quotient.exact h
     have ha : E[Γ₂.as.ctx] ⊢ₛ a.val : t.subst σ.subst := hty.convStrong a.valWF
     refine ⟨RawCtx.toCtx.map (σ.snoc ⟨u, ht⟩ ha), ?_, snoc_projection Γ₁ ht σ ha⟩
     apply Quotient.sound
@@ -98,11 +99,11 @@ theorem rawExtensionIsRepresented {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
 end CtxCat
 
 def Ty.chosen (A : y Γ₁ ⟶ Ty E ℓ) : Ty.Repr Γ₁ :=
-  (Ty.exists_ofRepr (yonedaEquiv A)).choose
+  (Quotient.exists_rep (yonedaEquiv A)).choose
 
 theorem Ty.yonedaEquiv_chosen (A : y Γ₁ ⟶ Ty E ℓ) :
-    yonedaEquiv A = Ty.ofRepr (Ty.chosen A) :=
-  (Ty.exists_ofRepr (yonedaEquiv A)).choose_spec
+    yonedaEquiv A = ⟦Ty.chosen A⟧ :=
+  (Quotient.exists_rep (yonedaEquiv A)).choose_spec.symm
 
 instance : HasEmptyCtx (CtxCat E ℓ) where
   empty := CtxCat.nil E ℓ
@@ -122,7 +123,7 @@ def ℒ : NaturalModel (Ty E ℓ) (Tm E ℓ) where
 
 def Ty.Repr.comprehension (T : Ty.Repr Γ₁) :
     ℒ.Comprehension Γ₁ ⟨Γ₁.as.snoc T.wf⟩ where
-  type := yonedaEquiv.symm (Ty.ofRepr T)
+  type := yonedaEquiv.symm (⟦T⟧)
   disp := RawCtx.toCtx.map ⟨Subst.wk, SubstWFStrong.wk T.term Γ₁.as.wf⟩
   generic := Tm.varLabel ⟨Γ₁.as.snoc T.wf⟩ (Fin.last Γ₁.as.len)
   isPullback := by
@@ -130,7 +131,7 @@ def Ty.Repr.comprehension (T : Ty.Repr Γ₁) :
     exact CtxCat.rawExtensionIsRepresented ht
 
 theorem Ty.comprehension_type_eq {A : y Γ₁ ⟶ Ty E ℓ} {T : Ty.Repr Γ₁}
-    (hT : yonedaEquiv A = Ty.ofRepr T) : A = T.comprehension.type := by
+    (hT : yonedaEquiv A = ⟦T⟧) : A = T.comprehension.type := by
   simp [Repr.comprehension, ← hT]
 
 theorem Ty.comprehension_type_chosen (A : y Γ₁ ⟶ Ty E ℓ) :
@@ -146,10 +147,6 @@ namespace Ty.Repr
 def reindex (T : Repr Γ₁) (σ : Γ₂.as ⟶ Γ₁.as) : Repr Γ₂ :=
   ⟨T.term.subst σ.subst, T.wf.substitution σ.typed⟩
 
-theorem ofRepr_reindex (T : Repr Γ₁) (σ : Γ₂.as ⟶ Γ₁.as) :
-    (Ty E ℓ).map (RawCtx.toCtx.map σ).op (ofRepr T) = ofRepr (T.reindex σ) :=
-  rfl
-
 theorem comprehension_type_reindex (T : Repr Γ₁) (σ : Γ₂.as ⟶ Γ₁.as) :
     y (RawCtx.toCtx.map σ) ≫ T.comprehension.type = (T.reindex σ).comprehension.type :=
   yonedaEquiv_symm_naturality_left _ _ _
@@ -160,7 +157,8 @@ theorem Tm.map_rawProjection_varLabel {t : Expr ζ ℓ Γ₁.as.len} {u : Level 
     (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (v : Var Γ₁.as.len) :
     (Tm E ℓ).map (Γ₁.rawProjection ht).op (Tm.varLabel Γ₁ v) =
       Tm.varLabel (Γ₁.extension ht) v.castSucc := by
-  refine Tm.label_congr ?_
+  change Tm.label _ ((CtxCat.projectionRaw Γ₁ ht).typed v) = Tm.label _ _
+  congr 1
   simp [CtxCat.projectionRaw, Expr.subst_wk]
 
 theorem Tm.map_extension_varLabel {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}

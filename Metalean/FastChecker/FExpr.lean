@@ -580,7 +580,6 @@ theorem data_mem_map {xs : Array FExpr} {i : Nat} (h : i < xs.size) :
     xs[i].data ∈ xs.map data :=
   Array.mem_map.mpr ⟨_, Array.getElem_mem h, rfl⟩
 
-
 def listDecEqOf {α : Type _} : (xs ys : List α) → (∀ x ∈ xs, ∀ y, Decidable (x = y)) →
     Decidable (xs = ys)
   | [], [], _ => isTrue rfl

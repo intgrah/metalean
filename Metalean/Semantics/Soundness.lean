@@ -55,10 +55,9 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     exact p
   intro n Δ e₁ e₂ t d hΔ hR
   induction d with
-  | var _ ih₁ =>
-    have p := ih₁ hΔ hR
-    rw [← Ctx.get_map] at p ⊢
-    exact RawJudgment.var hR p
+  | var =>
+    rw [← Ctx.get_map]
+    exact RawJudgment.var hR _
   | symm _ ih₁ => exact (ih₁ hΔ hR).symm
   | trans _ _ ih₁ ih₂ => exact (ih₁ hΔ hR).trans (ih₂ hΔ hR)
   | sortDF => exact RawJudgment.sort _ _
@@ -79,7 +78,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     rw [show (E₁.get η).block.level = (E₂.get (η.map pre.sigs)).block.level by
       simp [hlookup η, Inductive.map]]
     exact RawJudgment.indDF (ho.entryWFStrong _).block
-      (fun c => by rw [hb]; exact hsound.ctorTypeFnProperties hI s c _) pps pis
+      (fun c => hsound.ctorTypeFnProperties _ hI hb s c _) pps pis
   | @ctorDF _ _ ι η s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂ fieldLevels recFieldLevels
       _ _ _ hfieldTypes hrecFieldTypes _ ihps ihfields ihrecFields _ _ ihtype =>
     have ⟨_, _, _, _, hsound, hI, hb⟩ := hblock η
@@ -121,7 +120,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
         (fun s c => (pmins s c).syntactic) (fun i => (pis i).syntactic) pmaj.syntactic)
       (RecTyping.right hB ha hΔ (fun p => (pps p).syntactic) (fun s => (pms s).syntactic)
         (fun s c => (pmins s c).syntactic) (fun i => (pis i).syntactic) pmaj.syntactic)
-      hrec (RawJudgment.recrSubst pps pms pmins pis pmaj) ptype
+      hrec (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => RawJudgment _ e₁ e₂ t) pps pms pmins pis pmaj) ptype
   | appDF _ _ _ _ _ iht iht' ihf ihe ihres =>
     have pt := iht hΔ hR
     have pRes := ihres hΔ hR
@@ -154,7 +153,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have pTW := ihtw (hΔ.snoc ⟨_, pt.syntactic⟩) hR'
     have pEW := ihew (hΔ.snoc ⟨_, pt.syntactic⟩) hR'
     simp only [Expr.map, Expr.map_wk, Expr.map_wkFrom] at pTW pEW ⊢
-    exact RawJudgment.eta pt hR' (iht' _ hR') pTW pEW (ihe hΔ hR)
+    exact RawJudgment.eta pt (iht' _ hR') pTW pEW (ihe hΔ hR)
   | @etaStruct _ _ ι η s c ls ps is maj h _ _ _ ihps ihmaj ihrebuild =>
     have ⟨_, _, _, _, hsound, hI, hb⟩ := hblock η
     have pmaj := ihmaj hΔ hR
@@ -166,8 +165,9 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     simp only [Expr.map] at pmaj prebuild ⊢
     rw [hidx] at pmaj prebuild ⊢
     simp only [Inductive.paramType_map, ← hlookup η] at pps
-    have he := RawJudgment.etaStruct hsound hI hb hs (ho.entryWFStrong _).block hR pps pmaj
-    simpa [← hlookup η] using he (by simpa [← hlookup η] using prebuild)
+    have he := RawJudgment.etaStruct hsound hI hb hs (ho.entryWFStrong _).block hR
+      (fun p => (pps p).toRawTyped) pmaj.toRawTyped
+    simpa [← hlookup η] using he (by simpa [← hlookup η] using prebuild.toRawTyped)
   | proofIrrel _ _ _ ihp ih₁ ih₂ =>
     have pP := ihp hΔ hR
     exact RawJudgment.proofIrrel pP (ih₁ hΔ hR) (ih₂ hΔ hR)
@@ -208,7 +208,9 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
       ← hlookup η] at hIota plhs prhs ⊢
     exact RawJudgment.of_typings hIota plhs prhs (RawSound.iota hsound hI hb h (by simp [hu]) hR
       ⟨fun f => (fds f).map pre.sigs, fun f => (recFds f).map pre.sigs,
-        fun f => (pf f).syntactic, fun f => (prf f).syntactic⟩ pps pms pmins pf prf hIota prhs)
+        fun f => (pf f).syntactic, fun f => (prf f).syntactic⟩
+      (fun p => (pps p).toRawTyped) (fun t => (pms t).toRawTyped) (fun t c => (pmins t c).toRawTyped)
+      (fun f => (pf f).toRawTyped) (fun f => (prf f).toRawTyped) hIota prhs.toRawTyped)
   | quotDF _ _ ihα ihr =>
     have pr := ihr hΔ hR
     simp only [Quot.relType_map] at pr
@@ -251,8 +253,9 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
 theorem DefeqStrong.rawSoundness (ho : E₂.Ordered) {e₁ e₂ t : Expr ζ₂ ℓ n}
     (hΔ : E₂[Δ] ⊢ₛ ok) (d : E₂[Δ] ⊢ₛ e₁ ≡ e₂ : t) :
     RawJudgment ⟨Δ, hΔ⟩ e₁ e₂ t := by
-  simpa! [dsimp% [CategoryStruct.id] (Expr.functor ℓ n).map_id_apply ζ₂] using
-    RawSound.properties (ho.rawSound .refl) hΔ ((Ctx.functor _ _ _).map_id_apply _ Δ) hΔ d
+  convert RawSound.properties (ho.rawSound .refl) hΔ d using 1 <;>
+    simp! [dsimp% [CategoryStruct.id] (Expr.functor ℓ n).map_id_apply ζ₂,
+      dsimp% [CategoryStruct.id] (Ctx.functor ℓ 0 n).map_id_apply ζ₂]
 
 theorem CtxWFStrong.bottom_admissible (ho : E₂.Ordered) (hΔ : E₂[Δ] ⊢ₛ ok) {Γ : CtxCat E₂ ℓ}
     (σ : Γ ⟶ (⟨Δ, hΔ⟩ : CtxCat E₂ ℓ)) : SourceAdmissible σ fun _ ↦ ⊥ := by

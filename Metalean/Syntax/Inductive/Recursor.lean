@@ -117,47 +117,24 @@ def ihType
         (fun s => (ms s).instL levelSubst) f := by
   simp [ihType, ihTypeWith]
 
-def ihTeleAux (count : Nat) (hcount : count ≤ csig.nrecFields) :
-    Ctx ζ₁ ℓ (n + csig.nfields + csig.nrecFields)
-      (n + csig.nfields + csig.nrecFields + count) :=
-  Ctx.ofTypes fun f : Fin count => ctor.ihType ls ps ms (f.castLE hcount)
-
 def ihTele :
     Ctx ζ₁ ℓ (n + csig.nfields + csig.nrecFields)
       (n + csig.nfields + csig.nrecFields + csig.nrecFields) :=
-  ihTeleAux ctor ls ps ms csig.nrecFields le_rfl
-
-@[simp] theorem ihTeleAux_map
-    (count : Nat) (hcount : count ≤ csig.nrecFields) :
-    (ctor.ihTeleAux ls ps ms count hcount).map pre =
-      (ctor.map pre).ihTeleAux ls
-        (fun i => (ps i).map pre)
-        (fun s => (ms s).map pre) count hcount := by
-  refine (Ctx.ofTypes_map _ pre).trans ?_
-  simp [ihTeleAux]
+  Ctx.ofTypes (ctor.ihType ls ps ms)
 
 @[simp] theorem ihTele_map :
     (ctor.ihTele ls ps ms).map pre =
       (ctor.map pre).ihTele ls
         (fun i => (ps i).map pre)
-        fun s => (ms s).map pre :=
-  ctor.ihTeleAux_map pre ls ps ms _ _
-
-@[simp] theorem ihTeleAux_instL
-    (count : Nat) (hcount : count ≤ csig.nrecFields)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.ihTeleAux ls ps ms count hcount).instL levelSubst =
-      ctor.ihTeleAux (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) count hcount := by
-  simp [ihTeleAux]
+        fun s => (ms s).map pre := by
+  simp [ihTele]
 
 @[simp] theorem ihTele_instL :
     (ctor.ihTele ls ps ms).instL levelSubst =
       ctor.ihTele (fun i => (ls i).inst levelSubst)
         (fun i => (ps i).instL levelSubst)
-        fun s => (ms s).instL levelSubst :=
-  ctor.ihTeleAux_instL ls ps ms _ _ levelSubst
+        (fun s => (ms s).instL levelSubst) := by
+  simp [ihTele]
 
 end Ctor
 

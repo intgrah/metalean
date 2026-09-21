@@ -130,8 +130,7 @@ theorem application_rawPi_fixed (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
         ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label)).2)
     (hm : Tm.type name = yonedaEquiv ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label)).1) :
     (piLimit E ℓ).rawExtend (sectionValue (CtxCat.rawComprehension ht) B (σ₂ ≫ σ₁) (ρ.pullback σ₂) name X.val)
-        (Tm.apply ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label)).1
-          ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label)).2
+        (Tm.apply ((Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op label))
           ((Tm E ℓ).map σ₂.op n) name h hm)
         (CoherentShape.application (F.pullback σ₂) name X).val =
       (CoherentShape.application (F.pullback σ₂) name X).val := by
@@ -236,8 +235,7 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
       (piLimit E ℓ).rawExtend (C.app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) name J.val = J.val →
       (piLimit E ℓ).rawExtend
           (sectionValue (CtxCat.rawComprehension ht) B (σ₂ ≫ σ₁) (ρ.pullback σ₂) name J.val)
-          (Tm.apply ((Ty.pairPresheaf E ℓ).map σ₂.op label).1
-            ((Ty.pairPresheaf E ℓ).map σ₂.op label).2 ((Tm E ℓ).map σ₂.op n) name h hm)
+          (Tm.apply ((Ty.pairPresheaf E ℓ).map σ₂.op label) ((Tm E ℓ).map σ₂.op n) name h hm)
           (sectionValue (CtxCat.rawComprehension ht) M (σ₂ ≫ σ₁) (ρ.pullback σ₂) name J.val) =
         sectionValue (CtxCat.rawComprehension ht) M (σ₂ ≫ σ₁) (ρ.pullback σ₂) name J.val) :
     (piLimit E ℓ).rawExtend

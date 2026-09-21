@@ -49,7 +49,7 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
       | true =>
         ⨆ h : RecTyping Γ₁ η s ls l ps ms mins is maj,
           RawFamily.closedApps (recursorWith D (fun Γ' e _ => rawInterpret Γ' e) h.toRecDecl ls s)
-            (fun v => Tm.label Γ₁.as (h.recrSubstWF v))
+            (fun v => Tm.label Γ₁.as (h.recrHom.typed v))
             fun v => rawInterpret Γ₁ (Inductive.recrSubst ps ms mins is maj v)
   | .quot η u α r => ⨆ h : QuotTyping Γ₁ u α r, RawFamily.quot (h.code η)
   | .quotMk η u α _ a =>
@@ -84,20 +84,19 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
   | .letE _ e e' => rawInterpret Γ₁ (e'.inst e)
 termination_by t => t.measure
 decreasing_by
-  all_goals first
-    | exact Expr.measure_const_def ..
-    | exact Expr.measure_ind_ctorTypeFn ..
-    | exact Expr.measure_ind_param ..
-    | exact Expr.measure_ctorField ..
-    | exact Prod.Lex.left _ _ (lt_of_lt_of_le ‹_› (le_max_left _ _))
-    | exact Inductive.forall_recrSubst_image
-        (fun _ => Expr.measure_recr_param ..)
-        (fun _ => Expr.measure_recr_motive ..)
-        (fun _ _ => Expr.measure_recr_case ..)
-        (fun _ => Expr.measure_recr_index ..)
-        (Expr.measure_recr_major ..) _
-    | exact Expr.measure_inst ..
-    | exact Expr.measure_lt (by simp [Expr.headRank]) (by simp [Expr.size, Expr.sizeWith, Var]; omega)
+  · apply Expr.measure_const_def
+  · exact Expr.measure_ind_ctorTypeFn ..
+  · exact Expr.measure_ind_param ..
+  · exact Expr.measure_ctorField ..
+  · exact Prod.Lex.left _ _ (lt_of_lt_of_le ‹_› (le_max_left _ _))
+  · exact Inductive.forall_recrSubst_image
+      (fun _ => Expr.measure_recr_param ..)
+      (fun _ => Expr.measure_recr_motive ..)
+      (fun _ _ => Expr.measure_recr_case ..)
+      (fun _ => Expr.measure_recr_index ..)
+      (Expr.measure_recr_major ..) _
+  all_goals try exact Expr.measure_inst ..
+  all_goals exact Expr.measure_lt (by simp [Expr.headRank]) (by simp [Expr.size, Expr.sizeWith, Var]; omega)
 
 variable {Γ₁ Γ₂ : CtxCat E ℓ} {nlevels : Nat} (l : Level ℓ)
 
@@ -216,7 +215,7 @@ theorem rawInterpret_recr {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin 
     {is : Fin (ι.nindices s) → Expr ζ ℓ Γ₁.as.len} {maj : Expr ζ ℓ Γ₁.as.len}
     (h : RecTyping Γ₁ η s ls l ps ms mins is maj) (hrel : l.rel = true) :
     rawInterpret D Γ₁ (.recr η s ls l ps ms mins is maj) =
-      RawFamily.closedApps (recursor D h.toRecDecl ls s) (fun v => Tm.label Γ₁.as (h.recrSubstWF v))
+      RawFamily.closedApps (recursor D h.toRecDecl ls s) (fun v => Tm.label Γ₁.as (h.recrHom.typed v))
         fun v => rawInterpret D Γ₁ (Inductive.recrSubst ps ms mins is maj v) := by
   rw [rawInterpret, hrel]
   exact RawFamily.iSup_eq h fun _ => rfl

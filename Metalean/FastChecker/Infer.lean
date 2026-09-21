@@ -489,7 +489,7 @@ partial def inferCore (G : FCtx) :
           (fun e f => ((E.get η₀).block.ctors ⟨s, hs⟩ ⟨c, hc⟩).ordinaryFieldExpr (⟦ls' ·⟧) eps e f)
           hfds''
           (fun e he f => hcd.ordinaryFieldExpr hls hls' hpsA ⟨hfds', he⟩ f)
-          (fun e f h => hctor.ordinaryFieldExpr_isTypeStrong hB.params f hepsT h)
+          (fun e f h => ⟨_, hctor.ordinaryFieldExpr_congr hB.params f hepsT h⟩)
           (fun f => hfdsT f)
         have hfdsA : ArgsDenote L ⟨_, _⟩ fds _ := ⟨hfds', hefdsD⟩
         have ⟨erec, herecD, herecT⟩ := TypedSpec.fixArgs hS hrecFds'
@@ -585,7 +585,7 @@ partial def inferCore (G : FCtx) :
             simpa using hmins'' (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2)
           (fun _ _ j => (hI.ctors _ _).caseFnType hls hls' hpsA hη (fun r => rfl)
             (fun r => hemsD _) (hemsD _))
-          (fun _ j _ => hB.caseFnType hS.wf hepsT hemsT)
+          (fun _ j _ => (Inductive.caseFnType_congr hB hS.wf hepsT hemsT).isType.1)
           (fun j => by
             simpa [minorIndex] using hminsT (Fin.decodeSigma ι.nctors j).1 (Fin.decodeSigma ι.nctors j).2)
         have ⟨eis, heisD, heisT⟩ := TypedSpec.fixArgs hS his'
@@ -1576,11 +1576,11 @@ partial def isDefEqCtor (G : FCtx) (pos₁ s₁ c₁ : Nat) (ls₁ : Array FLeve
       (hrecFds₂'' r) (hrecFdsw₁ r).right (hrecFdsw₂ r).right)
     have hctor := hB.ctors s c
     have hleft := hindw₁.ctorDF hpsw₁ hfdsw₁ hrecFdsw₁
-      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ hfdsw₁).choose_spec)
+      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ (fun g _ => hfdsw₁ g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsw₁ hfdsw₁).choose_spec)
     have hright := (DefeqStrong.indDF hps fun i =>
       hctor.targetIndex_congr hB.params i hps hfds).ctorDF hps hfds hrecFds
-      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hps hfds).choose_spec)
+      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hps (fun g _ => hfds g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hps hfds).choose_spec)
     exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
 

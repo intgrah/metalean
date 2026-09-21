@@ -64,7 +64,7 @@ include hatoms hparamReach in
 theorem fieldSlotsReachable
     {fds₁ : Fin (ι.ctors s c).nfields → Expr ζ₂ 0 n}
     (hfields : ∀ f, ε₂[γ] ⊨ fds f ≡ fds₁ f :
-      ((((I.map pre.sigs).ctors s c).ordinaryType f).instL ls).subst
+      (((((I.map pre.sigs).ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) :
     Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
@@ -75,7 +75,7 @@ theorem fieldSlotsReachable
       (model.ctors s c).source.ordinary.sem :=
     (congrArg (fun Δ => Realizes ε₂ zeroNs _ Δ _)
       ((Ctx.map_instL pre.sigs ls (I.ctors s c).ordinaryTele).trans
-        (congrArg (Ctx.instL ls) (Ctor.ordinaryTele_map pre.sigs (I.ctors s c))))).mp
+        (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) _ _)))).mp
           (((model.ctors s c).source.ordinary.realizes.monoReach
             (reach₂ := {(ε₂[γ]⟦ps ·⟧)})
             (Set.singleton_subset_iff.mpr hparamReach)).map pre hatoms)
@@ -212,7 +212,7 @@ theorem ctorRuleSound
     {recFds₁ recFds₂ : Fin (ι.ctors s c).nrecFields → Expr ζ₂ 0 n} :
     (∀ param, ε₂[γ] ⊨ ps₁ param ≡ ps₂ param : (E₂.get η).block.paramType ls ps₁ param) →
     (∀ f, ε₂[γ] ⊨ fds₁ f ≡ fds₂ f :
-      ((((E₂.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))) →
     (∀ f, ε₂[γ] ⊨ recFds₁ f ≡ recFds₂ f :
       (((E₂.get η).block.ctors s c).recursive f).instantiatedType η ls ps₁

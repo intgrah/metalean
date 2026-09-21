@@ -37,7 +37,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
       {s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂} :
     Env.Ordered E →
     (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
-    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
       (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))) →
     (∀ f, ε[ν; γ] ⊨ recFds₁ f ≡ recFds₂ f :
       (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps₁ (Fin.append ps₁ fds₁)) →
@@ -100,7 +100,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
     (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : (E.get η).block.paramType ls ps p) →
     (∀ s, ε[ν; γ] ⊨ ms s ≡ ms s : (E.get η).block.motiveType η ls ps l s) →
     (∀ s c, ε[ν; γ] ⊨ mins s c ≡ mins s c : (E.get η).block.caseFnType η ls ps ms s c) →
-    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
       (Fin.append ps fun previous : Fin f.val => fds (previous.castLE f.isLt.le))) →
     (∀ f, ε[ν; γ] ⊨ recFds f ≡ recFds f :
       (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps (Fin.append ps fds)) →

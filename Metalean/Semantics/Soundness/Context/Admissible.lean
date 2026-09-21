@@ -40,25 +40,12 @@ judgement SourceAdmissible : {n : Nat} → {ctx : Ctx ζ ℓ 0 n} → {hctx : E[
 
 namespace SourceAdmissible
 
-theorem cons_iff (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (σ : Γ₂ ⟶ CtxCat.extension Γ₁ ht) (ρ : RawValuation Γ₂) :
-    SourceAdmissible σ ρ ↔
-      SourceAdmissible (σ ≫ CtxCat.rawProjection Γ₁ ht) ρ.tail ∧
-      ((rawInterpret (CodeAssignment.piLimit E ℓ) Γ₁ t).app _
-        (σ ≫ CtxCat.rawProjection Γ₁ ht).op ρ.tail).IsDirected ∧
-      (ρ 0).IsDirected ∧
-      (CodeAssignment.piLimit E ℓ).rawExtend
-        ((rawInterpret (CodeAssignment.piLimit E ℓ) Γ₁ t).app _
-          (σ ≫ CtxCat.rawProjection Γ₁ ht).op ρ.tail)
-        ((Tm E ℓ).map σ.op (CtxCat.rawComprehension ht).generic) (ρ 0) = ρ 0 :=
-  ⟨fun hρ => by cases hρ with | cons _ _ _ h₁ h₂ h₃ h₄ => exact ⟨h₁, h₂, h₃, h₄⟩,
-    fun ⟨h₁, h₂, h₃, h₄⟩ => .cons ht σ ρ h₁ h₂ h₃ h₄⟩
-
 theorem tail (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     {σ : Γ₂ ⟶ CtxCat.extension Γ₁ ht} {ρ : RawValuation Γ₂}
     (hρ : SourceAdmissible σ ρ) :
-    SourceAdmissible (σ ≫ CtxCat.rawProjection Γ₁ ht) ρ.tail :=
-  ((cons_iff ht σ ρ).mp hρ).1
+    SourceAdmissible (σ ≫ CtxCat.rawProjection Γ₁ ht) ρ.tail := by
+  cases hρ with
+  | cons _ _ _ htail _ _ _ => exact htail
 
 theorem pullback {σ₁ : Γ₂ ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ)} {ρ : RawValuation Γ₂}
     (hρ : SourceAdmissible σ₁ ρ) (σ₂ : Γ₃ ⟶ Γ₂) :

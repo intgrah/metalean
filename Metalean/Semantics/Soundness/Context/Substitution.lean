@@ -98,13 +98,6 @@ def HasSubstitution (Γ₁ : CtxCat E ℓ) (e : Expr ζ ℓ Γ₁.as.len) : Prop
 
 namespace HasSubstitution
 
-theorem rename {e : Expr ζ ℓ Γ₁.as.len} (h : HasSubstitution Γ₁ e) {r : Γ₂.as ⟶ Γ₁.as}
-    (hr : RawCtx.Hom.IsRenaming r) (σ : Γ₃ ⟶ Γ₂) {ρ₁ ρ₂ : RawValuation Γ₃} (hag : Agrees r σ ρ₁ ρ₂)
-    (hadm : SourceAdmissible (σ ≫ RawCtx.toCtx.map r) ρ₁) :
-    (rawInterpret (piLimit E ℓ) Γ₂ (e.subst r.subst)).app _ σ.op ρ₂ =
-      (rawInterpret (piLimit E ℓ) Γ₁ e).app _ (σ ≫ RawCtx.toCtx.map r).op ρ₁ :=
-  h r σ ρ₁ ρ₂ (.ren hr hag) hadm
-
 theorem closed_valuation {e : Expr ζ ℓ 0} (h : HasSubstitution (CtxCat.nil E ℓ) e)
     (σ : Γ₁ ⟶ CtxCat.nil E ℓ) (ρ₁ ρ₂ : RawValuation Γ₁) :
     (rawInterpret (piLimit E ℓ) (CtxCat.nil E ℓ) e).app _ σ.op ρ₁ =
@@ -139,7 +132,7 @@ theorem snoc {t : Expr ζ ℓ Γ₁.as.len} {e : Expr ζ ℓ Γ₂.as.len} {u : 
   | last =>
     change (rawInterpret (piLimit E ℓ) Γ₅ ((σ₁.subst.extend e (Fin.last _)).subst r.subst)).app _
       σ₄.op ρ₃ = _
-    rw [Subst.extend_last, Var.db_last, pe.rename hr σ₄ hag (by rw [hσ]; exact htarget.pullback σ₃),
+    rw [Subst.extend_last, Var.db_last, pe r σ₄ _ _ (.ren hr hag) (by rw [hσ]; exact htarget.pullback σ₃),
       hσ]
     rfl
   | cast v =>
@@ -206,17 +199,11 @@ theorem ofHom {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
     SemanticSubstitution σ₁ σ₂
       (RawValuation.pushFin (fun _ => ⊥)
         fun v => (rawInterpret (piLimit E ℓ) Γ₂ (σ₁.subst v)).app _ σ₂.op ρ) ρ := by
-  induction hctx with
-  | nil => exact SemanticSubstitution.nil _ _ _ _
-  | @snoc n ctx t hctx ht ih =>
-    have ⟨u, ht⟩ := ht
-    let σ₃ : Γ₂.as ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ).as := σ₁ ≫ CtxCat.projectionRaw ⟨ctx, hctx⟩ ht
-    have he : E[Γ₂.as.ctx] ⊢ₛ σ₁.subst (Fin.last n) : t.subst σ₃.subst := by
-      have he := σ₁.typed (Fin.last n)
-      rwa [Ctx.get_last, Expr.wk_subst] at he
-    have hsub := SemanticSubstitution.snoc ht σ₃ he (pσ₁ (Fin.last n)) σ₂ _ ρ htarget
-      (ih σ₃ fun v => pσ₁ v.castSucc)
-    rwa [show σ₃.snoc ⟨u, ht⟩ he = σ₁ from RawCtx.Hom.ext (Fin.snoc_init_self σ₁.subst)] at hsub
+  intro Γ₄ Γ₅ σ₃ r hr σ₄ ρ₃ hσ hag hadm v
+  change (rawInterpret (piLimit E ℓ) Γ₅ ((σ₁.subst v).subst r.subst)).app _ σ₄.op ρ₃ = _
+  rw [pσ₁ v r σ₄ _ _ (.ren hr hag) (by rw [hσ]; exact htarget.pullback σ₃), hσ]
+  simpa [RawValuation.pullback] using
+    ((rawInterpret (piLimit E ℓ) Γ₂ (σ₁.subst v)).app_pullback σ₂.op σ₃ ρ).symm
 
 end SemanticSubstitution
 

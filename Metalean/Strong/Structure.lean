@@ -34,11 +34,11 @@ theorem projTypeWith_hasTypeStrong
           (earlier.castLE prior.isLt.le)) :
     E[Γ] ⊢ₛ projTypeWith I ls ps f previous :
       .sort (((I.ctors s c).ordinary f).level.inst ls) := by
-  have hσ := Ctor.ordinarySubstWFStrong
+  have hσ := Ctor.forall_ordinarySubst
     f.isLt.le hps fun prior => by
       simpa [projTypeWith] using hprevious prior
   have htype := ((hctor.ordinary f).typeExact.instLevel ls).substitution hσ
-  simpa [projTypeWith, Ctor.ordinaryType, Expr.instL] using htype
+  simpa [projTypeWith, Expr.instL] using htype
 
 theorem projTypeWith_congrStrong
     (hB : I.WFStrong E) (hctor : (I.ctors s c).WFStrong E I)
@@ -54,21 +54,21 @@ theorem projTypeWith_congrStrong
       projTypeWith I ls ps f previous' :
         .sort (((I.ctors s c).ordinary f).level.inst ls) := by
   have hpsEq := paramSubstEqStrong hps
-  have hfieldsTele := (hctor.ordinaryTeleAuxStrong f.val f.isLt.le).instLevel
+  have hfieldsTele := (hctor.ordinaryTeleAux f.val f.isLt.le).instLevel
     (Q := fun _ => True) ls fun _ => trivial
   have hfullEq := SubstEqStrong.extendFamily
       hfieldsTele hpsEq fun prior => by
     rw [← Ctx.entry_instL]
     simpa [projTypeWith] using hprevious prior
   have hsource := hB.params.append
-    (by simpa using hctor.ordinaryTeleAuxStrong f.val f.isLt.le)
+    (by simpa using (hctor.ordinaryTeleAux f.val f.isLt.le).mono fun _ => trivial)
   have hfield := (hctor.ordinary f).typeExact.instLevel ls
   rw [Ctx.instL_append] at hfield
   have hsourceInst := hsource.instLevel (Q := fun _ => True)
     ls fun _ => trivial
   rw [Ctx.instL_append] at hsourceInst
   have hfield := hsourceInst.substitution_congr hfullEq hfield
-  simpa [projTypeWith, Ctor.ordinaryType, Expr.instL] using hfield
+  simpa [projTypeWith, Expr.instL] using hfield
 
 structure ProjectionStrong
     (E : Env ζ) (Γ : Ctx ζ ℓ 0 n)
@@ -213,7 +213,7 @@ theorem projectionStrong
     exact hmotive
   have hfieldsTele := (hB.ctors s c).ordinaryFieldTele (η := η) hps
   have hΓcase := (hB.caseTele (c := c) hΓ hps hms).appendCtxWFStrong hΓ
-  have hcaseParams := (Inductive.caseParams_typed (c := c) (ms := ms) · hps)
+  have hcaseParams := (Inductive.caseParams_congr (c := c) (ms := ms) · hps)
   have hcaseOrdinary := (hB.caseOrdinary_typed (c := c) (ms := ms) · hps)
   have hcaseIdx : ((E.get η).block.ctors s c).targetIndex ls
       ((ι.ctors s c).caseParams ps) (ι.ctors s c).caseOrdinary = h.indices :=
@@ -395,14 +395,14 @@ theorem projType_congrStrong :
   intro hps hmaj
   have hfields : ∀ current : Fin (ι.ctors s c).nfields,
       E[Γ] ⊢ₛ h.projTerm η ls ps₁ current maj₁ ≡ h.projTerm η ls ps₂ current maj₂ :
-        ((((E.get η).block.ctors s c).ordinaryType current).instL ls).subst
+        (((((E.get η).block.ctors s c).ordinary current).type).instL ls).subst
           (Fin.append ps₁ fun prior : Fin current.val =>
             h.projTerm η ls ps₁ (prior.castLE current.isLt.le) maj₁) := by
     intro current
     have hcongr := h.projTerm_congrStrong hB current hps hmaj
     rwa [projType_eq] at hcongr
-  have ⟨_, heq⟩ := (hB.ctors s c).ordinaryFieldExpr_congr hB.params f
-    hps hfields
+  have heq := (hB.ctors s c).ordinaryFieldExpr_congr hB.params f
+    hps (fun g _ => hfields g)
   rw [projType_eq, projType_eq]
   exact .ofDefEq heq
 
@@ -414,7 +414,7 @@ theorem rebuildTerm_hasTypeStrong
     E[Γ] ⊢ₛ h.rebuildTerm η ls ps maj : .ind η s ls ps is := by
   intro hΓ hps hmaj
   have hfields : ∀ f, E[Γ] ⊢ₛ h.projTerm η ls ps f maj :
-      ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           h.projTerm η ls ps
             (previous.castLE f.isLt.le) maj) := by

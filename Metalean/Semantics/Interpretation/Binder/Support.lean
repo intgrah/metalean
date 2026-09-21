@@ -104,7 +104,7 @@ theorem sourceQuery_eq_of_section (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   change Ty.ofTyping Γ₂.as (he₁.substitution σ.typed).regular.choose_spec =
     (Ty E ℓ).map (RawCtx.toCtx.map σ).op (Ty.ofTyping Γ₁.as ht) at htype
   rw [Ty.map_ofTyping] at htype
-  exact Tm.label_eq ((Ty.ofTyping_eq_iff Γ₂.as _ _).mp htype) (he₁.substitution σ.typed)
+  exact Tm.label_eq (Quotient.exact htype) (he₁.substitution σ.typed)
 
 theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (σ₁ : Γ₂ ⟶ Γ₁) (F X : Domain Γ₂)

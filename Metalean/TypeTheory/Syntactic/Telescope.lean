@@ -64,62 +64,22 @@ theorem RawCtx.Hom.liftTele_isPullback {Γ₁ Γ₂ : RawCtx E ℓ}
     IsPullback (RawCtx.toCtx.map (σ.liftTele hΔ))
       (RawCtx.toCtx.map (teleProjection (hΔ.substitution σ.typed)))
       (RawCtx.toCtx.map (teleProjection hΔ)) (RawCtx.toCtx.map σ) := by
-  cases Γ₁ with
-  | @mk n ctx wf =>
-    let Γ₁ : RawCtx E ℓ := ⟨ctx, wf⟩
-    induction Δ using Tele.addInduction with
-    | nil =>
-      change IsPullback (RawCtx.toCtx.map σ) (RawCtx.toCtx.map (𝟙 Γ₂))
-        (RawCtx.toCtx.map (𝟙 Γ₁)) (RawCtx.toCtx.map σ)
-      rw [RawCtx.toCtx.map_id, RawCtx.toCtx.map_id]
-      exact IsPullback.of_vert_isIso ⟨by simp⟩
-    | snoc k Δ A ih =>
-      have ⟨u, hu, hA⟩ := hΔ.last
-      have hmap : RawCtx.toCtx.map (σ.liftTele (k := k + 1) hΔ) =
-          CtxCat.extensionMap hA (σ.liftTele hΔ.init) := rfl
-      have hproj := RawCtx.Hom.teleProjection_snoc hΔ.init hu hA
-      have hproj' := RawCtx.Hom.teleProjection_snoc (hΔ.init.substitution σ.typed) hu
-        (hA.substitution (σ.liftTele hΔ.init).typed)
-      erw [hmap, hproj, hproj']
-      exact (CtxCat.extensionIsPullback hA (σ.liftTele hΔ.init)).paste_vert (ih hΔ.init)
-
-theorem RawCtx.Hom.applyTele_typed {Γ₁ Γ₂ : RawCtx E ℓ}
-    {Δ : Ctx ζ ℓ Γ₁.len (Γ₁.len + k)} (hΔ : WFTeleStrong E P Γ₁.ctx Δ)
-    {σ₁ : Γ₂ ⟶ Γ₁}
-    (σ₂ : Γ₂ ⟶ (⟨Γ₁.ctx ++ Δ, hΔ.appendCtxWFStrong Γ₁.wf⟩ : RawCtx E ℓ))
-    (hover : σ₂ ≫ teleProjection hΔ = σ₁)
-    {e : Expr ζ ℓ Γ₂.len} {body : Expr ζ ℓ (Γ₁.len + k)} {u : Level ℓ} :
-    E[Γ₁.ctx ++ Δ] ⊢ₛ body : .sort u →
-    E[Γ₂.ctx] ⊢ₛ e : (Δ.pi body).subst σ₁.subst →
-    E[Γ₂.ctx] ⊢ₛ e.apps (fun i => σ₂.subst (Fin.natAdd Γ₁.len i)) : body.subst σ₂.subst := by
-  intro hbody he
-  induction Δ using Tele.addInduction generalizing u with
+  have ⟨ctx, wf⟩ := Γ₁
+  let Γ₁ : RawCtx E ℓ := ⟨ctx, wf⟩
+  induction Δ using Tele.addInduction with
   | nil =>
-    have hσ₂ : σ₂.subst = σ₁.subst := congrArg RawCtx.Hom.subst hover
-    simpa [hσ₂] using he
-  | snoc k Δ t ih =>
-    have ⟨v, hv, ht⟩ := hΔ.last
-    let C : CtxCat E ℓ := ⟨⟨Γ₁.ctx ++ Δ, hΔ.init.appendCtxWFStrong Γ₁.wf⟩⟩
-    let σ₃ := σ₂ ≫ CtxCat.projectionRaw C ht
-    have hoverInit : σ₃ ≫ teleProjection hΔ.init = σ₁ := by
-      trans σ₂ ≫ teleProjection hΔ
-      · apply RawCtx.Hom.ext
-        rfl
-      · exact hover
-    have hfun := ih hΔ.init σ₃ hoverInit (.forallEDF ht hbody hbody) he
-    have harg : E[Γ₂.ctx] ⊢ₛ σ₂.subst (Fin.last (Γ₁.len + k)) : t.subst σ₃.subst := by
-      have hh := σ₂.typed (Fin.last (Γ₁.len + k))
-      erw [Ctx.get_last, Expr.wk_subst] at hh
-      exact hh
-    have htσ := ht.substitution σ₃.typed
-    have hbodyσ := hbody.substitution (σ₃.lift ⟨v, ht⟩).typed
-    have happ := DefeqStrong.appDF htσ hbodyσ hfun harg (hbodyσ.inst_congr harg)
-    have hσ₂ : σ₃.subst.extend (σ₂.subst (Fin.last (Γ₁.len + k))) = σ₂.subst :=
-      Fin.snoc_init_self σ₂.subst
-    change E[Γ₂.ctx] ⊢ₛ (e.apps fun i => σ₂.subst (Fin.natAdd Γ₁.len i.castSucc)).app
-        (σ₂.subst (Fin.last (Γ₁.len + k))) :
-      (body.subst σ₃.subst.lift).inst (σ₂.subst (Fin.last (Γ₁.len + k))) at happ
-    rw [Expr.apps_last]
-    simpa [Expr.inst_subst_lift, hσ₂] using happ
+    change IsPullback (RawCtx.toCtx.map σ) (RawCtx.toCtx.map (𝟙 Γ₂))
+      (RawCtx.toCtx.map (𝟙 Γ₁)) (RawCtx.toCtx.map σ)
+    rw [RawCtx.toCtx.map_id, RawCtx.toCtx.map_id]
+    exact IsPullback.of_vert_isIso ⟨by simp⟩
+  | snoc k Δ A ih =>
+    have ⟨u, hu, hA⟩ := hΔ.last
+    have hmap : RawCtx.toCtx.map (σ.liftTele (k := k + 1) hΔ) =
+        CtxCat.extensionMap hA (σ.liftTele hΔ.init) := rfl
+    have hproj := RawCtx.Hom.teleProjection_snoc hΔ.init hu hA
+    have hproj' := RawCtx.Hom.teleProjection_snoc (WFTeleStrong.substitution σ.typed hΔ.init) hu
+      (hA.substitution (σ.liftTele hΔ.init).typed)
+    erw [hmap, hproj, hproj']
+    exact (CtxCat.extensionIsPullback hA (σ.liftTele hΔ.init)).paste_vert (ih hΔ.init)
 
 end Metalean

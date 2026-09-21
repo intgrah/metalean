@@ -59,40 +59,19 @@ notation:max "Ty_" Γ:max => Functor.obj (Metalean.Ty _ _) (Opposite.op Γ)
 
 namespace Ty
 
-def ofRepr (A : Repr Γ) : Ty_ Γ := ⟦A⟧
-
-@[simp] theorem ofRepr_eq_iff (A B : Repr Γ) :
-    ofRepr A = ofRepr B ↔ E[Γ.as.ctx] ⊢ₛ A.term ≡ B.term typ :=
-  ⟨Quotient.exact, fun h => Quotient.sound h⟩
-
-theorem exists_ofRepr (A : Ty_ Γ) : ∃ T, A = ofRepr T :=
-  have ⟨T, hT⟩ := Quotient.exists_rep A
-  ⟨T, hT.symm⟩
-
-def elim {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
-    (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂) : β :=
+def elim {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ⟦T⟧ → β)
+    (hf : ∀ T₁ T₂ (h₁ : A = ⟦T₁⟧) (h₂ : A = ⟦T₂⟧), f T₁ h₁ = f T₂ h₂) : β :=
   Quotient.pliftOn A f fun _ _ _ _ _ => hf _ _ _ _
 
-theorem elim_eq {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ofRepr T → β)
-    (hf : ∀ T₁ T₂ (h₁ : A = ofRepr T₁) (h₂ : A = ofRepr T₂), f T₁ h₁ = f T₂ h₂)
-    (T : Repr Γ) (h : A = ofRepr T) : elim A f hf = f T h := by
+theorem elim_eq {β : Sort*} (A : Ty_ Γ) (f : (T : Repr Γ) → A = ⟦T⟧ → β)
+    (hf : ∀ T₁ T₂ (h₁ : A = ⟦T₁⟧) (h₂ : A = ⟦T₂⟧), f T₁ h₁ = f T₂ h₂)
+    (T : Repr Γ) (h : A = ⟦T⟧) : elim A f hf = f T h := by
   subst h
   rfl
 
 def ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {u : Level ℓ}
     (ht : E[Γ.ctx] ⊢ₛ t : .sort u) : Ty_ (⟨Γ⟩ : CtxCat E ℓ) :=
-  ofRepr ⟨t, u, ht⟩
-
-theorem ofTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len} {u₁ u₂ : Level ℓ}
-    (ht₁ : E[Γ.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ.ctx] ⊢ₛ t₂ : .sort u₂) :
-    ofTyping Γ ht₁ = ofTyping Γ ht₂ ↔ E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ :=
-  ofRepr_eq_iff _ _
-
-theorem ofTyping_congr {Γ : RawCtx E ℓ} {t₁ t₂ : Expr ζ ℓ Γ.len} {u₁ u₂ : Level ℓ}
-    {ht₁ : E[Γ.ctx] ⊢ₛ t₁ : .sort u₁} {ht₂ : E[Γ.ctx] ⊢ₛ t₂ : .sort u₂} (h : t₁ = t₂) :
-    ofTyping Γ ht₁ = ofTyping Γ ht₂ := by
-  subst h
-  rfl
+  ⟦⟨t, u, ht⟩⟧
 
 end Ty
 
@@ -122,8 +101,8 @@ instance Repr.setoid (Γ : CtxCat E ℓ) : Setoid (Repr Γ) where
 def Element (Γ : CtxCat E ℓ) := Quotient (Repr.setoid Γ)
 
 def type : Element Γ → Ty.Element Γ :=
-  Quotient.lift (fun p => Ty.ofRepr ⟨p.ty, p.tyWF⟩)
-    fun _ _ h => (Ty.ofRepr_eq_iff _ _).mpr h.1
+  Quotient.lift (fun p => ⟦⟨p.ty, p.tyWF⟩⟧)
+    fun _ _ h => Quotient.sound h.1
 
 def reindex (σ : Γ₂.as ⟶ Γ₁.as) (a : Element Γ₁) : Element Γ₂ :=
   Quotient.map (sa := Repr.setoid Γ₁) (sb := Repr.setoid Γ₂)
@@ -174,52 +153,27 @@ def label (Γ : RawCtx E ℓ) {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ₛ 
   ⟦⟨t, e, he.regular, he⟩⟧
 
 @[simp] theorem type_label {Γ : RawCtx E ℓ} {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ₛ e : t) :
-    type (label Γ he) = Ty.ofRepr ⟨t, he.regular⟩ :=
+    type (label Γ he) = ⟦⟨t, he.regular⟩⟧ :=
   rfl
-
-theorem label_eq_iff {Γ : RawCtx E ℓ} {t₁ e₁ t₂ e₂ : Expr ζ ℓ Γ.len}
-    {he₁ : E[Γ.ctx] ⊢ₛ e₁ : t₁} {he₂ : E[Γ.ctx] ⊢ₛ e₂ : t₂} :
-    label Γ he₁ = label Γ he₂ ↔ E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ ∧ E[Γ.ctx] ⊢ₛ e₁ ≡ e₂ : t₁ :=
-  ⟨Quotient.exact, fun h => Quotient.sound h⟩
 
 theorem label_eq {Γ : RawCtx E ℓ} {t₁ e₁ t₂ e₂ : Expr ζ ℓ Γ.len}
     {he₁ : E[Γ.ctx] ⊢ₛ e₁ : t₁} {he₂ : E[Γ.ctx] ⊢ₛ e₂ : t₂}
     (ht : E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ) (he : E[Γ.ctx] ⊢ₛ e₁ ≡ e₂ : t₁) : label Γ he₁ = label Γ he₂ :=
-  label_eq_iff.mpr ⟨ht, he⟩
+  Quotient.sound ⟨ht, he⟩
 
-theorem label_congr {Γ : RawCtx E ℓ} {t₁ t₂ e : Expr ζ ℓ Γ.len} {he : E[Γ.ctx] ⊢ₛ e : t₁}
-    {hb : E[Γ.ctx] ⊢ₛ e : t₂} (ht : t₁ = t₂) : label Γ he = label Γ hb := by
-  subst ht
-  rfl
-
-theorem type_eq_of_mk {n : Tm_ Γ} {T : Ty.Repr Γ} (hn : type n = Ty.ofRepr T)
-    {R : Repr Γ} (hR : ⟦R⟧ = n) : E[Γ.as.ctx] ⊢ₛ R.ty ≡ T.term typ := by
-  subst hR
-  exact (Ty.ofRepr_eq_iff _ _).mp hn
-
-def elim {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
+def elim {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = ⟦T⟧)
     (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
     (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ₛ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ₛ e₂ : T.term),
       E[Γ.as.ctx] ⊢ₛ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂) : β :=
-  Quotient.pliftOn n (fun R hR => f R.val ((type_eq_of_mk hn hR.symm).convStrong R.valWF))
+  Quotient.pliftOn n (fun R hR => f R.val (IsTypeEq.convStrong (Quotient.exact ((congrArg type hR).symm.trans hn)) R.valWF))
     fun _ _ h₁ _ h => hf _ _ _ _ <|
-      (type_eq_of_mk hn h₁.symm).convStrong h.2
+      IsTypeEq.convStrong (Quotient.exact ((congrArg type h₁).symm.trans hn)) h.2
 
-theorem elim_eq {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T)
-    (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ₛ e : T.term → β)
-    (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ₛ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ₛ e₂ : T.term),
-      E[Γ.as.ctx] ⊢ₛ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂)
-    {e : Expr ζ ℓ Γ.as.len} (he : E[Γ.as.ctx] ⊢ₛ e : T.term) (h : n = label Γ.as he) :
-    elim n T hn f hf = f e he := by
-  subst h
-  rfl
-
-theorem exists_label (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = Ty.ofRepr T) :
+theorem exists_label (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = ⟦T⟧) :
     ∃ e, ∃ he : E[Γ.as.ctx] ⊢ₛ e : T.term, n = label Γ.as he := by
-  obtain ⟨R, hR⟩ := Quotient.exists_rep n
-  have hty := type_eq_of_mk hn hR
-  exact ⟨R.val, hty.convStrong R.valWF,
-    hR.symm.trans (Quotient.sound ⟨hty, R.valWF⟩)⟩
+  obtain ⟨R, rfl⟩ := Quotient.exists_rep n
+  have hty : E[Γ.as.ctx] ⊢ₛ R.ty ≡ T.term typ := Quotient.exact hn
+  exact ⟨R.val, hty.convStrong R.valWF, Quotient.sound ⟨hty, R.valWF⟩⟩
 
 theorem subsingleton_of_prop {P : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
     (hP : E[Γ₁.as.ctx] ⊢ₛ P : .sort u) (hu : u = .zero) (σ : Γ₂ ⟶ Γ₁) :
@@ -256,7 +210,7 @@ theorem hom_ext (σ₁ σ₂ : Γ₁ ⟶ Γ₂)
   obtain ⟨σ₁⟩ := σ₁
   obtain ⟨σ₂⟩ := σ₂
   exact (RawCtx.toCtx_map_eq_iff σ₁ σ₂).mpr fun v =>
-    (label_eq_iff.mp ((map_varLabel σ₁ v).symm.trans ((h v).trans (map_varLabel σ₂ v)))).2
+    (Quotient.exact ((map_varLabel σ₁ v).symm.trans ((h v).trans (map_varLabel σ₂ v)))).2
 
 def rawBinderVar (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {u : Level ℓ}
     (ht : E[Γ.ctx] ⊢ₛ t : .sort u) : Tm_ (CtxCat.extension ⟨Γ⟩ ht) :=

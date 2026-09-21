@@ -243,7 +243,7 @@ theorem rawRecCase_isDirected (minValue : (c : Fin (ι.nctors s)) → RawFamily 
       exact absurd hstruct₁ hns₂
     · obtain rfl : c₂ = c₁ := hstruct₁.ctor_unique c₂
       obtain rfl : sect₂ = sect₁ :=
-        CtorSection.eq_of_names_eq (CtorSection.names_eq_of_projectsFrom sect₂ sect₁ hp₂ hp₁)
+        CtorSection.eq_of_projectsFrom sect₂ sect₁ hp₂ hp₁
       choose g hg hg₁ hg₂ using fun i =>
         RawValue.proj_isDirected _ i hX σ₂ (hf₁ i) (hf₂ i)
       exact rawRecCase_isDirected_tail h minValue σ₁ ρ hdir majorName X hmin sect₂
@@ -427,8 +427,7 @@ theorem mem_rawRecCase_ctor (minValue : (c : Fin (ι.nctors s)) → RawFamily Γ
           CtorSection.eq_of_names_eq (by simpa using ctorMap_names_eq hns hle)
         exact Or.inr ⟨fields, fun i => ΩLower.lower _ σ₂ (ctorMap_le_field hle i) (hxs i), hy⟩
       · obtain rfl : c₁ = c := (hstruct.ctor_unique c).symm
-        obtain rfl : sect₁ = sect.pullback σ₂ := CtorSection.eq_of_names_eq
-          (CtorSection.names_eq_of_projectsFrom sect₁ (sect.pullback σ₂) hp ((hname hstruct).pullback σ₂))
+        obtain rfl : sect₁ = sect.pullback σ₂ := CtorSection.eq_of_projectsFrom sect₁ (sect.pullback σ₂) hp ((hname hstruct).pullback σ₂)
         exact Or.inr ⟨fields, fun i => by simpa [RawValue.proj_ctor] using hf i, hy⟩
   · rintro (hy | ⟨fields, hfields, hy⟩)
     · exact Or.inl hy

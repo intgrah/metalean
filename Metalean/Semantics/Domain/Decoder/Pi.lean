@@ -91,7 +91,7 @@ noncomputable def resultBody (σ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
       Ty.piApp ((Ty.pairPresheaf E ℓ).map σ.op label).1 ((Ty.pairPresheaf E ℓ).map σ.op label).2)
     (hm : Tm.type m = yonedaEquiv ((Ty.pairPresheaf E ℓ).map σ.op label).1) : Domain Γ₂ :=
   F.extend (B.val.app _ (σ.op, m) X)
-    (Tm.apply ((Ty.pairPresheaf E ℓ).map σ.op label).1 ((Ty.pairPresheaf E ℓ).map σ.op label).2
+    (Tm.apply ((Ty.pairPresheaf E ℓ).map σ.op label)
       ((Tm E ℓ).map σ.op n) m h hm) Y
 
 theorem pullback_resultBody (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
@@ -105,20 +105,9 @@ theorem pullback_resultBody (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
         (map_forallE_cond h σ₂) (map_dom_cond hm σ₂) := by
   have hlab := map_pair_comp label σ₁ σ₂
   rw [resultBody, resultBody, F.pullback_extend,
-    Tm.map_apply ((Ty.pairPresheaf E ℓ).map σ₁.op label).1
-      ((Ty.pairPresheaf E ℓ).map σ₁.op label).2 ((Tm E ℓ).map σ₁.op n) m h hm σ₂
-      (by
-        rw [map_tm_comp]
-        refine (map_forallE_cond h σ₂).trans ?_
-        rw [← map_pair_comp]
-        rfl)
-      (by
-        refine (map_dom_cond hm σ₂).trans ?_
-        rw [← map_pair_comp]
-        rfl),
+    Tm.map_apply ((Ty.pairPresheaf E ℓ).map σ₁.op label) ((Tm E ℓ).map σ₁.op n) m h hm σ₂,
     ← B.app_pullback σ₁.op σ₂ m X, ← op_comp]
-  exact congrArg (F.extend _ · _) (Tm.apply_congr hlab (map_tm_comp n σ₁ σ₂) rfl _ _
-    (map_forallE_cond h σ₂) (map_dom_cond hm σ₂))
+  exact congr(F.extend _ (Tm.apply $hlab $(map_tm_comp n σ₁ σ₂) _ _ _) _)
 
 noncomputable def resultIdeal (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
     (X Y : Domain Γ₂) : Domain Γ₂ where

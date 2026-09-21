@@ -41,7 +41,9 @@ noncomputable def ctorFieldTypes {Γ₂ : CtxCat E₂ ℓ}
   ((RawFamily.closedApps
     (rawInterpret (piLimit E₂ ℓ) (CtxCat.nil E₂ ℓ) (((E₂.get η).block.ctorTypeFn s d).instL fun p => ls p))
     names fun p => rawInterpret (piLimit E₂ ℓ) Γ₁ (ps₁ p)).app _ σ.op ρ).toIdeal
-    (ctorFieldTypes_value_isDirected d (pfn d) _ _ σ ρ hps)
+    (by
+      rw [RawFamily.closedApps_value]
+      exact rawApps_isDirected ⟨_, pfn d _ _ (.nil _ _)⟩ _ fun p => ⟨_, hps p⟩)
 
 theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.get η).block.WFStrong E₂)
     (hfn : ∀ c : Fin (ι.nctors s), HasIdeality (CtxCat.nil E₂ ℓ)
@@ -51,7 +53,7 @@ theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.ge
   fun _ σ ρ hρ => by
     rw [rawInterpret_ind_typed _ h hB]
     exact RawValue.ind_isDirected _ fun c =>
-      ctorFieldTypes_value_isDirected c (hfn c) _ _ σ ρ fun p => hp p σ ρ hρ
+      (ctorFieldTypes hfn (fun p => Tm.label Γ₁.as (h.param p)) σ ρ (fun p => hp p σ ρ hρ) c).property
 
 theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.get η).block.WFStrong E₂)
     (hp : ∀ p, HasSubstitution Γ₁ (ps₁ p)) :
@@ -69,7 +71,7 @@ theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E�
     congr 1
     · funext p
       rw [op_comp, Functor.map_comp_apply]
-      exact congrArg ((Tm E₂ ℓ).map σ₂.op) (Tm.label_congr (by simp))
+      exact congr((Tm E₂ ℓ).map σ₂.op (Tm.label _ (t := $(by simp)) _))
     · funext p
       exact hp p σ₁ σ₂ ρs ρt hsub hρ
 
@@ -148,6 +150,163 @@ theorem RawInterpretationProperties.ctor (h : CtorTyping Γ₁ η s c ls ps₁ f
         | left f => simpa using (pf f).subst σ₁ σ₂ ρs ρt hσ₁ hρ
         | right f => simpa using (pr f).subst σ₁ σ₂ ρs ρt hσ₁ hρ
 
+theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+    (hblock : (E₂.get η).block = I.map pre.sigs) (hB : (E₂.get η).block.WFStrong E₂)
+    (pps : ∀ p, RawTyped Γ₁ (ps₁ p) ((E₂.get η).block.paramType ls ps₁ p))
+    (pf : ∀ f, RawTyped Γ₁ (fds₁ f) (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f))
+    (pr : ∀ f, RawTyped Γ₁ (recFds₁ f) (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f)) :
+    RawTyped Γ₁ (.ctor η s c ls ps₁ fds₁ recFds₁)
+      (.ind η s ls ps₁ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i) := by
+  have hps := fun p => (pps p).typed
+  have h₁ : CtorTyping Γ₁ η s c ls ps₁ fds₁ recFds₁ := ⟨fun f => (pf f).typed, fun f => (pr f).typed⟩
+  have hT : IndTyping Γ₁ η s ls ps₁ (((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁) :=
+    ⟨hps, fun i => (hB.ctors s c).targetIndex i (Ctor.forall_ordinarySubst le_rfl hps h₁.ordinary)⟩
+  refine ⟨.ctorDF hps h₁.ordinary h₁.recursive
+      (fun f => (hB.ctors s c).ordinaryFieldExprStrong f hps h₁.ordinary)
+      (fun f => ((hB.ctors s c).recursiveFieldExprStrong rfl f Γ₁.as.wf hps h₁.ordinary).choose_spec)
+      (.indDF hT.param hT.index),
+    ⟨HasIdeality.ind hT hB (fun d => (hsound.ctorTypeFnProperties η hI hblock s d ls).ideal)
+      (fun p => (pps p).term.ideal), HasSubstitution.ind hT hB fun p => (pps p).term.subst⟩,
+    .ctor h₁ (fun f => (pf f).term) (fun f => (pr f).term), fun Γ₂ ht σ ρ hρ => ?_⟩
+  cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
+  · rw [rawInterpret_ctor_prop _ hrel]
+    exact rawExtend_bottom_payload piLimit_isPayloadStrict _ _
+  by_cases hs : (E₂.get η).block.IsStructure s c
+  · have hctx := hB.paramClosedWF ls
+    have hΔ := ((hB.ctors s c).ordinaryTeleAux _ le_rfl).instLevel (Q := fun _ => True) ls fun _ => trivial
+    have pctx := hsound.paramTeleProperties hI hblock ls
+    have pfields := hsound.ordinaryTeleProperties η hI hblock s c ls
+    have pbody := hsound.ctorFieldProperties η hI hblock s c ls hctx
+    have pfn (d : Fin (ι.nctors s)) := hsound.ctorTypeFnProperties η hI hblock s d ls
+    have hindices : (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i) =
+        hs.indices := funext hs.no_indices.elim
+    have hrecursive : recFds₁ = hs.recursive := funext hs.no_recursive.elim
+    have hctor : E₂[Γ₁.as.ctx] ⊢ₛ .ctor η s c ls ps₁ fds₁ hs.recursive :
+        .ind η s ls ps₁ hs.indices := by
+      simpa [hindices, hrecursive] using ht
+    let w : hT.code.StructWitness c (Tm.label Γ₁.as ht) := {
+      params := ps₁
+      struct := hs
+      block := hB
+      typed := hT.param
+      params_eq := fun _ => rfl
+      guard := by
+        change Ty.ofTyping Γ₁.as ht.regular.choose_spec = Ty.ofTyping Γ₁.as _
+        exact congr(Quotient.mk _ (⟨Expr.ind η s ls ps₁ $hindices, _⟩ : Ty.Repr Γ₁)) }
+    let hg : hT.code.StructGuard c (Tm.label Γ₁.as ht) := ⟨w⟩
+    have hnames : indNames (hg.pullback σ) = fun i => (Tm E₂ ℓ).map σ.op (h₁.names i) := by
+      funext i
+      rw [← map_indNames hg σ (hg.pullback σ) i]
+      apply congrArg ((Tm E₂ ℓ).map σ.op)
+      cases i using Fin.addCases with
+      | left f =>
+        change Fin (ι.ctors s c).nfields at f
+        simp only [indNames, CtorTyping.names, IndTyping.code]
+        rw [Fin.append_left, Fin.append_left]
+        refine (Tm.projOfCode_eq_proj hg w f).trans ?_
+        trans Tm.proj hs hB ls ps₁ hT.param f (Tm.label Γ₁.as hctor) rfl
+        · congr 1
+          simp [hindices, hrecursive]
+        · exact Tm.proj_ctor_label hs hB ls ps₁ hT.param fds₁ hctor h₁.ordinary f
+      | right f => exact hs.no_recursive.elim f
+    let vals : Fin (ι.ctors s c).nfields → Domain Γ₂ := fun f => hρ.eval (pf f).term.ideal
+    let fields : Fin (CtorHead.mk η s c).arity → Domain Γ₂ :=
+      Fin.append vals hs.no_recursive.elim
+    let names : Fin (CtorHead.mk η s c).arity → Tm_ Γ₂ :=
+      fun i => (Tm E₂ ℓ).map σ.op (h₁.names i)
+    let X : Domain Γ₂ := ctorIdeal ⟨η, s, c⟩ names fields
+    have hX : (rawInterpret (piLimit E₂ ℓ) Γ₁ (.ctor η s c ls ps₁ fds₁ recFds₁)).app _ σ.op ρ = X.val := by
+      rw [rawInterpret_ctor_typed _ h₁ hrel]
+      apply congrArg (RawValue.ctor ⟨η, s, c⟩ names)
+      funext i
+      cases i using Fin.addCases with
+      | left f => simp only [fields, Fin.append_left]; rfl
+      | right f => exact hs.no_recursive.elim f
+    let types := ctorFieldTypes (fun d => (pfn d).ideal) (fun p => Tm.label Γ₁.as (hT.param p))
+      σ ρ fun p => (pps p).term.ideal σ ρ hρ
+    rw [rawInterpret_ind_typed _ hT hB, hX]
+    change (piLimit E₂ ℓ).rawExtend
+      (RawValue.ind (hT.code.map ((Tm E₂ ℓ).map σ.op)) fun d => (types d).val)
+      ((Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as ht)) X.val = X.val
+    rw [piLimit_rawExtend_indValue_of_structural _
+      ((IndCode.rel_map _ _).trans (hT.code_rel.trans hrel)) (hg.pullback σ) types X]
+    apply congrArg Subtype.val
+    unfold indBody
+    rw [hnames]
+    change ctorIdeal ⟨η, s, c⟩ names
+      ((piLimit E₂ ℓ).telescope (types c) names fun i => projIdeal ⟨η, s, c⟩ i X).1 = X
+    have hproj : (fun i => projIdeal (CtorHead.mk η s c) i X) = fields := by
+      funext i
+      exact Subtype.val_injective (RawValue.proj_ctor _ _ _ i)
+    rw [hproj]
+    have hps := fun p => (pps p).typed
+    have hf := fun f => (pf f).typed
+    have ⟨hprojPi, hT', _, hlabels⟩ := ctorFieldTypes_eq_pi hctx hΔ pctx pbody hps
+      (fun p => (pps p).term) (fun p => (pps p).fixed) hf σ ρ hρ
+    have pσ := Ctor.forall_ordinarySubst
+      (motive := fun e _ t => RawTyped Γ₁ e t) (ps₂ := ps₁) (fds₂ := fds₁) le_rfl pps pf
+    simp only [Ctx.instL_append] at pσ
+    have hsource := (pctx.append (by simpa using pfields)).admissible_of_images
+      (CtxCat.extendTele ⟨_, hctx⟩ _ hΔ).as.wf (ctorTargetHom hctx hΔ hps hf) σ ρ hρ
+      (fun v => (pσ v).term) fun v => (pσ v).fixed
+    dsimp only [ctorTargetHom] at hsource
+    rw [Fin.append_comp ps₁ fds₁ (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ.op ρ),
+      RawValuation.pushFin_append] at hsource
+    have hd' := (rawInterpret_ctxPi_decode _ hΔ pfields
+      (.sort ((E₂.get η).block.level.inst ls)) .sortDF (HasIdeality.sort _ _)
+      (σ ≫ RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf)) _
+      (fun f => ((rawInterpret (piLimit E₂ ℓ) Γ₁ (fds₁ f)).app _ σ.op ρ).toIdeal
+        ((pf f).term.ideal σ ρ hρ))
+      (by rw [hprojPi, ← hT']; exact (types c).property)).1 hsource
+    simp only [hprojPi, ← hT'] at hd'
+    have hd : ((piLimit E₂ ℓ).telescope (types c)
+        (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as (pf f).typed)) vals).1 = vals :=
+      (congrArg (fun n => ((piLimit E₂ ℓ).telescope (types c) n _).1) hlabels).symm.trans
+        (congrArg Prod.fst hd')
+    have hnr := Fin.eq_zero_of_isEmpty hs.no_recursive
+    have hdecode : ∀ (ns : Fin (ι.ctors s c).nrecFields → Tm_ Γ₂)
+        (xs : Fin (ι.ctors s c).nrecFields → Domain Γ₂),
+        ((piLimit E₂ ℓ).telescope (types c)
+          (Fin.append (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as (pf f).typed)) ns)
+          (Fin.append vals xs)).1 = Fin.append vals xs := by
+      rw [hnr]
+      intro ns xs
+      simpa using hd
+    change ctorIdeal ⟨η, s, c⟩ names ((piLimit E₂ ℓ).telescope (types c) names fields).1 =
+      ctorIdeal ⟨η, s, c⟩ names fields
+    simp [names, CtorTyping.names, Fin.append_comp, fields, hdecode]
+  · have hns' (s' : Fin ι.nsorts) (c' : Fin (ι.nctors s')) :
+        ¬ (E₂.get η).block.IsStructure s' c' := by
+      intro hs'
+      obtain rfl := hs'.sort_unique s
+      obtain rfl := hs'.ctor_unique c
+      exact hs hs'
+    have hrel' : ∀ {s' : Fin ι.nsorts} {ps' : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
+        {is' : Fin (ι.nindices s') → Expr ζ₂ ℓ Γ₁.as.len} (h' : IndTyping Γ₁ η s' ls ps' is'),
+        (h'.code.map ((Tm E₂ ℓ).map σ.op)).rel = true :=
+      fun h' => (IndCode.rel_map _ _).trans (h'.code_rel.trans hrel)
+    rw [rawInterpret_ind_typed _ hT hB, RawFamily.ind_value, rawInterpret_ctor_typed _ h₁ hrel,
+      piLimit_rawExtend_indValue_of_nonstructural _ (hrel' hT) (hns' s)]
+    refine (RawValue.indProjection_ctor ⟨η, s, c⟩ _ _).trans ?_
+    congr 1
+    funext i
+    cases i using Fin.addCases with
+    | left f => simp
+    | right f =>
+      simp only [CtorHead.projectFields, Fin.append_right]
+      cases harity : (ι.ctors s c).recursiveArity f with
+      | succ => exact ite_eq_right (Nat.succ_ne_zero _)
+      | zero =>
+        have ⟨is, hrec⟩ :=
+          ((E₂.get η).block.ctors s c).recursiveFieldExpr_eq_ind η ls ps₁ fds₁ f harity
+        have hfix := (pr f).fixed (pr f).typed σ ρ hρ
+        have ⟨v, hty⟩ := (hB.ctors s c).recursiveFieldExprStrong rfl f Γ₁.as.wf hps h₁.ordinary
+        rw [hrec] at hty
+        conv_lhs at hfix =>
+          arg 2
+          rw [hrec, rawInterpret_ind_typed _ (IndTyping.ofTyping hB hty) hB, RawFamily.ind_value]
+        rwa [piLimit_rawExtend_indValue_of_nonstructural _ (hrel' _) (hns' _)] at hfix
+
 theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
     (hblock : (E₂.get η).block = I.map pre.sigs)
     (hB : (E₂.get η).block.WFStrong E₂) :
@@ -174,7 +333,8 @@ theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E�
       (fun f => (pr f).syntactic) hfieldTypes hrecFieldTypes pT.syntactic, pT.left,
     .ctor h₁ (fun f => (pf f).left) fun f => (pr f).left,
     .ctor h₂ (fun f => (pf f).right) fun f => (pr f).right, fun _ σ ρ hρ => ?_,
-    fun Γ₂ ht σ ρ hρ => ?_⟩
+    (RawTyped.ctor hsound hI hblock hB (fun p => (pps p).toRawTyped)
+      (fun f => (pf f).toRawTyped) (fun f => (pr f).toRawTyped)).fixed⟩
   · cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
     · rw [rawInterpret_ctor_prop _ hrel, rawInterpret_ctor_prop _ hrel]
     rw [rawInterpret_ctor_typed _ h₁ hrel, rawInterpret_ctor_typed _ h₂ hrel, RawFamily.ctor_value,
@@ -184,160 +344,5 @@ theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E�
     cases i using Fin.addCases with
     | left f => simpa using (pf f).equal σ ρ hρ
     | right f => simpa using (pr f).equal σ ρ hρ
-  have hT := IndTyping.ofTyping hB pT.syntactic.left
-  cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
-  · rw [rawInterpret_ctor_prop _ hrel]
-    exact rawExtend_bottom_payload piLimit_isPayloadStrict _ _
-  by_cases hs : (E₂.get η).block.IsStructure s c
-  · have ppsLeft := fun p => (pps p).leftRefl
-    have pfLeft := fun f => (pf f).leftRefl
-    have hctx := hB.paramClosedWF ls
-    have hΔ := hB.ordinaryTeleInstL s c ls
-    have pctx := hsound.paramTeleProperties hI hblock ls
-    have pfields := hsound.blockOrdinaryTeleProperties η hI hblock s c ls
-    have pbody := hsound.blockCtorFieldProperties η hI hblock s c ls hctx
-    have pfn (d : Fin (ι.nctors s)) := hsound.blockCtorTypeFnProperties η hI hblock s d ls
-    have hindices : (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i) =
-        hs.indices := funext hs.no_indices.elim
-    have hrecursive : recFds₁ = hs.recursive := funext hs.no_recursive.elim
-    have hctor : E₂[Γ₁.as.ctx] ⊢ₛ .ctor η s c ls ps₁ fds₁ hs.recursive :
-        .ind η s ls ps₁ hs.indices := by
-      simpa [hindices, hrecursive] using ht
-    have hlabel : Tm.label Γ₁.as ht = Tm.label Γ₁.as hctor := by
-      apply Tm.label_eq
-      · simpa [hindices] using IsTypeStrong.isTypeEq ht.regular
-      · simpa [hrecursive] using ht
-    let w : hT.code.StructWitness c (Tm.label Γ₁.as ht) := {
-      params := ps₁
-      struct := hs
-      block := hB
-      typed := hT.param
-      params_eq := fun _ => rfl
-      guard := by
-        change Ty.ofTyping Γ₁.as ht.regular.choose_spec = Ty.ofTyping Γ₁.as _
-        exact Ty.ofTyping_congr (congrArg (Expr.ind η s ls ps₁) hindices) }
-    let hg : hT.code.StructGuard c (Tm.label Γ₁.as ht) := ⟨w⟩
-    have hnames : indNames (hg.pullback σ) = fun i => (Tm E₂ ℓ).map σ.op (h₁.names i) := by
-      funext i
-      rw [← map_indNames hg σ (hg.pullback σ) i]
-      apply congrArg ((Tm E₂ ℓ).map σ.op)
-      cases i using Fin.addCases with
-      | left f =>
-        change Fin (ι.ctors s c).nfields at f
-        simp only [indNames, CtorTyping.names, IndTyping.code]
-        rw [Fin.append_left, Fin.append_left]
-        exact Tm.projOfCode_ctor_label hg w fds₁ hctor hlabel (fun f => h₁.ordinary f) f
-      | right f => exact hs.no_recursive.elim f
-    let vals : Fin (ι.ctors s c).nfields → Domain Γ₂ := fun f => hρ.eval (pfLeft f).left.ideal
-    let fields : Fin (CtorHead.mk η s c).arity → Domain Γ₂ :=
-      Fin.append vals hs.no_recursive.elim
-    let names : Fin (CtorHead.mk η s c).arity → Tm_ Γ₂ :=
-      fun i => (Tm E₂ ℓ).map σ.op (h₁.names i)
-    let X : Domain Γ₂ := ctorIdeal ⟨η, s, c⟩ names fields
-    have hX : (rawInterpret (piLimit E₂ ℓ) Γ₁ (.ctor η s c ls ps₁ fds₁ recFds₁)).app _ σ.op ρ = X.val := by
-      rw [rawInterpret_ctor_typed _ h₁ hrel]
-      apply congrArg (RawValue.ctor ⟨η, s, c⟩ names)
-      funext i
-      cases i using Fin.addCases with
-      | left f => simp only [fields, Fin.append_left]; rfl
-      | right f => exact hs.no_recursive.elim f
-    let types := ctorFieldTypes (fun d => (pfn d).ideal) (fun p => Tm.label Γ₁.as (hT.param p))
-      σ ρ fun p => (ppsLeft p).left.ideal σ ρ hρ
-    rw [rawInterpret_ind_typed _ hT hB, hX]
-    change (piLimit E₂ ℓ).rawExtend
-      (RawValue.ind (hT.code.map ((Tm E₂ ℓ).map σ.op)) fun d => (types d).val)
-      ((Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as ht)) X.val = X.val
-    rw [piLimit_rawExtend_indValue_of_structural _
-      ((IndCode.rel_map _ _).trans (hT.code_rel.trans hrel)) (hg.pullback σ) types X]
-    apply congrArg Subtype.val
-    unfold indBody
-    rw [hnames]
-    change ctorIdeal ⟨η, s, c⟩ names
-      ((piLimit E₂ ℓ).telescope (types c) names fun i => projIdeal ⟨η, s, c⟩ i X).1 = X
-    have hproj : (fun i => projIdeal (CtorHead.mk η s c) i X) = fields := by
-      funext i
-      exact Subtype.val_injective (RawValue.proj_ctor _ _ _ i)
-    rw [hproj]
-    have hps := fun p => (ppsLeft p).syntactic.left
-    have hf := fun f => (pfLeft f).syntactic.left
-    have ⟨hprojPi, hT', _, hlabels⟩ := ctorFieldTypes_eq_pi hctx hΔ pctx pbody hps
-      (fun p => (ppsLeft p).left) (fun p => (ppsLeft p).fixed) hf σ ρ hρ
-    have pσ (v : Var (ι.nparams + (ι.ctors s c).nfields)) : RawJudgment Γ₁
-        ((ctorTargetHom hctx hΔ hps hf).subst v) ((ctorTargetHom hctx hΔ hps hf).subst v)
-        (((CtxCat.extendTele ⟨_, hctx⟩ _ hΔ).as.ctx.get v).subst
-          (ctorTargetHom hctx hΔ hps hf).subst) := by
-      simpa [ctorTargetHom] using ctorSourceJudgment ppsLeft pfLeft v
-    have hsource := (pctx.append (by simpa using pfields)).admissible_of_images
-      (CtxCat.extendTele ⟨_, hctx⟩ _ hΔ).as.wf (ctorTargetHom hctx hΔ hps hf) σ ρ hρ
-      (fun v => (pσ v).left.ideal) (fun v => (pσ v).left.subst) fun v => (pσ v).fixed
-    have hvals : (fun v => (rawInterpret (piLimit E₂ ℓ) Γ₁
-        ((ctorTargetHom hctx hΔ hps hf).subst v)).app _ σ.op ρ) =
-        Fin.append (fun p => (rawInterpret (piLimit E₂ ℓ) Γ₁ (ps₁ p)).app _ σ.op ρ)
-          fun f => (rawInterpret (piLimit E₂ ℓ) Γ₁ (fds₁ f)).app _ σ.op ρ := by
-      funext v
-      cases v using Fin.addCases <;> simp [ctorTargetHom]
-    rw [hvals, RawValuation.pushFin_append] at hsource
-    have hd' := rawInterpret_ctxPi_decode _ hΔ pfields
-      (.sort ((E₂.get η).block.level.inst ls)) .sortDF (HasIdeality.sort _ _)
-      (σ ≫ RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf)) _
-      (fun f => ((rawInterpret (piLimit E₂ ℓ) Γ₁ (fds₁ f)).app _ σ.op ρ).toIdeal
-        ((pfLeft f).left.ideal σ ρ hρ)) hsource (types c)
-      (by rw [hprojPi]; exact hT')
-    have hd : ((piLimit E₂ ℓ).telescope (types c)
-        (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as (pfLeft f).syntactic.left)) vals).1 = vals :=
-      (congrArg (fun n => ((piLimit E₂ ℓ).telescope (types c) n _).1) hlabels).symm.trans
-        (congrArg Prod.fst hd')
-    have hnr := Fin.eq_zero_of_isEmpty hs.no_recursive
-    have hdecode : ∀ (ns : Fin (ι.ctors s c).nrecFields → Tm_ Γ₂)
-        (xs : Fin (ι.ctors s c).nrecFields → Domain Γ₂),
-        ((piLimit E₂ ℓ).telescope (types c)
-          (Fin.append (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as (pfLeft f).syntactic.left)) ns)
-          (Fin.append vals xs)).1 = Fin.append vals xs := by
-      rw [hnr]
-      intro ns xs
-      simpa using hd
-    have hnames' : names = Fin.append
-        (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as (pfLeft f).syntactic.left))
-        hs.no_recursive.elim := by
-      funext i
-      cases i using Fin.addCases with
-      | left f => simp [names, CtorTyping.names]
-      | right f => exact hs.no_recursive.elim f
-    change ctorIdeal ⟨η, s, c⟩ names ((piLimit E₂ ℓ).telescope (types c) names fields).1 =
-      ctorIdeal ⟨η, s, c⟩ names fields
-    rw [hnames', hdecode]
-  · have hns' (s' : Fin ι.nsorts) (c' : Fin (ι.nctors s')) :
-        ¬ (E₂.get η).block.IsStructure s' c' := by
-      intro hs'
-      obtain rfl := hs'.sort_unique s
-      obtain rfl := hs'.ctor_unique c
-      exact hs hs'
-    have hrel' : ∀ {s' : Fin ι.nsorts} {ps' : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
-        {is' : Fin (ι.nindices s') → Expr ζ₂ ℓ Γ₁.as.len} (h' : IndTyping Γ₁ η s' ls ps' is'),
-        (h'.code.map ((Tm E₂ ℓ).map σ.op)).rel = true :=
-      fun h' => (IndCode.rel_map _ _).trans (h'.code_rel.trans hrel)
-    rw [rawInterpret_ind_typed _ hT hB, RawFamily.ind_value, rawInterpret_ctor_typed _ h₁ hrel,
-      piLimit_rawExtend_indValue_of_nonstructural _ (hrel' hT) (hns' s)]
-    refine (RawValue.indProjection_ctor ⟨η, s, c⟩ _ _).trans ?_
-    congr 1
-    funext i
-    cases i using Fin.addCases with
-    | left f => simp
-    | right f =>
-      simp only [CtorHead.projectFields, Fin.append_right]
-      cases harity : (ι.ctors s c).recursiveArity f with
-      | succ => exact ite_eq_right (Nat.succ_ne_zero _)
-      | zero =>
-        have ⟨is, hrec⟩ :=
-          ((E₂.get η).block.ctors s c).recursiveFieldExpr_eq_ind η ls ps₁ fds₁ f harity
-        have hfix := (pr f).fixed (pr f).syntactic.left σ ρ hρ
-        have hty := (hrecFieldTypes f).left
-        rw [hrec] at hty
-        have hTeq : rawInterpret (piLimit E₂ ℓ) Γ₁
-            (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f) =
-            rawInterpret (piLimit E₂ ℓ) Γ₁
-              (.ind η ((ι.ctors s c).recursiveTarget f) ls ps₁ is) := by rw [hrec]
-        rwa [hTeq, rawInterpret_ind_typed _ (IndTyping.ofTyping hB hty) hB, RawFamily.ind_value,
-          piLimit_rawExtend_indValue_of_nonstructural _ (hrel' _) (hns' _)] at hfix
 
 end Metalean.CoherentShape

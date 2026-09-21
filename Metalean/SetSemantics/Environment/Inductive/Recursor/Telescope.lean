@@ -101,7 +101,8 @@ theorem recrArgs_reachable {n : Nat} {γ : Slots n} {s : Fin ι.nsorts}
       Reachable Set.univ (model.recrTeleSem s l) :=
   RecSlots.denote_recrSubst ε₂ zeroNs γ ps ms mins is maj ▸
     SemDefeq.reachable (model.recrTeleRealizes pre hatoms hsorts hctors s l)
-      (SemDefeq.recrSubst · (fun param => ⟨rfl, hps param⟩) (fun target => ⟨rfl, hms target⟩)
+      (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => ε₂[γ] ⊨ e₁ ≡ e₂ : t)
+        (fun param => ⟨rfl, hps param⟩) (fun target => ⟨rfl, hms target⟩)
         (fun target ctor => ⟨rfl, hmins target ctor⟩) (fun index => ⟨rfl, his index⟩)
         ⟨rfl, hmaj⟩)
 

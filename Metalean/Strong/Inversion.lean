@@ -126,7 +126,7 @@ theorem ctor_inv :
       (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
         (E.get η).block.paramType ls ps₁ p) ∧
       (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-        ((((E.get η).block.ctors s c).ordinaryType f).instL
+        (((((E.get η).block.ctors s c).ordinary f).type).instL
           ls).subst
           (Fin.append ps₁ fun previous : Fin f.val =>
             fds₁ (previous.castLE f.isLt.le))) ∧
@@ -156,7 +156,7 @@ theorem ctor_inv :
         (∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p :
           (E.get η).block.paramType ls ps₁ p) ∧
         (∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-          ((((E.get η).block.ctors s c).ordinaryType f).instL
+          (((((E.get η).block.ctors s c).ordinary f).type).instL
             ls).subst
             (Fin.append ps₁ fun previous : Fin f.val =>
               fds₁ (previous.castLE f.isLt.le))) ∧

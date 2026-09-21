@@ -76,10 +76,10 @@ private theorem WF.ordinaryTeleAux_get (h : ctor.WF E I) (count : Nat)
   | last count =>
     rw [Ctor.ordinaryTeleAux, Tele.append_snoc, Fin.natAdd_last, Ctx.get_last]
     exact (h.ordinary ((Fin.last count).castLE hcount)).typeExact.wk
-      (ctor.ordinaryType ⟨count, hcount⟩)
+      ((ctor.ordinary ⟨count, hcount⟩).type)
   | @cast count f ih =>
     rw [Ctor.ordinaryTeleAux, Tele.append_snoc, Ctx.get_snoc _ _ _ (by simp; omega)]
-    exact (ih (by omega)).wk (ctor.ordinaryType ⟨count, hcount⟩)
+    exact (ih (by omega)).wk ((ctor.ordinary ⟨count, hcount⟩).type)
 
 theorem WF.ordinaryTele_get (h : ctor.WF E I) (f : Fin csig.nfields) :
     E[I.params ++ ctor.ordinaryTele] ⊢

@@ -8,7 +8,7 @@ module
 public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Semantics.Soundness.Context.Substitution
 import Metalean.Semantics.Interpretation.Binder.Ideality
-import Metalean.Strong.WeakenEnv
+public import Metalean.Strong.WeakenEnv
 import Metalean.Strong.Substitution
 
 @[expose] public section
@@ -46,20 +46,6 @@ def RawTeleProperties (E₂ : Env ζ₂) (Γ : Ctx ζ₂ ℓ 0 n) (Δ : Ctx ζ�
 
 namespace RawTeleProperties
 
-theorem init (h : RawTeleProperties E₂ Γ (Δ.snoc A)) : RawTeleProperties E₂ Γ Δ := by
-  have .snoc h _ := h
-  exact h
-
-theorem last (h : RawTeleProperties E₂ Γ (Δ.snoc A)) (wf : E₂[Γ ++ Δ] ⊢ₛ ok) :
-    RawInterpretationProperties ⟨Γ ++ Δ, wf⟩ A := by
-  have .snoc _ h := h
-  exact h wf
-
-theorem entry (h : RawTeleProperties E₂ Γ (Δ.snoc A)) {X : Ctx ζ₂ ℓ 0 m} (hX : X = Γ ++ Δ)
-    (wf : E₂[X] ⊢ₛ ok) : RawInterpretationProperties ⟨X, wf⟩ A := by
-  subst hX
-  exact h.last wf
-
 theorem extension {Δ : Ctx ζ₂ ℓ 0 m} (h : RawTeleProperties E₂ .nil Δ) (wf : E₂[Δ] ⊢ₛ ok)
     (pt : RawInterpretationProperties ⟨Δ, wf⟩ A) : RawTeleProperties E₂ .nil (Δ.snoc A) :=
   .snoc h fun wf' => by
@@ -84,7 +70,9 @@ theorem of_append {a b c : Nat} {Γ : Ctx ζ₂ ℓ 0 a}
   | nil => exact ⟨h, .nil⟩
   | snoc Θ A ih =>
     have ⟨pΔ, pΘ⟩ := ih h.init
-    exact ⟨pΔ, .snoc pΘ fun wf => h.entry (Tele.append_assoc _ _ _) wf⟩
+    refine ⟨pΔ, .snoc pΘ ?_⟩
+    rw [Tele.append_assoc]
+    exact h.last
 
 end RawTeleProperties
 
@@ -96,19 +84,27 @@ structure RawJudgment (Γ₁ : CtxCat E₂ ℓ) (e₁ e₂ t : Expr ζ₂ ℓ Γ
   equal : HasEquality Γ₁ e₁ e₂
   fixed : HasFixedness Γ₁ e₁ t
 
-noncomputable def RawJudgment.eval (p : RawJudgment Γ₁ e₁ e₂ t) {σ : Γ₂ ⟶ Γ₁} {ρ : RawValuation Γ₂}
-    (hρ : SourceAdmissible σ ρ) : Domain Γ₂ := hρ.eval p.left.ideal
+structure RawTyped (Γ₁ : CtxCat E₂ ℓ) (e t : Expr ζ₂ ℓ Γ₁.as.len) : Prop where
+  typed : E₂[Γ₁.as.ctx] ⊢ₛ e : t
+  type : RawInterpretationProperties Γ₁ t
+  term : RawInterpretationProperties Γ₁ e
+  fixed : HasFixedness Γ₁ e t
 
-theorem HasIdeality.bodyAction {e' : Expr ζ₂ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}
-    (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality Γ₁ t)
-    (heI' : HasIdeality (CtxCat.extension Γ₁ ht) e')
-    (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ₁ ρ) :
-    (RawFamily.normalizedBodyAction (piLimit E₂ ℓ) (CtxCat.rawComprehension ht) (rawInterpret (piLimit E₂ ℓ) Γ₁ t)
-      (rawInterpret (piLimit E₂ ℓ) (CtxCat.extension Γ₁ ht) e') σ₁ ρ).IsIdealValued :=
-  RawFamily.normalizedBodyAction_isIdealValued (CtxCat.rawComprehension ht) _ _ σ₁ ρ (htI σ₁ ρ hρ)
+theorem RawJudgment.toRawTyped {e₁ e₂ t : Expr ζ₂ ℓ Γ₁.as.len} (p : RawJudgment Γ₁ e₁ e₂ t) :
+    RawTyped Γ₁ e₁ t :=
+  ⟨p.syntactic.left, p.type, p.left, p.fixed⟩
+
+theorem RawFamily.bodyAction_isIdealValued {t : Expr ζ₂ ℓ Γ₁.as.len}
+    {u : Level ℓ} (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : HasIdeality Γ₁ t)
+    {B : RawFamily (Γ₁.extension ht)}
+    (hB : ∀ ⦃Γ₃ : CtxCat E₂ ℓ⦄ (σ : Γ₃ ⟶ Γ₁.extension ht) (ρ : RawValuation Γ₃),
+      SourceAdmissible σ ρ → (B.app _ σ.op ρ).IsDirected)
+    (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
+    (RawFamily.normalizedBodyAction (piLimit E₂ ℓ) (CtxCat.rawComprehension ht)
+      (rawInterpret (piLimit E₂ ℓ) Γ₁ t) B σ ρ).IsIdealValued :=
+  RawFamily.normalizedBodyAction_isIdealValued (CtxCat.rawComprehension ht) _ _ σ ρ (pt σ ρ hρ)
     fun σ₂ _ s J hJ =>
-      heI' s.hom ((ρ.pullback σ₂).push J.val)
-        ((hρ.pullback σ₂).push ht s (htI _ _ (hρ.pullback σ₂)) J.property hJ)
+      hB s.hom _ ((hρ.pullback σ₂).push ht s (pt _ _ (hρ.pullback σ₂)) J.property hJ)
 
 theorem HasSubstitution.instantiate {C : Expr ζ₂ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}
     (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E₂[Γ₁.as.ctx] ⊢ₛ e : t)
@@ -193,19 +189,16 @@ def RawSound (E₂ : Env ζ₂) (ℓ : Nat) (pre : E₁.as ⟶ E₂.as) : Prop :
 
 theorem RawSound.properties (hsound : RawSound E₂ ℓ pre)
     {Δ₁ : Ctx ζ₁ ℓ 0 n} (hΔ₁ : E₁[Δ₁] ⊢ₛ ok)
-    {Δ₂ : Ctx ζ₂ ℓ 0 n} (hmap : Δ₁.map pre.sigs = Δ₂)
-    (hΔ₂ : E₂[Δ₂] ⊢ₛ ok) {e₁ e₂ t : Expr ζ₁ ℓ n} (d : E₁[Δ₁] ⊢ₛ e₁ ≡ e₂ : t) :
-    RawJudgment (⟨Δ₂, hΔ₂⟩ : CtxCat E₂ ℓ) (e₁.map pre.sigs) (e₂.map pre.sigs)
-      (t.map pre.sigs) := by
-  subst Δ₂
-  refine hsound d hΔ₂ ?_
-  clear d hΔ₂ e₁ e₂ t
+    {e₁ e₂ t : Expr ζ₁ ℓ n} (d : E₁[Δ₁] ⊢ₛ e₁ ≡ e₂ : t) :
+    RawJudgment ⟨Δ₁.map pre.sigs, CtxWFStrong.envMono pre hΔ₁⟩
+      (e₁.map pre.sigs) (e₂.map pre.sigs) (t.map pre.sigs) := by
+  refine hsound d _ ?_
+  clear d e₁ e₂ t
   induction hΔ₁ with
   | nil => exact .nil
   | @snoc _ Δ₁ t hΔ₁ ht ih =>
     have ⟨_, ht⟩ := ht
-    refine .snoc ih fun wf => ?_
-    revert wf
+    refine .snoc ih ?_
     rw [Tele.nil_append]
     exact fun wf => (hsound ht wf ih).left
 

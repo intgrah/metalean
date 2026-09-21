@@ -67,10 +67,6 @@ structure Inductive (ζ : Sigs) (ι : IndSig) where
 
 namespace Ctor
 
-def ordinaryType (ctor : Ctor ζ ι s csig) (f : Fin csig.nfields) :
-    Expr ζ ι.nlevels (ι.nparams + f.val) :=
-  (ctor.ordinary f).type
-
 def ordinaryTeleAux (ctor : Ctor ζ ι s csig) (count : Nat)
     (hcount : count ≤ csig.nfields) :
     Ctx ζ ι.nlevels ι.nparams (ι.nparams + count) :=
@@ -78,17 +74,17 @@ def ordinaryTeleAux (ctor : Ctor ζ ι s csig) (count : Nat)
   | 0 => .nil
   | count + 1 =>
     ctor.ordinaryTeleAux count (by omega)
-      |>.snoc (ctor.ordinaryType ⟨count, by omega⟩)
+      |>.snoc ((ctor.ordinary ⟨count, by omega⟩).type)
 
 @[simp] theorem ordinaryTeleAux_entry (ctor : Ctor ζ ι s csig)
     (count : Nat) (hcount : count ≤ csig.nfields) (f : Fin count) :
     Ctx.entry (p := ι.nparams + f.val)
         (ctor.ordinaryTeleAux count hcount) (by omega) (by omega) =
-      ctor.ordinaryType (f.castLE hcount) := by
+      (ctor.ordinary (f.castLE hcount)).type := by
   induction f using Fin.lastInduction with
   | last count =>
       change (ctor.ordinaryTeleAux (count + 1) hcount).entry _ _ =
-        ctor.ordinaryType ⟨count, by omega⟩
+        (ctor.ordinary ⟨count, by omega⟩).type
       simp [ordinaryTeleAux]
   | cast f ih =>
     simpa [ordinaryTeleAux] using ih (by omega)
@@ -104,12 +100,7 @@ abbrev ordinaryTele (ctor : Ctor ζ ι s csig) :
       (ctor.map pre).ordinaryTeleAux count hcount := by
   induction count with
   | zero => rfl
-  | succ count ih => simp [ordinaryTeleAux, ordinaryType, map, Field.map, ih]
-
-@[simp] theorem ordinaryTele_map (pre : ζ₁ ⟶ ζ₂)
-    (ctor : Ctor ζ₁ ι s csig) :
-    ctor.ordinaryTele.map pre = (ctor.map pre).ordinaryTele :=
-  ordinaryTeleAux_map pre ctor _ _
+  | succ count ih => simp [ordinaryTeleAux, map, Field.map, ih]
 
 end Ctor
 

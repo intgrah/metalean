@@ -36,7 +36,7 @@ theorem HasEquality.beta (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E[Γ₁
     (heS' : HasSubstitution (CtxCat.extension Γ₁ ht) e') :
     HasEquality Γ₁ (.app (.lam t e') e) (e'.inst e) :=
   fun _ σ ρ hρ => rawInterpret_beta (piLimit E ℓ) ht he σ ρ
-    (HasIdeality.bodyAction ht htI heI' σ ρ hρ) (heI σ ρ hρ) (heF he σ ρ hρ)
+    (RawFamily.bodyAction_isIdealValued ht htI heI' σ ρ hρ) (heI σ ρ hρ) (heF he σ ρ hρ)
     (HasSubstitution.instantiate ht he htI heI heF heR heS' σ ρ hρ)
 
 theorem HasEquality.proofIrrel (hpt : E[Γ₁.as.ctx] ⊢ₛ p : .sort .zero)
@@ -70,11 +70,12 @@ theorem of_typings :
 theorem leftRefl (h : RawJudgment Γ₁ e₁ e₂ t) : RawJudgment Γ₁ e₁ e₁ t :=
   ⟨h.syntactic.left, h.type, h.left, h.left, HasEquality.refl Γ₁ e₁, h.fixed⟩
 
-theorem var (pΓ : RawTeleProperties E .nil Γ₁.as.ctx) {v : Var Γ₁.as.len} :
-    RawJudgment Γ₁ (Γ₁.as.ctx.get v) (Γ₁.as.ctx.get v) (.sort u) →
-    RawJudgment Γ₁ (.var v) (.var v) (Γ₁.as.ctx.get v) :=
-  fun pt ↦ ⟨.var pt.syntactic, pt.left, .var Γ₁ v, .var Γ₁ v, HasEquality.refl Γ₁ _,
-    HasFixedness.var Γ₁.as.wf pΓ v⟩
+theorem var (pΓ : RawTeleProperties E .nil Γ₁.as.ctx) (v : Var Γ₁.as.len) :
+    RawJudgment Γ₁ (.var v) (.var v) (Γ₁.as.ctx.get v) := by
+  have p : RawTyped Γ₁ (.var v) (Γ₁.as.ctx.get v) := by
+    convert pΓ.var (Γ₁ := CtxCat.nil E ℓ) Γ₁.as.wf.wfTeleStrong v (Nat.zero_le _) using 1 <;>
+      simp [CtxCat.extendTele, CtxCat.nil]
+  exact ⟨p.typed, p.type, p.term, p.term, HasEquality.refl Γ₁ _, p.fixed⟩
 
 theorem sort (Γ : CtxCat E ℓ) (u : Level ℓ) :
     RawJudgment Γ (.sort u) (.sort u) (.sort u.succ) :=

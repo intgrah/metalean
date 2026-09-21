@@ -67,9 +67,9 @@ theorem code_map (h : IndTyping Γ₁ η s ls ps₁ is₁) (σ : Γ₂.as ⟶ Γ
   simp only [code, IndCode.map]
   congr 1
   · funext p
-    exact Tm.label_congr (by simp)
+    exact congr(Tm.label _ (t := $(by simp)) _)
   · funext i
-    exact Tm.label_congr (by simp)
+    exact congr(Tm.label _ (t := $(by simp)) _)
 
 theorem code_rel (h : IndTyping Γ₁ η s ls ps₁ is₁) :
     h.code.rel = Level.rel ((E.get η).block.level.inst ls) :=
@@ -148,9 +148,11 @@ theorem names_map (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (σ
   funext i
   cases i using Fin.addCases with
   | left f =>
-    simpa only [names, Fin.append_left, Tm.map_label] using Tm.label_congr (by simp)
+    simp only [names, Fin.append_left, Tm.map_label]
+    exact congr(Tm.label _ (t := $(by simp)) _)
   | right f =>
-    simpa only [names, Fin.append_right, Tm.map_label] using Tm.label_congr (by simp)
+    simp only [names, Fin.append_right, Tm.map_label]
+    exact congr(Tm.label _ (t := $(by simp)) _)
 
 theorem names_congr
     (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ fds₁ f ≡ fds₂ f :

@@ -59,7 +59,7 @@ def projTypeWith (I : Inductive ζ₁ ι) {n : Nat}
     (f : Fin (ι.ctors s c).nfields)
     (previous : Fin f.val → Expr ζ₁ ℓ n) : Expr ζ₁ ℓ n :=
   let C := I.ctors s c
-  ((C.ordinaryType f).instL ls).subst
+  (((C.ordinary f).type).instL ls).subst
     (Fin.append ps previous)
 
 @[simp] theorem projTypeWith_map
@@ -72,7 +72,7 @@ def projTypeWith (I : Inductive ζ₁ ι) {n : Nat}
       projTypeWith (I.map pre) ls
         (fun param => (ps param).map pre) f
         fun prior => (previous prior).map pre := by
-  simp [projTypeWith, Ctor.ordinaryType, Inductive.map, Ctor.map, Field.map]
+  simp [projTypeWith, Inductive.map, Ctor.map, Field.map]
 
 @[simp] theorem projTypeWith_instL
     (levelSubst : Param ℓ → Level ℓ')

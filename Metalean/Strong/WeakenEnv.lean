@@ -41,7 +41,7 @@ theorem weakenEnv (entry : Entry ζ sig) :
       ihfieldTypes ihrecFieldTypes ihtype =>
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at ihps
     have d := DefeqStrong.ctorDF ihps
-      (by simpa [Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
+      (by simpa [Inductive.map, Ctor.map, Field.map] using ihfields)
       (by simpa [Inductive.map, Ctor.map] using ihrecFields)
       (by simpa [Inductive.map] using ihfieldTypes)
       (by simpa [Inductive.map] using ihrecFieldTypes)
@@ -90,7 +90,7 @@ theorem weakenEnv (entry : Entry ζ sig) :
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply] at hps hms hmins ihtype ihlhs ihrhs
     simpa using
       DefeqStrong.iota hallowed' hps hms hmins
-        (by simpa [Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map] using ihfields)
+        (by simpa [Inductive.map, Ctor.map, Field.map] using ihfields)
         (by simpa [Inductive.map, Ctor.map] using ihrecFields)
         ihtype ihlhs ihrhs
   | quotDF _ _ ihα ihr => exact .quotDF ihα ihr
@@ -123,3 +123,19 @@ theorem envMono {e₁ e₂ t : Expr ζ₁ ℓ n} (pre : E₁.as ⟶ E₂.as) :
       $(Expr.map_step pre.sigs t)).mp ((ih h).weakenEnv _)
 
 end Metalean.DefeqStrong
+
+namespace Metalean
+
+variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ₁ ℓ 0 n}
+
+theorem CtxWFStrong.envMono (pre : E₁.as ⟶ E₂.as) :
+    E₁[Γ] ⊢ₛ ok →
+    E₂[Γ.map pre.sigs] ⊢ₛ ok := by
+  intro h
+  induction h with
+  | nil => exact .nil
+  | snoc _ ht ih =>
+    obtain ⟨u, ht⟩ := ht
+    exact .snoc ih ⟨u, ht.envMono pre⟩
+
+end Metalean

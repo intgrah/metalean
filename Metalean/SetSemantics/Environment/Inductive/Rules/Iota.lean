@@ -267,7 +267,7 @@ theorem iotaRuleSound
     (∀ s c, ε₂[γ] ⊨ mins s c ≡ mins s c :
       (E₂.get η).block.caseFnType η ls ps ms s c) →
     (∀ f, ε₂[γ] ⊨ fds f ≡ fds f :
-      ((((E₂.get η).block.ctors s c).ordinaryType f).instL ls).subst
+      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     (∀ f, ε₂[γ] ⊨ recFds f ≡ recFds f :

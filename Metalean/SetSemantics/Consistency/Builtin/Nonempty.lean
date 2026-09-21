@@ -44,7 +44,7 @@ theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Nonempty.sig,
     have hparam : w.ordinaryOf 0 0 ![α] vargs 0 = α :=
       hclause.realizes.ordinaryOf_castLE ⟨0, by decide⟩ ⟨0, by decide⟩ ![α] vargs 0
     exact ⟨_, by
-      simpa! [Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.instL, Expr.wk, hparam] using
+      simpa! [Ctor.ordinaryTeleAux, Ctx.instL, Expr.wk, hparam] using
         hclause.realizes.fieldsRealize ⟨0, by decide⟩ ⟨0, by decide⟩ ![α]
           (reachable hclause hα) vargs hargs ⟨1, by decide⟩⟩
 

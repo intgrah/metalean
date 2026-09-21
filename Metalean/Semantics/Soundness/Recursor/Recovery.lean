@@ -27,47 +27,12 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
   (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
   (f : Fin (ι.ctors s c).nrecFields)
 
-theorem ordinary_recovery_field_prop (f : Fin (ι.ctors s c).nfields)
-    (hf : Level.rel ((((E.get η).block.ctors s c).ordinary f).level.inst ls) = false) :
-    E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢ₛ
-      Ctx.get (fieldVar h.toIndData s c (Fin.castAdd (ι.ctors s c).nrecFields f))
-        (CtxCat.ctorFields h.toIndData s c).as.ctx : .prop := by
-  rw [CtxCat.ctorFields_get_ordinary]
-  have hz : (((E.get η).block.ctors s c).ordinary f).level.inst ls = .zero := by
-    simpa using hf
-  have hfield := (h.block.ctors s c).ordinaryFieldExprStrong f
-    (h.fields s c).param (CtorInstance.generic h.toIndData s c).typed.ordinary
-  rwa [hz] at hfield
-
-theorem recursive_recovery_field_prop (herased : (E.get η).block.level.inst ls = .zero)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields) :
-    E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢ₛ
-      Ctx.get (fieldVar h.toIndData s c (Fin.natAdd (ι.ctors s c).nfields f))
-        (CtxCat.ctorFields h.toIndData s c).as.ctx : .prop := by
-  rw [CtxCat.ctorFields_get_recursive]
-  have hparams (p : Fin ι.nparams) :
-      E[(CtxCat.ctorFieldTarget h.toIndData s c f).as.ctx] ⊢ₛ
-        ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f) :
-        (E.get η).block.paramType ls
-          (fun p => ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f)) p := by
-    have hp := ((h.fields s c).param p).wkN (Δ := fieldTelescope h.toIndData s c f)
-    exact Inductive.paramType_wkN (I := (E.get η).block) (ls := ls)
-      (ps := (ι.ctors s c).fieldParams ps) p ((ι.ctors s c).recursiveArity f) ▸ hp
-  have hind : E[(CtxCat.ctorFieldTarget h.toIndData s c f).as.ctx] ⊢ₛ
-      .ind η ((ι.ctors s c).recursiveTarget f) ls
-        (fun p => ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f))
-        (fieldIndices h.toIndData s c f) : .sort ((E.get η).block.level.inst ls) :=
-    .indDF hparams (indexTyping h.toIndData s c f)
-  rw [herased] at hind
-  exact Ctx.pi_propStrong (fieldTelescope h.toIndData s c f)
-    (CtxCat.ctorFieldTarget h.toIndData s c f).as.wf hind
-
-theorem CtorSection.names_eq_recovery (herased : (E.get η).block.level.inst ls = .zero)
+theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level.inst ls = .zero)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {σ : Γ₂ ⟶ Γ₁}
     {indexNames : Fin (ι.nindices s) → Tm_ Γ₂}
     (sect : CtorSection h s c σ) (sect' : CtorSection h s c σ)
     (hn : RecoveryNames η s c ls indexNames sect.names)
-    (hn' : RecoveryNames η s c ls indexNames sect'.names) : sect.names = sect'.names := by
+    (hn' : RecoveryNames η s c ls indexNames sect'.names) : sect = sect' := by
   have ⟨α, hα⟩ := RawCtx.toCtx.map_surjective sect.hom
   have ⟨β, hβ⟩ := RawCtx.toCtx.map_surjective sect'.hom
   have heq : E[Γ₂.as.ctx] ⊢ₛ α.subst ≡ β.subst ⊣ (CtxCat.ctorFields h.toIndData s c).as.ctx := by
@@ -78,7 +43,7 @@ theorem CtorSection.names_eq_recovery (herased : (E.get η).block.level.inst ls 
         E[Γ₂.as.ctx] ⊢ₛ α.subst v ≡ β.subst v :
           (Ctx.get v (CtxCat.ctorFields h.toIndData s c).as.ctx).subst α.subst := by
       rw [← hα, ← hβ] at hv
-      exact (Tm.label_eq_iff.mp
+      exact (Quotient.exact
         (((Tm.map_varLabel α v).symm.trans hv).trans
           (Tm.map_varLabel β v))).2
     refine Fin.addCases (fun v => ?_) (fun f => ?_) v
@@ -89,15 +54,27 @@ theorem CtorSection.names_eq_recovery (herased : (E.get η).block.level.inst ls 
           have ⟨j, hj, hnj⟩ := hn' f hf
           obtain rfl : i = j := Option.some.inj (hi.symm.trans hj)
           exact Or.inr (of_names _ (hni.trans hnj.symm))
-        · have hf : Level.rel ((((E.get η).block.ctors s c).ordinary f).level.inst ls) = false :=
-            Bool.eq_false_iff.mpr hf
-          exact Or.inl ((ordinary_recovery_field_prop h s c f hf).substitution α.typed)
-    · have hv : fieldVar h.toIndData s c (Fin.natAdd (ι.ctors s c).nfields f) =
-          Fin.natAdd (Γ₁.as.len + (ι.ctors s c).nfields) f :=
-        Fin.ext (Nat.add_assoc _ _ _).symm
-      rw [← hv]
-      exact Or.inl ((recursive_recovery_field_prop h herased s c f).substitution α.typed)
-  exact sect.names_eq sect' (hα ▸ hβ ▸ (RawCtx.toCtx_map_eq_iff α β).mpr heq)
+        · have hz : (((E.get η).block.ctors s c).ordinary f).level.inst ls = .zero := by
+            simpa using hf
+          have hp := (h.block.ctors s c).ordinaryFieldExprStrong f
+            (h.fields s c).param (CtorInstance.generic h.toIndData s c).typed.ordinary
+          rw [hz] at hp
+          refine Or.inl (DefeqStrong.substitution (t := .prop) α.typed ?_)
+          change E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢ₛ
+            Ctx.get (fieldVar h.toIndData s c (f.castAdd _))
+              (CtxCat.ctorFields h.toIndData s c).as.ctx : .prop
+          rw [CtxCat.ctorFields_get_ordinary]
+          exact hp
+    · rw [← fieldVar_natAdd h.toIndData s c f]
+      have hi := h.ihTyping s c f
+      have hp := DefeqStrong.indDF hi.param hi.index
+      rw [herased] at hp
+      have hp := Ctx.pi_propStrong (fieldTelescope h.toIndData s c f)
+        (CtxCat.ctorFieldTarget h.toIndData s c f).as.wf hp
+      refine Or.inl (DefeqStrong.substitution (t := .prop) α.typed ?_)
+      rw [CtxCat.ctorFields_get_recursive]
+      exact hp
+  exact CtorSection.ext (hα ▸ hβ ▸ (RawCtx.toCtx_map_eq_iff α β).mpr heq)
 
 theorem recoveredField_isDirected (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (indices : Fin (ι.nindices s) → RawValue Γ₂) (hindices : ∀ i, (indices i).IsDirected)
@@ -138,7 +115,7 @@ theorem proofConstructor_isDirected (hresult : l.rel = true)
   have hsingle := (h.recovery_eligible hresult herased s c).1
   have hc : c' = c := Fin.ext (by have := c'.isLt; have := c.isLt; omega)
   subst c'
-  obtain rfl := CtorSection.eq_of_names_eq (CtorSection.names_eq_recovery h herased sect sect' hn hn')
+  obtain rfl := CtorSection.eq_of_recovery h herased sect sect' hn hn'
   have hfields : ∀ i,
       (recoveredField η s c ls (fun j => (indices j).pullback σ₂) i).IsDirected :=
     recoveredField_isDirected s c _ fun j => ΩLower.IsDirected.pullback (hindices j) σ₂

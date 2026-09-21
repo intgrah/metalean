@@ -54,20 +54,6 @@ theorem rawInterpret_quotLift_app (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u
   · rw [rawInterpret_quotLift_typed _ hlift hu]
     rfl
 
-theorem rawInterpret_quotLift_isDirected
-    (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : β)
-    (pα : HasIdeality Γ₁ α) (pf : HasIdeality Γ₁ f) (pa : HasIdeality Γ₁ a)
-    {σ : Γ₂ ⟶ Γ₁} {ρ : RawValuation Γ₂} (hρ : SourceAdmissible σ ρ) :
-    ∃ X : RawValue Γ₂, X.IsDirected ∧
-      (rawInterpret (piLimit E ℓ) Γ₁ (.quotLift η u v α r β f h a)).app _ σ.op ρ =
-        (piLimit E ℓ).rawExtend ((rawInterpret (piLimit E ℓ) Γ₁ β).app _ σ.op ρ)
-          ((Tm E ℓ).map σ.op (Tm.label Γ₁.as hlift)) X := by
-  refine ⟨_, ?_, rawInterpret_quotLift_app hlift σ ρ⟩
-  cases hu : u.rel
-  · exact RawFamily.proofApplication_isDirected
-      (Tm.subsingleton_of_prop _ (by simpa using hu)) _ σ ρ (pf σ ρ hρ)
-  · exact rawQuotLift_isDirected _ _ (pα σ ρ hρ) (pf σ ρ hρ) (pa σ ρ hρ)
-
 theorem HasFixedness.quot (h : QuotTyping Γ₁ u α r) :
     HasFixedness Γ₁ (.quot η u α r) (.sort u) := fun _ _ σ ρ _ => by
   rw [rawInterpret_sort, RawFamily.sort_value, rawInterpret_quot _ h, RawFamily.quot_value,
@@ -104,10 +90,12 @@ theorem quotLift (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a 
     (pf : RawInterpretationProperties Γ₁ f) (pa : RawInterpretationProperties Γ₁ a) :
     RawInterpretationProperties Γ₁ (.quotLift η u v α r β f h a) where
   ideal _ σ ρ hρ := by
-    have ⟨X, hX, hvalue⟩ := rawInterpret_quotLift_isDirected hlift pα.ideal pf.ideal pa.ideal hρ
-    rw [hvalue]
+    rw [rawInterpret_quotLift_app hlift]
     apply (piLimit E ℓ).rawExtend_isDirected _ (pβ.ideal σ ρ hρ)
-    exact hX
+    cases hu : u.rel
+    · exact RawFamily.proofApplication_isDirected
+        (Tm.subsingleton_of_prop _ (by simpa using hu)) _ σ ρ (pf.ideal σ ρ hρ)
+    · exact rawQuotLift_isDirected _ _ (pα.ideal σ ρ hρ) (pf.ideal σ ρ hρ) (pa.ideal σ ρ hρ)
   subst _ _ σ₁ σ₂ ρ₁ ρ₂ hσ hρ := by
     change (rawInterpret (piLimit E ℓ) _ (.quotLift η u v (α.subst σ₁.subst) (r.subst σ₁.subst)
       (β.subst σ₁.subst) (f.subst σ₁.subst) (h.subst σ₁.subst) (a.subst σ₁.subst))).app _
@@ -193,12 +181,15 @@ theorem quotLiftDF :
       rw [rawInterpret_quotLift_app hsyn.left, rawInterpret_quotLift_app hl', pα.equal σ ρ hρ,
         pβ.equal σ ρ hρ, pf.equal σ ρ hρ, pa.equal σ ρ hρ,
         Tm.label_eq (.ofDefEq pβ.syntactic) hsyn,
-        (Ty.ofTyping_eq_iff _ pα.syntactic.left pα.syntactic.right).mpr (.ofDefEq pα.syntactic)]
+        show Ty.ofTyping Γ₁.as pα.syntactic.left = Ty.ofTyping Γ₁.as pα.syntactic.right from
+          Quotient.sound (IsTypeEq.ofDefEq pα.syntactic)]
     fixed _ _ σ ρ hρ := by
-      have ⟨X, hX, hvalue⟩ :=
-        rawInterpret_quotLift_isDirected hsyn.left pα.left.ideal pf.left.ideal pa.left.ideal hρ
-      rw [hvalue]
-      exact (piLimit E ℓ).rawExtend_idempotent piLimit_isIdempotent _ (pβ.left.ideal σ ρ hρ) hX }
+      rw [rawInterpret_quotLift_app hsyn.left]
+      apply (piLimit E ℓ).rawExtend_idempotent piLimit_isIdempotent _ (pβ.left.ideal σ ρ hρ)
+      cases hu : u.rel
+      · exact RawFamily.proofApplication_isDirected
+          (Tm.subsingleton_of_prop _ (by simpa using hu)) _ σ ρ (pf.left.ideal σ ρ hρ)
+      · exact rawQuotLift_isDirected _ _ (pα.left.ideal σ ρ hρ) (pf.left.ideal σ ρ hρ) (pa.left.ideal σ ρ hρ) }
 
 theorem quotIndDF :
     RawJudgment Γ₁ α α' (.sort u) →
@@ -236,8 +227,8 @@ theorem quotIota :
   refine of_typings hiota plhs prhs fun _ σ ρ hρ => ?_
   have hα := pα.syntactic.left
   have ha := pa.syntactic.left
-  have happ := HasIdeality.application_value hα (pβ.syntactic.left.wk α) pα.left.ideal
-    (pβ.left.wk hα).ideal ha pf.syntactic.left pf.left.ideal pa.left.ideal pf.fixed σ ρ hρ
+  have happ := (pf.toRawTyped.app hα (pβ.syntactic.left.wk α)
+    (pβ.left.wk hα) pa.toRawTyped (by simpa using pβ.left)).2 σ ρ hρ
   rw [← rawApplication_singleton] at happ
   rw [rawInterpret_quotLift_app plhs.syntactic, rawInterpret_quotMk_app ha,
     Tm.label_eq (he₂ := prhs.syntactic) (.ofDefEq pβ.syntactic) hiota,

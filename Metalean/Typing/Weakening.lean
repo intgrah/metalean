@@ -72,8 +72,8 @@ namespace Ctor
 
 @[simp] theorem ordinaryFieldType_wkN (f : Fin csig.nfields)
     (previous : Fin f.val → Expr ζ ℓ n) (k : Nat) :
-    (((ctor.ordinaryType f).instL ls).subst (Fin.append ps previous)).wkN k =
-      ((ctor.ordinaryType f).instL ls).subst
+    ((((ctor.ordinary f).type).instL ls).subst (Fin.append ps previous)).wkN k =
+      (((ctor.ordinary f).type).instL ls).subst
         (Fin.append (fun i => (ps i).wkN k) fun i => (previous i).wkN k) := by
   simp [Expr.wkN_eq_subst]
 

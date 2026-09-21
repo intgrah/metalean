@@ -194,11 +194,11 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       (ihrecFds r (hrecFds₂d r) hΔ hσ (hrecFdsw₁ r).right (hrecFdsw₂ r).right)
     have hctor := hB.ctors ‹Fin _› ‹Fin (IndSig.nctors _ _)›
     have hleft := hindw₁.ctorDF hpsw₁ hfdsw₁ hrecFdsw₁
-      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ hfdsw₁).choose_spec)
+      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ (fun g _ => hfdsw₁ g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsw₁ hfdsw₁).choose_spec)
     have hright := (DefeqStrong.indDF hpsE fun i =>
       hctor.targetIndex_congr hB.params i hpsE hfdsE).ctorDF hpsE hfdsE hrecFdsE
-      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsE hfdsE).choose_spec)
+      (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsE (fun g _ => hfdsE g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsE hfdsE).choose_spec)
     exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
   | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>

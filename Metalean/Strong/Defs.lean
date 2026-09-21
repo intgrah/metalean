@@ -53,7 +53,7 @@ judgement DefeqStrong (E : Env ζ) {ℓ : Nat} :
 
   ∀ p, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p
   ∀ f, E[Γ] ⊢ₛ fds₁ f ≡ fds₂ f :
-    ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+    (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
       (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))
   ∀ f, E[Γ] ⊢ₛ recFds₁ f ≡ recFds₂ f :
     (((E.get η).block.ctors s c).recursive f).instantiatedType
@@ -160,7 +160,7 @@ judgement DefeqStrong (E : Env ζ) {ℓ : Nat} :
   ∀ s, E[Γ] ⊢ₛ ms s : (E.get η).block.motiveType η ls ps u s
   ∀ s c, E[Γ] ⊢ₛ mins s c : (E.get η).block.caseFnType η ls ps ms s c
   ∀ f, E[Γ] ⊢ₛ fds f :
-    ((((E.get η).block.ctors s c).ordinaryType f).instL ls).subst
+    (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
       (Fin.append ps fun previous : Fin f.val =>
         fds (previous.castLE f.isLt.le))
   ∀ f, E[Γ] ⊢ₛ recFds f :

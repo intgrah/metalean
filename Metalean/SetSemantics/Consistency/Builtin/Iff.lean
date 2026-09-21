@@ -58,11 +58,11 @@ theorem ofSound (h : ∃ w : InductiveModel.{u} Iff.sig,
       rw [app_map hx] at hmem
       exact fun h => (notMem_empty _ (h ▸ hmem)).elim
     have hforward := himp ⟨2, by decide⟩ a b (by
-      simpa [Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
+      simpa [Ctor.ordinaryTeleAux, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
         Fin.snoc, hfirst, hsecond] using
         hfields ⟨2, by decide⟩)
     have hbackward := himp ⟨3, by decide⟩ b a (by
-      simpa [Ctor.ordinaryTeleAux, Ctor.ordinaryType, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
+      simpa [Ctor.ordinaryTeleAux, Ctx.get, Ctx.instL, Expr.wk, Expr.denote,
         hfirst, hsecond] using
         hfields ⟨3, by decide⟩)
     rcases mem_truth.mp ha with rfl | rfl <;> rcases mem_truth.mp hb with rfl | rfl

@@ -242,11 +242,8 @@ def proj : {k : Nat} → (f : Fin k) → Ctx ζ ℓ a (a + k) → Expr ζ ℓ (a
       naturality X Y σ :=
         (congr(_ ≫ $((h Y).symm))).trans ((β.naturality σ).trans congr($(h X) ≫ _)) }
 
-def pi : Expr ζ ℓ n → Ctx ζ ℓ a n → Expr ζ ℓ a := Tele.foldr Expr.forallE
-def lam : Expr ζ ℓ n → Ctx ζ ℓ a n → Expr ζ ℓ a := Tele.foldr Expr.lam
-
-@[simp] theorem pi_nil (e : Expr ζ ℓ n) : Ctx.nil.pi e = e := rfl
-@[simp] theorem lam_nil (e : Expr ζ ℓ n) : Ctx.nil.lam e = e := rfl
+abbrev pi : Expr ζ ℓ n → Ctx ζ ℓ a n → Expr ζ ℓ a := Tele.foldr Expr.forallE
+abbrev lam : Expr ζ ℓ n → Ctx ζ ℓ a n → Expr ζ ℓ a := Tele.foldr Expr.lam
 
 @[simp] theorem map_pi (pre : ζ₁ ⟶ ζ₂) (e : Expr ζ₁ ℓ n)
     (Γ : Ctx ζ₁ ℓ a n) :

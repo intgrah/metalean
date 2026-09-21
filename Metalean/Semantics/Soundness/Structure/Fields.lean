@@ -6,7 +6,6 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.Structure
-public import Metalean.Semantics.Soundness.Constructor.Fields
 public import Metalean.Semantics.Soundness.Constructor.Types
 public import Metalean.Semantics.Soundness.Telescope.Transport
 
@@ -25,30 +24,26 @@ theorem structure_projection_type_properties
     (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
     (hblock : (E₂.get η).block = I.map pre.sigs)
     (hs : (E₂.get η).block.IsStructure s c) (hB : (E₂.get η).block.WFStrong E₂)
-    (hps : ∀ p, E₂[Γ.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
-    (pps : ∀ p, RawInterpretationProperties Γ (ps p))
-    (hpsfixed : ∀ p, HasFixedness Γ (ps p) ((E₂.get η).block.paramType ls ps p))
-    (hmaj : E₂[Γ.as.ctx] ⊢ₛ maj : .ind η s ls ps hs.indices)
+    (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
     (f : Fin (ι.ctors s c).nfields)
-    (pprevious : ∀ g : Fin f.val,
-      RawInterpretationProperties Γ (hs.projTerm η ls ps (g.castLE f.isLt.le) maj))
-    (hprevious : ∀ g : Fin f.val,
-      HasFixedness Γ (hs.projTerm η ls ps (g.castLE f.isLt.le) maj)
-        (hs.projType η ls ps (g.castLE f.isLt.le) maj)) :
-    RawInterpretationProperties Γ (hs.projType η ls ps f maj) ∧
-      HasFixedness Γ (hs.projType η ls ps f maj)
-        (.sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)) := by
+    (pprevious : ∀ g : Fin f.val, RawTyped Γ
+      (hs.projTerm η ls ps (g.castLE f.isLt.le) maj) (hs.projType η ls ps (g.castLE f.isLt.le) maj)) :
+    RawTyped Γ (hs.projType η ls ps f maj)
+      (.sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)) := by
   have hctx := hB.ordinaryClosedWF s c ls f.val f.isLt.le
-  have pctx := hsound.blockOrdinaryPrefixProperties η hI hblock s c ls f.val f.isLt.le
-  have pfield := hsound.blockOrdinaryTypeJudgment η hI hblock s c ls f
-  have hp := ordinaryField_properties f hctx pctx (pfield hctx) hps pps hpsfixed
-    (fun g => by
-      rw [← hs.projType_eq]
-      exact hs.projTerm_hasTypeStrong hB _ Γ.as.wf hps hmaj)
-    pprevious fun g => by
-      rw [← hs.projType_eq]
-      exact hprevious g
-  simpa [← hs.projType_eq] using hp
+  have pctx := hsound.ordinaryPrefixProperties η hI hblock s c ls f.val f.isLt.le
+  have pfield := hsound.ordinaryTypeJudgment η hI hblock s c ls f
+  have pσ := Ctor.forall_ordinarySubst (ctor := (E₂.get η).block.ctors s c)
+    (motive := fun e _ t => RawTyped Γ e t)
+    (ps₂ := ps) (fds₂ := fun g : Fin f.val => hs.projTerm η ls ps (g.castLE f.isLt.le) maj)
+    f.isLt.le pps fun g => by
+      have pg := pprevious g
+      rw [hs.projType_eq] at pg
+      exact pg
+  let σ : Γ.as ⟶ (⟨_, hctx⟩ : CtxCat E₂ ℓ).as := ⟨_, fun v => (pσ v).typed⟩
+  have hp := (SemanticHom.ofImages hctx pctx σ
+    (fun v => (pσ v).term) (fun v => (pσ v).fixed)).typed (pfield hctx).toRawTyped
+  simpa [σ, hs.projType_eq, Ctor.ordinaryFieldExpr] using hp
 
 theorem structure_field_telescope_properties
     (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
@@ -59,14 +54,14 @@ theorem structure_field_telescope_properties
     (hpsfixed : ∀ p, HasFixedness Γ (ps p) ((E₂.get η).block.paramType ls ps p)) :
     RawTeleProperties E₂ Γ.as.ctx (((E₂.get η).block.ctors s c).ordinaryFieldTele η ls ps) := by
   have hctx := hB.paramClosedWF ls
-  have hd := hB.ordinaryTeleInstL s c ls
+  have hd := ((hB.ctors s c).ordinaryTeleAux _ le_rfl).instLevel (Q := fun _ => True) ls fun _ => trivial
   have ppctx := hsound.paramTeleProperties hI hblock ls
-  have ppfields := hsound.blockOrdinaryTeleProperties η hI hblock s c ls
+  have ppfields := hsound.ordinaryTeleProperties η hI hblock s c ls
   let Src : CtxCat E₂ ℓ := ⟨_, hctx⟩
   let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
   have hp (v : Var Src.as.len) : HasFixedness Γ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact hpsfixed v
-  exact RawTeleProperties.substitution ppctx _ hd ppfields σ pps hp
+  exact (SemanticHom.ofImages hctx ppctx σ pps hp).tele hd ppfields
 
 end Metalean.CoherentShape

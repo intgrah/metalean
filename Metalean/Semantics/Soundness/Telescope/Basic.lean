@@ -7,6 +7,7 @@ module
 
 public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Semantics.Soundness.Judgment
+public import Metalean.TypeTheory.Syntactic.Telescope
 import Metalean.Semantics.Interpretation.Binder.Ideality
 import Metalean.Semantics.Interpretation
 import Metalean.Semantics.Interpretation.Telescope
@@ -23,83 +24,144 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 
 namespace CoherentShape
 
+variable {Src Tgt Γ : CtxCat E₂ ℓ}
+
+theorem RawTeleProperties.extend_admissible {m k : Nat} {P : Level ℓ → Prop}
+    (Δ : Ctx ζ₂ ℓ Src.as.len m) (hk : Src.as.len + k = m) (hΔ : WFTeleStrong E₂ P Src.as.ctx Δ)
+    (pΔ : RawTeleProperties E₂ Src.as.ctx Δ) (σ₁ : Tgt.as ⟶ (CtxCat.extendTele Src Δ hΔ).as)
+    (pσ₁ : ∀ i : Fin k, RawInterpretationProperties Tgt
+      (σ₁.subst ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩))
+    (hfixed : ∀ i : Fin k, HasFixedness Tgt
+      (σ₁.subst ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩)
+      ((Ctx.get ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩ (Src.as.ctx ++ Δ)).subst σ₁.subst))
+    (σ₂ : Γ ⟶ Tgt) (ρs ρt : RawValuation Γ)
+    (hsub : SemanticSubstitution (σ₁ ≫ RawCtx.Hom.teleProjection hΔ) σ₂ ρs ρt)
+    (hsource : SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map (σ₁ ≫ RawCtx.Hom.teleProjection hΔ)) ρs)
+    (htarget : SourceAdmissible σ₂ ρt) :
+    SemanticSubstitution σ₁ σ₂
+        (ρs.pushFin fun i : Fin k => (rawInterpret (piLimit E₂ ℓ) Tgt
+          (σ₁.subst ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩)).app _ σ₂.op ρt) ρt ∧
+      SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁)
+        (ρs.pushFin fun i : Fin k => (rawInterpret (piLimit E₂ ℓ) Tgt
+          (σ₁.subst ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩)).app _ σ₂.op ρt) := by
+  subst hk
+  change ∀ i, RawInterpretationProperties Tgt (σ₁.subst (Fin.natAdd Src.as.len i)) at pσ₁
+  change ∀ i, HasFixedness Tgt (σ₁.subst (Fin.natAdd Src.as.len i))
+    ((Ctx.get (Fin.natAdd Src.as.len i) (Src.as.ctx ++ Δ)).subst σ₁.subst) at hfixed
+  induction Δ using Tele.addInduction with
+  | nil => exact ⟨hsub, hsource⟩
+  | snoc k Δ t ih =>
+    let S := CtxCat.extendTele Src Δ hΔ.init
+    have ht : E₂[S.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    obtain ⟨σ₃, arg, harg, rfl⟩ := RawCtx.Hom.exists_snoc (Γ₂ := S.as) ⟨_, ht⟩ σ₁
+    have hbase : σ₃.snoc ⟨_, ht⟩ harg ≫ RawCtx.Hom.teleProjection hΔ =
+        σ₃ ≫ RawCtx.Hom.teleProjection hΔ.init :=
+      RawCtx.Hom.ext (funext fun v => Subst.extend_castSucc σ₃.subst arg (v.castLE Δ.le))
+    have hsub := congr(SemanticSubstitution $hbase σ₂ ρs ρt).mp hsub
+    have hsource := congr(SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map $hbase) ρs).mp hsource
+    have ⟨hsubInit, hadmInit⟩ := ih hΔ.init pΔ.init σ₃
+      (pσ₁ := fun i => by simpa only [S, CtxCat.extendTele, RawCtx.Hom.snoc_subst,
+        Fin.natAdd_castSucc, Subst.extend_castSucc] using pσ₁ i.castSucc)
+      (hfixed := fun i => by simpa only [S, CtxCat.extendTele, RawCtx.Hom.snoc_subst,
+        Fin.natAdd_castSucc, Subst.extend_castSucc, Tele.append_snoc, Ctx.get_castSucc,
+        Expr.wk_subst_extend] using hfixed i.castSucc)
+      hsub hsource
+    have parg : RawInterpretationProperties Tgt arg := by
+      simpa [S, CtxCat.extendTele] using pσ₁ (Fin.last k)
+    have hargf : HasFixedness Tgt arg (t.subst σ₃.subst) := by
+      simpa [S, CtxCat.extendTele, Expr.wk_subst_extend] using hfixed (Fin.last k)
+    have pt : RawInterpretationProperties S t := pΔ.last S.as.wf
+    have he := pt.subst σ₃ σ₂ _ ρt hsubInit hadmInit
+    have hfix := hargf harg σ₂ ρt htarget
+    rw [he] at hfix
+    have hadm := hadmInit.push ht ((Raw.ContextSection.ofTyping ht σ₃ harg).pullback σ₂)
+      (pt.ideal _ _ hadmInit) (parg.ideal σ₂ ρt htarget) hfix
+    have hs := SemanticSubstitution.snoc ht σ₃ harg parg.subst
+      σ₂ _ ρt htarget hsubInit
+    change SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map (σ₃.snoc ⟨_, ht⟩ harg)) _ at hadm
+    change SemanticSubstitution _ _ (ρs.pushFin fun i : Fin (k + 1) =>
+      (rawInterpret (piLimit E₂ ℓ) Tgt (σ₃.subst.extend arg (Fin.natAdd Src.as.len i))).app _ σ₂.op ρt) _ ∧
+      SourceAdmissible _ (ρs.pushFin fun i : Fin (k + 1) =>
+        (rawInterpret (piLimit E₂ ℓ) Tgt (σ₃.subst.extend arg (Fin.natAdd Src.as.len i))).app _ σ₂.op ρt)
+    simp only [RawValuation.pushFin, Fin.natAdd_castSucc, Fin.natAdd_last,
+      Subst.extend_castSucc, Subst.extend_last, S, CtxCat.extendTele]
+    exact ⟨hs, hadm⟩
+
 namespace RawTeleProperties
+
+theorem fixed_image {ctx : Ctx ζ₂ ℓ 0 n}
+    (hctx : E₂[ctx] ⊢ₛ ok) (pctx : RawTeleProperties E₂ .nil ctx)
+    (σ₁ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as) (v : Fin n)
+    (pσ₁ : ∀ w < v, HasSubstitution Γ₁ (σ₁.subst w))
+    (σ₂ : Γ₂ ⟶ Γ₁) (ρs ρt : RawValuation Γ₂)
+    (hsource : SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁) ρs)
+    (htarget : SourceAdmissible σ₂ ρt)
+    (hvals : ∀ w < v,
+      (rawInterpret (piLimit E₂ ℓ) Γ₁ (σ₁.subst w)).app _ σ₂.op ρt = ρs (Var.db w)) :
+    (piLimit E₂ ℓ).rawExtend
+      ((rawInterpret (piLimit E₂ ℓ) Γ₁ ((ctx.get v).subst σ₁.subst)).app _ σ₂.op ρt)
+      ((Tm E₂ ℓ).map σ₂.op (Tm.label Γ₁.as (σ₁.typed v))) (ρs (Var.db v)) = ρs (Var.db v) := by
+  induction ctx generalizing ρs with
+  | nil => exact v.elim0
+  | @snoc n ctx t ih =>
+    have ht := hctx.last.choose_spec
+    have hctx : E₂[ctx] ⊢ₛ ok := hctx.init
+    let σ₃ := σ₁ ≫ CtxCat.projectionRaw ⟨ctx, hctx⟩ ht
+    have htail := SourceAdmissible.tail (Γ₁ := ⟨ctx, hctx⟩) ht hsource
+    rw [Category.assoc] at htail
+    change SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₃) ρs.tail at htail
+    cases v using Fin.lastCases with
+    | cast v =>
+      have h := ih hctx pctx.init σ₃ v
+        (fun w hw => pσ₁ w.castSucc hw) ρs.tail htail
+        (fun w hw => by
+          have h := hvals w.castSucc hw
+          rw [Var.db_castSucc] at h
+          exact h)
+      simp only [Ctx.get_castSucc, Expr.wk_subst, Var.db_castSucc]
+      exact h
+    | last =>
+      have pt := pctx.last
+      rw [Tele.nil_append] at pt
+      have pt := pt hctx
+      have hs : SemanticSubstitution σ₃ σ₂ ρs.tail ρt := by
+        intro Γ₃ Γ₄ τ r hr υ ρ hυ hag hadm w
+        change (rawInterpret (piLimit E₂ ℓ) Γ₄
+          ((σ₁.subst w.castSucc).subst r.subst)).app _ υ.op ρ = _
+        rw [pσ₁ w.castSucc (Fin.castSucc_lt_last w) r υ _ _ (.ren hr hag)
+          (by rw [hυ]; exact htarget.pullback τ), hυ, op_comp, ← RawFamily.app_pullback,
+          hvals w.castSucc (Fin.castSucc_lt_last w)]
+        rw [Var.db_castSucc]
+        rfl
+      have he := pt.subst σ₃ σ₂ ρs.tail ρt hs htail
+      conv_lhs =>
+        arg 2
+        rw [Ctx.get_last, Expr.wk_subst]
+        change (rawInterpret (piLimit E₂ ℓ) Γ₁ (t.subst σ₃.subst)).app _ σ₂.op ρt
+        rw [he]
+      rw [← Tm.map_varLabel σ₁ (Fin.last n), ← Functor.map_comp_apply, ← op_comp]
+      have .cons _ _ _ _ _ _ hf := hsource
+      simp only [σ₃, Functor.map_comp, Category.assoc, Var.db_last] at hf ⊢
+      exact hf
 
 theorem admissible_of_images {ctx : Ctx ζ₂ ℓ 0 n}
     (hctx : E₂[ctx] ⊢ₛ ok) (hprops : RawTeleProperties E₂ .nil ctx)
     (σ₁ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as) (σ₂ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (htarget : SourceAdmissible σ₂ ρ)
-    (hi : ∀ v, HasIdeality Γ₁ (σ₁.subst v))
-    (hr : ∀ v, HasSubstitution Γ₁ (σ₁.subst v))
+    (pσ₁ : ∀ v, RawInterpretationProperties Γ₁ (σ₁.subst v))
     (hf : ∀ v, HasFixedness Γ₁ (σ₁.subst v) ((ctx.get v).subst σ₁.subst)) :
     SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁)
       (RawValuation.pushFin (fun _ => ⊥)
         fun v => (rawInterpret (piLimit E₂ ℓ) Γ₁ (σ₁.subst v)).app _ σ₂.op ρ) := by
-  induction hctx with
-  | nil => exact .nil _ _
-  | @snoc n ctx t hctx ht ih =>
-    have ⟨u, ht⟩ := ht
-    let σ₃ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as :=
-      σ₁ ≫ CtxCat.projectionRaw ⟨ctx, hctx⟩ ht
-    have hfixed (v : Var n) :
-        HasFixedness Γ₁ (σ₃.subst v) ((Ctx.get v ctx).subst σ₃.subst) := by
-      have q : HasFixedness Γ₁ (σ₁.subst v.castSucc)
-          ((Ctx.get v.castSucc (ctx.snoc t)).subst σ₁.subst) := hf v.castSucc
-      rwa [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt), Expr.wk_subst] at q
-    have he : E₂[Γ₁.as.ctx] ⊢ₛ σ₁.subst (Fin.last n) : t.subst σ₃.subst := by
-      have q := σ₁.typed (Fin.last n)
-      rwa [Ctx.get_last, Expr.wk_subst] at q
-    have hfa : HasFixedness Γ₁ (σ₁.subst (Fin.last n)) (t.subst σ₃.subst) := by
-      have q : HasFixedness Γ₁ (σ₁.subst (Fin.last n))
-          ((Ctx.get (Fin.last n) (ctx.snoc t)).subst σ₁.subst) := hf (Fin.last n)
-      rwa [Ctx.get_last, Expr.wk_subst] at q
-    have heq : σ₃.snoc ⟨u, ht⟩ he = σ₁ :=
-      RawCtx.Hom.ext (Fin.snoc_init_self σ₁.subst)
-    have htail := ih hprops.init σ₃ (fun v => hi v.castSucc) (fun v => hr v.castSucc) hfixed
-    have pt : RawInterpretationProperties (⟨ctx, hctx⟩ : CtxCat E₂ ℓ) t := hprops.entry (by simp) hctx
-    have hsub := SemanticSubstitution.ofHom hctx σ₃ σ₂ ρ (fun v => hr v.castSucc) htarget
-    have htype := pt.subst σ₃ σ₂ _ ρ hsub htail
-    have hfixed := hfa he σ₂ ρ htarget
-    rw [htype] at hfixed
-    have hresult := htail.push ht ((Raw.ContextSection.ofTyping ht σ₃ he).pullback σ₂)
-      (pt.ideal _ _ htail) (hi (Fin.last n) _ _ htarget) hfixed
-    change SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map (σ₃.snoc ⟨u, ht⟩ he)) _ at hresult
-    rwa [heq] at hresult
-
-theorem admissible {ctx : Ctx ζ₂ ℓ 0 n} (hctx : E₂[ctx] ⊢ₛ ok)
-    (hprops : RawTeleProperties E₂ .nil ctx)
-    (σ₁ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as) (σ₂ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
-    (htarget : SourceAdmissible σ₂ ρ)
-    (hargs : ∀ v, RawJudgment Γ₁ (σ₁.subst v) (σ₁.subst v) ((ctx.get v).subst σ₁.subst)) :
-    SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁)
-      (RawValuation.pushFin (fun _ => ⊥)
-        fun v => (rawInterpret (piLimit E₂ ℓ) Γ₁ (σ₁.subst v)).app _ σ₂.op ρ) :=
-  hprops.admissible_of_images hctx σ₁ σ₂ ρ htarget (fun v => (hargs v).left.ideal)
-    (fun v => (hargs v).left.subst) fun v => (hargs v).fixed
+  have hΔ := hctx.wfTeleStrong
+  generalize hc : ctx = ctx' at hctx σ₁ pσ₁ hf ⊢
+  rw [← Tele.nil_append ctx] at hc
+  subst ctx'
+  simpa using (hprops.extend_admissible ctx (Nat.zero_add n)
+    hΔ σ₁ (by simpa using pσ₁) (by simpa using hf)
+    σ₂ (fun _ => ⊥) ρ (.nil _ _ _ _) (.nil _ _) htarget).2
 
 end RawTeleProperties
-
-theorem RawFamily.bodyAction_isIdealValued {t : Expr ζ₂ ℓ Γ₁.as.len}
-    {u : Level ℓ} (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : HasIdeality Γ₁ t)
-    {B : RawFamily (Γ₁.extension ht)}
-    (hB : ∀ ⦃Γ₃ : CtxCat E₂ ℓ⦄ (σ : Γ₃ ⟶ Γ₁.extension ht) (ρ : RawValuation Γ₃),
-      SourceAdmissible σ ρ → (B.app _ σ.op ρ).IsDirected)
-    (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
-    (RawFamily.normalizedBodyAction (piLimit E₂ ℓ) (CtxCat.rawComprehension ht)
-      (rawInterpret (piLimit E₂ ℓ) Γ₁ t) B σ ρ).IsIdealValued :=
-  RawFamily.normalizedBodyAction_isIdealValued (CtxCat.rawComprehension ht) _ _ σ ρ (pt σ ρ hρ)
-    fun σ₂ _ s J hJ =>
-      hB s.hom _ ((hρ.pullback σ₂).push ht s (pt _ _ (hρ.pullback σ₂)) J.property hJ)
-
-theorem RawFamily.abstraction_isDirected_of {t : Expr ζ₂ ℓ Γ₁.as.len}
-    {u : Level ℓ} (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : HasIdeality Γ₁ t)
-    {B : RawFamily (Γ₁.extension ht)}
-    (hB : ∀ ⦃Γ₃ : CtxCat E₂ ℓ⦄ (σ : Γ₃ ⟶ Γ₁.extension ht) (ρ : RawValuation Γ₃),
-      SourceAdmissible σ ρ → (B.app _ σ.op ρ).IsDirected)
-    ⦃Γ₂ : CtxCat E₂ ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
-    ((RawFamily.abstraction (piLimit E₂ ℓ) (CtxCat.rawComprehension ht)
-      (rawInterpret (piLimit E₂ ℓ) Γ₁ t) B).app _ σ.op ρ).IsDirected :=
-  RawAction.abstraction_isDirected _ (RawFamily.bodyAction_isIdealValued ht pt hB σ ρ hρ)
 
 theorem RawFamily.ctxLam_isDirected {b m : Nat} {P : Level ℓ → Prop}
     (Δ : Ctx ζ₂ ℓ Γ₁.as.len m) (hΔ : WFTeleStrong E₂ P Γ₁.as.ctx Δ)
@@ -114,19 +176,8 @@ theorem RawFamily.ctxLam_isDirected {b m : Nat} {P : Level ℓ → Prop}
   | nil => exact hB σ ρ hρ
   | snoc Δ t ih =>
     exact ih hΔ.init pΔ.init _
-      (RawFamily.abstraction_isDirected_of hΔ.last.choose_spec.2
-        (pΔ.last (hΔ.init.appendCtxWFStrong Γ₁.as.wf)).ideal hB)
-
-theorem Tm.map_teleSnoc_varLabel {k : Nat} {P : Level ℓ → Prop}
-    {Δ : Ctx ζ₂ ℓ Γ₁.as.len (Γ₁.as.len + k)} {t : Expr ζ₂ ℓ (Γ₁.as.len + k)}
-    (hΔ : WFTeleStrong E₂ P Γ₁.as.ctx (Δ.snoc t))
-    (ht : E₂[(CtxCat.extendTele Γ₁ Δ hΔ.init).as.ctx] ⊢ₛ t : .sort hΔ.last.choose)
-    (σ₁ : Γ₂ ⟶ CtxCat.extendTele Γ₁ (Δ.snoc t) hΔ) :
-    (fun i : Fin k => (Tm E₂ ℓ).map σ₁.op
-        (Tm.varLabel (CtxCat.extendTele Γ₁ (Δ.snoc t) hΔ) (Fin.natAdd Γ₁.as.len i.castSucc))) =
-      fun i : Fin k => (Tm E₂ ℓ).map (σ₁ ≫ CtxCat.rawProjection _ ht).op
-        (Tm.varLabel (CtxCat.extendTele Γ₁ Δ hΔ.init) (Fin.natAdd Γ₁.as.len i)) :=
-  funext fun i => Tm.map_extension_varLabel ht σ₁ (Fin.natAdd Γ₁.as.len i)
+      (fun _ _ _ hρ => RawAction.abstraction_isDirected _
+        (RawFamily.bodyAction_isIdealValued hΔ.last.choose_spec.2 (pΔ.last _).ideal hB _ _ hρ))
 
 end CoherentShape
 
@@ -138,9 +189,10 @@ theorem RawSound.teleProperties (hsound : RawSound E₂ ℓ pre) {Δ : Ctx ζ₁
   | nil => exact .nil
   | @snoc m Θ t hΘ ht ih =>
     have ⟨u, _, ht⟩ := ht
-    have hok : E₁[Δ ++ Θ] ⊢ₛ ok := WFTeleStrong.appendCtxWFStrong hΘ hΔ
-    exact .snoc ih fun wf =>
-      (hsound.properties hok (Ctx.map_append pre.sigs Δ Θ) wf ht).left
+    exact .snoc ih fun wf => by
+      revert wf
+      rw [← Ctx.map_append]
+      exact fun _ => (hsound.properties (WFTeleStrong.appendCtxWFStrong hΘ hΔ) ht).left
 
 theorem RawSound.paramTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
     (hblock : (E₂.get η).block = I.map pre.sigs) (ls : Fin ι.nlevels → Level ℓ) :
@@ -149,19 +201,5 @@ theorem RawSound.paramTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WF
     (hB.params.instLevel (Q := fun _ => True) ls fun _ => trivial)
   rw [hblock]
   exact congr(RawTeleProperties E₂ _ $(Ctx.map_instL pre.sigs ls I.params)).mp hp
-
-theorem RawSound.ordinaryTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) :
-    RawTeleProperties E₂ (Ctx.instL ls (I.map pre.sigs).params)
-      (Ctx.instL ls ((I.map pre.sigs).ctors s c).ordinaryTele) := by
-  have hΔ := hB.paramClosedWF ls
-  have hordinary : WFTeleStrong E₁ (fun _ => True) I.params (I.ctors s c).ordinaryTele := by
-    simpa using
-      (hB.ctors s c).ordinaryTeleAuxStrong (ι.ctors s c).nfields le_rfl
-  have hΘ := hordinary.instLevel (Q := fun _ => True) ls fun _ => trivial
-  exact congr(RawTeleProperties E₂ $(Ctx.map_instL pre.sigs ls I.params)
-    $((Ctx.map_instL pre.sigs ls (I.ctors s c).ordinaryTele).trans
-      (congrArg (Ctx.instL ls) (Ctor.ordinaryTele_map pre.sigs (I.ctors s c))))).mp
-    (hsound.teleProperties hΔ hΘ)
 
 end Metalean

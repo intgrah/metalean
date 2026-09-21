@@ -24,6 +24,12 @@ structure SemanticHom (σ₁ : Γ₂.as ⟶ Γ₁.as) : Prop where
 
 namespace SemanticHom
 
+theorem id (Γ₁ : CtxCat E ℓ) : SemanticHom (𝟙 Γ₁.as) where
+  image v := HasSubstitution.var Γ₁ v
+  admissible _ σ ρ hρ := ⟨ρ, .id σ ρ, by
+    change SourceAdmissible (σ ≫ 𝟙 Γ₁) ρ
+    simpa using hρ⟩
+
 theorem ofImages {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
     (pctx : RawTeleProperties E .nil ctx) (σ₁ : Γ₂.as ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ).as)
     (pσ₁ : ∀ v, RawInterpretationProperties Γ₂ (σ₁.subst v))
@@ -31,8 +37,7 @@ theorem ofImages {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
     SemanticHom σ₁ where
   image v := (pσ₁ v).subst
   admissible _ σ₂ ρ hρ := ⟨_, .ofHom hctx σ₁ σ₂ ρ (fun v => (pσ₁ v).subst) hρ,
-    pctx.admissible_of_images hctx σ₁ σ₂ ρ hρ (fun v => (pσ₁ v).ideal) (fun v => (pσ₁ v).subst)
-      fσ₁⟩
+    pctx.admissible_of_images hctx σ₁ σ₂ ρ hρ pσ₁ fσ₁⟩
 
 theorem projection (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) :
     SemanticHom (CtxCat.projectionRaw Γ₁ ht) where
@@ -72,6 +77,51 @@ theorem fixed (h : SemanticHom σ₁) (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (pt : 
     pt σ₁ σ₂ ρ₁ ρ hs hadm, pe σ₁ σ₂ ρ₁ ρ hs hadm]
   exact hf he _ _ hadm
 
+theorem comp {σ₂ : Γ₃.as ⟶ Γ₂.as} (h₁ : SemanticHom σ₁) (h₂ : SemanticHom σ₂) :
+    SemanticHom (σ₂ ≫ σ₁) where
+  image v := h₂.subst (h₁.image v)
+  admissible _ σ₃ ρ₃ hρ₃ := by
+    have ⟨ρ₂, hs₂, ha₂⟩ := h₂.admissible σ₃ ρ₃ hρ₃
+    have ⟨ρ₁, hs₁, ha₁⟩ := h₁.admissible _ ρ₂ ha₂
+    exact ⟨ρ₁, hs₁.comp hs₂ ha₂ h₁.image, by simpa using ha₁⟩
+
+theorem lift (h : SemanticHom σ₁) (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+    (pt : RawInterpretationProperties Γ₁ t) : SemanticHom (σ₁.lift ⟨u, ht⟩) where
+  image v := by
+    change HasSubstitution (Γ₂.extension (ht.substitution σ₁.typed)) (σ₁.subst.lift v)
+    cases v using Fin.lastCases with
+    | last => rw [Subst.lift_last]; exact HasSubstitution.var _ _
+    | cast v =>
+      rw [Subst.lift_castSucc, ← Expr.subst_wk]
+      exact (projection (ht.substitution σ₁.typed)).subst (h.image v)
+  admissible _ σ₂ ρ₂ hρ₂ := by
+    have ⟨ρ₁, hs, ha⟩ := h.admissible _ ρ₂.tail (hρ₂.tail (ht.substitution σ₁.typed))
+    refine ⟨ρ₁.push (ρ₂ 0), .lift ht σ₁ σ₂ ρ₁ ρ₂ hs, ?_⟩
+    let s : Raw.ContextSection (ht.substitution σ₁.typed)
+        (σ₂ ≫ Γ₂.rawProjection (ht.substitution σ₁.typed))
+        ((Tm _ _).map σ₂.op (CtxCat.rawComprehension (ht.substitution σ₁.typed)).generic) := ⟨σ₂, rfl, rfl⟩
+    have .cons _ _ _ _ _ hi hf := hρ₂
+    refine ha.push ht (s.mapExtension ht σ₁) (pt.ideal _ _ ha) hi ?_
+    rw [← pt.subst σ₁ _ ρ₁ ρ₂.tail hs ha]
+    exact hf
+
+theorem typed (h : SemanticHom σ₁) (p : RawTyped Γ₁ e t) :
+    RawTyped Γ₂ (e.subst σ₁.subst) (t.subst σ₁.subst) :=
+  ⟨p.typed.substitution σ₁.typed, h.props p.type, h.props p.term,
+    h.fixed p.typed p.type.subst p.term.subst p.fixed⟩
+
+theorem judgment {e₁ e₂ t : Expr ζ ℓ Γ₁.as.len} (h : SemanticHom σ₁) (p : RawJudgment Γ₁ e₁ e₂ t) :
+    RawJudgment Γ₂ (e₁.subst σ₁.subst) (e₂.subst σ₁.subst) (t.subst σ₁.subst) where
+  syntactic := p.syntactic.substitution σ₁.typed
+  type := h.props p.type
+  left := h.props p.left
+  right := h.props p.right
+  equal _ σ₂ ρ hρ := by
+    have ⟨ρ₁, hs, ha⟩ := h.admissible σ₂ ρ hρ
+    rw [p.left.subst σ₁ σ₂ ρ₁ ρ hs ha, p.right.subst σ₁ σ₂ ρ₁ ρ hs ha]
+    exact p.equal _ _ ha
+  fixed := h.fixed p.syntactic.left p.type.subst p.left.subst p.fixed
+
 end SemanticHom
 
 theorem HasSubstitution.wk_value (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pe : HasSubstitution Γ₁ e)
@@ -80,8 +130,8 @@ theorem HasSubstitution.wk_value (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pe :
     (rawInterpret (piLimit E ℓ) (Γ₁.extension ht) e.wk).app _ σ.op ρ =
       (rawInterpret (piLimit E ℓ) Γ₁ e).app _ (σ ≫ Γ₁.rawProjection ht).op ρ.tail := by
   rw [← Expr.subst_wk]
-  exact pe.rename (fun v => ⟨_, rfl⟩) σ (ρ₁ := ρ.tail)
-    (.of_var Fin.castSucc (fun _ => rfl) fun v => congrArg ρ (Var.db_castSucc v)) hadm
+  exact pe _ σ ρ.tail ρ (.ren (fun v => ⟨_, rfl⟩)
+    (.of_var Fin.castSucc (fun _ => rfl) fun v => congrArg ρ (Var.db_castSucc v))) hadm
 
 theorem RawInterpretationProperties.wk (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
     (pe : RawInterpretationProperties Γ₁ e) :
@@ -89,14 +139,6 @@ theorem RawInterpretationProperties.wk (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   have h : RawInterpretationProperties (Γ₁.extension ht) (e.subst Subst.wk) :=
     (SemanticHom.projection ht).props pe
   rwa [Expr.subst_wk] at h
-
-theorem HasFixedness.wk {t₁ t₂ : Expr ζ ℓ Γ₁.as.len}
-    (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (he : E[Γ₁.as.ctx] ⊢ₛ e : t₂)
-    (pt₂ : HasSubstitution Γ₁ t₂) (pe : HasSubstitution Γ₁ e)
-    (hf : HasFixedness Γ₁ e t₂) : HasFixedness (Γ₁.extension ht₁) e.wk t₂.wk := by
-  have h : HasFixedness (Γ₁.extension ht₁) (e.subst Subst.wk) (t₂.subst Subst.wk) :=
-    (SemanticHom.projection ht₁).fixed he pt₂ pe hf
-  rwa [Expr.subst_wk, Expr.subst_wk] at h
 
 theorem RawInterpretationProperties.var (Γ₁ : CtxCat E ℓ) (v : Var Γ₁.as.len) :
     RawInterpretationProperties Γ₁ (.var v) where
@@ -112,40 +154,29 @@ theorem HasFixedness.varLast (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : Has
   have hname : Tm.label (Γ₁.extension ht).as hterm = (CtxCat.rawComprehension ht).generic :=
     Tm.label_eq_var hterm rfl
   rw [HasSubstitution.wk_value ht pt σ ρ (hadm.tail ht), hname]
-  simpa [RawFamily.lookup] using ((SourceAdmissible.cons_iff ht σ ρ).mp hadm).2.2.2
+  cases hadm with
+  | cons _ _ _ _ _ _ hf =>
+    simp only [rawInterpret_var, Var.db_last]
+    exact hf
 
-theorem RawTeleProperties.get {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
-    (pctx : RawTeleProperties E .nil ctx) (v : Var n) :
-    RawInterpretationProperties (⟨ctx, hctx⟩ : CtxCat E ℓ) (ctx.get v) := by
-  induction hctx with
-  | nil => exact v.elim0
-  | @snoc n ctx t hctx ht ih =>
-    have ⟨u, ht⟩ := ht
-    cases v using Fin.lastCases with
+theorem RawTeleProperties.var {m : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ Γ₁.as.len m}
+    (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ) (pΔ : RawTeleProperties E Γ₁.as.ctx Δ)
+    (i : Fin m) (hi : Γ₁.as.len ≤ i.val) :
+    RawTyped (CtxCat.extendTele Γ₁ Δ hΔ) (.var i) (Ctx.get i (Γ₁.as.ctx ++ Δ)) := by
+  induction Δ with
+  | nil => omega
+  | snoc Δ t ih =>
+    let T := CtxCat.extendTele Γ₁ Δ hΔ.init
+    have ht : E[T.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have pt : RawInterpretationProperties T t := pΔ.last _
+    cases i using Fin.lastCases with
     | last =>
-      rw [Ctx.get_last]
-      exact (pctx.entry (by simp) hctx).wk ht
-    | cast v =>
-      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt)]
-      exact (ih pctx.init v).wk ht
-
-theorem HasFixedness.var {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
-    (pctx : RawTeleProperties E .nil ctx) (v : Var n) :
-    HasFixedness (⟨ctx, hctx⟩ : CtxCat E ℓ) (.var v) (ctx.get v) := by
-  induction hctx with
-  | nil => exact v.elim0
-  | @snoc n ctx t hctx ht ih =>
-    have ⟨u, ht⟩ := ht
-    cases v using Fin.lastCases with
-    | last =>
-      have pt := pctx.entry (by simp) hctx
-      rw [Ctx.get_last]
-      exact HasFixedness.varLast ht pt.subst
-    | cast v =>
-      rw [Ctx.get_snoc ctx t v.castSucc (Nat.ne_of_lt v.isLt)]
-      have h : HasFixedness _ _ _ := HasFixedness.wk ht (CtxWFStrong.var v hctx)
-        (pctx.init.get hctx v).subst (HasSubstitution.var ⟨ctx, hctx⟩ v) (ih pctx.init v)
-      rwa [Expr.var_wk] at h
+      simpa [T, CtxCat.extendTele] using
+        (show RawTyped (T.extension ht) (.var (Fin.last T.as.len)) t.wk from
+          ⟨CtxWFStrong.varLast (T.as.wf.snoc ⟨_, ht⟩), pt.wk ht, .var _ _, .varLast ht pt.subst⟩)
+    | cast i =>
+      have p := (SemanticHom.projection ht).typed (ih hΔ.init pΔ.init i hi)
+      simpa [T, CtxCat.extendTele, CtxCat.projectionRaw, Expr.subst_wk, Expr.var_wk] using p
 
 theorem RawInterpretationProperties.wkN {k : Nat} {P : Level ℓ → Prop}
     (Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
@@ -166,19 +197,6 @@ theorem RawTeleProperties.ofTypes {k : Nat} {P : Level ℓ → Prop}
     exact .snoc (ih hΘ.init fun i => ptypes i.castSucc)
       fun _ => (ptypes (Fin.last k)).wkN _ hΘ.init
 
-theorem HasFixedness.wkN {t₂ : Expr ζ ℓ Γ₁.as.len} {k : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
-    (he : E[Γ₁.as.ctx] ⊢ₛ e : t₂)
-    (pt₂ : RawInterpretationProperties Γ₁ t₂) (pe : RawInterpretationProperties Γ₁ e)
-    (hf : HasFixedness Γ₁ e t₂) :
-    HasFixedness (CtxCat.extendTele Γ₁ Δ hΔ) (e.wkN k) (t₂.wkN k) := by
-  induction Δ using Tele.addInduction with
-  | nil => exact hf
-  | snoc k Δ t₁ ih =>
-    exact @HasFixedness.wk ζ E ℓ (CtxCat.extendTele Γ₁ Δ hΔ.init) (e.wkN k) hΔ.last.choose t₁
-      (t₂.wkN k) hΔ.last.choose_spec.2 he.wkN
-      (pt₂.wkN Δ hΔ.init).subst (pe.wkN Δ hΔ.init).subst (ih hΔ.init)
-
 theorem HasSubstitution.congrImages {e : Expr ζ ℓ Src.as.len}
     (pe : HasSubstitution Src e) (pctx : RawTeleProperties E .nil Src.as.ctx)
     (σ₁ σ₁' : Γ₁.as ⟶ Src.as) (hσ₁ : RawCtx.toCtx.map σ₁ = RawCtx.toCtx.map σ₁')
@@ -189,7 +207,7 @@ theorem HasSubstitution.congrImages {e : Expr ζ ℓ Src.as.len}
     (he : ∀ v, HasEquality Γ₁ (σ₁.subst v) (σ₁'.subst v)) :
     HasEquality Γ₁ (e.subst σ₁.subst) (e.subst σ₁'.subst) := by
   intro Γ₂ σ₂ ρ hρ
-  have hadm := pctx.admissible_of_images Src.as.wf σ₁ σ₂ ρ hρ hi hr hf
+  have hadm := pctx.admissible_of_images Src.as.wf σ₁ σ₂ ρ hρ (fun v => ⟨hi v, hr v⟩) hf
   have hvalues : (RawValuation.pushFin (fun _ => ⊥) fun v =>
       (rawInterpret (piLimit E ℓ) Γ₁ (σ₁.subst v)).app _ σ₂.op ρ) =
       RawValuation.pushFin (fun _ => ⊥) fun v =>

@@ -31,27 +31,6 @@ noncomputable def proj (h : (E.get η).block.IsStructure s c) (hB : (E.get η).b
     fun _ _ _ _ he => label_eq (h.projType_congrStrong hB f hps he)
       (h.projTerm_congrStrong hB f hps he)
 
-theorem proj_eq (h : (E.get η).block.IsStructure s c) (hB : (E.get η).block.WFStrong E)
-    (ls : Fin ι.nlevels → Level ℓ)
-    (ps : Fin ι.nparams → Expr ζ ℓ Γ.as.len)
-    (hps : ∀ p, E[Γ.as.ctx] ⊢ₛ ps p : (E.get η).block.paramType ls ps p)
-    (f : Fin (ι.ctors s c).nfields) (n : Tm_ Γ)
-    (hn : Tm.type n = Ty.ofTyping Γ.as (h.indTypeStrong hps)) {maj : Expr ζ ℓ Γ.as.len}
-    (hmaj : E[Γ.as.ctx] ⊢ₛ maj : .ind η s ls ps h.indices) (hnmaj : n = label Γ.as hmaj) :
-    proj h hB ls ps hps f n hn = label Γ.as (h.projTerm_hasTypeStrong hB f Γ.as.wf hps hmaj) :=
-  elim_eq _ _ _ _ _ hmaj hnmaj
-
-theorem proj_label (h : (E.get η).block.IsStructure s c) (hB : (E.get η).block.WFStrong E)
-    (ls : Fin ι.nlevels → Level ℓ)
-    (ps : Fin ι.nparams → Expr ζ ℓ Γ.as.len)
-    (hps : ∀ p, E[Γ.as.ctx] ⊢ₛ ps p : (E.get η).block.paramType ls ps p)
-    {maj : Expr ζ ℓ Γ.as.len}
-    (hmaj : E[Γ.as.ctx] ⊢ₛ maj : .ind η s ls ps h.indices)
-    (f : Fin (ι.ctors s c).nfields) :
-    proj h hB ls ps hps f (label Γ.as hmaj) rfl =
-      label Γ.as (h.projTerm_hasTypeStrong hB f Γ.as.wf hps hmaj) :=
-  proj_eq h hB ls ps hps f _ rfl hmaj rfl
-
 end Tm
 
 namespace IndCode
@@ -97,10 +76,10 @@ def StructWitness.map {code : IndCode Γ₁} {c : Fin code.toIndHead.nctors}
     change Tm.label Γ₂.as (htyped p) =
       (Tm E ℓ).map (RawCtx.toCtx.map σ).op (code.params p)
     rw [← w.params_eq p]
-    exact Tm.label_congr (Inductive.paramType_subst (I := (E.get code.η).block)
-      (ls := code.ls) (ps := w.params) p σ.subst).symm
+    exact congr(Tm.label _ (t := $((Inductive.paramType_subst (I := (E.get code.η).block)
+      (ls := code.ls) (ps := w.params) p σ.subst).symm)) _)
   · rw [Tm.type_map, w.guard]
-    refine (Ty.map_ofTyping _ σ).trans (Ty.ofTyping_congr ?_)
+    refine (Ty.map_ofTyping _ σ).trans congr(Ty.ofTyping _ (t := $(?_)) _)
     rw [Expr.subst, hidx]
 
 theorem StructGuard.pullback {code : IndCode Γ₁} {c : Fin code.toIndHead.nctors}
@@ -133,46 +112,36 @@ theorem projOfCode_eq_proj {code : IndCode Γ} {c : Fin code.toIndHead.nctors}
     {n : Tm_ Γ} (hg : code.StructGuard c n)
     (w : code.StructWitness c n) (f : Fin (code.ι.ctors code.s c).nfields) :
     projOfCode hg f = proj w.struct w.block code.ls w.params w.typed f n w.guard := by
+  obtain ⟨R⟩ := n
   have hparams (p : Fin code.ι.nparams) : E[Γ.as.ctx] ⊢ₛ hg.witness.params p ≡ w.params p :
       (E.get code.η).block.paramType code.ls hg.witness.params p :=
-    (label_eq_iff.mp ((hg.witness.params_eq p).trans (w.params_eq p).symm)).2
-  have ⟨e, he, hn⟩ := exists_label n _ hg.witness.guard
-  have hty := (Ty.ofRepr_eq_iff _ _).mp (hg.witness.guard.symm.trans w.guard)
-  have he' := hty.convStrong he
-  exact (proj_eq hg.witness.struct hg.witness.block code.ls hg.witness.params hg.witness.typed f n
-    hg.witness.guard he hn).trans
-    ((label_eq (hg.witness.struct.projType_congrStrong hg.witness.block f hparams he)
-      (hg.witness.struct.projTerm_congrStrong hg.witness.block f hparams he)).trans
-        (proj_eq w.struct w.block code.ls w.params w.typed f n w.guard he'
-          (hn.trans (label_eq hty he))).symm)
+    (Quotient.exact ((hg.witness.params_eq p).trans (w.params_eq p).symm)).2
+  have he := (Quotient.exact hg.witness.guard).convStrong R.valWF
+  exact label_eq (hg.witness.struct.projType_congrStrong hg.witness.block f hparams he)
+    (hg.witness.struct.projTerm_congrStrong hg.witness.block f hparams he)
 
-theorem projOfCode_ctor_label {code : IndCode Γ} {c : Fin code.toIndHead.nctors}
-    {n : Tm_ Γ} (hg : code.StructGuard c n) (w : code.StructWitness c n)
-    (fds : Fin (code.ι.ctors code.s c).nfields → Expr ζ ℓ Γ.as.len)
-    (hmaj : E[Γ.as.ctx] ⊢ₛ .ctor code.η code.s c code.ls w.params fds w.struct.recursive :
-      .ind code.η code.s code.ls w.params w.struct.indices)
-    (hn : n = label Γ.as hmaj)
-    (hfields : ∀ f, E[Γ.as.ctx] ⊢ₛ fds f :
-      ((E.get code.η).block.ctors code.s c).ordinaryFieldExpr code.ls w.params fds f)
-    (f : Fin (code.ι.ctors code.s c).nfields) :
-    projOfCode hg f = label Γ.as (hfields f) := by
-  trans proj w.struct w.block code.ls w.params w.typed f (label Γ.as hmaj) rfl
-  · rw [projOfCode_eq_proj hg w f]
-    congr
-  have hiota (current : Fin (code.ι.ctors code.s c).nfields) :=
-    w.struct.projTerm_ctorStrong w.block current fds Γ.as.wf w.typed hmaj hfields
-  have hprojected : ∀ current : Fin (code.ι.ctors code.s c).nfields,
-      E[Γ.as.ctx] ⊢ₛ w.struct.projTerm code.η code.ls w.params current
-          (.ctor code.η code.s c code.ls w.params fds w.struct.recursive) ≡
+theorem proj_ctor_label (hs : (E.get η).block.IsStructure s c) (hB : (E.get η).block.WFStrong E)
+    (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ Γ.as.len)
+    (hps : ∀ p, E[Γ.as.ctx] ⊢ₛ ps p : (E.get η).block.paramType ls ps p)
+    (fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ Γ.as.len)
+    (hmaj : E[Γ.as.ctx] ⊢ₛ .ctor η s c ls ps fds hs.recursive : .ind η s ls ps hs.indices)
+    (hfields : ∀ f, E[Γ.as.ctx] ⊢ₛ fds f : ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
+    (f : Fin (ι.ctors s c).nfields) :
+    proj hs hB ls ps hps f (label Γ.as hmaj) rfl = label Γ.as (hfields f) := by
+  have hiota (current : Fin (ι.ctors s c).nfields) :=
+    hs.projTerm_ctorStrong hB current fds Γ.as.wf hps hmaj hfields
+  have hprojected : ∀ current : Fin (ι.ctors s c).nfields,
+      E[Γ.as.ctx] ⊢ₛ hs.projTerm η ls ps current
+          (.ctor η s c ls ps fds hs.recursive) ≡
         fds current :
-          ((((E.get code.η).block.ctors code.s c).ordinaryType current).instL code.ls).subst
-            (Fin.append w.params fun previous : Fin current.val =>
-              w.struct.projTerm code.η code.ls w.params (previous.castLE current.isLt.le)
-                (.ctor code.η code.s c code.ls w.params fds w.struct.recursive)) := by
+          (((((E.get η).block.ctors s c).ordinary current).type).instL ls).subst
+            (Fin.append ps fun previous : Fin current.val =>
+              hs.projTerm η ls ps (previous.castLE current.isLt.le)
+                (.ctor η s c ls ps fds hs.recursive)) := by
     intro current
     simpa [Inductive.IsStructure.projType_eq, Ctor.ordinaryFieldExpr] using hiota current
-  have ⟨_, htypes⟩ := (w.block.ctors code.s c).ordinaryFieldExpr_congr w.block.params f
-    w.typed hprojected
+  have htypes := (hB.ctors s c).ordinaryFieldExpr_congr hB.params f
+    hps (fun g _ => hprojected g)
   apply label_eq _ (hiota f)
   rw [Inductive.IsStructure.projType_eq]
   exact .ofDefEq htypes
@@ -183,20 +152,16 @@ theorem map_projOfCode {code : IndCode Γ₁} {c : Fin code.toIndHead.nctors}
     (hg' : (code.map ((Tm E ℓ).map (RawCtx.toCtx.map σ).op)).StructGuard c
       ((Tm E ℓ).map (RawCtx.toCtx.map σ).op n)) :
     (Tm E ℓ).map (RawCtx.toCtx.map σ).op (projOfCode hg f) = projOfCode hg' f := by
+  obtain ⟨R⟩ := n
   let w := hg.witness
   have hidx : (fun index => Expr.subst σ.subst (w.struct.indices index)) = w.struct.indices :=
     funext w.struct.no_indices.elim
-  have ⟨e, he, hn⟩ := exists_label n _ w.guard
-  have heσ : E[Γ₂.as.ctx] ⊢ₛ e.subst σ.subst :
+  have he := (Quotient.exact w.guard).convStrong R.valWF
+  have heσ : E[Γ₂.as.ctx] ⊢ₛ R.val.subst σ.subst :
       .ind code.η code.s code.ls (fun q => (w.params q).subst σ.subst) w.struct.indices := by
     have h := he.substitution σ.typed
     rwa [Expr.subst, hidx] at h
-  have hnσ : (Tm E ℓ).map (RawCtx.toCtx.map σ).op n = label Γ₂.as heσ :=
-    (congrArg ((Tm E ℓ).map (RawCtx.toCtx.map σ).op) hn).trans
-      ((map_label he σ).trans (label_congr (by rw [Expr.subst, hidx])))
-  rw [projOfCode_eq_proj hg' (w.map σ) f, proj_eq (w.map σ).struct (w.map σ).block _
-    (w.map σ).params (w.map σ).typed f _ (w.map σ).guard heσ hnσ,
-    projOfCode_eq_proj hg w f, proj_eq _ _ _ _ _ f n w.guard he hn]
+  rw [projOfCode_eq_proj hg' (w.map σ) f, projOfCode_eq_proj hg w f]
   refine (map_label _ σ).trans (label_eq ?_ ?_)
   · rw [Inductive.IsStructure.projType_subst]
     exact w.struct.projType_congrStrong w.block f (w.map σ).typed heσ

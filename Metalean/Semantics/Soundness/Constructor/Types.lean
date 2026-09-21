@@ -20,18 +20,6 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 
 namespace CoherentShape
 
-theorem ctorFieldTypes_value_isDirected (c : Fin (ι.nctors s))
-    (hfn : HasIdeality (CtxCat.nil E₂ ℓ)
-      (((E₂.get η).block.ctorTypeFn s c).instL ls))
-    (names : Fin ι.nparams → Tm_ Γ₁) (args : Fin ι.nparams → RawFamily Γ₁)
-    (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
-    (ha : ∀ p, ((args p).app _ σ.op ρ).IsDirected) :
-    ((RawFamily.closedApps
-      (rawInterpret (piLimit E₂ ℓ) (CtxCat.nil E₂ ℓ) (((E₂.get η).block.ctorTypeFn s c).instL ls))
-      names args).app _ σ.op ρ).IsDirected := by
-  rw [RawFamily.closedApps_value]
-  exact rawApps_isDirected ⟨_, hfn _ _ (.nil _ _)⟩ _ fun p => ⟨_, ha p⟩
-
 def ctorTargetHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ ℓ Γ₁.as.len}
     (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
@@ -40,7 +28,11 @@ def ctorTargetHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
     (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ₛ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f) :
     Γ₁.as ⟶ (CtxCat.extendTele ⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ _ hΔ).as :=
-  ⟨Fin.append ps fds, by simpa using Ctor.targetSubstWFStrong hps hf⟩
+  ⟨Fin.append ps fds, by
+    change E₂[Γ₁.as.ctx] ⊢ₛ Fin.append ps fds ⊣
+      Ctx.instL ls (E₂.get η).block.params ++ Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele
+    rw [← Ctx.instL_append]
+    exact Ctor.forall_ordinarySubst le_rfl hps hf⟩
 
 def ctorParamHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
@@ -78,8 +70,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
     (fun f => (Tm E₂ ℓ).map (σ₁ ≫ RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf)).op
         (Tm.varLabel (CtxCat.extendTele ⟨_, hctx⟩ _ hΔ) (Fin.natAdd ι.nparams f))) =
       fun f => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as (hf f)) := by
-  have hadm := pctx.admissible_of_images hctx (ctorParamHom hctx hps) σ₁ ρ hρ (fun v => (pps v).ideal)
-    (fun v => (pps v).subst) fun v => by
+  have hadm := pctx.admissible_of_images hctx (ctorParamHom hctx hps) σ₁ ρ hρ pps fun v => by
       rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
       exact fps v
   have hproj : RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf) ≫
@@ -94,7 +85,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
         fun p => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as (hps p)) := by
       funext p
       rw [op_comp, Functor.map_comp_apply]
-      refine congrArg _ (Tm.label_congr ?_)
+      refine congr((Tm E₂ ℓ).map σ₁.op (Tm.label _ (t := $(?_)) _))
       change ((Ctx.instL ls (E₂.get η).block.params).get p).subst ps = _
       rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     rw [hn] at hb
@@ -104,7 +95,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
   · rw [op_comp, Functor.map_comp_apply, Tm.map_varLabel]
     simp only [ctorTargetHom, Fin.append_right]
     apply congrArg ((Tm E₂ ℓ).map σ₁.op)
-    apply Tm.label_congr
+    refine congr(Tm.label _ (t := $(?_)) _)
     change (Ctx.get (Fin.natAdd ι.nparams f) (Ctx.instL ls (E₂.get η).block.params ++
       Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele)).subst (Fin.append ps fds) = _
     rw [← Ctx.instL_append, Ctx.get_subst _ _ _ (ι.nparams + f.val) (by omega) rfl,
@@ -112,146 +103,68 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
         (by omega)]
     simp [Ctor.ordinaryFieldExpr]
 
-theorem ctorSourceJudgment
-    {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
-    {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ ℓ Γ₁.as.len}
-    (pps : ∀ p, RawJudgment Γ₁ (ps p) (ps p) ((E₂.get η).block.paramType ls ps p))
-    (pf : ∀ f, RawJudgment Γ₁ (fds f) (fds f)
-      (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f))
-    (v : Var (ι.nparams + (ι.ctors s c).nfields)) :
-    RawJudgment Γ₁ ((Fin.append ps fds) v) ((Fin.append ps fds) v)
-      (((Ctx.instL ls ((E₂.get η).block.params ++
-        ((E₂.get η).block.ctors s c).ordinaryTele)).get v).subst (Fin.append ps fds)) := by
-  rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
-  cases v using Fin.addCases with
-  | left p => simpa [Inductive.paramType] using pps p
-  | right f =>
-    rw [Ctx.entry_append_right (E₂.get η).block.params _ (by omega) (by simp) (by omega)]
-    simpa [Ctor.ordinaryFieldExpr] using pf f
-
 end CoherentShape
 
-theorem RawSound.ctorTypeFnProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (s : Fin ι.nsorts) (d : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) :
-    RawInterpretationProperties (CtxCat.nil E₂ ℓ)
-      (((I.map pre.sigs).ctorTypeFn s d).instL ls) := by
-  have ⟨_, hf⟩ := hB.ctorTypeFn s d
-  have p := (hsound.properties .nil rfl .nil (hf.instLevel ls)).left
-  simpa using p
-
-theorem RawSound.ctorFieldProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ)
-    (hctx : E₂[Ctx.instL ls (I.map pre.sigs).params] ⊢ₛ ok) :
-    RawInterpretationProperties (⟨Ctx.instL ls (I.map pre.sigs).params, hctx⟩ : CtxCat E₂ ℓ)
-      ((((I.map pre.sigs).ctors s c).ordinaryTele.pi (.sort I.level)).instL ls) :=
-  have hp : E₁[I.params] ⊢ₛ ok := by
-    simpa using WFTeleStrong.appendCtxWFStrong hB.params .nil
-  have hfields := WFTeleStrong.appendCtxWFStrong
-    ((hB.ctors s c).ordinaryTeleAuxStrong _ le_rfl) hp
-  have ⟨u, ht⟩ := Ctx.pi_isTypeStrong hfields (.sortDF)
-  have p := (hsound.properties (hp.instLevel ls)
-    (Ctx.map_instL pre.sigs ls I.params) hctx (ht.instLevel ls)).left
-  have he :=
-    (Expr.map_instL pre.sigs ls ((I.ctors s c).ordinaryTele.pi (.sort I.level))).trans
-      (congrArg (Expr.instL ls) ((Ctx.map_pi pre.sigs _ _).trans
-        (congrArg (Ctx.pi (.sort I.level))
-          (Ctor.ordinaryTele_map pre.sigs (I.ctors s c)))))
-  (congrArg (RawInterpretationProperties (⟨_, hctx⟩ : CtxCat E₂ ℓ)) he).mp p
-
-theorem RawSound.ordinaryPrefixProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ)
-    (count : Nat) (hcount : count ≤ (ι.ctors s c).nfields) :
-    RawTeleProperties E₂ .nil (Ctx.instL ls ((I.map pre.sigs).params ++
-      ((I.map pre.sigs).ctors s c).ordinaryTeleAux count hcount)) :=
-  have hfields := (hB.ctors s c).ordinaryTeleAuxStrong count hcount
-  (congrArg (RawTeleProperties E₂ .nil)
-    ((Ctx.map_instL pre.sigs ls _).trans (congrArg (Ctx.instL ls)
-      ((Ctx.map_append pre.sigs _ _).trans
-        (congrArg (Tele.append (I.params.map pre.sigs))
-          (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) count hcount)))))).mp <|
-    hsound.teleProperties .nil
-      ((hB.params.append (by simpa using hfields)).instLevel (Q := fun _ => True) ls fun _ => trivial)
-
-theorem RawSound.ordinaryTypeJudgment (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ)
-    (f : Fin (ι.ctors s c).nfields)
-    (hctx : E₂[Ctx.instL ls ((I.map pre.sigs).params ++
-      ((I.map pre.sigs).ctors s c).ordinaryTeleAux f.val f.isLt.le)] ⊢ₛ ok) :
-    RawJudgment
-      (⟨Ctx.instL ls ((I.map pre.sigs).params ++
-        ((I.map pre.sigs).ctors s c).ordinaryTeleAux f.val f.isLt.le), hctx⟩ : CtxCat E₂ ℓ)
-      ((((I.map pre.sigs).ctors s c).ordinaryType f).instL ls)
-      ((((I.map pre.sigs).ctors s c).ordinaryType f).instL ls)
-      (.sort ((((I.map pre.sigs).ctors s c).ordinary f).level.inst ls)) := by
-  have hsrc := hB.ordinaryClosedWF s c ls f.val f.isLt.le
-  have hmap : (Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTeleAux f.val f.isLt.le)).map pre.sigs = Ctx.instL ls ((I.map pre.sigs).params ++
-        ((I.map pre.sigs).ctors s c).ordinaryTeleAux f.val f.isLt.le) :=
-    (Ctx.map_instL pre.sigs ls _).trans (congrArg (Ctx.instL ls)
-      ((Ctx.map_append pre.sigs _ _).trans
-        (congrArg (Tele.append (I.params.map pre.sigs))
-          (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) f.val f.isLt.le))))
-  simpa [Inductive.map, Ctor.ordinaryType, Ctor.map, Field.map,
-    Expr.map, Expr.instL] using
-    hsound.properties hsrc hmap hctx (((hB.ctors s c).ordinary f).typeExact.instLevel ls)
-
-theorem Inductive.WFStrong.ordinaryTeleInstL {J : Inductive ζ₂ ι} (hJ : J.WFStrong E₂)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) :
-    WFTeleStrong E₂ (fun _ => True) (Ctx.instL ls J.params)
-      (Ctx.instL ls ((J.ctors s c).ordinaryTele)) := by
-  simpa using
-    ((hJ.ctors s c).ordinaryTeleAuxStrong _ le_rfl).instLevel
-      ls fun _ => trivial
-
-section Block
-
-variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
+variable (hsound : RawSound E₂ ℓ pre) (η) (hB : I.WFStrong E₁)
   (hblock : (E₂.get η).block = I.map pre.sigs) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
   (ls : Fin ι.nlevels → Level ℓ)
 
 include hsound hB hblock
 
-variable (η)
-
-theorem RawSound.blockCtorTypeFnProperties :
+theorem RawSound.ctorTypeFnProperties :
     RawInterpretationProperties (CtxCat.nil E₂ ℓ)
       (((E₂.get η).block.ctorTypeFn s c).instL ls) := by
   rw [hblock]
-  exact hsound.ctorTypeFnProperties hB s c ls
+  have ⟨_, hf⟩ := hB.ctorTypeFn s c
+  simpa using (hsound.properties .nil (hf.instLevel ls)).left
 
-theorem RawSound.blockCtorFieldProperties
+theorem RawSound.ctorFieldProperties
     (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok) :
     RawInterpretationProperties (⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ : CtxCat E₂ ℓ)
       ((((E₂.get η).block.ctors s c).ordinaryTele.pi (.sort (E₂.get η).block.level)).instL ls) := by
   revert hctx
   rw [hblock]
-  exact hsound.ctorFieldProperties hB s c ls
+  intro hctx
+  have hp : E₁[I.params] ⊢ₛ ok := by simpa using hB.params.appendCtxWFStrong .nil
+  have ⟨_, ht⟩ := Ctx.pi_isTypeStrong (e := .sort I.level)
+    (((hB.ctors s c).ordinaryTeleAux _ le_rfl).appendCtxWFStrong hp) .sortDF
+  convert (hsound.properties (hp.instLevel ls) (ht.instLevel ls)).left using 1 <;>
+    simp [Inductive.map, Ctor.ordinaryTele, Expr.map]
 
-theorem RawSound.blockOrdinaryTeleProperties :
+theorem RawSound.ordinaryTeleProperties :
     RawTeleProperties E₂ (Ctx.instL ls (E₂.get η).block.params)
       (Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele) := by
   rw [hblock]
-  exact hsound.ordinaryTeleProperties hB s c ls
+  have hΘ := ((hB.ctors s c).ordinaryTeleAux _ le_rfl).instLevel
+    (Q := fun _ => True) ls fun _ => trivial
+  simpa [Inductive.map, Ctor.ordinaryTele] using hsound.teleProperties (hB.paramClosedWF ls) hΘ
 
-theorem RawSound.blockOrdinaryPrefixProperties (count : Nat)
+theorem RawSound.ordinaryPrefixProperties (count : Nat)
     (hcount : count ≤ (ι.ctors s c).nfields) :
     RawTeleProperties E₂ .nil (Ctx.instL ls ((E₂.get η).block.params ++
       ((E₂.get η).block.ctors s c).ordinaryTeleAux count hcount)) := by
   rw [hblock]
-  exact hsound.ordinaryPrefixProperties hB s c ls count hcount
+  have hfields := (hB.ctors s c).ordinaryTeleAux count hcount
+  have hp := hsound.teleProperties .nil
+    ((hB.params.append (by simpa using hfields.mono fun _ => trivial)).instLevel
+      (Q := fun _ => True) ls fun _ => trivial)
+  simp only [Ctx.map_instL, Ctx.map_append, Ctor.ordinaryTeleAux_map] at hp
+  exact hp
 
-theorem RawSound.blockOrdinaryTypeJudgment (f : Fin (ι.ctors s c).nfields)
+theorem RawSound.ordinaryTypeJudgment (f : Fin (ι.ctors s c).nfields)
     (hctx : E₂[Ctx.instL ls ((E₂.get η).block.params ++
       ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le)] ⊢ₛ ok) :
     RawJudgment
       (⟨Ctx.instL ls ((E₂.get η).block.params ++
         ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le), hctx⟩ : CtxCat E₂ ℓ)
-      ((((E₂.get η).block.ctors s c).ordinaryType f).instL ls)
-      ((((E₂.get η).block.ctors s c).ordinaryType f).instL ls)
+      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls)
+      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls)
       (.sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)) := by
   revert hctx
   rw [hblock]
-  exact hsound.ordinaryTypeJudgment hB s c ls f
-
-end Block
+  intro hctx
+  convert hsound.properties (hB.ordinaryClosedWF s c ls f.val f.isLt.le)
+    (((hB.ctors s c).ordinary f).typeExact.instLevel ls) using 1 <;>
+    simp [Inductive.map, Ctor.map, Field.map, Expr.map, Expr.instL]
 
 end Metalean

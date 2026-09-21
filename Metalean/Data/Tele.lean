@@ -207,6 +207,21 @@ inductive Forall : {b : Nat} → Tele T a b → Prop
   | nil : Forall nil
   | snoc {b} {Δ : Tele T a b} {A : T b} : Forall Δ → P Δ A → Forall (snoc Δ A)
 
+namespace Forall
+
+variable {a b : Nat} {P : {b : Nat} → Tele T a b → T b → Prop}
+  {Δ : Tele T a b} {A : T b}
+
+theorem init (h : Forall P (Δ.snoc A)) : Forall P Δ := by
+  cases h with
+  | snoc h _ => exact h
+
+theorem last (h : Forall P (Δ.snoc A)) : P Δ A := by
+  cases h with
+  | snoc _ h => exact h
+
+end Forall
+
 variable {a} (R : {b : Nat} → Tele T a b → Tele S a b → T b → S b → Prop) in
 inductive Forall₂ : {b : Nat} → Tele T a b → Tele S a b → Prop
   | nil : Forall₂ nil nil

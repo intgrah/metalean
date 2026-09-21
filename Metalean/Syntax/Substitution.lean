@@ -354,10 +354,10 @@ theorem Expr.inst_subst_lift (σ : Subst ζ ℓ n p) (e' : Expr ζ ℓ (n + 1)) 
   simp [indexType]
 
 @[simp] theorem Ctor.targetIndex_subst (fds : Fin csig.nfields → Expr ζ ℓ m)
-    (index : Fin (ι.nindices s)) (σ : Subst ζ ℓ m n) :
-    (ctor.targetIndex ls ps fds index).subst σ =
+    (i : Fin (ι.nindices s)) (σ : Subst ζ ℓ m n) :
+    (ctor.targetIndex ls ps fds i).subst σ =
       ctor.targetIndex ls (fun i => (ps i).subst σ)
-        (fun i => (fds i).subst σ) index := by
+        (fun i => (fds i).subst σ) i := by
   simp [targetIndex]
 
 @[simp] theorem RecField.instantiatedTelescope_subst
@@ -610,20 +610,12 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   unfold Inductive.iotaRhs
   simp
 
-@[simp] theorem Ctor.ihTeleAux_subst (count : Nat)
-    (hcount : count ≤ csig.nrecFields) (σ : Subst ζ ℓ m n) :
-    Ctx.substN (csig.liftFieldSubst σ) count
-        (ctor.ihTeleAux ls ps ms count hcount) =
-      ctor.ihTeleAux ls (fun i => (ps i).subst σ)
-        (fun s => (ms s).subst σ) count hcount := by
-  simp [Ctor.ihTeleAux]
-
 @[simp] theorem Ctor.ihTele_subst :
     Ctx.substN (csig.liftFieldSubst σ) csig.nrecFields
         (ctor.ihTele ls ps ms) =
       ctor.ihTele ls (fun i => (ps i).subst σ)
-        fun s => (ms s).subst σ :=
-  ctor.ihTeleAux_subst ls ps ms _ _ σ
+        fun s => (ms s).subst σ := by
+  simp [Ctor.ihTele]
 
 @[simp] theorem Inductive.caseTele_subst (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (σ : Subst ζ ℓ m n) :
@@ -650,41 +642,42 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
 
 @[simp] theorem Inductive.indexTele_entry_subst (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ ℓ m) (σ : Subst ζ ℓ m n)
-    (is : Fin (ι.nindices s) → Expr ζ ℓ n) (index : Fin (ι.nindices s)) :
+    (is : Fin (ι.nindices s) → Expr ζ ℓ n) (i : Fin (ι.nindices s)) :
     ((I.indexTele ls s ps).entry (by omega) (by omega)).subst
         (Fin.append σ fun previous =>
-          is (previous.castLE index.isLt.le)) =
-      I.indexType ls s (fun p => (ps p).subst σ) is index := by
+          is (previous.castLE i.isLt.le)) =
+      I.indexType ls s (fun p => (ps p).subst σ) is i := by
   unfold Inductive.indexTele Inductive.indexType
-  rw [Ctx.entry_substN _ _ _ index.val (by omega) (by omega) (by omega) (by omega),
+  rw [Ctx.entry_substN _ _ _ i.val (by omega) (by omega) (by omega) (by omega),
     Expr.subst_subst, Subst.liftN_comp_append]
   congr 1
   rw [← Ctx.entry_instL]
   exact congrArg (Expr.instL ls)
-    (Eq.symm (Ctx.proj_eq_entry index (I.indices s)))
+    (Eq.symm (Ctx.proj_eq_entry i (I.indices s)))
 
 @[simp] theorem Inductive.indexTele_get (s : Fin ι.nsorts)
-    (ps : Fin ι.nparams → Expr ζ ℓ n) (Γ : Ctx ζ ℓ 0 n) (index : Fin (ι.nindices s)) :
-    Ctx.get ⟨n + index.val, by omega⟩
+    (ps : Fin ι.nparams → Expr ζ ℓ n) (Γ : Ctx ζ ℓ 0 n) (i : Fin (ι.nindices s)) :
+    Ctx.get (Fin.natAdd n i)
         (Γ ++ I.indexTele ls s ps) =
       I.indexType ls s
         (fun p => (ps p).wkN (ι.nindices s))
-        (fun i => .var ⟨n + i.val, by omega⟩) index := by
-  rw [← Expr.subst_id (Ctx.get ⟨n + index.val, by omega⟩ (Γ ++ I.indexTele ls s ps)),
-    Ctx.get_subst _ Subst.id _ (n + index.val) (by omega) rfl,
+        (fun i => .var (i.natAdd n)) i := by
+  simp only [Fin.natAdd]
+  rw [← Expr.subst_id (Ctx.get ⟨n + i.val, by omega⟩ (Γ ++ I.indexTele ls s ps)),
+    Ctx.get_subst _ Subst.id _ (n + i.val) (by omega) rfl,
     Ctx.entry_append_right Γ (I.indexTele ls s ps) (Nat.zero_le _) (by omega) (by omega)]
   have hσ :
-      (fun w : Fin (n + index.val) =>
+      (fun w : Fin (n + i.val) =>
         (.var (w.castLE (by omega)) :
           Expr ζ ℓ (n + ι.nindices s))) =
       Fin.append (fun v : Fin n => (.var (v.castAdd (ι.nindices s)) :
           Expr ζ ℓ (n + ι.nindices s))) fun i => .var ⟨n + i.val, by omega⟩ := by
     funext v
     by_cases hv : v.val < n
-    · have heq : v = (⟨v.val, hv⟩ : Fin n).castAdd index.val := rfl
+    · have heq : v = (⟨v.val, hv⟩ : Fin n).castAdd i.val := rfl
       rw [heq, Fin.append_left]
       rfl
-    · have hi : v.val - n < index.val := by omega
+    · have hi : v.val - n < i.val := by omega
       have heq : v = Fin.natAdd n ⟨v.val - n, hi⟩ := Fin.ext (by simp; omega)
       rw [heq, Fin.append_right]
       rfl
@@ -693,7 +686,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   rw [hσ]
   erw [I.indexTele_entry_subst ls s ps
     (fun v => .var (v.castAdd (ι.nindices s)))
-    (fun i => .var ⟨n + i.val, by omega⟩) index]
+    (fun i => .var ⟨n + i.val, by omega⟩) i]
   congr 2
   funext p
   rw [Expr.wkN_eq_rename]
@@ -714,7 +707,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   change (Ctx.substN σ (ι.nindices s) (I.indexTele ls s ps)).snoc
       ((Expr.ind η s ls
         (fun i => (ps i).wkN (ι.nindices s))
-        (fun index => .var ⟨m + index.val, by omega⟩)).subst
+        (fun i => .var ⟨m + i.val, by omega⟩)).subst
           (σ.liftN (ι.nindices s))) = _
   rw [indexTele_subst]
   exact congr(Tele.snoc (I.indexTele ls s fun i => (ps i).subst σ)
@@ -747,7 +740,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   rw [Inductive.motiveResult_subst]
   congr 1
   · simp [CtorSig.liftCaseSubst]
-  · funext index
+  · funext i
     rw [Ctor.targetIndex_subst]
     congr 1
     · funext param
@@ -774,14 +767,75 @@ theorem Inductive.paramType_eq_get_subst (ps : Fin ι.nparams → Expr ζ ℓ n)
   rw [Ctx.get_instL, Ctx.get_subst _ ps f f.val f.isLt rfl, ← Ctx.entry_instL]
   rfl
 
+theorem Ctor.forall_ordinarySubst {I : Inductive ζ ι} {ctor : Ctor ζ ι s csig}
+    {ls : Fin ι.nlevels → Level ℓ} {count : Nat} (hcount : count ≤ csig.nfields)
+    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {fds₁ fds₂ : Fin count → Expr ζ ℓ n}
+    {motive : Expr ζ ℓ n → Expr ζ ℓ n → Expr ζ ℓ n → Prop}
+    (hps : ∀ p, motive (ps₁ p) (ps₂ p) (I.paramType ls ps₁ p))
+    (hfds : ∀ f, motive (fds₁ f) (fds₂ f)
+      ((((ctor.ordinary (f.castLE hcount)).type).instL ls).subst
+        (Fin.append ps₁ fun g : Fin f.val => fds₁ (g.castLE f.isLt.le))))
+    (v : Fin (ι.nparams + count)) :
+    motive (Fin.append ps₁ fds₁ v) (Fin.append ps₂ fds₂ v)
+      (((Ctx.instL ls (I.params ++ ctor.ordinaryTeleAux count hcount)).get v).subst
+        (Fin.append ps₁ fds₁)) := by
+  rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
+  cases v using Fin.addCases with
+  | left p => simpa [Inductive.paramType] using hps p
+  | right f =>
+    rw [Ctx.entry_append_right I.params _ (by omega) (by simp) (by omega)]
+    simpa using hfds f
+
+theorem Ctor.forall_caseSubst {ctor : Ctor ζ ι s csig} {η : Head ζ (.inductive ι)}
+    {ls : Fin ι.nlevels → Level ℓ} {Γ : Ctx ζ ℓ 0 n}
+    {ps : Fin ι.nparams → Expr ζ ℓ n} {ms : Fin ι.nsorts → Expr ζ ℓ n}
+    {fds : Fin csig.nfields → Expr ζ ℓ n} {recFds ihs : Fin csig.nrecFields → Expr ζ ℓ n}
+    {motive : Fin (n + csig.nfields + csig.nrecFields + csig.nrecFields) →
+      Expr ζ ℓ n → Expr ζ ℓ n → Prop}
+    (hΓ : ∀ v, motive (((v.castAdd csig.nfields).castAdd csig.nrecFields).castAdd csig.nrecFields)
+      (.var v) (Γ.get v))
+    (hfds : ∀ f, motive (((f.natAdd n).castAdd csig.nrecFields).castAdd csig.nrecFields)
+      (fds f) (ctor.ordinaryFieldExpr ls ps fds f))
+    (hrec : ∀ f, motive ((f.natAdd (n + csig.nfields)).castAdd csig.nrecFields)
+      (recFds f) (ctor.recursiveFieldExpr η ls ps fds f))
+    (hih : ∀ f, motive (f.natAdd (n + csig.nfields + csig.nrecFields))
+      (ihs f) (ctor.ihTypeWith ls ms ps fds recFds f))
+    (v : Fin (n + csig.nfields + csig.nrecFields + csig.nrecFields)) :
+    motive v (csig.caseSubst fds recFds ihs v)
+      ((Ctx.get v (Γ ++ (ctor.fieldTele η ls ps ++ ctor.ihTele ls ps ms))).subst
+        (csig.caseSubst fds recFds ihs)) := by
+  simp only [Ctor.fieldTele, ← Tele.append_assoc]
+  cases v using Fin.addCases with
+  | right f =>
+    simpa [CtorSig.caseSubst, Ctor.ihTele, Ctx.get_append_ofTypes,
+      Ctor.ihType, CtorSig.fieldParams, CtorSig.fieldOrdinary, CtorSig.fieldRecursive,
+      Expr.subst] using hih f
+  | left v =>
+    simp only [Ctx.get_append, CtorSig.caseSubst, Fin.append_left, Expr.wkN_subst_append]
+    cases v using Fin.addCases with
+    | right f =>
+      simpa [Ctor.recursiveFieldTele, Ctor.recursiveFieldTeleAux, Ctx.get_append_ofTypes,
+        Expr.boundVars, Expr.subst, Ctor.recursiveFieldExpr] using hrec f
+    | left v =>
+      simp only [Ctx.get_append, Fin.append_left, Expr.wkN_subst_append]
+      cases v using Fin.addCases with
+      | left v =>
+        simp only [Ctx.get_append, Expr.wkN_subst_id_append, Fin.append_left]
+        exact hΓ v
+      | right f =>
+        rw [Ctx.get_subst _ _ _ (n + f.val) (by omega) rfl,
+          Ctx.entry_append_right Γ _ (by omega) (by simp) (by omega)]
+        simpa [Ctor.ordinaryFieldTele, Ctor.ordinaryFieldExpr, Subst.liftN_eq_append,
+          Subst.comp, Expr.boundVars, Expr.subst] using hfds f
+
 theorem Inductive.indexType_eq_get_subst (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ ℓ n) (is : Fin (ι.nindices s) → Expr ζ ℓ n)
     (f : Fin (ι.nindices s)) :
-    ((Ctx.get (Fin.natAdd ι.nparams f)
+    ((Ctx.get (f.natAdd ι.nparams)
           (I.params ++ I.indices s)).instL ls).subst
         (Fin.append ps is) =
       I.indexType ls s ps is f := by
-  have hsub : (fun w : Var (Fin.natAdd ι.nparams f).val =>
+  have hsub : (fun w : Var (f.natAdd ι.nparams).val =>
       Fin.append ps is (w.castLE (by omega))) =
       Fin.append ps fun previous : Fin f.val =>
         is (previous.castLE f.isLt.le) := by
@@ -871,7 +925,6 @@ theorem Expr.inst_wkFrom_last (t' : Expr ζ ℓ (n + 1)) :
     | last => simp [Subst.id]
     | cast v =>
         simp
-
   rw [this, Expr.subst_id]
 
 theorem Subst.wkFrom_eq_lift_wk :

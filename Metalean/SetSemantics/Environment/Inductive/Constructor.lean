@@ -247,17 +247,13 @@ private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
       simp only [γ₁, Fin.append_right]
       rw [show Ctx.instL ls (I.indices s) = I.indexTele ls s fun param => .var param from
         ((Ctx.substFunctor _).map_id_apply _ _).symm,
-        show Fin.natAdd ι.nparams index = ⟨ι.nparams + index.val, by omega⟩ from
-          Fin.ext (by simp), I.indexTele_get, Inductive.indexType_subst,
+        I.indexTele_get, Inductive.indexType_subst,
         show (fun param : Fin ι.nparams => Expr.subst σ ((Expr.var param).wkN (ι.nindices s))) =
           fun param => (Expr.var (param.castLE hm) : Expr ζ₁ 0 m) from
             funext fun param => by simp [σ, Expr.subst],
         show (fun i : Fin (ι.nindices s) =>
-            Expr.subst σ (.var ⟨ι.nparams + i.val, by omega⟩)) = is from
-          funext fun i => by
-            rw [show (⟨ι.nparams + i.val, by omega⟩ : Fin (ι.nparams + ι.nindices s)) =
-              Fin.natAdd ι.nparams i from Fin.ext (by simp)]
-            simp [Expr.subst, σ]]
+            Expr.subst σ (.var (Fin.natAdd ι.nparams i))) = is from
+          funext fun i => by simp [Expr.subst, σ]]
       exact (interp index).mem
 
 theorem StrongRecursiveFieldSource.valuesReachable (recFd : RecField ζ₁ ι nfields arity s₁)
@@ -449,7 +445,7 @@ theorem realizes
       (by simpa using happlyRecursive) csig.nrecFields le_rfl
   have hfields := CtorCode.Interprets.prependOrdinary (block := block) (level := level)
     (Δ := Ctx.instL ls (ctor.map pre.sigs).ordinaryTele)
-    (congrArg (Ctx.instL ls) (Ctor.ordinaryTele_map pre.sigs ctor) ▸
+    (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map pre.sigs ctor _ _) ▸
       Realizes.mapInst (source.ordinary.realizes.monoReach
         (Set.singleton_subset_iff.mpr hps)) pre hatoms)
     (hphase.prepend (rest := .target (targetIndex model))

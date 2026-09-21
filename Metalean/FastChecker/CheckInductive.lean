@@ -145,7 +145,7 @@ theorem Ctor.ordinaryTeleAux_congr {ι : IndSig} {s : Fin ι.nsorts} {csig : Cto
   induction count with
   | zero => rfl
   | succ count ih =>
-    simp only [Ctor.ordinaryTeleAux, Ctor.ordinaryType]
+    simp only [Ctor.ordinaryTeleAux]
     rw [ih (by omega) fun f hf => h f (by omega), h ⟨count, by omega⟩ (Nat.lt_succ_self count)]
 
 theorem Inductive.paramVars_typed {E : Env ζ} {ι : IndSig} {I : Inductive ζ ι} {k : Nat}

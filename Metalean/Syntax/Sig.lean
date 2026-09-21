@@ -68,22 +68,30 @@ namespace RecrBinder
 variable {ι : IndSig} {s : Fin ι.nsorts}
 
 /-- Reify the bound -/
-def resolve : RecrBinder ι s → Fin (ι.recrEnd s)
-  | .param p => ⟨p.val, by lia⟩
-  | .motive t => ⟨ι.nparams + t.val, by lia⟩
-  | .case t c => ⟨ι.motivesEnd + (Fin.encodeSigma ι.nctors ⟨t, c⟩).val, by lia⟩
-  | .index i => ⟨ι.casesEnd + i.val, by lia⟩
+@[simp] abbrev resolve : RecrBinder ι s → Fin (ι.recrEnd s)
+  | .param p => (((p.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).castSucc
+  | .motive t => (((t.natAdd ι.nparams).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).castSucc
+  | .case t c => (((Fin.encodeSigma ι.nctors ⟨t, c⟩).natAdd ι.motivesEnd).castAdd (ι.nindices s)).castSucc
+  | .index i => (i.natAdd ι.casesEnd).castSucc
   | .major => Fin.last _
 
-theorem resolve_motive_eq (t : Fin ι.nsorts) :
-    (RecrBinder.motive t).resolve =
-      (((Fin.natAdd ι.nparams t).castAdd (Fin.sum ι.nctors)).castAdd
-        (ι.nindices s)).castSucc := rfl
-
-theorem resolve_index_eq (i : Fin (ι.nindices s)) :
-    (RecrBinder.index i).resolve =
-      (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) i).castSucc :=
-  rfl
+theorem resolve_surjective : Function.Surjective (@resolve ι s) := by
+  intro v
+  cases v using Fin.lastCases with
+  | last => exact ⟨.major, rfl⟩
+  | cast v =>
+    cases v using Fin.addCases with
+    | left v =>
+      cases v using Fin.addCases with
+      | left v =>
+        cases v using Fin.addCases with
+        | left p => exact ⟨.param p, rfl⟩
+        | right t => exact ⟨.motive t, rfl⟩
+      | right tag =>
+        obtain ⟨⟨t, c⟩, rfl⟩ : ∃ point, Fin.encodeSigma ι.nctors point = tag :=
+          ⟨_, Fin.encodeSigma_decodeSigma ..⟩
+        exact ⟨.case t c, rfl⟩
+    | right i => exact ⟨.index i, rfl⟩
 
 end RecrBinder
 

@@ -55,6 +55,11 @@ theorem apps_last (η : Expr ζ ℓ n) (args : Fin (k + 1) → Expr ζ ℓ n) :
     η.apps args = (η.apps fun i => args i.castSucc).app (args (Fin.last k)) :=
   Fin.foldl_succ_last ..
 
+theorem apps_append (e : Expr ζ ℓ n) (args₁ : Fin k → Expr ζ ℓ n)
+    (args₂ : Fin m → Expr ζ ℓ n) :
+    e.apps (Fin.append args₁ args₂) = (e.apps args₁).apps args₂ := by
+  simp [apps, Fin.foldl_add]
+
 @[simp] theorem map_apps (pre : ζ₁ ⟶ ζ₂)
     (η : Expr ζ₁ ℓ n) (args : Fin k → Expr ζ₁ ℓ n) :
     (η.apps args).map pre =

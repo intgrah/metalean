@@ -15,15 +15,6 @@ namespace Metalean
 variable {ζ : Sigs} {E : Env ζ} {ℓ n m : Nat}
   {Γ Γ₁ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ n m} {Γ₂ : Ctx ζ ℓ 0 m} {P : Level ℓ → Prop}
 
-theorem WFTeleStrong.init {t : Expr ζ ℓ m} (hΔ : WFTeleStrong E P Γ (Δ.snoc t)) : WFTeleStrong E P Γ Δ := by
-  have .snoc hΔ _ := hΔ
-  exact hΔ
-
-theorem WFTeleStrong.last {t : Expr ζ ℓ m} (hΔ : WFTeleStrong E P Γ (Δ.snoc t)) :
-    ∃ u, P u ∧ E[Γ ++ Δ] ⊢ₛ t : .sort u := by
-  have .snoc _ ht := hΔ
-  exact ht
-
 theorem WFTeleStrong.appendCtxWFStrong :
     WFTeleStrong E P Γ Δ →
     E[Γ] ⊢ₛ ok →

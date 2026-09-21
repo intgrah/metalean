@@ -168,10 +168,10 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
   have hpscps p := ((hpsc' p).symm.trans (hps p)).retype ho hΓ (hpsc p).left
   have hps₂ps₁ p := ((hpsc p).symm.trans (hpscps p)).retype ho hΓ (Inductive.paramType_conv hB p hpsc)
   have hfds f := ((hB.ctors s c).ordinaryFieldExpr_congr
-    hB.params f hpsc hfdsc).choose_spec.defeqDF (hfdsc f).right
+    hB.params f hpsc (fun g _ => hfdsc g)).defeqDF (hfdsc f).right
   have hrecFds f := ((hB.ctors s c).recursiveFieldExpr_congr
     hB.params rfl f hpsc hfdsc).choose_spec.defeqDF (hrecFdsc f).right
-  have hordFd f := ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps₂ps₁ hfds).choose_spec
+  have hordFd f := ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps₂ps₁ (fun g _ => hfds g))
   have hrecFd f := ((hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f hps₂ps₁ hfds).choose_spec
   have hctor := (DefeqStrong.indDF hps₂ps₁ fun i =>
     (hB.ctors s c).targetIndex_congr hB.params i hps₂ps₁ hfds).ctorDF
@@ -186,7 +186,7 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
   have hminsu x y := Inductive.caseFnType_conv hB hΓ hps hms (hmins x y)
   have hfdsu f := (hordFd f).defeqDF (hfds f)
   have hrecFdsu f := (hrecFd f).defeqDF (hrecFds f)
-  have hσ := Ctor.targetSubstWFStrong hpsu hfdsu
+  have hσ := Ctor.forall_ordinarySubst le_rfl hpsu hfdsu
   have hisu index := (hB.ctors s c).targetIndex index hσ
   have hmaju := DefeqStrong.ctorDF hpsu hfdsu hrecFdsu
     (fun f => (hB.ctors s c).ordinaryFieldExprStrong f hpsu hfdsu)
@@ -229,10 +229,10 @@ theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
   have hps₂ps p :=
     ((hpsc p).symm.trans (hpscps p)).retype ho hΓ (Inductive.paramType_conv hB p hpsc)
   have hfds f := ((hB.ctors s c).ordinaryFieldExpr_congr
-    hB.params f hpsc hfdsc).choose_spec.defeqDF (hfdsc f).right
+    hB.params f hpsc (fun g _ => hfdsc g)).defeqDF (hfdsc f).right
   have hrecFds f := ((hB.ctors s c).recursiveFieldExpr_congr
     hB.params rfl f hpsc hfdsc).choose_spec.defeqDF (hrecFdsc f).right
-  have hordFd f := ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps₂ps hfds).choose_spec
+  have hordFd f := ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps₂ps (fun g _ => hfds g))
   have hrecFd f :=
     ((hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f hps₂ps hfds).choose_spec
   have hctor := (DefeqStrong.indDF hps₂ps fun i =>

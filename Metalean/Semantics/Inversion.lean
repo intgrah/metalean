@@ -35,8 +35,8 @@ theorem DefeqStrong.ind_model_inv (ho : E.Ordered) {ι : IndSig}
   have hcode := RawValue.code_eq_of_ind_eq heq
   simp [IndTyping.code] at hcode
   exact ⟨hcode.1,
-    fun p => ⟨_, (Tm.label_eq_iff.mp (congrFun hcode.2.1 p)).2⟩,
-    fun i => ⟨_, (Tm.label_eq_iff.mp (congrFun hcode.2.2 i)).2⟩⟩
+    fun p => ⟨_, (Quotient.exact (congrFun hcode.2.1 p)).2⟩,
+    fun i => ⟨_, (Quotient.exact (congrFun hcode.2.2 i)).2⟩⟩
 
 theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ₛ ok)
     {t t' : Expr ζ ℓ n} :
@@ -92,7 +92,7 @@ theorem IsTypeEq.quot_model_inj (ho : E.Ordered)
   rw [rawInterpret_quot _ h₁, rawInterpret_quot _ h₂, RawFamily.quot_value,
     RawFamily.quot_value, QuotCode.map_hom_id, QuotCode.map_hom_id] at heq
   have hcode : h₁.code η = h₂.code η := quotAtom_le_iff.mp (by simpa using heq.le)
-  exact ⟨congrArg QuotCode.level hcode, (Tm.label_eq_iff.mp (congrArg QuotCode.carrier hcode)).2,
-    (Tm.label_eq_iff.mp (congrArg QuotCode.relation hcode)).2⟩
+  exact ⟨congrArg QuotCode.level hcode, (Quotient.exact (congrArg QuotCode.carrier hcode)).2,
+    (Quotient.exact (congrArg QuotCode.relation hcode)).2⟩
 
 end Metalean

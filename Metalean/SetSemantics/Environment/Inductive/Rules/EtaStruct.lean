@@ -306,7 +306,7 @@ theorem projTerm_denotes_field
       exact (hbody (maj₂ := .var (Fin.last (m₁ + ι.nindices s))) hpsSlots hpsTySlots
         hlastMem).2
     have hord₂ := ((congrArg (Realizes ε₂ zeroNs _ · _)
-      (congrArg (Ctx.instL ls) (Ctor.ordinaryTele_map total.sigs (I.ctors s c)))).mp
+      (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
       ((model.ctors s c).source.ordinary.realizes_mapInst total hatoms)).pull
       (reach₁ := {γ₁}) ps₁ (fun _ => vps)
       (fun δ hδ => by subst hδ; exact hvps) fun δ hδ v => by subst hδ; rfl

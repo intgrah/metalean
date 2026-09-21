@@ -126,7 +126,7 @@ noncomputable def recursorHyp (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) (c : 
       (fieldTelescope_headRank_lt (RecTyping.generic hd ls s).toIndData (fun _ => Expr.headRank_var_le _) s c f)
       (RawFamily.closedApps (V ((ι.ctors s c).recursiveTarget f))
         (fun v => Tm.label (CtxCat.ctorFieldTarget (RecTyping.generic hd ls s).toIndData s c f).as
-          (((RecTyping.generic hd ls s).toRecData.ihTyping s c f).recrSubstWF v))
+          (((RecTyping.generic hd ls s).toRecData.ihTyping s c f).recrHom.typed v))
         fun v => interp _ _ (ihSubst_headRank_lt hd ls s c f v)))
 
 noncomputable def recursorPayload (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) :
@@ -142,7 +142,7 @@ noncomputable def recursorPayload (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) :
 
 noncomputable def recursorBody (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) :
     RawFamily (CtxCat.recr hd ls s) :=
-  RawFamily.decode D (Tm.label (CtxCat.recr hd ls s).as (RecTyping.recrBody_typed hd ls s))
+  RawFamily.decode D (Tm.label (CtxCat.recr hd ls s).as ((RecTyping.generic hd ls s).typed))
     (interp (CtxCat.recr hd ls s) (ι.recrBody s) (recrBody_headRank_lt η s))
     (recursorPayload D interp hd ls V s)
 

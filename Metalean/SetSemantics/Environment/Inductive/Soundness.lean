@@ -47,7 +47,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
       (hps : ∀ param, ε₂[γ] ⊨ ps₁ param ≡ ps₂ param :
         (E₂.get (η.map pre.sigs)).block.paramType ls ps₁ param)
       (hfields : ∀ f, ε₂[γ] ⊨ fds₁ f ≡ fds₂ f :
-        ((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinaryType f).instL ls).subst
+        (((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type).instL ls).subst
           (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le)))
       (hrecFields : ∀ f, ε₂[γ] ⊨ recFds₁ f ≡ recFds₂ f :
         (((E₂.get (η.map pre.sigs)).block.ctors s c).recursive f).instantiatedType
@@ -103,7 +103,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
       (hmins : ∀ s c, ε₂[γ] ⊨ mins s c ≡ mins s c :
         (E₂.get (η.map pre.sigs)).block.caseFnType (η.map pre.sigs) ls ps ms s c)
       (hfields : ∀ f, ε₂[γ] ⊨ fds f ≡ fds f :
-        ((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinaryType f).instL ls).subst
+        (((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type).instL ls).subst
           (Fin.append ps fun previous : Fin f.val =>
             fds (previous.castLE f.isLt.le)))
       (hrecFields : ∀ f, ε₂[γ] ⊨ recFds f ≡ recFds f :

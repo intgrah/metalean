@@ -27,7 +27,7 @@ abbrev RecSlots (ι : IndSig) (s : Fin ι.nsorts) : Type (u + 1) :=
 namespace RecSlots
 
 variable (vps : Slots.{u} ι.nparams) (vms : Slots.{u} ι.nsorts)
-  (vmins : (target : Fin ι.nsorts) → Slots.{u} (ι.nctors target))
+  (vmins : (s : Fin ι.nsorts) → Slots.{u} (ι.nctors s))
   (vis : Slots.{u} (ι.nindices s)) (vmaj : ZFSet.{u})
   (γ : RecSlots.{u} ι s) (outer : RecSlots.{u} ι s)
   (values : Slots.{u} (ι.nindices s₁)) (major : ZFSet.{u})
@@ -54,24 +54,24 @@ def prefixOf : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors) :=
   fun current => Fin.init γ (current.castLE (by omega))
 
 def paramsOf : Slots ι.nparams :=
-  fun param => prefixOf γ (param.castLE (by omega))
+  fun p => prefixOf γ (p.castLE (by omega))
 
-def motivesOf (target : Fin ι.nsorts) : ZFSet :=
-  prefixOf γ ⟨ι.nparams + target.val, by omega⟩
+def motivesOf (s : Fin ι.nsorts) : ZFSet :=
+  prefixOf γ ⟨ι.nparams + s.val, by omega⟩
 
 def casesOf : Slots (Fin.sum ι.nctors) :=
   fun tag => prefixOf γ ⟨ι.nparams + ι.nsorts + tag.val, by omega⟩
 
 @[simp] theorem paramsOf_args : paramsOf (args vps vms vmins vis vmaj) = vps := by
-  funext param
-  change args vps vms vmins vis vmaj (Fin.castAdd (ι.nindices s)
-    (Fin.castAdd (Fin.sum ι.nctors) (Fin.castAdd ι.nsorts param))).castSucc = vps param
+  funext p
+  change args vps vms vmins vis vmaj
+    (((p.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).castSucc = vps p
   simp [args]
 
 @[simp] theorem motivesOf_args : motivesOf (args vps vms vmins vis vmaj) = vms := by
-  funext target
-  change args vps vms vmins vis vmaj (Fin.castAdd (ι.nindices s)
-    (Fin.castAdd (Fin.sum ι.nctors) (Fin.natAdd ι.nparams target))).castSucc = vms target
+  funext s₁
+  change args vps vms vmins vis vmaj
+    (((s₁.natAdd ι.nparams).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).castSucc = vms s₁
   simp [args]
 
 @[simp] theorem casesOf_args (s₁ : Fin ι.nsorts) (c : Fin (ι.nctors s₁)) :
@@ -82,13 +82,12 @@ def casesOf : Slots (Fin.sum ι.nctors) :=
 
 def recrParams (γ : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors)) :
     Slots ι.nparams :=
-  fun param => γ (param.castLE (by omega))
+  fun p => γ (p.castLE (by omega))
 
 def recrIndices (s : Fin ι.nsorts)
     (γ : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s)) :
     Slots (ι.nindices s) :=
-  fun index => γ
-    ⟨ι.nparams + ι.nsorts + Fin.sum ι.nctors + index.val, by omega⟩
+  fun i => γ ⟨ι.nparams + ι.nsorts + Fin.sum ι.nctors + i.val, by omega⟩
 
 abbrev withIndices :
     Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s₁) :=
@@ -104,30 +103,29 @@ theorem append_params_motives_cases :
   cases current using Fin.addCases with
   | left current =>
     cases current using Fin.addCases with
-    | left param => simp; rfl
-    | right target => simp; rfl
+    | left p => simp; rfl
+    | right s => simp; rfl
   | right tag => simp; rfl
 
 abbrev indexValuesOf : Slots (ι.nindices s) :=
-  fun index =>
-    γ ⟨ι.nparams + ι.nsorts + Fin.sum ι.nctors + index.val, by omega⟩
+  fun i => γ ⟨ι.nparams + ι.nsorts + Fin.sum ι.nctors + i.val, by omega⟩
 
 @[simp] theorem indexValuesOf_args :
     indexValuesOf (args vps vms vmins vis vmaj) = vis :=
-  funext fun index => by
+  funext fun i => by
     change args vps vms vmins vis vmaj
-      (Fin.castSucc (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) index)) = vis index
+      (i.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors)).castSucc = vis i
     rw [args, Fin.snoc_castSucc, Fin.append_right]
 
 @[simp] theorem recrIndices_withIndices :
     recrIndices s₁ (withIndices outer values) = values :=
-  funext fun index => Fin.append_right _ _ index
+  funext (Fin.append_right _ _)
 
 theorem withIndices_params :
-    (fun param : Fin ι.nparams =>
-      withIndices outer values (param.castLE (by omega))) = paramsOf outer :=
-  funext fun param => Fin.append_of_lt _ _ _ (by
-    change param.val < ι.nparams + ι.nsorts + Fin.sum ι.nctors
+    (fun p : Fin ι.nparams =>
+      withIndices outer values (p.castLE (by omega))) = paramsOf outer :=
+  funext fun p => Fin.append_of_lt _ _ _ (by
+    change p.val < ι.nparams + ι.nsorts + Fin.sum ι.nctors
     omega)
 
 @[simp] theorem pull_recrParams_withIndices :
@@ -173,11 +171,11 @@ def majorOfSlots : ZFSet :=
 
 @[simp] theorem indexValuesOf_childOf :
     indexValuesOf (childOf outer values major) = values :=
-  funext fun index => by
-    rw [show indexValuesOf (childOf outer values major) index =
-      withIndices outer values (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) index) from
+  funext fun i => by
+    rw [show indexValuesOf (childOf outer values major) i =
+      withIndices outer values (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) i) from
       Fin.snoc_of_lt _ _ _ (by
-        change ι.nparams + ι.nsorts + Fin.sum ι.nctors + index.val <
+        change ι.nparams + ι.nsorts + Fin.sum ι.nctors + i.val <
           ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s₁
         omega), withIndices, Fin.append_right]
 
@@ -186,39 +184,6 @@ def majorOfSlots : ZFSet :=
   simp [indicesOfSlots]
 
 end RecSlots
-
-theorem SemDefeq.recrSubst {I : Inductive ζ ι} {l : Level 0} {n : Nat} {γ : Slots n}
-    {ps₁ ps₂ : Fin ι.nparams → Expr ζ 0 n} {ms₁ ms₂ : Fin ι.nsorts → Expr ζ 0 n}
-    {mins₁ mins₂ : (target : Fin ι.nsorts) → Fin (ι.nctors target) → Expr ζ 0 n}
-    {is₁ is₂ : Fin (ι.nindices s) → Expr ζ 0 n} {maj₁ maj₂ : Expr ζ 0 n}
-    (v : Fin (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1)) :
-    (∀ param, ε[γ] ⊨ ps₁ param ≡ ps₂ param : I.paramType ls ps₁ param) →
-    (∀ target, ε[γ] ⊨ ms₁ target ≡ ms₂ target :
-      I.motiveType η ls ps₁ l target) →
-    (∀ target ctor, ε[γ] ⊨ mins₁ target ctor ≡ mins₂ target ctor :
-      I.caseFnType η ls ps₁ ms₁ target ctor) →
-    (∀ index, ε[γ] ⊨ is₁ index ≡ is₂ index : I.indexType ls s ps₁ is₁ index) →
-    ε[γ] ⊨ maj₁ ≡ maj₂ : .ind η s ls ps₁ is₁ →
-    ε[γ] ⊨ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ v ≡
-      Inductive.recrSubst ps₂ ms₂ mins₂ is₂ maj₂ v :
-      (Ctx.get v (I.recrTele η s ls l)).subst (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁) := by
-  intro hps hms hmins his hmaj
-  cases v using Fin.lastCases with
-  | last => simpa using hmaj
-  | cast v =>
-    cases v using Fin.addCases with
-    | left v =>
-      cases v using Fin.addCases with
-      | left v =>
-        cases v using Fin.addCases with
-        | left param => simpa using hps param
-        | right target => simpa using hms target
-      | right tag =>
-        obtain ⟨⟨s₁, c⟩, rfl⟩ : ∃ point, Fin.encodeSigma ι.nctors point = tag :=
-          ⟨_, Fin.encodeSigma_decodeSigma ..⟩
-        simpa using hmins s₁ c
-    | right index =>
-      simpa only [Inductive.recrSubst_index, Inductive.recrTele_get_index_subst] using his index
 
 theorem SemDefeq.recr
     {l : Level 0}
@@ -231,20 +196,20 @@ theorem SemDefeq.recr
     {n : Nat} {γ : Slots n}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ 0 n}
     {ms₁ ms₂ : Fin ι.nsorts → Expr ζ 0 n}
-    {mins₁ mins₂ : (s : Fin ι.nsorts) →
-      Fin (ι.nctors s) → Expr ζ 0 n}
+    {mins₁ mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ 0 n}
     {is₁ is₂ : Fin (ι.nindices s) → Expr ζ 0 n}
     {maj₁ maj₂ : Expr ζ 0 n} :
     (∀ p, ε[γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
     (∀ s, ε[γ] ⊨ ms₁ s ≡ ms₂ s : (E.get η).block.motiveType η ls ps₁ l s) →
     (∀ s c, ε[γ] ⊨ mins₁ s c ≡ mins₂ s c : (E.get η).block.caseFnType η ls ps₁ ms₁ s c) →
-    (∀ index, ε[γ] ⊨ is₁ index ≡ is₂ index : (E.get η).block.indexType ls s ps₁ is₁ index) →
+    (∀ i, ε[γ] ⊨ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) →
     ε[γ] ⊨ maj₁ ≡ maj₂ : .ind η s ls ps₁ is₁ →
     ε[γ] ⊨ .recr η s ls l ps₁ ms₁ mins₁ is₁ maj₁ ≡ .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ :
       Inductive.motiveResult (ms₁ s) is₁ maj₁ := by
   intro hps hms hmins his hmaj
   have hreachable := SemDefeq.reachable hrealizes
-    (SemDefeq.recrSubst · hps hms hmins his hmaj)
+    (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => ε[γ] ⊨ e₁ ≡ e₂ : t)
+      hps hms hmins his hmaj)
   have hbody := Expr.denote_subst (ε := ε) (ν := zeroNs) γ
     (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁) (ι.recrBody s)
   rw [IndSig.recrBody_subst] at hbody

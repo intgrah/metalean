@@ -31,12 +31,15 @@ structure IndData (Γ₁ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (ls : Fi
   block : (E.get η).block.WFStrong E
   param (p : Fin ι.nparams) : E[Γ₁.as.ctx] ⊢ₛ ps p : (E.get η).block.paramType ls ps p
 
+structure RecDecl (E : Env ζ) (η : Head ζ (.inductive ι)) (l : Level ℓ) : Prop where
+  block : (E.get η).block.WFStrong E
+  allowed : (E.get η).block.RecAllowed l
+
 structure RecData (Γ₁ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (ls : Fin ι.nlevels → Level ℓ)
     (l : Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len)
     (ms : Fin ι.nsorts → Expr ζ ℓ Γ₁.as.len)
     (mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ Γ₁.as.len) : Prop
-    extends IndData Γ₁ η ls ps where
-  allowed : (E.get η).block.RecAllowed l
+    extends IndData Γ₁ η ls ps, RecDecl E η l where
   motive (s₁ : Fin ι.nsorts) : E[Γ₁.as.ctx] ⊢ₛ ms s₁ : (E.get η).block.motiveType η ls ps l s₁
   case (s₁ : Fin ι.nsorts) (c : Fin (ι.nctors s₁)) :
     E[Γ₁.as.ctx] ⊢ₛ mins s₁ c : (E.get η).block.caseFnType η ls ps ms s₁ c
@@ -49,10 +52,6 @@ structure RecTyping (Γ₁ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (s : F
     extends RecData Γ₁ η ls l ps ms mins where
   index (i : Fin (ι.nindices s)) : E[Γ₁.as.ctx] ⊢ₛ is i : (E.get η).block.indexType ls s ps is i
   major : E[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps is
-
-structure RecDecl (E : Env ζ) (η : Head ζ (.inductive ι)) (l : Level ℓ) : Prop where
-  block : (E.get η).block.WFStrong E
-  allowed : (E.get η).block.RecAllowed l
 
 abbrev CtxCat.recr (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
     CtxCat E ℓ :=
@@ -123,12 +122,12 @@ theorem iota (hB : (E.get η).block.WFStrong E) (hallowed : (E.get η).block.Rec
   param := hps
   motive := hms
   case := hmins
-  index := ((hB.ctors s c).targetIndex · (Ctor.targetSubstWFStrong hps hfds))
+  index := ((hB.ctors s c).targetIndex · (Ctor.forall_ordinarySubst le_rfl hps hfds))
   major :=
     DefeqStrong.ctorDF hps hfds hrecFds
       ((hB.ctors s c).ordinaryFieldExprStrong · hps hfds)
       (fun f => ((hB.ctors s c).recursiveFieldExprStrong rfl f hΓ hps hfds).choose_spec)
-      (.indDF hps ((hB.ctors s c).targetIndex · (Ctor.targetSubstWFStrong hps hfds)))
+      (.indDF hps ((hB.ctors s c).targetIndex · (Ctor.forall_ordinarySubst le_rfl hps hfds)))
 
 theorem subst (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) (σ : Γ₂.as ⟶ Γ₁.as) :
     RecTyping Γ₂ η s ls l (fun p => (ps₁ p).subst σ.subst) (fun s₁ => (ms₁ s₁).subst σ.subst)
@@ -138,64 +137,40 @@ theorem subst (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) (
   index i := by simpa using (h.index i).substitution σ.typed
   major := by simpa [Expr.subst] using h.major.substitution σ.typed
 
-theorem toRecDecl (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) : RecDecl E η l :=
-  ⟨h.block, h.allowed⟩
-
-theorem recrSubstWF (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) :
-    E[Γ₁.as.ctx] ⊢ₛ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ ⊣
-      (CtxCat.recr h.toRecDecl ls s).as.ctx := by
-  change E[Γ₁.as.ctx] ⊢ₛ _ ⊣ #t[] ++ _
-  rw [Tele.nil_append]
-  exact Inductive.forall_recrSubst
-    h.param h.motive h.case h.index h.major
-
 def recrHom (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) :
     Γ₁.as ⟶ (CtxCat.recr h.toRecDecl ls s).as :=
-  ⟨Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁, h.recrSubstWF⟩
+  ⟨Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁, by
+    simpa [CtxCat.recr, CtxCat.extendTele, CtxCat.nil] using
+      Inductive.forall_recrSubst h.param h.motive h.case h.index h.major⟩
 
 theorem generic (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
     RecTyping (CtxCat.recr hd ls s) η s ls l (fun p => .var (RecrBinder.param p).resolve)
       (fun t => .var (RecrBinder.motive t).resolve) (fun t c => .var (RecrBinder.case t c).resolve)
       (fun i => .var (RecrBinder.index i).resolve) (.var RecrBinder.major.resolve) := by
-  have hvar (v : Fin (ι.recrEnd s)) : E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .var v :
-      (Ctx.get v ((E.get η).block.recrTele η s ls l)).subst
-        (Inductive.recrSubst (fun p => .var (RecrBinder.param p).resolve)
-          (fun t => .var (RecrBinder.motive t).resolve)
-          (fun t c => .var (RecrBinder.case t c).resolve)
-          (fun i => .var (RecrBinder.index i).resolve) (.var RecrBinder.major.resolve)) := by
-    rw [Inductive.recrSubst_vars, Expr.subst_id]
-    exact (congrArg (fun Δ => E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .var v : Ctx.get v Δ)
-      (Tele.nil_append _)).mp ((CtxCat.recr hd ls s).as.wf.var v)
+  have ht b := (E.get η).block.recrTele_get_subst (s := s) η ls l
+    (fun p => .var (RecrBinder.param p).resolve) (fun t => .var (RecrBinder.motive t).resolve)
+    (fun t c => .var (RecrBinder.case t c).resolve) (fun i => .var (RecrBinder.index i).resolve)
+    (.var RecrBinder.major.resolve) b
+  rw [Inductive.recrSubst_vars] at ht
+  simp only [Expr.subst_id] at ht
+  have hvar (b : RecrBinder ι s) : E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .var b.resolve :
+      (E.get η).block.recrBinderType η ls l (fun p => .var (RecrBinder.param p).resolve)
+        (fun t => .var (RecrBinder.motive t).resolve) (fun i => .var (RecrBinder.index i).resolve) b := by
+    rw [← ht b]
+    simpa [CtxCat.recr, CtxCat.extendTele, CtxCat.nil] using (CtxCat.recr hd ls s).as.wf.var b.resolve
   exact {
     block := hd.block
     allowed := hd.allowed
-    param p := by
-      have hp := hvar (((p.castAdd ι.nsorts).castAdd (Fin.sum ι.nctors)).castAdd (ι.nindices s)).castSucc
-      rwa [Inductive.recrTele_get_param_subst] at hp
-    motive t := by
-      have hp := hvar (((Fin.natAdd ι.nparams t).castAdd (Fin.sum ι.nctors)).castAdd
-        (ι.nindices s)).castSucc
-      rwa [Inductive.recrTele_get_motive_subst] at hp
-    case t c := by
-      have hp := hvar ((Fin.natAdd (ι.nparams + ι.nsorts)
-        (Fin.encodeSigma ι.nctors ⟨t, c⟩)).castAdd (ι.nindices s)).castSucc
-      rwa [Inductive.recrTele_get_case_subst] at hp
-    index i := by
-      have hp := hvar (Fin.natAdd (ι.nparams + ι.nsorts + Fin.sum ι.nctors) i).castSucc
-      rwa [Inductive.recrTele_get_index_subst] at hp
-    major := by
-      have hp := hvar (Fin.last _)
-      rwa [Inductive.recrTele_get_major_subst] at hp }
+    param p := hvar (.param p)
+    motive t := hvar (.motive t)
+    case t c := hvar (.case t c)
+    index i := hvar (.index i)
+    major := hvar .major }
 
-theorem recrBody_typed (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
-    E[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .recr η s ls l (fun p => .var (RecrBinder.param p).resolve)
-        (fun t => .var (RecrBinder.motive t).resolve) (fun t c => .var (RecrBinder.case t c).resolve)
-        (fun i => .var (RecrBinder.index i).resolve) (.var RecrBinder.major.resolve) :
-      ι.recrBody s :=
-  have h := generic hd ls s
+theorem typed (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) :
+    E[Γ₁.as.ctx] ⊢ₛ .recr η s ls l ps₁ ms₁ mins₁ is₁ maj₁ : Inductive.motiveResult (ms₁ s) is₁ maj₁ :=
   .recrDF h.allowed h.param h.motive h.case h.index h.major
-    (Inductive.WFStrong.motiveResult_congr h.block (CtxCat.recr hd ls s).as.wf h.param h.motive
-      h.index h.major)
+    (Inductive.WFStrong.motiveResult_congr h.block Γ₁.as.wf h.param h.motive h.index h.major)
 
 end RecTyping
 
@@ -208,10 +183,6 @@ structure CtorInstance (Γ₁ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (s 
 
 namespace CtorInstance
 
-noncomputable def names (inst : CtorInstance Γ₁ η s c ls ps₁) :
-    Fin (CtorHead.mk η s c).arity → Tm_ Γ₁ :=
-  inst.typed.names
-
 def ih (inst : CtorInstance Γ₁ η s c ls ps₁) (l : Level ℓ) (ms : Fin ι.nsorts → Expr ζ ℓ Γ₁.as.len)
     (mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ Γ₁.as.len)
     (f : Fin (ι.ctors s c).nrecFields) : Expr ζ ℓ Γ₁.as.len :=
@@ -221,8 +192,9 @@ theorem ih_typed (h : RecData Γ₁ η ls l ps₁ ms₁ mins₁)
     (inst : CtorInstance Γ₁ η s c ls ps₁) (f : Fin (ι.ctors s c).nrecFields) :
     E[Γ₁.as.ctx] ⊢ₛ inst.ih l ms₁ mins₁ f :
       ((E.get η).block.ctors s c).ihTypeWith ls ms₁ ps₁ inst.fds inst.recFds f :=
-  Ctor.WFStrong.iotaIH (h.block.ctors s c) h.block h.allowed f Γ₁.as.wf h.param h.motive
-    h.case inst.typed.ordinary inst.typed.recursive
+  ((h.block.ctors s c).recursive f).iotaIH h.block rfl h.allowed (by simp) Γ₁.as.wf
+    h.param h.motive h.case (Ctor.forall_ordinarySubst le_rfl h.param inst.typed.ordinary)
+    (inst.typed.recursive f)
 
 noncomputable def ihName (h : RecData Γ₁ η ls l ps₁ ms₁ mins₁)
     (inst : CtorInstance Γ₁ η s c ls ps₁) (f : Fin (ι.ctors s c).nrecFields) :

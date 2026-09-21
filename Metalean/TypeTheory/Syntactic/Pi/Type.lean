@@ -58,17 +58,17 @@ end Repr
 def piApp (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) : Ty_ Γ :=
   elim (yonedaEquiv A) (fun T hT => T.pi (T.comprehension.eval A B (comprehension_type_eq hT)))
     fun T₁ T₂ h₁ h₂ => by
-      have h := (ofRepr_eq_iff _ _).mp (h₁.symm.trans h₂)
+      have h := Quotient.exact (h₁.symm.trans h₂)
       rw [Repr.eval_conversion T₁ T₂ h A B _ _, Repr.pi_conversion]
 
 theorem piApp_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
-    (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) :
+    (T : Repr Γ) (hT : yonedaEquiv A = ⟦T⟧) :
     piApp A B = T.pi (T.comprehension.eval A B (comprehension_type_eq hT)) :=
   elim_eq _ _ _ T hT
 
 theorem reindex_yonedaEquiv {A : y Γ₁ ⟶ Ty E ℓ} {T : Repr Γ₁}
-    (hT : yonedaEquiv A = ofRepr T) (σ : Γ₂.as ⟶ Γ₁.as) :
-    yonedaEquiv (y (RawCtx.toCtx.map σ) ≫ A) = ofRepr (T.reindex σ) := by
+    (hT : yonedaEquiv A = ⟦T⟧) (σ : Γ₂.as ⟶ Γ₁.as) :
+    yonedaEquiv (y (RawCtx.toCtx.map σ) ≫ A) = ⟦T.reindex σ⟧ := by
   rw [← yonedaEquiv_naturality, hT]
   rfl
 
@@ -78,7 +78,8 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
     intro ⟨Γ₁⟩ ⟨Γ₂⟩ ⟨σ⟩
     obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
     ext ⟨A, B⟩
-    obtain ⟨T, hT⟩ := exists_ofRepr (yonedaEquiv A)
+    obtain ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
+    have hT := hT.symm
     change piApp (y (RawCtx.toCtx.map σ) ≫ A)
         (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
       (Ty E ℓ).map (RawCtx.toCtx.map σ).op (piApp A B)
@@ -100,9 +101,9 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
   (map_piApp L.1 L.2 σ).symm
 
 theorem piApp_eq_ofRepr (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
-    (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) (C : Repr ⟨Γ.as.snoc T.wf⟩)
+    (T : Repr Γ) (hT : yonedaEquiv A = ⟦T⟧) (C : Repr ⟨Γ.as.snoc T.wf⟩)
     (hC : ⟦C⟧ = T.comprehension.eval A B (comprehension_type_eq hT)) :
-    piApp A B = ofRepr (T.forallE C) := by
+    piApp A B = ⟦T.forallE C⟧ := by
   rw [piApp_eq A B T hT, ← hC]
   rfl
 
@@ -111,9 +112,9 @@ def forallE (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ) :
   yonedaEquiv.symm (piApp A B)
 
 theorem forallE_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
-    (T : Repr Γ) (hT : yonedaEquiv A = ofRepr T) (C : Repr ⟨Γ.as.snoc T.wf⟩)
+    (T : Repr Γ) (hT : yonedaEquiv A = ⟦T⟧) (C : Repr ⟨Γ.as.snoc T.wf⟩)
     (hC : ⟦C⟧ = T.comprehension.eval A B (comprehension_type_eq hT)) :
-    yonedaEquiv (forallE A B) = ofRepr (T.forallE C) := by
+    yonedaEquiv (forallE A B) = ⟦T.forallE C⟧ := by
   rw [forallE, Equiv.apply_symm_apply, piApp_eq A B T hT, ← hC]
   rfl
 
@@ -128,7 +129,7 @@ theorem map_forallE (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty
 def familyOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ (Γ.len + 1)}
     {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
     pullback (CtxCat.rawComprehension ht).type (Tm.typing E ℓ) ⟶ Ty E ℓ :=
-  (CtxCat.rawComprehension ht).family (ofRepr ⟨t', v, ht'⟩)
+  (CtxCat.rawComprehension ht).family (⟦⟨t', v, ht'⟩⟧)
 
 def pairOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ (Γ.len + 1)}
     {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
@@ -139,15 +140,15 @@ def pairOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ 
     {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u)
     (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
     (CtxCat.rawComprehension ht).eval (CtxCat.rawComprehension ht).type (familyOfTyping Γ ht ht') rfl =
-      ofRepr ⟨t', v, ht'⟩ :=
+      ⟦⟨t', v, ht'⟩⟧ :=
   Comprehension.eval_family _ _
 
-theorem forallE_ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len}
+@[simp] theorem piApp_ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len}
     {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u)
     (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
-    yonedaEquiv (forallE (CtxCat.rawComprehension ht).type (familyOfTyping Γ ht ht')) =
+    piApp (pairOfTyping Γ ht ht').1 (pairOfTyping Γ ht ht').2 =
       ofTyping Γ (.forallEDF ht ht' ht') :=
-  forallE_eq _ _ ⟨t, u, ht⟩ (yonedaEquiv.apply_symm_apply _) ⟨t', v, ht'⟩
+  piApp_eq_ofRepr _ _ ⟨t, u, ht⟩ (yonedaEquiv.apply_symm_apply _) ⟨t', v, ht'⟩
     (eval_familyOfTyping Γ ht ht').symm
 
 theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
@@ -169,8 +170,7 @@ theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
   constructor
   · intro h
     have hA := congrArg Sigma.fst h
-    have hd := (ofTyping_eq_iff Γ ht₁ ht₂).mp
-      (yonedaEquiv.symm.injective hA)
+    have hd := Quotient.exact (yonedaEquiv.symm.injective hA)
     have e := ((eval_familyOfTyping Γ ht₁ ht₁').symm.trans
       ((CtxCat.rawComprehension ht₁).eval_congr h rfl hA.symm)).trans (hconv hd hA.symm)
     have hb := Quotient.exact e
@@ -180,7 +180,7 @@ theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
   · intro ⟨hd, hb, _⟩
     have hA : (CtxCat.rawComprehension ht₂).type = (CtxCat.rawComprehension ht₁).type :=
       congrArg yonedaEquiv.symm
-        ((ofTyping_eq_iff Γ ht₂ ht₁).mpr hd.symm)
+        (Quotient.sound hd.symm)
     refine Eq.trans ?_ ((CtxCat.rawComprehension ht₁).label_eval (CtxCat.rawComprehension ht₂).type
       (familyOfTyping Γ ht₂ ht₂') hA)
     rw [hconv hd hA]

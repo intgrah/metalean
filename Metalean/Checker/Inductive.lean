@@ -61,7 +61,7 @@ def checkOrdField (ho : E.Ordered) (I : Inductive ζ ι) (hΓp : E[I.params] ⊢
       (I.params ++ (I.ctors s c).ordinaryTeleAux f.val hle)
       ((I.ctors s c).ordinary f))) := do
   let ⟨hΓf⟩ ← checkCtx ho hΓp ((I.ctors s c).ordinaryTeleAux f.val hle)
-  let ⟨ht⟩ ← checkAgainst ho hΓf ((I.ctors s c).ordinaryType f)
+  let ⟨ht⟩ ← checkAgainst ho hΓf (((I.ctors s c).ordinary f).type)
     (.sort ((I.ctors s c).ordinary f).level)
   let ⟨hOK⟩ ← guardProofOr (I.LevelOK ((I.ctors s c).ordinary f).level) (.reject .fieldLevel)
   pure ⟨⟨ht.defeq, hOK⟩⟩

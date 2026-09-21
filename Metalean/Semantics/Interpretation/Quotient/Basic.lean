@@ -235,7 +235,7 @@ theorem code_map (h : QuotTyping Γ₁ u α r) (η : Head ζ .quot) (σ : Γ₂.
     (h.code η).map ((Tm E ℓ).map (RawCtx.toCtx.map σ).op) = (h.subst σ).code η := by
   simp only [QuotCode.map]
   congr 1
-  exact Tm.label_congr (by simp)
+  exact congr(Tm.label _ (t := $(by simp)) _)
 
 theorem code_congr (hα : E[Γ₁.as.ctx] ⊢ₛ α ≡ α' : .sort u)
     (hr : E[Γ₁.as.ctx] ⊢ₛ r ≡ r' : Quot.relType α)
