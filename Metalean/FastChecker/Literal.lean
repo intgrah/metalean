@@ -462,10 +462,6 @@ theorem natLit_rename {m : Nat} (ρ : Ren n m) (num : Nat) :
   rw [← Expr.subst_vars]
   exact subst_natLit _ _ num
 
-theorem natOp₂_rename {m : Nat} (ρ : Ren n m) (x y : Expr ζ ℓ n) :
-    (natOp₂ ηOp x y).rename ρ = natOp₂ ηOp (x.rename ρ) (y.rename ρ) := by
-  simp [natOp₂, Expr.rename]
-
 theorem natType_wkClosed :
     (natType ηNat : Expr ζ ℓ 0).wkClosed (n := n) = natType ηNat :=
   Expr.wkClosed_of_rename natType_rename n

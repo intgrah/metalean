@@ -36,16 +36,6 @@ def Hints.compare : Export.Hints → Export.Hints → Ordering
 variable (L : Literals) (F : FEnv) (ℓ : Nat) (hints : Array Export.Hints)
   (accel : Accel L F) (n : Nat)
 
-def unfoldHead : (fe₁ : FExpr) → Option {fe₂ : FExpr // FWHRedS L F n fe₁ fe₂}
-  | .const pos ls => do
-    match hfe : F[pos]? with
-    | some (.def nlevels _ v) =>
-      let ⟨hsize⟩ ← guardProof (ls.size = nlevels)
-      some ⟨v.instL ls, .single (.delta hfe hsize)⟩
-    | _ => none
-  | .app f a => (unfoldHead f).map fun ⟨f₂, h⟩ => ⟨.app f₂ a, h.frame (.app a)⟩
-  | _ => none
-
 def accelOp (pos : Nat) : Bool :=
   (pos == L.add && accel.add.isSome) || (pos == L.sub && accel.sub.isSome) ||
     (pos == L.mul && accel.mul.isSome) || (pos == L.pow && accel.pow.isSome) ||

@@ -881,10 +881,6 @@ theorem Subst.wkFrom_eq_lift_wk :
   | last => simp [Subst.wkFrom]
   | cast v => simp [Subst.wkFrom, Subst.wk, Expr.var_wk]
 
-theorem Expr.inst_subst_lift_wk_last (t' : Expr ζ ℓ (n + 1)) :
-    (t'.subst Subst.wk.lift).inst (.var (Fin.last n)) = t' := by
-  rw [← Subst.wkFrom_eq_lift_wk, ← Expr.wkFrom_eq_subst, Expr.inst_wkFrom_last]
-
 def Subst.Renames (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m) : Prop :=
   ∀ v, ∃ w, σ v = .var w ∧ Γ₂.get w = (Γ₁.get v).subst σ
 

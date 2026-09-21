@@ -115,20 +115,6 @@ theorem mk_inst (σ : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
   | max _ _ ih₁ ih₂ => exact congrArg₂ max ih₁ ih₂
   | imax _ _ ih₁ ih₂ => exact congrArg₂ imax ih₁ ih₂
 
-theorem inst_mk_of_hasParam_eq_false (σ : Param ℓ → Level ℓ) {l : RawLevel ℓ}
-    (h : l.hasParam = false) : Level.inst σ ⟦l⟧ = ⟦l⟧ := by
-  induction l with
-  | zero => rfl
-  | succ _ ih =>
-    exact congrArg succ (ih h)
-  | max _ _ ih₁ ih₂ =>
-    simp [RawLevel.hasParam] at h
-    exact congrArg₂ max (ih₁ h.1) (ih₂ h.2)
-  | imax _ _ ih₁ ih₂ =>
-    simp [RawLevel.hasParam] at h
-    exact congrArg₂ imax (ih₁ h.1) (ih₂ h.2)
-  | param => simp [RawLevel.hasParam] at h
-
 @[simp] theorem inst_zero (σ : Param ℓ → Level ℓ₁) : (zero : Level ℓ).inst σ = zero := rfl
 @[simp] theorem inst_param (σ : Param ℓ → Level ℓ₁) (p : Param ℓ) : (param p).inst σ = σ p := rfl
 

@@ -182,11 +182,6 @@ theorem vars_wkN (count : Nat) :
       fun i => Expr.var (i.castLE (Nat.le_add_right _ _)) :=
   funext fun i => var_wkN i count
 
-theorem wkN_congr {e₁ : Expr ζ ℓ n} {e₂ : Expr ζ ℓ m}
-    (hn : n = m) (h : e₁ ≍ e₂) (k : Nat) : e₁.wkN k ≍ e₂.wkN k := by
-  subst hn
-  exact heq_of_eq (congrArg (·.wkN k) (eq_of_heq h))
-
 def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
   | 0 => e
   | _ + 1 => e.wkClosed.wk

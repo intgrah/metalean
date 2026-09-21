@@ -16,16 +16,6 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {t : Expr ζ ℓ n}
 
-theorem CtxWFStrong.toWF :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ ok := by
-  intro h
-  induction h with
-  | nil => exact .nil
-  | snoc _ ht ih =>
-    obtain ⟨u, ht⟩ := ht
-    exact .snoc ih ⟨u, ht.defeq⟩
-
 theorem IsTypeStrong.wk
     (t₁ : Expr ζ ℓ n) :
     E[Γ] ⊢ₛ t typ →
@@ -101,34 +91,5 @@ theorem SubstWFStrong.wk (t : Expr ζ ℓ n) :
   have h := (hΓ.var v).wk t
   rw [Expr.var_wk] at h
   exact h
-
-theorem DefeqStrong.lam_body {t' e₁' e₂' : Expr ζ ℓ (n + 1)}
-    {u v : Level ℓ} :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ t : .sort u →
-    E[Γ.snoc t] ⊢ₛ t' : .sort v →
-    E[Γ.snoc t] ⊢ₛ e₁' : t' →
-    E[Γ.snoc t] ⊢ₛ e₂' : t' →
-    E[Γ] ⊢ₛ .lam t e₁' ≡ .lam t e₂' : .forallE t t' →
-    E[Γ.snoc t] ⊢ₛ e₁' ≡ e₂' : t' := by
-  intro hΓ ht ht' he₁ he₂ h
-  have hwk := SubstWFStrong.wk t hΓ
-  have hlift := SubstWFStrong.lift ⟨u, ht⟩ hwk
-  have hx : E[Γ.snoc t] ⊢ₛ .var (Fin.last n) : t.subst Subst.wk := by
-    rw [Expr.subst_wk]
-    exact CtxWFStrong.varLast (Tele.Forall.snoc hΓ ⟨u, ht⟩)
-  have htσ := ht.substitution hwk
-  have ht'σ := ht'.substitution hlift
-  have hres : E[Γ.snoc t] ⊢ₛ (t'.subst Subst.wk.lift).inst (.var (Fin.last n)) : .sort v := by
-    rw [Expr.inst_subst_lift_wk_last]
-    exact ht'
-  have happ := DefeqStrong.appDF htσ ht'σ (h.substitution hwk) hx hres
-  have hβ₁ := DefeqStrong.beta htσ ht'σ (he₁.substitution hlift) hx hres
-    (by rw [Expr.inst_subst_lift_wk_last, Expr.inst_subst_lift_wk_last]; exact he₁)
-  have hβ₂ := DefeqStrong.beta htσ ht'σ (he₂.substitution hlift) hx hres
-    (by rw [Expr.inst_subst_lift_wk_last, Expr.inst_subst_lift_wk_last]; exact he₂)
-  rw [Expr.inst_subst_lift_wk_last, Expr.inst_subst_lift_wk_last] at hβ₁ hβ₂
-  rw [Expr.inst_subst_lift_wk_last] at happ
-  exact hβ₁.symm.trans (happ.trans hβ₂)
 
 end Metalean

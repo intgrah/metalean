@@ -116,8 +116,6 @@ noncomputable abbrev toModel : InductiveModel ι where
   indicesSem := model.indicesSem
   targetValues := model.targetValues
 
-theorem toModel_codes : model.toModel.codes = model.codeOf := rfl
-
 theorem mapsTo (vps : Slots ι.nparams) :
     Set.MapsTo (indOp model.toModel.codes vps) (Set.Iic model.toModel.bound)
       (Set.Iic model.toModel.bound) :=

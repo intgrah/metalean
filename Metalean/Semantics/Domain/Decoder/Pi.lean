@@ -55,9 +55,6 @@ theorem graphAction_le_of_valid (B : IdealAction Γ₁) (f : CoherentGraph Γ₁
 
 namespace CodeAssignment
 
-theorem pairPresheaf_fst (L : Ty.Pair Γ₁) (σ : Γ₂ ⟶ Γ₁) :
-    ((Ty.pairPresheaf E ℓ).map σ.op L).1 = yoneda.map σ ≫ L.1 := rfl
-
 theorem map_pair_comp (L : Ty.Pair Γ₁) (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) :
     (Ty.pairPresheaf E ℓ).map σ₂.op ((Ty.pairPresheaf E ℓ).map σ₁.op L) =
       (Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op L := by

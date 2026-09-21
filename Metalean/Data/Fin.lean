@@ -60,19 +60,6 @@ theorem eq_one_of_unique {k : Nat} (s : Fin k) (h : ∀ s', s' = s) : k = 1 := b
       have h01 := (h 0).trans (h 1).symm
       simp at h01
 
-theorem sum_eq_of_unique {k : Nat} (f : Fin k → Nat) (s : Fin k) (h : ∀ s', s' = s) :
-    Fin.sum f = f s := by
-  obtain rfl := eq_one_of_unique s h
-  rw [← h 0]
-  rfl
-
-theorem encodeSigma_val_of_unique {k : Nat} (f : Fin k → Nat) (s : Fin k) (h : ∀ s', s' = s)
-    (c : Fin (f s)) :
-    (Fin.encodeSigma f ⟨s, c⟩).val = c.val := by
-  obtain rfl := eq_one_of_unique s h
-  obtain rfl := h 0
-  simp [Fin.encodeSigma]
-
 theorem append_of_lt {α : Type u} {m k : Nat} (u : Fin m → α) (w : Fin k → α)
     (i : Fin (m + k)) (h : i.val < m) : append u w i = u ⟨i.val, h⟩ :=
   append_left u w ⟨i.val, h⟩

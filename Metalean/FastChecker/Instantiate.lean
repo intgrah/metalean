@@ -1569,12 +1569,6 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
     | strLit hNat₂ hList₂ hChar₂ hOfNat₂ hString₂ =>
       exact .strLit hNat₂ hList₂ hChar₂ hOfNat₂ hString₂
 
-theorem FExpr.Denotes.unopen {n : Nat} {fb : FExpr} {b₀ b' : Expr E.1 ℓ (n + 1)} :
-    FExpr.Denotes L E 1 fb b₀ →
-    FExpr.Denotes L E 0 (FExpr.instAt (.fvar n) 0 fb) b' →
-    FExpr.Denotes L E 1 fb b' :=
-  fun h₀ h' => h₀.unopenStep rfl (h₀.unopenCore rfl rfl) h'
-
 theorem FExpr.Denotes.unopenBVars {m k base : Nat} {fe : FExpr} {e₀ e' : Expr E.1 ℓ m}
     (hm : base + k = m) :
     FExpr.Denotes L E k fe e₀ →

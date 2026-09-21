@@ -68,10 +68,6 @@ theorem isFunc_dom_image_snd
     subst a₂
     exact ⟨b₁, hc, fun b₂ hb₂ => huniq a₁ b₂ b₁ hb₂ hc⟩
 
-theorem dom_union (f g : ZFSet) : dom (f ∪ g) = dom f ∪ dom g := by
-  ext
-  simp [or_and_right, exists_or]
-
 @[simp] theorem dom_singleton_pair (a b : ZFSet) : dom {pair a b} = {a} := by
   ext
   simp
@@ -88,11 +84,6 @@ theorem fibre_mono {α β : ZFSet} (h : α ⊆ β) (a : ZFSet) :
     fibreOp α a ⊆ fibreOp β a :=
   fun _ hb => mem_fibre.mpr (h (mem_fibre.mp hb))
 
-theorem image_mono {op : ZFSet → ZFSet} (h : α ⊆ β) :
-    image op α ⊆ image op β := fun _ hc =>
-  have ⟨b, hb, hcb⟩ := mem_image.mp hc
-  mem_image.mpr ⟨b, h hb, hcb⟩
-
 def app (f a : ZFSet) : ZFSet :=
   (⋃₀ ⋃₀ ⋃₀ f).sep fun c => ∃ b, pair a b ∈ f ∧ c ∈ b
 
@@ -107,17 +98,6 @@ noncomputable def graph (α : ZFSet.{u}) (fn : α → ZFSet.{u}) : ZFSet.{u} :=
 @[simp] theorem mem_graph {fn : α → ZFSet.{u}} :
     c ∈ graph α fn ↔ ∃ x : α, pair x (fn x) = c :=
   mem_range
-
-theorem app_graph {fn : α → ZFSet.{u}} (ha : a ∈ α) : app (graph α fn) a = fn ⟨a, ha⟩ := by
-  ext z
-  rw [mem_app]
-  constructor
-  · intro ⟨b, hb, hz⟩
-    have ⟨y, hy⟩ := mem_graph.mp hb
-    have ⟨hfst, hsnd⟩ := pair_inj.mp hy
-    obtain rfl : y = ⟨a, ha⟩ := Subtype.ext hfst
-    exact hsnd ▸ hz
-  · exact fun hz => ⟨fn ⟨a, ha⟩, mem_graph.mpr ⟨⟨a, ha⟩, rfl⟩, hz⟩
 
 noncomputable def σ (α β : ZFSet) : ZFSet :=
   (prod α (⋃₀ image (app β) α)).sep fun c =>

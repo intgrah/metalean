@@ -539,8 +539,6 @@ theorem instManyRev_letE (rev : List FExpr) (t v b : FExpr) :
   rw [instManyRev, instManyRev, List.reverse_cons]
   exact instAt_instManyAt 0 rev.reverse _ b
 
-theorem instManyRev_singleton (a b : FExpr) : instManyRev [a] b = instAt a 0 b := rfl
-
 inductive LamBody : Nat → FExpr → FExpr → Prop where
   | zero {b : FExpr} :
     LamBody 0 b b
@@ -706,10 +704,6 @@ theorem appList_spineAux (e : FExpr) (acc : List FExpr) :
 
 def spine (e : FExpr) : {p : FExpr × List FExpr // appList p.1 p.2 = e} :=
   ⟨spineAux e [], appList_spineAux e []⟩
-
-def appParts? : (fe : FExpr) → Option {p : FExpr × FExpr // fe = .app p.1 p.2}
-  | .app f a => some ⟨(f, a), rfl⟩
-  | _ => none
 
 def appHead : FExpr → FExpr
   | .app f _ => appHead f

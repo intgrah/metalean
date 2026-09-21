@@ -346,12 +346,6 @@ theorem FCtor.Denotes.instTargetIndices (i : Fin (ι.nindices s)) :
   simp only [FCtor.instTargetIndices, Array.getElem_map]
   exact ((hc.targetIndices i).instL hus hus').instFVars (hps.append hfds)
 
-include hc hus' hps hfds in
-theorem FCtor.Denotes.instTargetIndicesArgs :
-    ArgsDenote L E (fctor.instTargetIndices us ps fds)
-      (ctor.targetIndex (⟦ls' ·⟧) ps' fds') :=
-  ⟨hc.instTargetIndices_size, hc.instTargetIndices hus hus' hps hfds⟩
-
 end Ctor
 
 section RecField

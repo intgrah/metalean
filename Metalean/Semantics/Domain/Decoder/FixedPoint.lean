@@ -103,10 +103,6 @@ theorem piLimit_extend_pi (label : Ty.Pair Γ₁) (A : Domain Γ₁) (B : IdealA
   conv_lhs => rw [← piLimit_fixedPoint]
   exact extend_piStep_pi (piLimit E ℓ) label A B n G
 
-theorem piLimit_value_sort (r : Level ℓ) :
-    (piLimit E ℓ).app _ (sortAtom r : CoherentShape Γ₁) = universeAction r.rel := by
-  rfl
-
 theorem piLimit_extend_sort (r : Level ℓ) (n : Tm_ Γ₁) (X : Domain Γ₁) :
     (piLimit E ℓ).extend (principalIdeal (sortAtom r)) n X = universeIdeal r.rel X := by
   rw [extend_principal]

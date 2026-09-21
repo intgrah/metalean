@@ -32,10 +32,6 @@ abbrev ofDb (i : Nat) (h : i < n) : Var n := ⟨n - 1 - i, by omega⟩
   simp [db]
   omega
 
-theorem db_lt (v : Var n) : v.db < n := by
-  simp [db]
-  omega
-
 @[simp] theorem db_last : db (Fin.last n) = 0 := by
   simp [db]
 

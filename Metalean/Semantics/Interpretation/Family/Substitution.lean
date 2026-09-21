@@ -49,8 +49,6 @@ def tailN (ρ : RawValuation Γ₁) : Nat → RawValuation Γ₁
   | 0 => ρ
   | k + 1 => (ρ.tailN k).tail
 
-theorem tailN_succ (ρ : RawValuation Γ₁) (k : Nat) : ρ.tailN (k + 1) = (ρ.tailN k).tail := rfl
-
 theorem tailN_apply (ρ : RawValuation Γ₁) (k j : Nat) : ρ.tailN k j = ρ (j + k) := by
   induction k generalizing j with
   | zero => rfl

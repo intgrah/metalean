@@ -62,11 +62,6 @@ def KTarget.check (ι : IndSig) (I : FInductive) (s : Nat) : Option (PLift (KTar
   let ⟨hcol⟩ ← guardProof (0 < (I.ctors[s]'hrow).size)
   pure ⟨hl, hs, h₁, hc, hf, hr, hrow, hcol⟩
 
-def internTy (t : FExpr) : CheckM L F ℓ FExpr := do
-  if let some t' := (← get).intern.get? t then return t'
-  modify fun c => { c with intern := c.intern.insert t t }
-  return t
-
 def ancestorsOf (G : FCtx) : CheckM L F ℓ (FCtx.Ancestors G) := do
   if let some ⟨G₁, a⟩ := (← get).ancestors.get? G.addr then
     if h : G₁ = G then return a.cast h
