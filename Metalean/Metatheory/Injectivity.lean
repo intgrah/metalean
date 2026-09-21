@@ -44,7 +44,7 @@ theorem DefeqStrong.ind_inj (ho : E.Ordered)
       (∀ p, ∃ t : Expr ζ ℓ n, E[Γ] ⊢ₛ ps₁ p ≡ ps₂ p : t) ∧
       ∀ index, ∃ t : Expr ζ ℓ n,
         E[Γ] ⊢ₛ is₁ index ≡ is₂ index : t :=
-  fun hΓ h => h.ind_model_inv ho hΓ
+  ind_model_inv ho
 
 theorem IsTypeEq.quot_inj (ho : E.Ordered)
     {η : Head ζ .quot} {l₁ l₂ : Level ℓ} {α α' r r' : Expr ζ ℓ n} :
