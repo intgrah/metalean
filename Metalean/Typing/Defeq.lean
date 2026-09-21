@@ -224,13 +224,13 @@ meta def unexpand : Lean.PrettyPrinter.Unexpander
 
 end Defeq
 
-def IsType (E : Env ζ) {ℓ n} (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) : Prop :=
+def TypeWF (E : Env ζ) {ℓ n} (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) : Prop :=
   ∃ l, E[Γ] ⊢ t : .sort l
 
-notation:65 E "[" Γ "]" " ⊢ " t " typ" => IsType E Γ t
+notation:65 E "[" Γ "]" " ⊢ " t " typ" => TypeWF E Γ t
 
-@[app_unexpander IsType]
-meta def IsType.unexpand : Lean.PrettyPrinter.Unexpander
+@[app_unexpander TypeWF]
+meta def TypeWF.unexpand : Lean.PrettyPrinter.Unexpander
   | `($_ $E $Γ $t) => `($E[$Γ] ⊢ $t typ)
   | _ => throw ()
 
