@@ -34,11 +34,11 @@ open CategoryTheory MonoidalCategory
 variable {T : Nat → Type u} {S : Nat → Type v}
 
 def map {a b} (f : {d : Nat} → Tele T a d → T d → S d) : Tele T a b → Tele S a b
-  | nil => #t[]
+  | nil => nil
   | snoc Δ A => snoc (map f Δ) (f Δ A)
 
 @[simp] theorem map_nil {a} (f : {d : Nat} → Tele T a d → T d → S d) :
-    map f #t[] = #t[] :=
+    map f nil = nil :=
   rfl
 
 @[simp] theorem map_snoc {a b} (f : {d : Nat} → Tele T a d → T d → S d)
@@ -50,7 +50,7 @@ def foldr {a b} (f : {d : Nat} → T d → S (d + 1) → S d) (s : S b) : Tele T
   | snoc Δ A => foldr f (f A s) Δ
 
 @[simp] theorem foldr_nil {a} (f : {d : Nat} → T d → S (d + 1) → S d)
-    (s : S a) : foldr f s #t[] = s :=
+    (s : S a) : foldr f s nil = s :=
   rfl
 
 @[simp] theorem foldr_snoc {a b} (f : {d : Nat} → T d → S (d + 1) → S d)
@@ -65,7 +65,7 @@ def append {a b c} (Γ : Tele T a b) : Tele T b c → Tele T a c
 @[reducible] instance {a b c} : HAppend (Tele T a b) (Tele T b c) (Tele T a c) :=
   ⟨append⟩
 
-@[simp] theorem append_nil {a b} (Γ : Tele T a b) : Γ ++ (#t[] : Tele T b b) = Γ :=
+@[simp] theorem append_nil {a b} (Γ : Tele T a b) : Γ ++ (nil : Tele T b b) = Γ :=
   rfl
 
 @[simp] theorem append_snoc {a b c} (Γ : Tele T a b) (Δ : Tele T b c) (A : T c) :
@@ -86,7 +86,7 @@ theorem append_assoc {a b c d} (Γ : Tele T a b)
   | nil => rfl
   | snoc Ε A ih => simp [ih]
 
-@[simp] theorem nil_append {a b} (Δ : Tele T a b) : (#t[] : Tele T a a) ++ Δ = Δ := by
+@[simp] theorem nil_append {a b} (Δ : Tele T a b) : (nil : Tele T a a) ++ Δ = Δ := by
   induction Δ with
   | nil => rfl
   | snoc Δ A ih => simp [ih]
@@ -141,7 +141,7 @@ theorem le {a b} : Tele T a b → a ≤ b
   | snoc ts _ => Nat.le_trans ts.le (Nat.le_succ _)
 
 theorem heq_nil {a b} (Δ : Tele T a b) (h : b ≤ a) :
-    Δ ≍ (#t[] : Tele T a a) := by
+    Δ ≍ (nil : Tele T a a) := by
   cases Δ with
   | nil => rfl
   | snoc Δ _ => have := Δ.le; omega
@@ -154,7 +154,7 @@ theorem exists_snoc {a b} (h : a ≤ b) (Δ : Tele T a (b + 1)) :
 
 @[elab_as_elim] def addInduction {a}
     {motive : {k : Nat} → Tele T a (a + k) → Sort v}
-    (nil : @motive 0 #t[])
+    (nil : @motive 0 nil)
     (snoc : ∀ k (Δ : Tele T a (a + k)) (A : T (a + k)),
       motive Δ → @motive (k + 1) (Δ.snoc A))
     {k : Nat} (Δ : Tele T a (a + k)) :
@@ -222,12 +222,12 @@ theorem front {a b} (hlt : a < b) :
 
 variable {a} (P : {b : Nat} → Tele T a b → T b → Prop) in
 inductive Forall : {b : Nat} → Tele T a b → Prop
-  | nil : Forall #t[]
+  | nil : Forall nil
   | snoc {b} {Δ : Tele T a b} {A : T b} : Forall Δ → P Δ A → Forall (snoc Δ A)
 
 variable {a} (R : {b : Nat} → Tele T a b → Tele S a b → T b → S b → Prop) in
 inductive Forall₂ : {b : Nat} → Tele T a b → Tele S a b → Prop
-  | nil : Forall₂ #t[] #t[]
+  | nil : Forall₂ nil nil
   | snoc {b} {Δ : Tele T a b} {Θ : Tele S a b} {A : T b} {B : S b} :
     Forall₂ Δ Θ → R Δ Θ A B → Forall₂ (snoc Δ A) (snoc Θ B)
 
