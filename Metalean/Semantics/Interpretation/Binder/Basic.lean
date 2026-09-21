@@ -245,8 +245,6 @@ end RawFamily
 
 namespace RawActionFamily
 
-noncomputable abbrev presheaf (E : Env ζ) (ℓ : Nat) := Functor.HomObj.functor (RawValuation.presheaf E ℓ) (RawAction.presheaf E ℓ)
-
 @[simp] theorem pullback_app (F : RawActionFamily Γ₁) {Δ : (CtxCat E ℓ)ᵒᵖ} {Γ₂ : CtxCat E ℓ}
     (σ₁ : op Γ₁ ⟶ Δ) (σ₂ : Γ₂ ⟶ Δ.unop) (ρ : RawValuation Δ.unop) :
     RawAction.pullback (F.app Δ σ₁ ρ) σ₂ = F.app (op Γ₂) (σ₁ ≫ σ₂.op) (ρ.pullback σ₂) :=
@@ -335,18 +333,6 @@ theorem IsFinitary.apply {F : RawActionFamily Γ₁} (hF : F.IsFinitary) (hArg :
     (fun _ _ h J => (F.app _ σ.op).hom.monotone (RawValuation.replace_mono i le_rfl h) _ _ J)
     (fun I => ((F.app _ σ.op (ρ.replace i I)).app _ _).hom.monotone)
     ((X.app _ σ.op).hom.monotone.comp (Function.update_mono (f := ρ) (i := i)))
-
-theorem isFinitary_iSup {κ : Sort*} {F : κ → RawActionFamily Γ₁}
-    (hF : ∀ k, (F k).IsFinitary) : (⨆ k, F k).IsFinitary := by
-  intro Γ₂ σ i ρ X label
-  have h : (fun I => ((⨆ k, F k).app _ σ.op (ρ.replace i I)).app _ ((𝟙 Γ₂).op, label) X) =
-      fun I => ⨆ k, ((F k).app _ σ.op (ρ.replace i I)).app _ ((𝟙 Γ₂).op, label) X := by
-    funext I
-    rw [RawActionFamily.iSup_app, RawAction.iSup_app]
-  rw [h]
-  exact ΩLower.isFinitary_iSup (fun k => hF k σ i ρ X label)
-    fun k _ _ hI => ((F k).app _ σ.op).hom.monotone (RawValuation.replace_mono i le_rfl hI) _
-      ((𝟙 Γ₂).op, label) X
 
 end RawActionFamily
 

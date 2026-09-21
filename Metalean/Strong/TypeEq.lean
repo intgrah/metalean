@@ -140,15 +140,6 @@ theorem IsTypeEq.forallE_cod {t : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n +
     exact .ofDefEq (.forallEDF ht h h)
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem IsTypeStrong.snocConvTy {t₁ t₂ : Expr ζ ℓ n}
-    {t' : Expr ζ ℓ (n + 1)} :
-    E[Γ] ⊢ₛ t₁ ≡ t₂ typ →
-    E[Γ.snoc t₁] ⊢ₛ t' typ →
-    E[Γ.snoc t₂] ⊢ₛ t' typ :=
-  fun h ht' =>
-    have ⟨u, ht'⟩ := ht'
-    ⟨u, DefeqStrong.snocConvTy h ht'⟩
-
 section
 
 variable {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}

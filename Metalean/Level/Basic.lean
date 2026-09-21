@@ -84,9 +84,6 @@ def eval (ν : Param ℓ → Nat) (u : Level ℓ) : Nat :=
 @[simp] theorem succ_ne_zero (u : Level ℓ) : u.succ ≠ zero :=
   fun h => by simpa using congrArg (eval fun _ => 0) h
 
-theorem max_zero (u : Level ℓ) : u.max zero = u :=
-  ext <| by simp
-
 theorem imax_zero (u : Level ℓ) : u.imax zero = zero :=
   ext <| by simp
 

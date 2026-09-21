@@ -414,13 +414,6 @@ theorem EntryWF.inductive {ι : IndSig} {fI : FInductive} :
   have ⟨_, hI⟩ := hI hE
   exact ⟨.inductive _, .inductive hI⟩
 
-theorem WFSpec.wkOpen {ℓ n : Nat} {ft : FExpr} :
-    WFSpec L F ℓ n 0 ft →
-    WFSpec L F ℓ (n + 1) 1 ft := by
-  intro h _ hE
-  have ⟨_, h⟩ := h hE
-  exact ⟨_, h.wkOpen⟩
-
 theorem WFSpec.wkNOpen {ℓ n : Nat} {ft : FExpr} (k : Nat) :
     WFSpec L F ℓ n 0 ft →
     WFSpec L F ℓ (n + k) k ft := by
@@ -435,13 +428,6 @@ theorem WFSpec.ofClosed {ℓ n k : Nat} {ft : FExpr}
   intro h _ hE
   have ⟨_, h⟩ := h hE
   exact (h.unbind (by omega) hc).strengthenN hr hc
-
-theorem WFSpec.abstractAt {ℓ m d x : Nat} {ft : FExpr} (hx : x + d + 1 = m) :
-    WFSpec L F ℓ m d ft →
-    WFSpec L F ℓ m (d + 1) (FExpr.abstractAt x d ft) := by
-  intro h _ hE
-  have ⟨_, h⟩ := h hE
-  exact ⟨_, h.abstractAt hx⟩
 
 theorem WFSpec.appList {ℓ n k : Nat} {f : FExpr} :
     (args : List FExpr) →

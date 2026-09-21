@@ -26,9 +26,6 @@ theorem le_imax_right : m ≤ imax n m :=
   | zero => Nat.le_refl 0
   | succ m => imax_succ_right ▸ Nat.le_max_right n (m + 1)
 
-theorem le_imax_left (h : m ≠ 0) : n ≤ imax n m :=
-  imax_eq_max h ▸ Nat.le_max_left n m
-
 theorem imax_le_iff : imax n m ≤ k ↔ m ≠ 0 → n ≤ k ∧ m ≤ k := by
   cases m with simp [Nat.max_le]
 

@@ -30,4 +30,8 @@ theorem eval_le_of_imax_le {ν : Param ℓ → Nat} (h : l₁.imax l₂ ≤ l₂
     l₁.eval ν ≤ l₂.eval ν :=
   Nat.le_of_imax_le (by simpa using h ν) hl₂
 
+instance : DecidableLE (Level ℓ) := fun u v =>
+  Quotient.recOnSubsingleton₂ u v fun a b =>
+    decidable_of_iff (a ≤ b) ⟨fun h => h, fun h => h⟩
+
 end Metalean.Level

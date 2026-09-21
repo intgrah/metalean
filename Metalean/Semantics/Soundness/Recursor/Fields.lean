@@ -91,38 +91,6 @@ theorem RawTyped.ctorFieldTarget_properties (p : RawTyped Γ e t)
   rw [CtxCat.ctorFieldTargetHom_param, CtxCat.ctorFieldTargetHom_param]
   exact ⟨pe.wkN Δ hΔ, pt.wkN Δ hΔ, HasFixedness.wkN Δ hΔ he pt pe pf⟩
 
-theorem SourceAdmissible.ctorFields (h : IndData Γ η ls ps)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) {Ξ : CtxCat E₂ ℓ}
-    (σ : Ξ ⟶ CtxCat.ctorFields h s c) (ρ : RawValuation Ξ) (hρ : SourceAdmissible σ ρ) :
-    SemanticSubstitution (CtxCat.ctorFieldsProjection h s c) σ
-        (ρ.tailN ((ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) ρ ∧
-      SourceAdmissible (σ ≫ RawCtx.toCtx.map (CtxCat.ctorFieldsProjection h s c))
-        (ρ.tailN ((ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) := by
-  have hfields := (h.block.ctors s c).fieldTele rfl Γ.as.wf h.param
-  exact ⟨by simpa [CtxCat.ctorFieldsProjection, Nat.add_assoc] using
-      SemanticSubstitution.tailTele hfields σ ρ,
-    by simpa [CtxCat.ctorFieldsProjection, Nat.add_assoc] using hρ.tailTele hfields⟩
-
-theorem SourceAdmissible.ctorFieldTarget (h : IndData Γ η ls ps)
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields)
-    {Ξ : CtxCat E₂ ℓ} (σ : Ξ ⟶ CtxCat.ctorFieldTarget h s c f) (ρ : RawValuation Ξ)
-    (hρ : SourceAdmissible σ ρ) :
-    SemanticSubstitution (CtxCat.ctorFieldTargetHom h s c f) σ
-      (ρ.tailN ((ι.ctors s c).nfields + (ι.ctors s c).nrecFields + (ι.ctors s c).recursiveArity f)) ρ ∧
-      SourceAdmissible (σ ≫ RawCtx.toCtx.map (CtxCat.ctorFieldTargetHom h s c f))
-        (ρ.tailN ((ι.ctors s c).nfields + (ι.ctors s c).nrecFields + (ι.ctors s c).recursiveArity f)) := by
-  have hfield := fieldTelescopeStrong h s c f
-  have htail := hρ.tailTele hfield
-  simp only [Nat.add_sub_cancel_left] at htail
-  have ⟨hbase, hadm⟩ := SourceAdmissible.ctorFields h s c _ _ htail
-  have hsub := SemanticSubstitution.tailTele hfield σ ρ
-  simp only [Nat.add_sub_cancel_left] at hsub
-  have hs := hbase.comp hsub htail fun v => by
-    exact HasSubstitution.var _ _
-  rw [CtxCat.ctorFieldTargetHom_projection] at hs
-  rw [Category.assoc, ← RawCtx.toCtx.map_comp, CtxCat.ctorFieldTargetHom_projection] at hadm
-  simpa [Nat.add_comm] using And.intro hs hadm
-
 end CoherentShape
 
 variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)

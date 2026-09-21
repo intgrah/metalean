@@ -458,12 +458,6 @@ theorem ArgsDenote.fieldOrdinary (csig : CtorSig ι.nsorts) :
     simp only [FExpr.getElem_fvars]
     exact (FExpr.Denotes.fvar (k := 0) (by omega)).wkN csig.nrecFields
 
-theorem ArgsDenote.fieldRecursive (csig : CtorSig ι.nsorts) :
-    ArgsDenote (ℓ := ℓ) L E (FExpr.fvars (n + csig.nfields) csig.nrecFields)
-      (csig.fieldRecursive (n := n)) where
-  size := by simp
-  denotes v := by simpa using .fvar (by omega)
-
 include hps in
 theorem ArgsDenote.caseParams {csig : CtorSig ι.nsorts} :
     ArgsDenote L E ps (csig.caseParams ps') :=

@@ -25,10 +25,6 @@ variable {n : Nat} {Φ : ZFSet → ZFSet}
 @[expose] def SmallOver (Λ X : ZFSet) : Prop :=
   ∃ i ∈ Λ, ∃ g : ZFSet → ZFSet, X ⊆ image g i
 
-theorem SmallOver.mono {Λ' : ZFSet} (h : SmallOver Λ X) (hΛ : Λ ⊆ Λ') : SmallOver Λ' X :=
-  have ⟨i, hi, g, hX⟩ := h
-  ⟨i, hΛ hi, g, hX⟩
-
 theorem succ_inj (h : insert x x = insert y y) : x = y := by
   have hx : x ∈ insert y y := by rw [← h]; exact mem_insert x x
   have hy : y ∈ insert x x := by rw [h]; exact mem_insert y y

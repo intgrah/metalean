@@ -771,20 +771,6 @@ theorem FExpr.Denotes.inst {n : Nat} {fb fa : FExpr} {b : Expr E.1 ℓ (n + 1)} 
         exact (Expr.rename_id a).symm
       bound v hv := absurd v.isLt (by omega) }
 
-theorem FExpr.Denotes.instFVar {n : Nat} {fb : FExpr} {b : Expr E.1 ℓ (n + 1)} :
-    FExpr.Denotes L E 1 fb b →
-    FExpr.Denotes L E 0 (FExpr.instAt (.fvar n) 0 fb) b := by
-  intro hb
-  simpa using (FExpr.Denotes.fvar (Nat.lt_succ_self n)).instAt hb
-    Subst.id rfl
-    { size := rfl
-      le := le_rfl
-      scope := by omega
-      free v _ := ⟨v, rfl, rfl⟩
-      here v hv := by
-        exact congrArg Expr.var (Fin.ext hv)
-      bound v hv := absurd v.isLt (by omega) }
-
 theorem FExpr.Denotes.instFVarAt {m p d : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
     (hm : p + d + 1 = m) :
     FExpr.Denotes L E (d + 1) fb b →

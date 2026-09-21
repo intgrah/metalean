@@ -59,7 +59,6 @@ public import Metalean.Frontend.Table
 public import Metalean.Frontend.Translate
 public import Metalean.Grind
 public import Metalean.Level.Basic
-public import Metalean.Level.Decide
 public import Metalean.Level.Nat
 public import Metalean.Level.Order
 public import Metalean.Level.Relevance

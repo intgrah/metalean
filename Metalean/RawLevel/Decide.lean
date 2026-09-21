@@ -316,23 +316,6 @@ public theorem decLe_iff (l₁ l₂ : RawLevel ℓ) : decLe l₁ l₂ = true ↔
       _ ≤ eval ν l₂ := h ν
       _ = Sub.evalMax ν (subs [] 0 l₂) := (evalMax_subs_nil ν l₂).symm
 
-public def decZeroLe (l₁ l₂ : RawLevel ℓ) : Bool :=
-  decLe l₂ (l₂.imax l₁)
-
-public theorem decZeroLe_iff (l₁ l₂ : RawLevel ℓ) :
-    decZeroLe l₁ l₂ = true ↔ ∀ ν, l₁.eval ν = 0 → l₂.eval ν = 0 := by
-  rw [decZeroLe, decLe_iff]
-  constructor
-  · intro h ν hz
-    have := h ν
-    simp [hz] at this
-    omega
-  · intro h ν
-    rw [eval_imax]
-    by_cases hz : l₁.eval ν = 0
-    · simp [hz, h ν hz]
-    · exact Nat.le_imax_left hz
-
 public instance : DecidableLE (RawLevel ℓ) :=
   fun l₁ l₂ => decidable_of_iff _ (decLe_iff l₁ l₂)
 

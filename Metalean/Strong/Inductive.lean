@@ -281,20 +281,6 @@ theorem WFStrong.instantiatedType
     simpa using (hps p).wkN
   exact Ctx.pi_isTypeStrong hΓtele <| DefeqStrong.indDF hpsWk his
 
-theorem WFStrong.recursiveIndex
-    {telescope : Ctx ζ ι.nlevels (ι.nparams + nfields)
-      (ι.nparams + nfields + arity)}
-    {is : Fin (ι.nindices s) →
-      Expr ζ ι.nlevels (ι.nparams + nfields + arity)}
-    (h : RecField.WFStrong E I Δ ⟨telescope, is⟩)
-    {ls : Fin ι.nlevels → Level ℓ} (i) :
-    E[Ctx.instL ls Δ ++ Ctx.instL ls telescope] ⊢ₛ (is i).instL ls :
-        I.indexType ls s
-          (fun p => .var ⟨p.val, by omega⟩)
-          (fun i => (is i).instL ls) i := by
-  have hi := h.indices.instLevel ls i
-  simpa [Expr.instL] using hi
-
 end RecField
 
 section Constructors

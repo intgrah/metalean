@@ -213,13 +213,6 @@ theorem CtxCat.ctorFieldsHom_subst :
   | left p => simp [CtxCat.ctorFieldsHom, CtorSig.fieldParams]
   | right f => simp [CtxCat.ctorFieldsHom, CtorSig.fieldOrdinary]
 
-theorem CtxCat.ctorFieldTargetHom_projection :
-    RawCtx.Hom.teleProjection (fieldTelescopeStrong h s c f) ≫ CtxCat.ctorFieldsProjection h s c =
-      CtxCat.ctorFieldTargetHom h s c f := by
-  apply RawCtx.Hom.ext
-  simp [CtxCat.ctorFieldTargetHom, Expr.wkN_eq_rename]
-  rfl
-
 theorem CtxCat.ctorFieldTargetHom_param (e : Expr ζ ℓ Γ₁.as.len) :
     e.subst (CtxCat.ctorFieldTargetHom h s c f).subst =
       ((e.wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields).wkN

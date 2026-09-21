@@ -467,14 +467,6 @@ namespace SubstEqStrong
 
 variable {σ₁ σ₂ σ₃ : Subst ζ ℓ n m}
 
-theorem right :
-    E[Γ₁] ⊢ₛ ok →
-    E[Γ₂] ⊢ₛ σ₁ ≡ σ₂ ⊣ Γ₁ →
-    E[Γ₂] ⊢ₛ σ₂ ⊣ Γ₁ := by
-  intro hΓ h v
-  have ⟨_, ht⟩ := h.get v hΓ
-  exact .defeqDF ht (h v).right
-
 theorem symm :
     E[Γ₁] ⊢ₛ ok →
     E[Γ₂] ⊢ₛ σ₁ ≡ σ₂ ⊣ Γ₁ →

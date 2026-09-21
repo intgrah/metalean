@@ -352,25 +352,6 @@ theorem Env.Ordered.def_spec {nlevels : Nat} {ζ₀ : Sigs} {E₀ : Env ζ₀} (
       rw [Category.assoc, ← hget, hsigs]
       exact congrArg E.get hη.symm
 
-theorem CtxWF.toStrongOf :
-    (∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e t : Expr ζ ℓ n},
-      E[Γ] ⊢ e : t →
-      E[Γ] ⊢ₛ ok →
-      E[Γ] ⊢ₛ e : t) →
-    E[Γ] ⊢ ok →
-    E[Γ] ⊢ₛ ok := by
-  intro tr hΓ
-  induction hΓ with
-  | nil => exact .nil
-  | snoc hΓ ht ih =>
-    have ⟨u, ht⟩ := ht
-    exact .snoc ih ⟨u, tr ht ih⟩
-
-theorem CtxWF.toStrongOrdered (ho : E.Ordered) :
-    E[Γ] ⊢ ok →
-    E[Γ] ⊢ₛ ok :=
-  fun h => h.toStrongOf fun h hΓ => h.toStrongOrdered ho hΓ
-
 theorem CtxWFStrong.snocOfHasType {t : Expr ζ ℓ n} {l : Level ℓ}
     (ho : E.Ordered) :
     E[Γ] ⊢ₛ ok →

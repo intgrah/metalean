@@ -7,7 +7,7 @@ module
 
 public import Metalean.Builtin.Iff
 public import Metalean.Typing.Env
-import Metalean.Level.Decide
+import Metalean.Level.Order
 
 @[expose] public section
 

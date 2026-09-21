@@ -166,12 +166,6 @@ theorem exists_principal {f : ΩLower R X → ΩLower S X} (hf : IsFinitary f) (
 
 end IsFinitary
 
-theorem isFinitary_iSup {κ : Sort*} {f : κ → ΩLower R X → ΩLower S X}
-    (hf : ∀ k, IsFinitary (f k)) (hm : ∀ k, Monotone (f k)) :
-    IsFinitary fun I => ⨆ k, f k I :=
-  IsFinitary.of_eventually fun _ _ hy =>
-    iSup_eventually (fun k _ hz => (hf k).eventually (hm k) eventually_mem hz) hy
-
 end ΩLower
 
 end Metalean.Presheaf

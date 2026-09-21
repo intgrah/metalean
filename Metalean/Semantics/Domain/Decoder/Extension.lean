@@ -198,19 +198,6 @@ theorem extend_finitary_right (F : CodeAssignment E ℓ) (T : Domain Γ₁)
   have ⟨a, ha, x, hx, hy⟩ := (mem_rawExtend F T.val n X.val (𝟙 Γ₁) y).mp hy
   exact ⟨x, hx, (mem_rawExtend _ _ _ _ _ _).mpr ⟨a, ha, x, by simp, hy⟩⟩
 
-noncomputable def decode (F : CodeAssignment E ℓ) (T : Domain Γ₁) : IdealAction Γ₁ where
-  val.app _ p := Preord.ofHom {
-    toFun := F.extend (T.pullback p.1.unop) p.2
-    monotone' _ _ h := F.extend_mono (@le_rfl _ _ _) h }
-  val.naturality σ p := by
-    ext X
-    change F.extend (T.pullback (p.1 ≫ σ).unop) ((Tm E ℓ).map σ p.2)
-        (X.pullback σ.unop) =
-      (F.extend (T.pullback p.1.unop) p.2 X).pullback σ.unop
-    rw [unop_comp, ← ΩIdeal.pullback_pullback]
-    exact (F.pullback_extend (T.pullback p.1.unop) p.2 X σ.unop).symm
-  property _ p := F.extend_finitary_right (T.pullback p.1.unop) p.2
-
 def IsIdempotent (F : CodeAssignment E ℓ) : Prop :=
   ∀ ⦃Γ₁ : CtxCat E ℓ⦄ (a : CoherentShape Γ₁), IdealAction.IsIdempotent (F.app _ a)
 

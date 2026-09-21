@@ -115,14 +115,6 @@ theorem HasFixedness.pi_prop {k : Nat} {P : Level ℓ → Prop}
     rw [Level.imax_zero] at hp hty
     exact ih hΔ.init pΔ.init (.forallE t body) hty hp
 
-theorem SemanticSubstitution.tailTele {m : Nat} {Δ : Ctx ζ ℓ Γ₁.as.len m}
-    (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
-    (σ : Γ₂ ⟶ CtxCat.extendTele Γ₁ Δ hΔ) (ρ : RawValuation Γ₂) :
-    SemanticSubstitution (RawCtx.Hom.teleProjection hΔ) σ
-      (ρ.tailN (m - Γ₁.as.len)) ρ :=
-  .ren (fun v => ⟨_, rfl⟩) (.of_var (Fin.castLE Δ.le) (fun _ => rfl) fun v => by
-    rw [Var.db_castLE, RawValuation.tailN_apply])
-
 theorem SourceAdmissible.tailTele {m : Nat} {Δ : Ctx ζ ℓ Γ₁.as.len m}
     (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
     {σ : Γ₂ ⟶ CtxCat.extendTele Γ₁ Δ hΔ} {ρ : RawValuation Γ₂}

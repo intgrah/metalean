@@ -61,12 +61,6 @@ def eval : RawLevel ℓ → Nat
   | 0 => rfl
   | n + 1 => congrArg (· + 1) (eval_ofNat n)
 
-def hasParam : RawLevel ℓ → Bool
-  | zero => false
-  | succ u => u.hasParam
-  | max u₁ u₂ | imax u₁ u₂ => u₁.hasParam || u₂.hasParam
-  | param _ => true
-
 variable (levelSubst : Param ℓ → RawLevel ℓ₁) in
 def inst : RawLevel ℓ → RawLevel ℓ₁
   | zero => zero
@@ -87,11 +81,6 @@ def inst : RawLevel ℓ → RawLevel ℓ₁
     (l₁.imax l₂).inst levelSubst = (l₁.inst levelSubst).imax (l₂.inst levelSubst) := rfl
 
 @[simp] theorem inst_param (levelSubst : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p).inst levelSubst = levelSubst p := rfl
-
-theorem inst_of_hasParam_eq_false (levelSubst : Param ℓ → RawLevel ℓ) {l : RawLevel ℓ}
-    (h : l.hasParam = false) : l.inst levelSubst = l := by
-  induction l <;> simp_all [hasParam]
-
 
 @[simp] theorem inst_id (l : RawLevel ℓ) : l.inst param = l := by
   induction l <;> simp [*]

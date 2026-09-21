@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Typing.Env
-public import Metalean.Level.Decide
+public import Metalean.Level.Order
 
 @[expose] public section
 

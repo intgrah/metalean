@@ -12,14 +12,12 @@ import Metalean.Typing.Weakening
 
 @[expose] public section
 
-namespace Metalean
+namespace Metalean.DefeqStrong
 
 open CategoryTheory
 
 variable {sig : Sig} {ζ ζ₁ ζ₂ : Sigs} {E : Env ζ} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
   {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {Γ₁ : Ctx ζ₁ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
-
-namespace DefeqStrong
 
 theorem weakenEnv (entry : Entry ζ sig) :
     E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
@@ -124,16 +122,4 @@ theorem envMono {e₁ e₂ t : Expr ζ₁ ℓ n} (pre : E₁.as ⟶ E₂.as) :
       $(Expr.map_step pre.sigs e₁) ≡ $(Expr.map_step pre.sigs e₂) :
       $(Expr.map_step pre.sigs t)).mp ((ih h).weakenEnv _)
 
-end DefeqStrong
-
-theorem CtxWFStrong.envMono (pre : E₁.as ⟶ E₂.as) :
-    E₁[Γ₁] ⊢ₛ ok →
-    E₂[Γ₁.map pre.sigs] ⊢ₛ ok := by
-  intro hΓ
-  induction hΓ with
-  | nil => exact .nil
-  | snoc _ ht ih =>
-    have ⟨u, ht⟩ := ht
-    exact .snoc ih ⟨u, ht.envMono pre⟩
-
-end Metalean
+end Metalean.DefeqStrong

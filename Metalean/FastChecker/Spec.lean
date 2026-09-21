@@ -771,31 +771,6 @@ theorem Sem.append {G ts : FCtx} {E : Env ζ} {n b : Nat} {Γ : Ctx ζ ℓ 0 n}
     Sem L F (G ++ ts) E (Γ ++ Δ) := fun hS hΔ hwf =>
   ⟨hS.env, hS.ordered, hS.trust, hS.ctx.append hΔ, CtxWFStrong.append hS.ordered hS.wf hwf⟩
 
-theorem TypeEqSpec.forallE {G : FCtx} {ft₁ ft₂ b₁ b₂ : FExpr}
-    {E : Env ζ} {Γ : Ctx ζ ℓ 0 G.size} {e₁ e₂ t₁ t₂ : Expr ζ ℓ G.size} :
-    TypeEqSpec L F ℓ G ft₁ ft₂ →
-    TypeEqSpec L F ℓ (G.push ft₁) (FExpr.instAt (.fvar G.size) 0 b₁)
-      (FExpr.instAt (.fvar G.size) 0 b₂) →
-    Sem L F G E Γ →
-    FExpr.Denotes L ⟨ζ, E⟩ 0 (.forallE ft₁ b₁) e₁ →
-    FExpr.Denotes L ⟨ζ, E⟩ 0 (.forallE ft₂ b₂) e₂ →
-    E[Γ] ⊢ₛ e₁ : t₁ →
-    E[Γ] ⊢ₛ e₂ : t₂ →
-    E[Γ] ⊢ₛ e₁ ≡ e₂ typ := by
-  intro hdom hcod hS hd₁ hd₂ he₁ he₂
-  have .forallE hdt₁ hb₁ := hd₁
-  have .forallE hdt₂ hb₂ := hd₂
-  have hinv₁ := he₁.forallE_inv
-  have hinv₂ := he₂.forallE_inv
-  have hd := hdom hS hdt₁ hdt₂ hinv₁.1 hinv₂.1
-  have ⟨_, ht₁⟩ := hinv₁.1
-  have ⟨u, hcl⟩ := hinv₂.2
-  have hcod₁ : IsTypeStrong _ _ _ :=
-    ⟨u, ((hd.symm.snocConv hS.ordered hS.wf).mp hcl.defeq).toStrongOrdered
-      hS.ordered (hS.wf.snoc hinv₁.1)⟩
-  exact hd.forallE_congr' hS.ordered hS.wf
-    (hcod (hS.snoc hdt₁ ht₁) hb₁.instFVar hb₂.instFVar hinv₁.2 hcod₁)
-
 theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FExpr}
     (hk : k ≤ G.size) :
     TypeEqTeleSpec L F ℓ G k ft₁ ft₂ →

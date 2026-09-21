@@ -222,18 +222,6 @@ meta def unexpand : Lean.PrettyPrinter.Unexpander
       `($E[$Γ] ⊢ $e₁ ≡ $e₂ : $t)
   | _ => throw ()
 
-variable {E : Env ζ} {ℓ n} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
-
-theorem left :
-    E[Γ] ⊢ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ e₁ : t :=
-  fun h => h.trans h.symm
-
-theorem right :
-    E[Γ] ⊢ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ e₂ : t :=
-  fun h => h.symm.trans h
-
 end Defeq
 
 def IsType (E : Env ζ) {ℓ n} (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) : Prop :=

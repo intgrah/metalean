@@ -138,55 +138,6 @@ theorem Compatible.of_isBottom_right {a b : Shape Γ₁} (σ : Γ₂ ⟶ Γ₁)
     (h : Basis.IsBottom b) : Compatible σ a b :=
   (Compatible.of_isBottom_left σ h).symm
 
-theorem Compatible.comp {a b : Shape Γ₁} {σ₁ : Γ₂ ⟶ Γ₁}
-    (σ₂ : Γ₃ ⟶ Γ₂) : Compatible σ₁ a b → Compatible (σ₂ ≫ σ₁) a b := by
-  induction a generalizing b Γ₂ with
-  | forallE _ _ _ _ _ _ ih _ _ =>
-    cases b with
-    | forallE _ _ _ _ _ _ =>
-      exact fun ⟨hlabel, hdomain, hgraph⟩ =>
-        ⟨by simp [hlabel], ih σ₂ hdomain,
-          Graph.Compatible.comp (f := ⟨_, _, _, _⟩) (g := ⟨_, _, _, _⟩) σ₂ hgraph⟩
-    | _ => exact fun h => h
-  | lam _ _ _ _ _ _ =>
-    cases b with
-    | lam _ _ _ _ =>
-      exact Graph.Compatible.comp (f := ⟨_, _, _, _⟩) (g := ⟨_, _, _, _⟩) σ₂
-    | _ => exact fun h => h
-  | ind _ _ ih =>
-    cases b with
-    | ind _ _ =>
-      refine fun ⟨hc, h⟩ => ⟨?_, fun c c' hcc => ih c σ₂ (h c c' hcc)⟩
-      rw [IndCode.map_comp_hom, IndCode.map_comp_hom, hc]
-    | _ => exact fun h => h
-  | ctor _ _ _ ih =>
-    cases b with
-    | ctor _ _ _ =>
-      exact fun ⟨hh, h⟩ => ⟨hh, fun i j hij =>
-        ⟨by simp [(h i j hij).1], ih i σ₂ (h i j hij).2⟩⟩
-    | _ => exact fun h => h
-  | struct _ _ _ ih =>
-    cases b with
-    | struct _ _ _ =>
-      rintro (hbot | hbot' | ⟨hh, h⟩)
-      · exact .inl hbot
-      · exact .inr (.inl hbot')
-      · exact .inr (.inr ⟨hh, fun i j hij => ih i σ₂ (h i j hij)⟩)
-    | _ => exact fun h => h
-  | quot _ =>
-    cases b with
-    | quot _ =>
-      intro h
-      change QuotCode.map _ _ = QuotCode.map _ _
-      rw [QuotCode.map_comp_hom, QuotCode.map_comp_hom, h]
-    | _ => exact fun h => h
-  | quotMk _ _ _ ih =>
-    cases b with
-    | quotMk _ _ _ =>
-      exact fun ⟨hh, hn, hv⟩ => ⟨hh, by simp [hn], ih σ₂ hv⟩
-    | _ => exact fun h => h
-  | _ => cases b <;> exact fun h => h
-
 theorem Compatible.reindexHom_iff (σ₁ : Γ₂ ⟶ Γ₁) (a b : Shape Γ₁) (σ₂ : Γ₃ ⟶ Γ₂) :
     Compatible σ₂ (a.reindexHom σ₁) (b.reindexHom σ₁) ↔ Compatible (σ₂ ≫ σ₁) a b := by
   induction a generalizing b Γ₃ with

@@ -28,6 +28,4 @@ theorem le_antisymm (h : l₁ ≤ l₂) (h' : l₂ ≤ l₁) : l₁ ≈ l₂ :=
 theorem equiv_iff_le_le : l₁ ≈ l₂ ↔ l₁ ≤ l₂ ∧ l₂ ≤ l₁ :=
   ⟨fun h => ⟨h.le, h.ge⟩, fun h => le_antisymm h.1 h.2⟩
 
-theorem le_max_left (l₁ l₂ : RawLevel ℓ) : l₁ ≤ l₁.max l₂ := fun _ => Nat.le_max_left _ _
-
 end Metalean.RawLevel

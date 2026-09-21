@@ -65,11 +65,6 @@ theorem lower (I : ΩIdeal R X) (f : Y ⟶ X) {a b : R.obj (op Y)}
 theorem natural (I : ΩIdeal R X) (f : Y ⟶ X) (g : Z ⟶ Y) (a : R.obj (op Y)) :
     I.mem f a → I.mem (g ≫ f) (R.map g.op a) := I.val.natural f g a
 
-def fibre (I : ΩIdeal R X) (f : Y ⟶ X) :
-    Order.Ideal (R.obj (op Y)) :=
-  ⟨⟨{a | I.mem f a}, fun _ _ h hb => I.lower f h hb⟩,
-    ⟨(⊥ : R.obj (op Y)), I.bottom f⟩, fun _ ha _ hb => I.property f ha hb⟩
-
 @[simp]
 theorem val_mem (I : ΩIdeal R X) (f : Y ⟶ X) (a : R.obj (op Y)) :
     I.val.mem f a ↔ I.mem f a := Iff.rfl
