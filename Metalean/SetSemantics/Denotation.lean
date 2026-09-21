@@ -76,14 +76,16 @@ def AtomsMap (pre : ζ₁ ⟶ ζ₂) (ε₁ : Atom ζ₁ ℓ → ZFSet) (ε₂ :
   ε₂ ∘ Atom.map pre = ε₁
 
 theorem AtomsMap.trans {pre₁ : ζ₁ ⟶ ζ₂} {pre₂ : ζ₂ ⟶ ζ₃}
-    {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet} {ε₃ : Atom ζ₃ ℓ → ZFSet}
-    (h₁ : AtomsMap pre₁ ε₁ ε₂)
-    (h₂ : AtomsMap pre₂ ε₂ ε₃) :
+    {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet} {ε₃ : Atom ζ₃ ℓ → ZFSet} :
+    AtomsMap pre₁ ε₁ ε₂ →
+    AtomsMap pre₂ ε₂ ε₃ →
     AtomsMap (pre₁ ≫ pre₂) ε₁ ε₃ := by
+  intro h₁ h₂
   funext a
-  have h : a.map (pre₁ ≫ pre₂) = (a.map pre₁).map pre₂ :=
-    (Atom.functor ℓ).map_comp_apply pre₁ pre₂ a
-  exact (congrArg ε₃ h).trans ((congrFun h₂ _).trans (congrFun h₁ a))
+  calc
+    _ = _ := congrArg ε₃ <| (Atom.functor ℓ).map_comp_apply pre₁ pre₂ a
+    _ = _ := congrFun h₂ _
+    _ = _ := congrFun h₁ a
 
 namespace Expr
 
