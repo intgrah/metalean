@@ -39,6 +39,6 @@ def Con : Prop :=
 theorem consistency : Con := by
   intro ζ E pre hax hE
   have m := Env.Model.classical.{0}.extend pre hax hE
-  exact con_ordered m.atoms zeroNs m.semDecls m.semDeclRules hE
+  exact con_ordered zeroNs m.semDecls m.semDeclRules hE
 
 end Metalean
