@@ -22,16 +22,17 @@ namespace Metalean
 
 open ClassicalEnv in
 noncomputable def Env.Model.classical : Model.{u} ClassicalEnv.E :=
-  let pre : Env.nil.as ⟶ env₄.as := .step (.step (.step (.step .refl)))
+  let pre : Env.nil.as ⟶ env₄.as := Prefix.refl.step.step.step.step
   have hfree : pre.Forall fun entry => ¬ IsAxiom entry := by
     (repeat constructor) <;> nofun
-  let m₄ := Model.nil.extend pre hfree wf₄
-  let m₅ := m₄.addAxiom (quotSound_valid m₄ (by simp! [Env.get, Entry.block]))
-  let m₆ := m₅.addAxiom (propext_valid m₅
-    (by simp! [Env.get, Entry.block])
-    (by simp! [Env.get, Entry.block]))
-  let m₇ := m₆.addAxiom (classicalChoice_valid m₆ (by
-    simp [Env.get, Entry.map, Entry.block]))
+  let m := Model.nil
+  let m₄ := m.extend pre hfree wf₄
+  let m₅ := m₄.addAxiom
+    (quotSound_valid m₄ (by simp! [Env.get, Entry.block]))
+  let m₆ := m₅.addAxiom
+    (propext_valid m₅ (by simp! [Env.get, Entry.block]) (by simp! [Env.get, Entry.block]))
+  let m₇ := m₆.addAxiom
+    (classicalChoice_valid m₆ (by simp [Env.get, Entry.map, Entry.block]))
   m₇
 
 def Con : Prop :=
