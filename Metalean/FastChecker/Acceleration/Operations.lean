@@ -92,7 +92,7 @@ theorem RedSpec.natOp₂ {G : FCtx} {pos : Nat} {f : Nat → Nat → Nat} (num�
   intro h ζ E n Γ e₁ t hS hd he
   obtain ⟨_, _, _, hη, hηOp, rfl⟩ := hd.op₂_natLit_inv
   exact ⟨_, .natLit hη,
-    Defeq.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηOp) he⟩
+    Defeq.retype hS.wf hS.ctxWF (h.eq num₁ num₂ hS.env hS.wf hS.trust hη hηOp) he⟩
 
 theorem RedSpec.boolOp {G : FCtx} {pos : Nat} {f : Nat → Nat → Bool} (num₁ num₂ : Nat) :
     BoolOpSpec L F pos f →
@@ -103,7 +103,7 @@ theorem RedSpec.boolOp {G : FCtx} {pos : Nat} {f : Nat → Nat → Bool} (num₁
   have ⟨_, hbool⟩ := h.boolSig
   have ⟨_, hηBool, _⟩ := hS.env.inductive hbool
   exact ⟨_, FExpr.Denotes.boolLit hηBool _,
-    Defeq.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηBool hηOp) he⟩
+    Defeq.retype hS.wf hS.ctxWF (h.eq num₁ num₂ hS.env hS.wf hS.trust hη hηBool hηOp) he⟩
 
 theorem RedSpec.zeroLit {G : FCtx} {I : FInductive}
     (hfe : F[L.nat]? = some (.inductive Literals.Nat.sig I)) :
@@ -159,6 +159,6 @@ theorem RedSpec.succArg {G : FCtx} {I : FInductive} {x y : FExpr}
     exact h₀
   have ⟨_, hy', hc'⟩ := h hS (by simpa using hrecFdsd ⟨0, by decide⟩) hx
   exact ⟨_, FExpr.Denotes.succ hη hy',
-    Defeq.retype hS.ordered hS.wf (Literals.natSuccDF hc') he⟩
+    Defeq.retype hS.wf hS.ctxWF (Literals.natSuccDF hc') he⟩
 
 end Metalean.FastChecker

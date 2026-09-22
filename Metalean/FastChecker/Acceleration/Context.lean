@@ -125,7 +125,7 @@ structure NatAt (L : Literals) (F : FEnv) {ζ : Sigs} (E : Env ζ)
     (ηNat : Head ζ (.inductive Literals.Nat.sig)) {ℓ n : Nat} (Γ : Ctx ζ ℓ 0 n)
     (x y : Expr ζ ℓ n) : Prop where
   env : FEnv.Denotes L F E
-  ordered : EnvWF E
+  wf : EnvWF E
   trust : L.NatTrust E
   nat : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩
   varX : E[Γ] ⊢ x : Literals.natType ηNat
@@ -139,7 +139,7 @@ theorem NatAt.eq {Γ : Ctx ζ ℓ 0 n} {ft fe₁ fe₂ : FExpr} {t e₁ e₂ : E
     Instantiated L E x y fe₂ e₂ →
     E[Γ] ⊢ e₁ ≡ e₂ : t := by
   intro ha h ht h₁ h₂
-  have hlev := (h (natCtxSem ha.nat ha.ordered ha.env ha.trust) ht.denotes h₁.denotes h₂.denotes).instLevel
+  have hlev := (h (natCtxSem ha.nat ha.wf ha.env ha.trust) ht.denotes h₁.denotes h₂.denotes).instLevel
     (fun p : Param 0 => (p.elim0 : Level ℓ))
   rw [natCtx'_instL] at hlev
   have hres := hlev.substitution (natSubstWF ha.varX ha.varY)

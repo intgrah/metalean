@@ -113,7 +113,7 @@ def checkIdx (G : FCtx) (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts)
     have ⟨is', hisD, hisT⟩ := TypedSpec.fixArgs hS his₀.size
       (fun e i => I.indexType (⟦ls' ·⟧) s σ e i) his₀.denotes
       (fun _ he i => hI.indexType hus hus' hps s ⟨his₀.size, he⟩ i)
-      (fun _ i he => Inductive.indexType_isType hidx i hS.wf hσ he)
+      (fun _ i he => Inductive.indexType_isType hidx i hS.ctxWF hσ he)
       h
     ⟨is', ⟨his₀.size, hisD⟩, hisT⟩⟩
 
@@ -416,7 +416,7 @@ def checkInductive (ι : IndSig) (fI : FInductive) :
     have hI₁ : FInductive.Denotes L ⟨ζ, E⟩ fI { I₀ with params := Δp, indices := Δi } :=
       ⟨hΔp, hI₀.indicesSize, hΔi, hI₀.level, hI₀.ctorsSize, hI₀.ctorsRow, hI₀.ctors⟩
     have hH : HeaderWF E ({ I₀ with params := Δp, indices := Δi } : Inductive ζ ι) :=
-      ⟨hSp.wf, hwfi⟩
+      ⟨hSp.ctxWF, hwfi⟩
     have hcs := fun t c => hctors t c hSp hI₁ hH (hI₀.ctors t c)
     choose cs hcsD hcsWF using hcs
     exact ⟨{ I₀ with params := Δp, indices := Δi, ctors := cs },

@@ -50,8 +50,10 @@ inductive IsAxiom : {ζ : Sigs} → {sig : Sig} → Entry ζ sig → Prop
   | intro {ζ : Sigs} {ℓ : Nat} (t : Expr ζ ℓ 0) : IsAxiom (.axiom t)
 
 noncomputable def Env.Model.extend {E₁ : Env ζ₁} {E₂ : Env ζ₂}
-    (m : Model.{u} E₁) (pre : E₁.as ⟶ E₂.as)
-    (h : pre.Forall fun entry => ¬ IsAxiom entry) (hE : EnvWF E₂) : Model.{u} E₂ := by
+    (pre : E₁.as ⟶ E₂.as)
+    (h : pre.Forall fun entry => ¬ IsAxiom entry) (hE : EnvWF E₂)
+    (m : Model E₁) :
+    Model E₂ := by
   induction pre with
   | refl => exact m
   | @step ζ₂ sig E₁ E₂ entry pre ih =>
@@ -62,7 +64,7 @@ noncomputable def Env.Model.extend {E₁ : Env ζ₁} {E₂ : Env ζ₂}
       have .step hprefix _ := h
       hprefix
     have hpre : EnvWF E₂ := hE.comap (.step .refl)
-    let m := ih m hprefix hpre
+    let m := ih hprefix hpre m
     cases entry with
     | «axiom» type => exact (have .step _ hfree := h; hfree (.intro type)).elim
     | «opaque» => exact m.addOpaque hpre hwf

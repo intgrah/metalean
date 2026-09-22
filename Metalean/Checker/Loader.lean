@@ -19,13 +19,13 @@ open Frontend
 structure State where
   {ζ : Sigs}
   env : Env ζ
-  ordered : EnvWF env
+  wf : EnvWF env
   table : Table := ∅
   definitions : Export.Definitions := ∅
 
 def State.initial : State where
   env := .nil
-  ordered := .nil
+  wf := .nil
 
 def checkLevelParams (lps : List Name) : Except Failure Unit := do
   if lps.eraseDups.length != lps.length then
@@ -41,7 +41,7 @@ def extend (st : State) {sig : Sig} (entry : Entry st.ζ sig)
     (hwf : EntryWF st.env entry) : State where
   ζ := st.ζ.snoc sig
   env := st.env.snoc entry
-  ordered := st.ordered.snoc hwf
+  wf := st.wf.snoc hwf
   table := st.table
   definitions := st.definitions
 
@@ -53,7 +53,7 @@ def stepAxiom (st : State) (c : Export.ConstantDecl) : Except Failure State := d
   checkLevelParams c.levelParams
   let t ← translateClosed st c.levelParams c.type
   let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkAxiom st.ordered t
+  let ⟨hwf⟩ ← checkAxiom st.wf t
   pure (extend { st with table } (.axiom t) hwf)
 
 def stepDef (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
@@ -62,7 +62,7 @@ def stepDef (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
   let t ← translateClosed st c.levelParams c.type
   let e ← translateClosed st c.levelParams value
   let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkDef st.ordered t e
+  let ⟨hwf⟩ ← checkDef st.wf t e
   let definitions := st.definitions.insert c.name (c.levelParams, value)
   pure (extend { st with table, definitions } (.def t e) hwf)
 
@@ -72,7 +72,7 @@ def stepOpaque (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
   let t ← translateClosed st c.levelParams c.type
   let e ← translateClosed st c.levelParams value
   let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkOpaque st.ordered t e
+  let ⟨hwf⟩ ← checkOpaque st.wf t e
   pure (extend { st with table } (.opaque t) hwf)
 
 def stepQuot (st : State) (c : Export.ConstantDecl) : Export.QuotKind → Except Failure State
@@ -113,13 +113,13 @@ def stepInductive (st : State) (types : List Export.InductiveType)
       let some order := result.metaOrders[s]?.bind (·[c]?) | throw .internal
       if table.contains name then throw (.reject .duplicateName)
       table := table.insert name (.ctor pos s c order)
-  let ⟨levels, ⟨hwf⟩⟩ ← checkPreInductive st.ordered result.pre
+  let ⟨levels, ⟨hwf⟩⟩ ← checkPreInductive st.wf result.pre
   pure (extend { st with table } (.inductive (result.pre.withLevels levels)) hwf)
 
 def stepTheorem (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
     Except Failure State := do
   checkLevelParams c.levelParams
-  unless ← isProp st.ordered (← translateClosed st c.levelParams c.type) do
+  unless ← isProp st.wf (← translateClosed st c.levelParams c.type) do
     throw (.reject .nonPropTheorem)
   stepOpaque st c value
 

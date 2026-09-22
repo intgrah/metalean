@@ -221,7 +221,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν) :
     ε[ν; γ]⟦.falseTy⟧ = ∅ :=
   Aczel.pi_truth_id_eq_falsum
 
-theorem con_ordered {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (ν : Param 0 → Nat) :
+theorem con_wf {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (ν : Param 0 → Nat) :
     SemDecls E ε ν →
     SemDeclRules E ε ν →
     EnvWF E →

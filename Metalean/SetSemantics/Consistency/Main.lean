@@ -26,7 +26,7 @@ noncomputable def Env.Model.classical : Model.{u} classicalEnv :=
   have hfree : pre.Forall fun entry => ¬ IsAxiom entry := by
     (repeat constructor) <;> nofun
   let m := Model.nil
-  let m := m.extend pre hfree (classicalEnv_ordered.comap (.step (.step (.step .refl))))
+  let m := m.extend pre hfree (classicalEnv_wf.comap (.step (.step (.step .refl))))
   let m := m.addAxiom (Quot.Sound.valid m)
   let m := m.addAxiom (Propext.valid m)
   let m := m.addAxiom (Choice.valid m)
@@ -39,6 +39,6 @@ def Con : Prop :=
 theorem consistency : Con := by
   intro ζ E pre hax hE
   have m := Env.Model.classical.{0}.extend pre hax hE
-  exact con_ordered zeroNs m.semDecls m.semDeclRules hE
+  exact con_wf zeroNs m.semDecls m.semDeclRules hE
 
 end Metalean
