@@ -19,8 +19,7 @@ open ZFSet
 variable {ζ ζ₁ ζ₂ : Sigs}
 
 noncomputable def Env.Model.addQuotient {pre : Env ζ}
-    {ηeq : Head ζ (.inductive Eq.sig)} (m : Env.Model.{u} pre)
-    (hwf : Entry.WFStrong pre (.quot ηeq)) :
+    {ηeq : Head ζ (.inductive Eq.sig)} (m : Env.Model.{u} pre) (hwf : EntryWF pre (.quot ηeq)) :
     Env.Model.{u} (pre.snoc (.quot ηeq)) := by
   have heq : Eq.Sem m.atoms ηeq :=
     have .quot hblock := hwf
@@ -56,7 +55,7 @@ noncomputable def Env.Model.extend {E₁ : Env ζ₁} {E₂ : Env ζ₂}
   induction pre with
   | refl => exact m
   | @step ζ₂ sig E₁ E₂ entry pre ih =>
-    have hwf : Entry.WFStrong E₂ entry :=
+    have hwf : EntryWF E₂ entry :=
       have .snoc _ hwf := ho
       hwf
     have hprefix : pre.Forall fun entry => ¬ IsAxiom entry :=

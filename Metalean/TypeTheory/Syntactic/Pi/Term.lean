@@ -31,22 +31,21 @@ def lam (T : Repr Γ) : Tm_ (⟨Γ.as.snoc T.wf⟩ : CtxCat E ℓ) → Tm_ Γ :=
       have ⟨_, hB⟩ := R₁.tyWF
       Quotient.sound ⟨IsTypeEq.forallE_cod ht hty, .lamDF ht hB hB hval hval⟩
 
-theorem lam_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ₛ T₁.term ≡ T₂.term typ)
+theorem lam_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ T₂.term typ)
     (c : Tm_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
     T₂.lam ((Tm E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ.as h)).op c) =
       T₁.lam c := by
   induction c using Quotient.inductionOn with
   | h R =>
     have ⟨_, hB⟩ := R.tyWF
-    have hty : E[Γ.as.ctx] ⊢ₛ .forallE T₂.term (R.ty.subst Subst.id) ≡
+    have hty : E[Γ.as.ctx] ⊢ .forallE T₂.term (R.ty.subst Subst.id) ≡
         .forallE T₁.term R.ty typ := by
       rw [Expr.subst_id]
-      exact IsTypeEq.forallE_dom h.symm (DefeqStrong.snocConvTy h hB)
-    have hval : E[Γ.as.ctx] ⊢ₛ .lam T₂.term (R.val.subst Subst.id) ≡ .lam T₁.term R.val :
+      exact IsTypeEq.forallE_dom h.symm (Defeq.snocConvTy h hB)
+    have hval : E[Γ.as.ctx] ⊢ .lam T₂.term (R.val.subst Subst.id) ≡ .lam T₁.term R.val :
         .forallE T₂.term (R.ty.subst Subst.id) := by
       rw [Expr.subst_id, Expr.subst_id]
-      exact IsTypeEq.lam_dom h.symm (DefeqStrong.snocConvTy h hB)
-        (DefeqStrong.snocConvTy h R.valWF)
+      exact IsTypeEq.lam_dom h.symm (Defeq.snocConvTy h hB) (Defeq.snocConvTy h R.valWF)
     exact Quotient.sound ⟨hty, hval⟩
 
 end Ty.Repr
@@ -91,11 +90,11 @@ open Ty
 namespace Repr
 
 theorem app_wf (T : Ty.Repr Γ) (B : Ty.Repr ⟨Γ.as.snoc T.wf⟩) {f a : Expr ζ ℓ Γ.as.len}
-    (hf : E[Γ.as.ctx] ⊢ₛ f : .forallE T.term B.term) (ha : E[Γ.as.ctx] ⊢ₛ a : T.term) :
-    E[Γ.as.ctx] ⊢ₛ .app f a : B.term.inst a :=
+    (hf : E[Γ.as.ctx] ⊢ f : .forallE T.term B.term) (ha : E[Γ.as.ctx] ⊢ a : T.term) :
+    E[Γ.as.ctx] ⊢ .app f a : B.term.inst a :=
   have ⟨_, ht⟩ := T.wf
   have ⟨_, hB⟩ := B.wf
-  .appDF ht hB hf ha (DefeqStrong.inst_congr hB ha)
+  .appDF ht hB hf ha (Defeq.inst_congr hB ha)
 
 def apply (T : Ty.Repr Γ) (B : Ty.Repr ⟨Γ.as.snoc T.wf⟩) (n m : Tm_ Γ)
     (hn : Tm.type n = ⟦T.forallE B⟧) (hm : Tm.type m = ⟦T⟧) : Tm_ Γ :=
@@ -104,18 +103,18 @@ def apply (T : Ty.Repr Γ) (B : Ty.Repr ⟨Γ.as.snoc T.wf⟩) (n m : Tm_ Γ)
       fun a₁ a₂ ha₁ _ ha => by
         have ⟨_, hB⟩ := B.wf
         have ⟨_, ht⟩ := T.wf
-        exact label_eq (.ofDefEq (DefeqStrong.inst_congr hB ha))
-          (.appDF ht hB hf ha (DefeqStrong.inst_congr hB ha)))
+        exact label_eq (.ofDefEq (Defeq.inst_congr hB ha))
+          (.appDF ht hB hf ha (Defeq.inst_congr hB ha)))
     fun f₁ f₂ hf₁ _ hf => by
       obtain ⟨a, ha, rfl⟩ := Tm.exists_label m T hm
       have ⟨_, hB⟩ := B.wf
       have ⟨_, ht⟩ := T.wf
-      exact label_eq (.ofDefEq (DefeqStrong.inst_congr hB ha))
-        (.appDF ht hB hf ha (DefeqStrong.inst_congr hB ha))
+      exact label_eq (.ofDefEq (Defeq.inst_congr hB ha))
+        (.appDF ht hB hf ha (Defeq.inst_congr hB ha))
 
 theorem apply_congr (T₁ T₂ : Ty.Repr Γ) (B₁ : Ty.Repr ⟨Γ.as.snoc T₁.wf⟩)
     (B₂ : Ty.Repr ⟨Γ.as.snoc T₂.wf⟩)
-    (hB : E[Γ.as.ctx.snoc T₁.term] ⊢ₛ B₁.term ≡ B₂.term typ) (n m : Tm_ Γ)
+    (hB : E[Γ.as.ctx.snoc T₁.term] ⊢ B₁.term ≡ B₂.term typ) (n m : Tm_ Γ)
     (hn₁ : Tm.type n = ⟦T₁.forallE B₁⟧) (hm₁ : Tm.type m = ⟦T₁⟧)
     (hn₂ : Tm.type n = ⟦T₂.forallE B₂⟧) (hm₂ : Tm.type m = ⟦T₂⟧) :
     apply T₁ B₁ n m hn₁ hm₁ = apply T₂ B₂ n m hn₂ hm₂ := by
@@ -143,14 +142,14 @@ def apply (L : Ty.Pair Γ) (n m : Tm_ Γ)
         rfl
       rw [Ty.elim_eq _ _ _ C₁ hC₁.symm, Ty.elim_eq _ _ _ _ hC₂.symm]
       exact Repr.apply_congr T₁ T₂ C₁ _
-        ((congrArg (E[Γ.as.ctx.snoc T₁.term] ⊢ₛ C₁.term ≡ · typ) (Expr.subst_id C₁.term)).mpr
+        ((congrArg (E[Γ.as.ctx.snoc T₁.term] ⊢ C₁.term ≡ · typ) (Expr.subst_id C₁.term)).mpr
           C₁.wf.isTypeEq) n m _ _ _ _
 
 theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (T : Ty.Repr Γ) (hT : yonedaEquiv A = ⟦T⟧)
     (C : Ty.Repr ⟨Γ.as.snoc T.wf⟩) (hC : ⟦C⟧ = T.comprehension.eval A B (Ty.comprehension_type_eq hT))
-    {f a : Expr ζ ℓ Γ.as.len} (hf : E[Γ.as.ctx] ⊢ₛ f : .forallE T.term C.term)
-    (ha : E[Γ.as.ctx] ⊢ₛ a : T.term) :
+    {f a : Expr ζ ℓ Γ.as.len} (hf : E[Γ.as.ctx] ⊢ f : .forallE T.term C.term)
+    (ha : E[Γ.as.ctx] ⊢ a : T.term) :
     apply ⟨A, B⟩ (label Γ.as hf) (label Γ.as ha)
       (Ty.piApp_eq_ofRepr A B T hT C hC).symm hT.symm = label Γ.as (Repr.app_wf T C hf ha) := by
   unfold apply
@@ -158,12 +157,12 @@ theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ
   rfl
 
 theorem apply_label (Γ : RawCtx E ℓ) {t e f : Expr ζ ℓ Γ.len}
-    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) (hf : E[Γ.ctx] ⊢ₛ f : .forallE t t')
-    (he : E[Γ.ctx] ⊢ₛ e : t) :
+    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ.ctx.snoc t] ⊢ t' : .sort v) (hf : E[Γ.ctx] ⊢ f : .forallE t t')
+    (he : E[Γ.ctx] ⊢ e : t) :
     apply (Ty.pairOfTyping Γ ht ht') (label Γ hf) (label Γ he)
         (Ty.piApp_ofTyping Γ ht ht').symm (CtxCat.rawComprehension_type ht).symm =
-      label Γ (.appDF ht ht' hf he (DefeqStrong.inst_congr ht' he)) :=
+      label Γ (.appDF ht ht' hf he (Defeq.inst_congr ht' he)) :=
   apply_eq _ _ ⟨t, u, ht⟩ (yonedaEquiv.apply_symm_apply _) ⟨t', v, ht'⟩
     (Ty.eval_familyOfTyping Γ ht ht').symm hf he
 

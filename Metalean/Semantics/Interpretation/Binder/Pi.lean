@@ -113,7 +113,7 @@ end CodeAssignment
 namespace RawFamily
 
 variable {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
-  (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+  (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
   (label : Ty.Pair Γ₁)
   (C : RawFamily Γ₁) {B : RawFamily (CtxCat.extension Γ₁ ht)} (hB : B.IsFinitary)
   (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hC : (C.app _ σ₁.op ρ).IsDirected)
@@ -209,7 +209,7 @@ namespace RawFamily
 variable {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
 
 private theorem normalizedBodyAction_value (D : CodeAssignment E ℓ)
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+    (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     (C : RawFamily Γ₁) (B : RawFamily (CtxCat.extension Γ₁ ht))
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) {Γ₃ : CtxCat E ℓ} (σ₂ : Γ₃ ⟶ Γ₂)
     (name : Tm_ Γ₃) (I : RawValue Γ₃) :
@@ -217,7 +217,7 @@ private theorem normalizedBodyAction_value (D : CodeAssignment E ℓ)
       sectionValue (CtxCat.rawComprehension ht) B (σ₂ ≫ σ₁) (ρ.pullback σ₂) name
         (D.rawExtend (C.app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) name I) := rfl
 
-theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     (C : RawFamily Γ₁) (B M : RawFamily (CtxCat.extension Γ₁ ht))
     (hBF : B.IsFinitary) (hMF : M.IsFinitary)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)

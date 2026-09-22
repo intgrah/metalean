@@ -10,7 +10,7 @@ public import Metalean.Semantics.Soundness.Telescope.Application
 public import Metalean.Semantics.Soundness.Function.Motive
 public import Metalean.Semantics.Soundness.Rules.Inductive
 public import Metalean.Semantics.Soundness.Telescope.Transport
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 import Metalean.Semantics.Soundness.Rules.Core
 import Metalean.Syntax.Substitution
 
@@ -42,8 +42,8 @@ theorem SemanticHom.ctorFieldTarget (h : IndData Γ η ls ps)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields) :
     SemanticHom (CtxCat.ctorFieldTargetHom h s c f) := by
   have hp := (SemanticHom.teleProjection ((h.block.ctors s c).fieldTele rfl Γ.as.wf h.param)).comp
-    (SemanticHom.teleProjection (fieldTelescopeStrong h s c f))
-  have he : RawCtx.Hom.teleProjection (fieldTelescopeStrong h s c f) ≫
+    (SemanticHom.teleProjection (fieldTelescope_wf h s c f))
+  have he : RawCtx.Hom.teleProjection (fieldTelescope_wf h s c f) ≫
       CtxCat.ctorFieldsProjection h s c = CtxCat.ctorFieldTargetHom h s c f := by
     apply RawCtx.Hom.ext
     funext v
@@ -52,7 +52,7 @@ theorem SemanticHom.ctorFieldTarget (h : IndData Γ η ls ps)
 
 end CoherentShape
 
-variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)
+variable (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I) (hblock : (E₂.get η).block = I.map pre.sigs)
   (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (h : IndData Γ η ls ps) (f : Fin (ι.ctors s c).nrecFields)
 
 include hsound hB hblock
@@ -70,14 +70,14 @@ theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).
       ((E₂.get η).block.indexType ls ((ι.ctors s c).recursiveTarget f)
         (fun p => ((Expr.var (p.castAdd (ι.ctors s c).nfields))).wkN ((ι.ctors s c).recursiveArity f))
         ((fun i => ((((E₂.get η).block.ctors s c).recursive f).indices i).instL ls)) i) := by
-  have hctx : E₁[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)] ⊢ₛ ok :=
+  have hctx : E₁[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)] ⊢ ok :=
     hB.ordinaryClosedWF s c ls (ι.ctors s c).nfields le_rfl
   have hΔ := ((hB.ctors s c).recursive f).tele.instLevel (Q := fun _ => True) ls fun _ => trivial
   have hi := ((hB.ctors s c).recursive f).instantiatedIndices (ls := ls) (σ := Subst.id)
     (ps := fun p => .var (p.castAdd (ι.ctors s c).nfields)) (fun _ => rfl) i
-    (SubstWFStrong.id hctx)
+    (SubstWF.id hctx)
   simp only [RecField.instantiatedTelescope_id, RecField.instantiatedIndices_id] at hi
-  have hfull := hΔ.appendCtxWFStrong hctx
+  have hfull := hΔ.appendCtxWF hctx
   have hp := hsound.properties hfull hi
   convert hp using 1 <;>
     simp [CtxCat.sourceFieldTarget, CtxCat.ctorSource, CtxCat.extendTele,
@@ -85,11 +85,11 @@ theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).
 
 theorem RawSound.recursiveSourceProperties :
     RawTeleProperties E₂ (CtxCat.ctorSource h s c).as.ctx (recursiveSourceTele E₂ η ls s c) := by
-  apply RawTeleProperties.ofTypes (recursiveSourceTeleStrong h s c)
+  apply RawTeleProperties.ofTypes (recursiveSourceTele_wf h s c)
   intro f
   erw [← Subst.liftN_eq_append, Subst.liftN_id]
   let Δ := (((E₂.get η).block.ctors s c).recursive f).tele.instL ls
-  have hΔ := sourceTelescopeStrong h s c f
+  have hΔ := sourceTelescope_wf h s c f
   have pΔ := hsound.recursiveArgumentProperties hB hblock s c h f
   let hI : IndTyping (CtxCat.sourceFieldTarget h s c f) η
       ((ι.ctors s c).recursiveTarget f) ls
@@ -122,7 +122,7 @@ theorem RawSound.fieldTeleProperties
   have hparams := hsound.paramTeleProperties hB hblock ls
   have hO := ((h.block.ctors s c).ordinaryTeleAux _ le_rfl).instLevel (Q := fun _ => True) ls fun _ => trivial
   have pO := hsound.ordinaryTeleProperties η hB hblock s c ls
-  let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong h.param).left⟩
+  let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEq h.param).left⟩
   have pf (p : Fin ι.nparams) : HasFixedness Γ (σ.subst p) ((Src.as.ctx.get p).subst σ.subst) := by
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact (pps p).fixed
@@ -132,9 +132,9 @@ theorem RawSound.fieldTeleProperties
   let R := recursiveSourceTele E₂ η ls s c
   have hctx : Src.as.ctx ++ O = (CtxCat.ctorSource h s c).as.ctx :=
     (Ctx.instL_append _ _ _).symm
-  have hR : WFTeleStrong E₂ (fun _ => True) (Src.as.ctx ++ O) R := by
+  have hR : TeleWF E₂ (fun _ => True) (Src.as.ctx ++ O) R := by
     rw [hctx]
-    exact recursiveSourceTeleStrong h s c
+    exact recursiveSourceTele_wf h s c
   have pR : RawTeleProperties E₂ (Src.as.ctx ++ O) R := by
     rw [hctx]
     exact hsound.recursiveSourceProperties hB hblock s c h
@@ -164,7 +164,7 @@ theorem RawSound.fieldTeleProperties
 theorem RawSound.fieldTelescopeProperties
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p)) :
     RawTeleProperties E₂ (CtxCat.ctorFields h s c).as.ctx (fieldTelescope h s c f) :=
-  (hsound.fieldTeleProperties hB hblock s c h pps).2.tele (sourceTelescopeStrong h s c f)
+  (hsound.fieldTeleProperties hB hblock s c h pps).2.tele (sourceTelescope_wf h s c f)
     (hsound.recursiveArgumentProperties hB hblock s c h f)
 
 theorem RawSound.fieldIndexProperties
@@ -176,7 +176,7 @@ theorem RawSound.fieldIndexProperties
           (fieldIndices h s c f) i) := by
   have pargs := hsound.recursiveArgumentProperties hB hblock s c h f
   have hg := (hsound.fieldTeleProperties hB hblock s c h pps).2.liftTele
-    (sourceTelescopeStrong h s c f) pargs
+    (sourceTelescope_wf h s c f) pargs
   have pi := hsound.recursiveIndexProperties hB hblock s c h f i
   have hp := hg.typed pi.toRawTyped
   simp only [Inductive.indexType_subst, RawCtx.Hom.liftTele, Expr.wkN_subst,
@@ -204,7 +204,7 @@ theorem RawSound.appliedMajorProperties (h : IndData Γ η ls ps) (hR : RawTeleP
     (hR.append (by simpa using (hsound.fieldTeleProperties hB hblock s c h pps).1))
     (fieldVar h s c (Fin.natAdd (ι.ctors s c).nfields f))
   rw [CtxCat.ctorFields_get_recursive, Ctor.recursiveFieldExpr_eq, fieldVar_natAdd] at pv
-  have ⟨_, _, hbody⟩ := Ctx.pi_isTypeStrong_inv _ (CtxCat.ctorFields h s c).as.wf
+  have ⟨_, _, hbody⟩ := Ctx.pi_isType_inv _ (CtxCat.ctorFields h s c).as.wf
     pv.syntactic.regular.choose_spec
   have hi := IndTyping.ofTyping (Γ₁ := CtxCat.ctorFieldTarget h s c f) h.block hbody
   have pp (p) := ((SemanticHom.ctorFieldTarget h s c f).typed (pps p)).term
@@ -214,7 +214,7 @@ theorem RawSound.appliedMajorProperties (h : IndData Γ η ls ps) (hR : RawTeleP
       ((ι.ctors s c).recursiveTarget f) c' ls).ideal) fun p => (pp p).ideal)
     (HasSubstitution.ind hi h.block fun p => (pp p).subst)
   have pΔ := hsound.fieldTelescopeProperties hB hblock s c h f pps
-  exact pv.toRawTyped.applyBound (fieldTelescopeStrong h s c f) pΔ hbody pbody
+  exact pv.toRawTyped.applyBound (fieldTelescope_wf h s c f) pΔ hbody pbody
 
 theorem RawSound.recursiveMotiveResult (h : IndData Γ η ls ps) (hR : RawTeleProperties E₂ .nil Γ.as.ctx)
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
@@ -270,7 +270,7 @@ theorem RawSound.caseTeleProperties (h : IndData Γ η ls ps) (hR : RawTelePrope
       fun f => by
         have pm := hsound.recursiveMotiveResult hB hblock s c h hR pps pms f
         have hp := RawInterpretationProperties.pi (fieldTelescope h s c f)
-          (fieldTelescopeStrong h s c f) (hsound.fieldTelescopeProperties hB hblock s c h f pps)
+          (fieldTelescope_wf h s c f) (hsound.fieldTelescopeProperties hB hblock s c h f pps)
           _ pm.typed pm.term
         simpa only [CtxCat.ctorFieldTargetHom_param] using hp)
 

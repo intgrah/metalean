@@ -31,7 +31,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
 namespace HasSubstitution
 
-theorem binder_body (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality Γ₁ t)
+theorem binder_body (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (htI : HasIdeality Γ₁ t)
     (he' : HasSubstitution (CtxCat.extension Γ₁ ht) e')
     (σ₁ : Γ₂.as ⟶ Γ₁.as) (σ₂ : Γ₃ ⟶ Γ₂) (ρs ρt : RawValuation Γ₃)
     (hσ₁ : SemanticSubstitution σ₁ σ₂ ρs ρt)
@@ -62,7 +62,7 @@ theorem binder_body (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality
     (σ₁.lift ⟨u, ht⟩) s.hom ((ρs.pullback σ₃).push J.val)
     ((ρt.pullback σ₃).push J.val) htest hhead).symm
 
-theorem lam (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality Γ₁ t)
+theorem lam (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (htI : HasIdeality Γ₁ t)
     (hts : HasSubstitution Γ₁ t) (he' : HasSubstitution (CtxCat.extension Γ₁ ht) e') :
     HasSubstitution Γ₁ (.lam t e') := by
   intro Γ₂ Γ₃ σ₁ σ₂ ρs ρt hσ₁ hρ
@@ -77,12 +77,12 @@ theorem lam (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (htI : HasIdeality Γ₁ t
   · exact (hts σ₁ σ₂ ρs ρt hσ₁ hρ).symm
   · exact binder_body ht htI he' σ₁ σ₂ ρs ρt hσ₁ hρ
 
-theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+theorem forallE (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (htI : HasIdeality Γ₁ t) (hts : HasSubstitution Γ₁ t)
     (hts' : HasSubstitution (CtxCat.extension Γ₁ ht) t') :
     HasSubstitution Γ₁ (.forallE t t') := by
   intro Γ₂ Γ₃ σ₁ σ₂ ρs ρt hσ₁ hρ
-  have htσ' : E[Γ₂.as.ctx.snoc (t.subst σ₁.subst)] ⊢ₛ t'.subst σ₁.subst.lift : .sort v :=
+  have htσ' : E[Γ₂.as.ctx.snoc (t.subst σ₁.subst)] ⊢ t'.subst σ₁.subst.lift : .sort v :=
     ht'.substitution (σ₁.lift ⟨u, ht⟩).typed
   change (rawInterpret (piLimit E ℓ) Γ₂ (.forallE (t.subst σ₁.subst) (t'.subst σ₁.subst.lift))).app _
     σ₂.op ρt = _
@@ -103,7 +103,7 @@ theorem piLimit_rawExtend_sort_le (r : Level ℓ) (n : Tm_ Γ₁)
     (piLimit E ℓ).rawExtend (ΩLower.principal (pointedOrder E ℓ) (sortAtom r)) n I ≤ I :=
   fun σ y hy => ((mem_piLimit_rawExtend_sort_iff r I n σ y).mp hy).1
 
-theorem SourceAdmissible.push_fixed_pullback (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (htI : HasIdeality Γ₁ t₁)
+theorem SourceAdmissible.push_fixed_pullback (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (htI : HasIdeality Γ₁ t₁)
     {σ₁ : Γ₂ ⟶ Γ₁} {ρ : RawValuation Γ₂} (hρ : SourceAdmissible σ₁ ρ)
     (J : Domain Γ₂) {label : Tm_ Γ₂}
     (hJ : (piLimit E ℓ).rawExtend ((rawInterpret (piLimit E ℓ) Γ₁ t₁).app _ σ₁.op ρ) label
@@ -116,21 +116,21 @@ theorem SourceAdmissible.push_fixed_pullback (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t�
   exact (hρ.pullback σ₂).push ht₁ s (htI _ _ (hρ.pullback σ₂))
     (J.pullback σ₂).property hJ'
 
-theorem HasIdeality.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v)
+theorem HasIdeality.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v)
     (htI : HasIdeality Γ₁ t₁) (htI' : HasIdeality (CtxCat.extension Γ₁ ht₁) t₁') :
     HasIdeality Γ₁ (.forallE t₁ t₁') := by
   intro Γ₂ σ ρ hρ
   rw [rawInterpret_forallE (piLimit E ℓ) ht₁ ht₁']
   exact rawPi_isDirected _ _ (htI σ ρ hρ) (RawFamily.bodyAction_isIdealValued ht₁ htI htI' σ ρ hρ)
 
-theorem HasIdeality.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (htI : HasIdeality Γ₁ t₁)
+theorem HasIdeality.lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (htI : HasIdeality Γ₁ t₁)
     (heI' : HasIdeality (CtxCat.extension Γ₁ ht₁) e₁') : HasIdeality Γ₁ (.lam t₁ e₁') := by
   intro Γ₂ σ ρ hρ
   rw [rawInterpret_lam (piLimit E ℓ) ht₁]
   exact RawAction.abstraction_isDirected _ (RawFamily.bodyAction_isIdealValued ht₁ htI heI' σ ρ hρ)
 
-theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
-    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v)
+theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
+    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v)
     (htI : HasIdeality Γ₁ t₁) (htsort' : HasFixedness (CtxCat.extension Γ₁ ht₁) t₁' (.sort v)) :
     HasFixedness Γ₁ (.forallE t₁ t₁') (.sort (.imax u v)) := by
   intro Γ₂ _ σ₁ ρ hρ
@@ -171,8 +171,8 @@ theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
     have ⟨_, hcode⟩ := (mem_piLimit_rawExtend_sort_iff _ _ _ _ _).mp hmem
     rwa [hv] at hcode
 
-theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
-    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v) (he₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ e₁' : t₁')
+theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
+    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v) (he₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ e₁' : t₁')
     {σ : Γ₂ ⟶ Γ₁} {m : Tm_ Γ₂} (s : Raw.ContextSection ht₁ σ m) :
     (Tm E ℓ).map s.hom.op (Tm.label (CtxCat.extension Γ₁ ht₁).as he₁') =
       Tm.apply ((Ty.pairPresheaf E ℓ).map σ.op (Ty.pairOfTyping Γ₁.as ht₁ ht₁'))
@@ -181,7 +181,7 @@ theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
             exact congrArg ((Ty E ℓ).map σ.op) (Ty.piApp_ofTyping Γ₁.as ht₁ ht₁').symm)
         (s.type_eq.trans (yonedaEquiv_naturality _ σ)) := by
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-  have hlift := SubstWFStrong.lift ⟨u, ht₁⟩ σ.typed
+  have hlift := SubstWF.lift ⟨u, ht₁⟩ σ.typed
   have htσ := ht₁.substitution σ.typed
   have htσ' := ht₁'.substitution hlift
   have heσ' := he₁'.substitution hlift
@@ -196,13 +196,12 @@ theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
   refine Eq.trans (Tm.label_eq ?_ ?_)
     (Tm.apply_label Γ₂.as htσ htσ' (.lamDF htσ htσ' htσ' heσ' heσ') harg).symm
   · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
-      IsTypeEq.ofDefEq (DefeqStrong.inst_congr htσ' harg)
+      IsTypeEq.ofDefEq (Defeq.inst_congr htσ' harg)
   · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
-      (DefeqStrong.beta htσ htσ' heσ' harg (DefeqStrong.inst_congr htσ' harg)
-        (DefeqStrong.inst_congr heσ' harg)).symm
+      (Defeq.beta htσ htσ' heσ' harg (Defeq.inst_congr htσ' harg) (Defeq.inst_congr heσ' harg)).symm
 
-theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v)
-    (he₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ e₁' : t₁')
+theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v)
+    (he₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ e₁' : t₁')
     (htI : HasIdeality Γ₁ t₁) (htI' : HasIdeality (CtxCat.extension Γ₁ ht₁) t₁')
     (heI' : HasIdeality (CtxCat.extension Γ₁ ht₁) e₁')
     (heF' : HasFixedness (CtxCat.extension Γ₁ ht₁) e₁' t₁') :
@@ -241,7 +240,7 @@ theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁'
 namespace HasEquality
 
 theorem normalizedBodyAction_contextConversion
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u) (htI : HasIdeality Γ₁ t₁)
+    (ht : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ : .sort u) (htI : HasIdeality Γ₁ t₁)
     (hteq : HasEquality Γ₁ t₁ t₂)
     (he' : HasEquality (CtxCat.extension Γ₁ ht.left) e₁' e₂')
     (he₂' : HasSubstitution (CtxCat.extension Γ₁ ht.left) e₂')
@@ -277,7 +276,7 @@ theorem normalizedBodyAction_contextConversion
       Expr.subst_id] at h
     exact (he' _ _ hadm).trans h.symm
 
-theorem lam (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u) (htI : HasIdeality Γ₁ t₁)
+theorem lam (ht : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ : .sort u) (htI : HasIdeality Γ₁ t₁)
     (hteq : HasEquality Γ₁ t₁ t₂)
     (he' : HasEquality (CtxCat.extension Γ₁ ht.left) e₁' e₂')
     (he₂' : HasSubstitution (CtxCat.extension Γ₁ ht.left) e₂') :
@@ -286,9 +285,9 @@ theorem lam (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u) (htI : HasIdea
   rw [rawInterpret_lam (piLimit E ℓ) ht.left, rawInterpret_lam (piLimit E ℓ) ht.right]
   exact RawAction.abstraction_eq_of_eq_on_ideals (normalizedBodyAction_contextConversion ht htI hteq he' he₂' σ ρ hρ)
 
-theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u)
-    (ht' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' ≡ t₂' : .sort v)
-    (ht₂' : E[Γ₁.as.ctx.snoc t₂] ⊢ₛ t₁' ≡ t₂' : .sort v)
+theorem forallE (ht : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ : .sort u)
+    (ht' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' ≡ t₂' : .sort v)
+    (ht₂' : E[Γ₁.as.ctx.snoc t₂] ⊢ t₁' ≡ t₂' : .sort v)
     (htI : HasIdeality Γ₁ t₁) (hteq : HasEquality Γ₁ t₁ t₂)
     (hteq' : HasEquality (CtxCat.extension Γ₁ ht.left) t₁' t₂')
     (htR' : HasSubstitution (CtxCat.extension Γ₁ ht.left) t₂') :
@@ -302,20 +301,20 @@ theorem forallE (ht : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u)
 
 end HasEquality
 
-theorem RawInterpretationProperties.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
-    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v)
+theorem RawInterpretationProperties.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
+    (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v)
     (pt : RawInterpretationProperties Γ₁ t₁) (pt' : RawInterpretationProperties (CtxCat.extension Γ₁ ht₁) t₁') :
     RawInterpretationProperties Γ₁ (.forallE t₁ t₁') where
   ideal := HasIdeality.forallE ht₁ ht₁' pt.ideal pt'.ideal
   subst := HasSubstitution.forallE ht₁ ht₁' pt.ideal pt.subst pt'.subst
 
-theorem RawInterpretationProperties.lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u)
+theorem RawInterpretationProperties.lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
     (pt : RawInterpretationProperties Γ₁ t₁) (pe₁' : RawInterpretationProperties (CtxCat.extension Γ₁ ht₁) e₁') :
     RawInterpretationProperties Γ₁ (.lam t₁ e₁') where
   ideal := HasIdeality.lam ht₁ pt.ideal pe₁'.ideal
   subst := HasSubstitution.lam ht₁ pt.ideal pt.subst pe₁'.subst
 
-theorem RawTyped.lam (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+theorem RawTyped.lam (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     (pt : RawInterpretationProperties Γ₁ t)
     (pb : RawTyped (Γ₁.extension ht) e₁' t₁') :
     RawTyped Γ₁ (.lam t e₁') (.forallE t t₁') := by
@@ -351,9 +350,9 @@ theorem RawJudgment.lamDF (pt : RawJudgment Γ₁ t₁ t₂ (.sort u))
     pt'.left.ideal pe'.left.ideal pe'.fixed
 
 theorem HasEquality.eta
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+    (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (htI : HasIdeality Γ₁ t) (htI' : HasIdeality (Γ₁.extension ht) t')
-    (he : E[Γ₁.as.ctx] ⊢ₛ e : .forallE t t')
+    (he : E[Γ₁.as.ctx] ⊢ e : .forallE t t')
     (hEI : HasIdeality Γ₁ e) (hEF : HasFixedness Γ₁ e (.forallE t t'))
     (hER : HasSubstitution Γ₁ e) :
     HasEquality Γ₁ (.lam t (.app e.wk (.var (Fin.last Γ₁.as.len)))) e := by
@@ -398,7 +397,7 @@ theorem HasEquality.eta
     rw [pullback_application]
     symm
     dsimp only [RawFamily.bodySection, Eb]
-    have hvar := CtxWFStrong.varLast (Γ₁.as.wf.snoc ⟨u, ht⟩)
+    have hvar := CtxWF.varLast (Γ₁.as.wf.snoc ⟨u, ht⟩)
     rw [← Expr.subst_wk] at hvar
     rw [rawInterpret_app, RawFamily.application_value, rawInterpret_var, Var.db_last,
       HasSubstitution.wk_value ht hER s.hom _ (by rw [s.over]; exact (hρ.pullback σ₂).pullback σ₃),
@@ -441,11 +440,11 @@ theorem HasEquality.eta
   rw [rawInterpret_lam (piLimit E ℓ) ht]
   exact (U.abstraction_eq_of_ideal_values K hvalues).trans (congrArg Subtype.val hF)
 
-theorem RawInterpretationProperties.app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+theorem RawInterpretationProperties.app (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (htI : HasIdeality Γ₁ t) (htI' : HasIdeality (Γ₁.extension ht) t')
     (pf : RawTyped Γ₁ f (.forallE t t')) (pe : RawInterpretationProperties Γ₁ e₁)
-    (he : E[Γ₁.as.ctx] ⊢ₛ e₁ : t) :
+    (he : E[Γ₁.as.ctx] ⊢ e₁ : t) :
     RawInterpretationProperties Γ₁ (.app f e₁) ∧
     ∀ {Γ₂ : CtxCat E ℓ} (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ),
       (rawInterpret (piLimit E ℓ) Γ₁ (.app f e₁)).app _ σ.op ρ =
@@ -473,8 +472,8 @@ theorem RawInterpretationProperties.app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u
       (pf.term.ideal _ _ hρ) (pe.ideal _ _ hρ) _ (pf.fixed pf.typed _ _ hρ)
       (pf.term.subst σ₁ σ₂ ρs ρt hσ₁ hρ) (pe.subst σ₁ σ₂ ρs ρt hσ₁ hρ)
 
-theorem RawTyped.app (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+theorem RawTyped.app (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (pt' : RawInterpretationProperties (Γ₁.extension ht) t')
     (pf : RawTyped Γ₁ f (.forallE t t')) (pe : RawTyped Γ₁ e₁ t)
     (pr : RawInterpretationProperties Γ₁ (t'.inst e₁)) :
@@ -568,7 +567,7 @@ theorem RawJudgment.eta (pt : RawJudgment Γ₁ t t (.sort u)) :
     exact (Expr.subst_wk _).symm
   have pvar : RawJudgment (Γ₁.extension pt.syntactic) (.var (Fin.last Γ₁.as.len))
       (.var (Fin.last Γ₁.as.len)) t.wk :=
-    ⟨CtxWFStrong.varLast (Γ₁.as.wf.snoc ⟨_, pt.syntactic⟩), ptw.left,
+    ⟨CtxWF.varLast (Γ₁.as.wf.snoc ⟨_, pt.syntactic⟩), ptw.left,
       .var _ _, .var _ _, .refl _ _, .varLast pt.syntactic pt.left.subst⟩
   have pbody := appDF ptw pw pew pvar (by rwa [Expr.inst_wkFrom_last])
   rw [Expr.inst_wkFrom_last] at pbody

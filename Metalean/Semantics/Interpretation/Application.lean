@@ -20,8 +20,8 @@ open CategoryTheory CodeAssignment
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
   {t f e : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ ℓ (Γ₁.as.len + 1)} {u v : Level ℓ} {k : Nat}
 
-theorem rawInterpret_app_subst (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v) (he : E[Γ₁.as.ctx] ⊢ₛ e : t)
+theorem rawInterpret_app_subst (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v) (he : E[Γ₁.as.ctx] ⊢ e : t)
     (σ₁ : Γ₂.as ⟶ Γ₁.as) (σ₂ : Γ₃ ⟶ Γ₂) (ρs ρt : RawValuation Γ₃)
     (hC : ((rawInterpret (piLimit E ℓ) Γ₁ t).app _ (σ₂ ≫ RawCtx.toCtx.map σ₁).op ρs).IsDirected)
     (hD : (RawFamily.normalizedBodyAction (piLimit E ℓ) (CtxCat.rawComprehension ht) (rawInterpret (piLimit E ℓ) Γ₁ t)

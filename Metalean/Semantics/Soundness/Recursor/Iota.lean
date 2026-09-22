@@ -77,7 +77,7 @@ theorem CoherentShape.CtorInstance.fields_admissible (h : IndData Γ₁ η ls ps
   exact ⟨hs, ha⟩
 
 variable (σ₁ : Γ₂.as ⟶ Γ₁.as) (hps : ∀ p, (ps p).subst σ₁.subst = ps₂ p)
-  (hidx : ∀ i, E₂[Γ₂.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).targetIndex ls ps₂ inst.fds i :
+  (hidx : ∀ i, E₂[Γ₂.as.ctx] ⊢ ((E₂.get η).block.ctors s c).targetIndex ls ps₂ inst.fds i :
     (E₂.get η).block.indexType ls s ps₂ (((E₂.get η).block.ctors s c).targetIndex ls ps₂ inst.fds) i)
 
 include hps in
@@ -86,7 +86,7 @@ theorem CoherentShape.CtorInstance.recovery_index_name (h : IndData Γ₁ η ls 
     (hi : ((E₂.get η).block.ctors s c).recoveryIndex f = some i) :
     inst.typed.names (Fin.castAdd (ι.ctors s c).nrecFields f) = Tm.label Γ₂.as (hidx i) := by
   have ht := (h.block.ctors s c).targetIndex i
-    (Ctor.forall_ordinarySubst le_rfl (fun p => Ctor.WFStrong.fieldParams _ p h.param)
+    (Ctor.forall_ordinarySubst le_rfl (fun p => CtorWF.fieldParams _ p h.param)
       (CtorInstance.generic h s c).typed.ordinary)
   have he : ((E₂.get η).block.ctors s c).targetIndex ls ((ι.ctors s c).fieldParams ps)
         (ι.ctors s c).fieldOrdinary i =
@@ -145,7 +145,7 @@ theorem proofConstructor_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel :
       simpa using hnames
     · rwa [hsect]
 
-variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)
+variable (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I) (hblock : (E₂.get η).block = I.map pre.sigs)
 
 include hsound hB hblock
 
@@ -169,22 +169,22 @@ theorem RawSound.genericIHProperties (h : RecData Γ₁ η ls l ps ms mins) (hR 
   have pmr := hsound.recursiveMotiveResult hB hblock s c h.toIndData hR pps pms f
   rw [CtorInstance.generic_ih_eq_lam h.toIndData s c f ms mins,
     Ctor.ihType, CtorInstance.generic_ihType_eq_pi h.toIndData s c f ms]
-  exact RawTyped.ctxLam _ (fieldTelescopeStrong h.toIndData s c f) pΔ ⟨h'.typed, pmr.term, pe, fe⟩
+  exact RawTyped.ctxLam _ (fieldTelescope_wf h.toIndData s c f) pΔ ⟨h'.typed, pmr.term, pe, fe⟩
 
 theorem RawSound.recursiveField_prop (h : IndData Γ₁ η ls ps) (fds : Fin (ι.ctors s c).nfields → Expr ζ₂ ℓ Γ₁.as.len)
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pf : ∀ f, RawTyped Γ₁ (fds f) (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f))
     (herased : (E₂.get η).block.level.inst ls = .zero) (f : Fin (ι.ctors s c).nrecFields) :
-    E₂[Γ₁.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f : .prop ∧
+    E₂[Γ₁.as.ctx] ⊢ ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f : .prop ∧
       HasFixedness Γ₁ (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f) .prop := by
   have pσ := Ctor.forall_ordinarySubst (motive := fun e _ t => RawTyped Γ₁ e t)
     (ps₂ := ps) (fds₂ := fds) le_rfl pps pf
   let σ : Γ₁.as ⟶ (CtxCat.ctorSource h s c).as := ⟨_, fun v => (pσ v).typed⟩
   have pΔ := (SemanticHom.ofImages (CtxCat.ctorSource h s c).as.wf
     (hsound.ordinaryPrefixProperties η hB hblock s c ls _ le_rfl) σ
-    (fun v => (pσ v).term) (fun v => (pσ v).fixed)).tele (sourceTelescopeStrong h s c f)
+    (fun v => (pσ v).term) (fun v => (pσ v).fixed)).tele (sourceTelescope_wf h s c f)
       (hsound.recursiveArgumentProperties hB hblock s c h f)
-  have hσ : E₂[Γ₁.as.ctx] ⊢ₛ Fin.append ps fds ⊣
+  have hσ : E₂[Γ₁.as.ctx] ⊢ Fin.append ps fds ⊣
       Ctx.instL ls ((E₂.get η).block.params ++ ((E₂.get η).block.ctors s c).ordinaryTele) := σ.typed
   have hΔ := (((h.block.ctors s c).recursive f).tele.instLevel (Q := fun _ => True) ls
     fun _ => trivial).substitution hσ
@@ -193,20 +193,20 @@ theorem RawSound.recursiveField_prop (h : IndData Γ₁ η ls ps) (fds : Fin (ι
       (fun p => (ps p).wkN ((ι.ctors s c).recursiveArity f))
       ((((E₂.get η).block.ctors s c).recursive f).instantiatedIndices ls (Fin.append ps fds)) :=
     ⟨fun p => by
-      have hp : E₂[T.as.ctx] ⊢ₛ (ps p).wkN ((ι.ctors s c).recursiveArity f) :
+      have hp : E₂[T.as.ctx] ⊢ (ps p).wkN ((ι.ctors s c).recursiveArity f) :
           ((E₂.get η).block.paramType ls ps p).wkN ((ι.ctors s c).recursiveArity f) :=
         (pps p).typed.wkN
       simp only [Inductive.paramType_wkN] at hp
       exact hp,
     fun i => ((h.block.ctors s c).recursive f).instantiatedIndices (fun p => Fin.append_left _ _ p) i
       (by simpa only using hσ)⟩
-  have hb : E₂[T.as.ctx] ⊢ₛ .ind η ((ι.ctors s c).recursiveTarget f) ls
+  have hb : E₂[T.as.ctx] ⊢ .ind η ((ι.ctors s c).recursiveTarget f) ls
       (fun p => (ps p).wkN ((ι.ctors s c).recursiveArity f))
       ((((E₂.get η).block.ctors s c).recursive f).instantiatedIndices ls (Fin.append ps fds)) :
       .sort ((E₂.get η).block.level.inst ls) := .indDF hI.param hI.index
   have pb : HasFixedness _ _ _ := HasFixedness.ind hI h.block
   rw [herased] at hb pb
-  exact ⟨Ctx.pi_propStrong _ T.as.wf hb, HasFixedness.pi_prop _ hΔ pΔ _ hb pb⟩
+  exact ⟨Ctx.pi_prop _ T.as.wf hb, HasFixedness.pi_prop _ hΔ pΔ _ hb pb⟩
 
 theorem recoveredField_eq_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel : l.rel = true)
     (herased : (E₂.get η).block.level.inst ls = .zero) (inst : CtorInstance Γ₁ η s c ls ps)
@@ -274,7 +274,7 @@ theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTel
   let Δ := (E₂.get η).block.caseTele η ls ps ms s c
   have hΔ := h.block.caseTele (s := s) (c := c) Γ₁.as.wf h.param h.motive
   have pΔ := hsound.caseTeleProperties hB hblock s c h.toIndData hR pps pms
-  have ⟨_, _, hsort⟩ := Ctx.pi_isTypeStrong_inv Δ Γ₁.as.wf (h.case s c).regular.choose_spec
+  have ⟨_, _, hsort⟩ := Ctx.pi_isType_inv Δ Γ₁.as.wf (h.case s c).regular.choose_spec
   have pt := hsound.caseTypeProperties hB hblock h.toIndData pps pms s c
   have pσ := Ctor.forall_caseSubst (motive := fun _ e t => RawTyped Γ₁ e t)
     (fun v => (RawJudgment.var hR v).toRawTyped) pf prf pih
@@ -294,7 +294,7 @@ theorem rawInterpret_iotaRhs (h : RecData Γ₁ η ls l ps ms mins) (hR : RawTel
   have hn := Ctor.forall_caseSubst (Γ := Γ₁.as.ctx) (ctor := (E₂.get η).block.ctors s c)
     (η := η) (ls := ls) (ps := ps) (ms := ms) (fds := inst.fds) (recFds := inst.recFds)
     (ihs := inst.ih l ms mins)
-    (motive := fun v e t => ∀ ht : E₂[Γ₁.as.ctx] ⊢ₛ e : t, Tm.label Γ₁.as ht = ns v)
+    (motive := fun v e t => ∀ ht : E₂[Γ₁.as.ctx] ⊢ e : t, Tm.label Γ₁.as ht = ns v)
     (by intro v ht; simp [ns]; rfl) (by intro f ht; simp [ns])
     (by intro f ht; simp [ns]) (by intro f ht; simp [ns])
   have hargs : (fun i => σ.subst ((Fin.natAdd Γ₁.as.len i).cast hk)) =
@@ -331,7 +331,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps inst.fds f))
     (prf : ∀ f, RawTyped Γ₁ (inst.recFds f)
       (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps inst.fds f))
-    (heq : E₂[Γ₁.as.ctx] ⊢ₛ .recr η s ls l ps ms mins
+    (heq : E₂[Γ₁.as.ctx] ⊢ .recr η s ls l ps ms mins
         (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)
         (.ctor η s c ls ps inst.fds inst.recFds) ≡
       (E₂.get η).block.iotaRhs η ls l ps ms mins s c inst.fds inst.recFds :
@@ -444,17 +444,17 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       ((inst.section gen.toRecData hr.recrHom hps).pullback σ₁).ProjectsFrom hstruct
         ((Tm E₂ ℓ).map σ'.op
           (Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.major (s := s)).resolve)) := by
-    have hA := hstruct.indTypeStrong gen.param
+    have hA := hstruct.indType gen.param
     have hi : (fun i => (Expr.var (RecrBinder.index (s := s) i).resolve :
         Expr ζ₂ ℓ (CtxCat.recr hd ls s).as.len)) = hstruct.indices :=
       funext hstruct.no_indices.elim
-    have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .var (RecrBinder.major (s := s)).resolve :
+    have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
         .ind η s ls (fun p => .var (RecrBinder.param p).resolve) hstruct.indices := by
       have hm := gen.major
       rwa [hi] at hm
     rw [← Tm.label_eq_var hvar rfl]
     have hrec : inst.recFds = hstruct.recursive := funext hstruct.no_recursive.elim
-    have hmaj : E₂[Γ₁.as.ctx] ⊢ₛ .ctor η s c ls ps inst.fds hstruct.recursive :
+    have hmaj : E₂[Γ₁.as.ctx] ⊢ .ctor η s c ls ps inst.fds hstruct.recursive :
         .ind η s ls ps hstruct.indices := by
       have hm := hr.major
       rwa [hrec, show (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i) = hstruct.indices from
@@ -534,7 +534,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
   have hn : Tm.label (t := Inductive.motiveResult (ms s)
       (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)
       (.ctor η s c ls ps inst.fds inst.recFds)) Γ₁.as heq.left = Tm.label Γ₁.as prhs.typed :=
-    Tm.label_eq (IsTypeStrong.isTypeEq heq.left.regular) heq
+    Tm.label_eq (IsType.isTypeEq heq.left.regular) heq
   rw [hsound.recr_value hB hblock hr pargs fargs hrel σ₁ ρ₁ hρ, hpayload, hn]
   exact prhs.fixed prhs.typed σ₁ ρ₁ hρ
 

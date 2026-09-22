@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Structure
+public import Metalean.Typing.Structure
 public import Metalean.Semantics.Soundness.Constructor.Types
 public import Metalean.Semantics.Soundness.Telescope.Transport
 
@@ -21,9 +21,9 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
   {Γ : CtxCat E₂ ℓ} {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ.as.len} {maj : Expr ζ₂ ℓ Γ.as.len}
 
 theorem structure_projection_type_properties
-    (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+    (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hs : (E₂.get η).block.IsStructure s c) (hB : (E₂.get η).block.WFStrong E₂)
+    (hs : (E₂.get η).block.IsStructure s c) (hB : InductiveWF E₂ (E₂.get η).block)
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
     (f : Fin (ι.ctors s c).nfields)
     (pprevious : ∀ g : Fin f.val, RawTyped Γ
@@ -45,11 +45,9 @@ theorem structure_projection_type_properties
     (fun v => (pσ v).term) (fun v => (pσ v).fixed)).typed (pfield hctx).toRawTyped
   simpa [σ, hs.projType_eq, Ctor.ordinaryFieldExpr] using hp
 
-theorem structure_field_telescope_properties
-    (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
-    (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hB : (E₂.get η).block.WFStrong E₂)
-    (hps : ∀ p, E₂[Γ.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
+theorem structure_field_telescope_properties (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
+    (hblock : (E₂.get η).block = I.map pre.sigs) (hB : InductiveWF E₂ (E₂.get η).block)
+    (hps : ∀ p, E₂[Γ.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
     (pps : ∀ p, RawInterpretationProperties Γ (ps p))
     (hpsfixed : ∀ p, HasFixedness Γ (ps p) ((E₂.get η).block.paramType ls ps p)) :
     RawTeleProperties E₂ Γ.as.ctx (((E₂.get η).block.ctors s c).ordinaryFieldTele η ls ps) := by
@@ -58,7 +56,7 @@ theorem structure_field_telescope_properties
   have ppctx := hsound.paramTeleProperties hI hblock ls
   have ppfields := hsound.ordinaryTeleProperties η hI hblock s c ls
   let Src : CtxCat E₂ ℓ := ⟨_, hctx⟩
-  let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
+  let σ : Γ.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEq hps).left⟩
   have hp (v : Var Src.as.len) : HasFixedness Γ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     exact hpsfixed v

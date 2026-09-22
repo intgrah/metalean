@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Builtin.Iff
-public import Metalean.Typing.Env
+public import Metalean.Typing.Env.Defs
 import Metalean.Level.Order
 
 @[expose] public section
@@ -32,7 +32,7 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   · exact Subsingleton.elim _ _
   · exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WFStrong E :=
+theorem wf (E : Env ζ) : InductiveWF E block :=
   ⟨.snoc (.snoc .nil ⟨_, trivial, .sortDF⟩) ⟨_, trivial, .sortDF⟩,
     fun _ => .nil,
     fun _ _ => {

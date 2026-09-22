@@ -15,10 +15,10 @@ namespace Metalean.CoherentShape
 
 open CategoryTheory Presheaf
 
-variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {ctx : Ctx ζ ℓ 0 n} {hctx : E[ctx] ⊢ₛ ok}
+variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {ctx : Ctx ζ ℓ 0 n} {hctx : E[ctx] ⊢ ok}
   {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
 
-judgement SourceAdmissible : {n : Nat} → {ctx : Ctx ζ ℓ 0 n} → {hctx : E[ctx] ⊢ₛ ok} →
+judgement SourceAdmissible : {n : Nat} → {ctx : Ctx ζ ℓ 0 n} → {hctx : E[ctx] ⊢ ok} →
     {Γ₂ : CtxCat E ℓ} → (Γ₂ ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ)) → RawValuation Γ₂ → Prop where
 
   ──────────────────── nil {Γ₂ : CtxCat E ℓ} (σ : Γ₂ ⟶ CtxCat.nil E ℓ) (ρ : RawValuation Γ₂)
@@ -32,15 +32,15 @@ judgement SourceAdmissible : {n : Nat} → {ctx : Ctx ζ ℓ 0 n} → {hctx : E[
     ((rawInterpret (CodeAssignment.piLimit E ℓ) ⟨ctx, hctx⟩ t).app _
       (σ ≫ CtxCat.rawProjection ⟨ctx, hctx⟩ ht).op ρ.tail)
     ((Tm E ℓ).map σ.op (CtxCat.rawComprehension ht).generic) (ρ 0) = ρ 0
-  ──────────────────── cons {n : Nat} {ctx : Ctx ζ ℓ 0 n} {hctx : E[ctx] ⊢ₛ ok} {Γ₂ : CtxCat E ℓ}
+  ──────────────────── cons {n : Nat} {ctx : Ctx ζ ℓ 0 n} {hctx : E[ctx] ⊢ ok} {Γ₂ : CtxCat E ℓ}
     {t : Expr ζ ℓ n} {u : Level ℓ}
-    (ht : E[ctx] ⊢ₛ t : .sort u) (σ : Γ₂ ⟶ CtxCat.extension ⟨ctx, hctx⟩ ht)
+    (ht : E[ctx] ⊢ t : .sort u) (σ : Γ₂ ⟶ CtxCat.extension ⟨ctx, hctx⟩ ht)
     (ρ : RawValuation Γ₂)
   SourceAdmissible σ ρ
 
 namespace SourceAdmissible
 
-theorem tail (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+theorem tail (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     {σ : Γ₂ ⟶ CtxCat.extension Γ₁ ht} {ρ : RawValuation Γ₂}
     (hρ : SourceAdmissible σ ρ) :
     SourceAdmissible (σ ≫ CtxCat.rawProjection Γ₁ ht) ρ.tail := by
@@ -64,7 +64,7 @@ theorem pullback {σ₁ : Γ₂ ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ)} {ρ : RawV
       simpa [RawValuation.pullback] using h
 
 theorem push {σ : Γ₂ ⟶ Γ₁} {ρ : RawValuation Γ₂}
-    (hρ : SourceAdmissible σ ρ) (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+    (hρ : SourceAdmissible σ ρ) (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     {label : Tm_ Γ₂} (s : Raw.ContextSection ht σ label)
     {X : RawValue Γ₂}
     (htideal : ((rawInterpret (CodeAssignment.piLimit E ℓ) Γ₁ t).app _ σ.op ρ).IsDirected)

@@ -32,7 +32,7 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
   | .const (kind := .opaque) _ _ => ⊥
   | .ind η s ls ps is =>
       ⨆ h : IndTyping Γ₁ η s ls ps is,
-        ⨆ _hB : (E.get η).block.WFStrong E,
+        ⨆ _hB : InductiveWF E (E.get η).block,
           RawFamily.ind h.code fun c =>
             RawFamily.closedApps
               (rawInterpret (CtxCat.nil E ℓ) (((E.get η).block.ctorTypeFn s c).instL fun p => ls p))
@@ -55,29 +55,29 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
   | .quotMk η u α _ a =>
       match u.rel with
       | false => ⊥
-      | true => ⨆ ha : E[Γ₁.as.ctx] ⊢ₛ a : α, RawFamily.quotMk η (Tm.label Γ₁.as ha) (rawInterpret Γ₁ a)
+      | true => ⨆ ha : E[Γ₁.as.ctx] ⊢ a : α, RawFamily.quotMk η (Tm.label Γ₁.as ha) (rawInterpret Γ₁ a)
   | .quotLift η l₁ l₂ α r β f hr a =>
       match l₁.rel with
       | false =>
-        ⨆ h : E[Γ₁.as.ctx] ⊢ₛ Expr.quotLift η l₁ l₂ α r β f hr a : β,
+        ⨆ h : E[Γ₁.as.ctx] ⊢ Expr.quotLift η l₁ l₂ α r β f hr a : β,
           RawFamily.decode D (Tm.label Γ₁.as h) (rawInterpret Γ₁ β)
             (RawFamily.proofApplication (Ty.ofTyping Γ₁.as (QuotTyping.ofLift h).carrier)
               (rawInterpret Γ₁ f))
       | true =>
-        ⨆ h : E[Γ₁.as.ctx] ⊢ₛ Expr.quotLift η l₁ l₂ α r β f hr a : β,
+        ⨆ h : E[Γ₁.as.ctx] ⊢ Expr.quotLift η l₁ l₂ α r β f hr a : β,
           RawFamily.decode D (Tm.label Γ₁.as h) (rawInterpret Γ₁ β)
             (RawFamily.quotLift D η (rawInterpret Γ₁ α) (rawInterpret Γ₁ f) (rawInterpret Γ₁ a))
   | .quotInd _ _ _ _ _ _ _ => ⊥
   | .app f e =>
       RawFamily.application (rawInterpret Γ₁ f) (rawInterpret Γ₁ e) (RawFamily.sourceQuery Γ₁ e)
   | .lam t e' =>
-      ⨆ h : {u : Level ℓ // E[Γ₁.as.ctx] ⊢ₛ t : .sort u},
+      ⨆ h : {u : Level ℓ // E[Γ₁.as.ctx] ⊢ t : .sort u},
         have ⟨_, ht⟩ := h
         RawFamily.abstraction D (CtxCat.rawComprehension ht) (rawInterpret Γ₁ t)
           (rawInterpret (Γ₁.extension ht) e')
   | .forallE t t' =>
       ⨆ h : {p : Level ℓ × Level ℓ //
-          E[Γ₁.as.ctx] ⊢ₛ t : .sort p.1 ∧ E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort p.2},
+          E[Γ₁.as.ctx] ⊢ t : .sort p.1 ∧ E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort p.2},
         have ⟨_, ht, ht'⟩ := h
         RawFamily.pi D (CtxCat.rawComprehension ht) (Ty.pairOfTyping Γ₁.as ht ht')
           (rawInterpret Γ₁ t) (rawInterpret (Γ₁.extension ht) t')
@@ -166,7 +166,7 @@ theorem rawInterpret_sort_fixed (l : Level ℓ) (σ : Γ₂ ⟶ Γ₁) (ρ : Raw
     CodeAssignment.rawExtend_toLower, CodeAssignment.piLimit_extend_sort, hrel,
     universeIdeal_principal .sort]
 
-theorem rawInterpret_lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) :
+theorem rawInterpret_lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) :
     rawInterpret D Γ₁ (.lam t₁ e') =
       RawFamily.abstraction D (CtxCat.rawComprehension ht₁) (rawInterpret D Γ₁ t₁)
         (rawInterpret D (CtxCat.extension Γ₁ ht₁) e') := by
@@ -174,7 +174,7 @@ theorem rawInterpret_lam (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) :
   exact RawFamily.iSup_eq ⟨u, ht₁⟩ fun _ => rfl
 
 theorem rawInterpret_forallE
-    (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ₛ t₁' : .sort v) :
+    (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v) :
     rawInterpret D Γ₁ (.forallE t₁ t₁') =
       RawFamily.pi D (CtxCat.rawComprehension ht₁) (Ty.pairOfTyping Γ₁.as ht₁ ht₁')
         (rawInterpret D Γ₁ t₁) (rawInterpret D (CtxCat.extension Γ₁ ht₁) t₁') := by
@@ -184,7 +184,7 @@ theorem rawInterpret_forallE
 theorem rawInterpret_ind_typed {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
     {ls : Fin ι.nlevels → Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len}
     {is : Fin (ι.nindices s) → Expr ζ ℓ Γ₁.as.len} (h : IndTyping Γ₁ η s ls ps is)
-    (hB : (E.get η).block.WFStrong E) :
+    (hB : InductiveWF E (E.get η).block) :
     rawInterpret D Γ₁ (.ind η s ls ps is) =
       RawFamily.ind h.code fun c =>
         RawFamily.closedApps
@@ -236,7 +236,7 @@ theorem rawInterpret_quot (h : QuotTyping Γ₁ u α r) :
   rw [rawInterpret]
   exact RawFamily.iSup_eq h fun _ => rfl
 
-theorem rawInterpret_quotMk (ha : E[Γ₁.as.ctx] ⊢ₛ a : α) (hu : u.rel = true) :
+theorem rawInterpret_quotMk (ha : E[Γ₁.as.ctx] ⊢ a : α) (hu : u.rel = true) :
     rawInterpret D Γ₁ (.quotMk η u α r a) =
       RawFamily.quotMk η (Tm.label Γ₁.as ha) (rawInterpret D Γ₁ a) := by
   rw [rawInterpret, hu]
@@ -246,7 +246,7 @@ theorem rawInterpret_quotMk_prop (hu : u.rel = false) :
     rawInterpret D Γ₁ (.quotMk η u α r a) = ⊥ := by
   rw [rawInterpret, hu]
 
-theorem rawInterpret_quotLift_typed (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : β)
+theorem rawInterpret_quotLift_typed (hlift : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a : β)
     (hu : u.rel = true) :
     rawInterpret D Γ₁ (.quotLift η u v α r β f h a) =
       RawFamily.decode D (Tm.label Γ₁.as hlift) (rawInterpret D Γ₁ β)
@@ -254,8 +254,8 @@ theorem rawInterpret_quotLift_typed (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η
   rw [rawInterpret, hu]
   exact RawFamily.iSup_eq hlift fun _ => rfl
 
-theorem rawInterpret_quotLift_proof (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : β)
-    (hu : u.rel = false) (hα : E[Γ₁.as.ctx] ⊢ₛ α : .sort u) :
+theorem rawInterpret_quotLift_proof (hlift : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a : β)
+    (hu : u.rel = false) (hα : E[Γ₁.as.ctx] ⊢ α : .sort u) :
     rawInterpret D Γ₁ (.quotLift η u v α r β f h a) =
       RawFamily.decode D (Tm.label Γ₁.as hlift) (rawInterpret D Γ₁ β)
         (RawFamily.proofApplication (Ty.ofTyping Γ₁.as hα) (rawInterpret D Γ₁ f)) := by

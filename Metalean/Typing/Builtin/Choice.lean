@@ -6,13 +6,13 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Builtin.Choice
-public import Metalean.Strong.Defs
+public import Metalean.Typing.Defs
 
 @[expose] public section
 
 namespace Metalean.Choice
 
-theorem isType : Propext.env[.nil] ⊢ₛ type typ :=
+theorem isType : Propext.env[.nil] ⊢ type typ :=
   ⟨_, .forallEDF .sortDF
     (.forallEDF
       (.indDF (η := nonemptyHead) (s := ⟨0, by decide⟩)

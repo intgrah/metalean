@@ -8,7 +8,7 @@ module
 public import Metalean.Semantics.Soundness.Constructor.Types
 public import Metalean.Semantics.Soundness.Judgment
 public import Metalean.Semantics.Soundness.Telescope.Decoder
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 import Metalean.Semantics.Domain.Decoder.FixedPoint
 import Metalean.Semantics.Domain.Inductive.Decoder
 import Metalean.Semantics.Interpretation.Computation
@@ -45,7 +45,7 @@ noncomputable def ctorFieldTypes {Γ₂ : CtxCat E₂ ℓ}
       rw [RawFamily.closedApps_value]
       exact rawApps_isDirected ⟨_, pfn d _ _ (.nil _ _)⟩ _ fun p => ⟨_, hps p⟩)
 
-theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.get η).block.WFStrong E₂)
+theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : InductiveWF E₂ (E₂.get η).block)
     (hfn : ∀ c : Fin (ι.nctors s), HasIdeality (CtxCat.nil E₂ ℓ)
       (((E₂.get η).block.ctorTypeFn s c).instL fun p => ls p))
     (hp : ∀ p, HasIdeality Γ₁ (ps₁ p)) :
@@ -55,7 +55,7 @@ theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.ge
     exact RawValue.ind_isDirected _ fun c =>
       (ctorFieldTypes hfn (fun p => Tm.label Γ₁.as (h.param p)) σ ρ (fun p => hp p σ ρ hρ) c).property
 
-theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.get η).block.WFStrong E₂)
+theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : InductiveWF E₂ (E₂.get η).block)
     (hp : ∀ p, HasSubstitution Γ₁ (ps₁ p)) :
     HasSubstitution Γ₁ (.ind η s ls ps₁ is₁) := by
   intro Γ₂ Γ₃ σ₁ σ₂ ρs ρt hsub hρ
@@ -75,7 +75,7 @@ theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E�
     · funext p
       exact hp p σ₁ σ₂ ρs ρt hsub hρ
 
-theorem HasFixedness.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.get η).block.WFStrong E₂) :
+theorem HasFixedness.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : InductiveWF E₂ (E₂.get η).block) :
     HasFixedness Γ₁ (.ind η s ls ps₁ is₁) (.sort ((E₂.get η).block.level.inst ls)) := by
   intro _ _ σ₁ ρ _
   rw [rawInterpret_sort, rawInterpret_ind_typed _ h hB]
@@ -88,7 +88,7 @@ theorem HasFixedness.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : (E₂.g
     refine Shape.IsCode.of_le hle (.ind _ ?_)
     rw [IndCode.rel_map, IndCode.rel_map, h.code_rel]
 
-theorem RawJudgment.indDF (hB : (E₂.get η).block.WFStrong E₂)
+theorem RawJudgment.indDF (hB : InductiveWF E₂ (E₂.get η).block)
     (pfn : ∀ c : Fin (ι.nctors s), RawInterpretationProperties (CtxCat.nil E₂ ℓ)
       (((E₂.get η).block.ctorTypeFn s c).instL fun p => ls p)) :
     (∀ p, RawJudgment Γ₁ (ps₁ p) (ps₂ p) ((E₂.get η).block.paramType ls ps₁ p)) →
@@ -150,8 +150,8 @@ theorem RawInterpretationProperties.ctor (h : CtorTyping Γ₁ η s c ls ps₁ f
         | left f => simpa using (pf f).subst σ₁ σ₂ ρs ρt hσ₁ hρ
         | right f => simpa using (pr f).subst σ₁ σ₂ ρs ρt hσ₁ hρ
 
-theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
-    (hblock : (E₂.get η).block = I.map pre.sigs) (hB : (E₂.get η).block.WFStrong E₂)
+theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
+    (hblock : (E₂.get η).block = I.map pre.sigs) (hB : InductiveWF E₂ (E₂.get η).block)
     (pps : ∀ p, RawTyped Γ₁ (ps₁ p) ((E₂.get η).block.paramType ls ps₁ p))
     (pf : ∀ f, RawTyped Γ₁ (fds₁ f) (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f))
     (pr : ∀ f, RawTyped Γ₁ (recFds₁ f) (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f)) :
@@ -162,8 +162,8 @@ theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
   have hT : IndTyping Γ₁ η s ls ps₁ (((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁) :=
     ⟨hps, fun i => (hB.ctors s c).targetIndex i (Ctor.forall_ordinarySubst le_rfl hps h₁.ordinary)⟩
   refine ⟨.ctorDF hps h₁.ordinary h₁.recursive
-      (fun f => (hB.ctors s c).ordinaryFieldExprStrong f hps h₁.ordinary)
-      (fun f => ((hB.ctors s c).recursiveFieldExprStrong rfl f Γ₁.as.wf hps h₁.ordinary).choose_spec)
+      (fun f => (hB.ctors s c).ordinaryFieldExpr f hps h₁.ordinary)
+      (fun f => ((hB.ctors s c).recursiveFieldExpr rfl f Γ₁.as.wf hps h₁.ordinary).choose_spec)
       (.indDF hT.param hT.index),
     ⟨HasIdeality.ind hT hB (fun d => (hsound.ctorTypeFnProperties η hI hblock s d ls).ideal)
       (fun p => (pps p).term.ideal), HasSubstitution.ind hT hB fun p => (pps p).term.subst⟩,
@@ -181,7 +181,7 @@ theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
     have hindices : (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i) =
         hs.indices := funext hs.no_indices.elim
     have hrecursive : recFds₁ = hs.recursive := funext hs.no_recursive.elim
-    have hctor : E₂[Γ₁.as.ctx] ⊢ₛ .ctor η s c ls ps₁ fds₁ hs.recursive :
+    have hctor : E₂[Γ₁.as.ctx] ⊢ .ctor η s c ls ps₁ fds₁ hs.recursive :
         .ind η s ls ps₁ hs.indices := by
       simpa [hindices, hrecursive] using ht
     let w : hT.code.StructWitness c (Tm.label Γ₁.as ht) := {
@@ -300,24 +300,23 @@ theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
         have ⟨is, hrec⟩ :=
           ((E₂.get η).block.ctors s c).recursiveFieldExpr_eq_ind η ls ps₁ fds₁ f harity
         have hfix := (pr f).fixed (pr f).typed σ ρ hρ
-        have ⟨v, hty⟩ := (hB.ctors s c).recursiveFieldExprStrong rfl f Γ₁.as.wf hps h₁.ordinary
+        have ⟨v, hty⟩ := (hB.ctors s c).recursiveFieldExpr rfl f Γ₁.as.wf hps h₁.ordinary
         rw [hrec] at hty
         conv_lhs at hfix =>
           arg 2
           rw [hrec, rawInterpret_ind_typed _ (IndTyping.ofTyping hB hty) hB, RawFamily.ind_value]
         rwa [piLimit_rawExtend_indValue_of_nonstructural _ (hrel' _) (hns' _)] at hfix
 
-theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
-    (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hB : (E₂.get η).block.WFStrong E₂) :
+theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
+    (hblock : (E₂.get η).block = I.map pre.sigs) (hB : InductiveWF E₂ (E₂.get η).block) :
     (∀ p, RawJudgment Γ₁ (ps₁ p) (ps₂ p) ((E₂.get η).block.paramType ls ps₁ p)) →
     (∀ f, RawJudgment Γ₁ (fds₁ f) (fds₂ f)
       (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f)) →
     (∀ f, RawJudgment Γ₁ (recFds₁ f) (recFds₂ f)
       (((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f)) →
-    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
+    (∀ f, E₂[Γ₁.as.ctx] ⊢ ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₁ fds₁ f ≡
       ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps₂ fds₂ f : .sort (fieldLevels f)) →
-    (∀ f, E₂[Γ₁.as.ctx] ⊢ₛ ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
+    (∀ f, E₂[Γ₁.as.ctx] ⊢ ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f ≡
       ((E₂.get η).block.ctors s c).recursiveFieldExpr η ls ps₂ fds₂ f : .sort (recFieldLevels f)) →
     RawJudgment Γ₁
       (.ind η s ls ps₁ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i)

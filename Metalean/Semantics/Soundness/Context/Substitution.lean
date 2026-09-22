@@ -120,8 +120,8 @@ end HasSubstitution
 namespace SemanticSubstitution
 
 theorem snoc {t : Expr ζ ℓ Γ₁.as.len} {e : Expr ζ ℓ Γ₂.as.len} {u : Level ℓ}
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (σ₁ : Γ₂.as ⟶ Γ₁.as)
-    (he : E[Γ₂.as.ctx] ⊢ₛ e : t.subst σ₁.subst) (pe : HasSubstitution Γ₂ e)
+    (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (σ₁ : Γ₂.as ⟶ Γ₁.as)
+    (he : E[Γ₂.as.ctx] ⊢ e : t.subst σ₁.subst) (pe : HasSubstitution Γ₂ e)
     (σ₂ : Γ₃ ⟶ Γ₂) (ρ₁ ρ₂ : RawValuation Γ₃) (htarget : SourceAdmissible σ₂ ρ₂)
     (htail : SemanticSubstitution σ₁ σ₂ ρ₁ ρ₂) :
     SemanticSubstitution (σ₁.snoc ⟨u, ht⟩ he) σ₂
@@ -143,7 +143,7 @@ theorem snoc {t : Expr ζ ℓ Γ₁.as.len} {e : Expr ζ ℓ Γ₂.as.len} {u : 
     simp
     exact htail σ₃ r hr σ₄ ρ₃ hσ hag hadm' v
 
-theorem lift {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
+theorem lift {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     (σ₁ : Γ₂.as ⟶ Γ₁.as) (σ₂ : Γ₃ ⟶ Γ₂.extension (ht.substitution σ₁.typed))
     (ρ₁ ρ₂ : RawValuation Γ₃)
     (htail : SemanticSubstitution σ₁ (σ₂ ≫ Γ₂.rawProjection (ht.substitution σ₁.typed)) ρ₁
@@ -193,7 +193,7 @@ theorem comp {σ₁ : Γ₂.as ⟶ Γ₁.as} {σ₂ : Γ₃.as ⟶ Γ₂.as} {σ
   rw [← Category.assoc]
   exact hvalue.trans hvar
 
-theorem ofHom {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
+theorem ofHom {n : Nat} {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ ok)
     (σ₁ : Γ₂.as ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ).as) (σ₂ : Γ₃ ⟶ Γ₂) (ρ : RawValuation Γ₃)
     (pσ₁ : ∀ v, HasSubstitution Γ₂ (σ₁.subst v)) (htarget : SourceAdmissible σ₂ ρ) :
     SemanticSubstitution σ₁ σ₂

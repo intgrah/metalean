@@ -20,7 +20,7 @@ open CategoryTheory Presheaf CodeAssignment
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
 
 theorem rawInterpret_forallE_decode {t : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ ℓ (Γ₁.as.len + 1)} {u v : Level ℓ}
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+    (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (pt : HasIdeality Γ₁ t) (pt' : HasIdeality (CtxCat.extension Γ₁ ht) t')
     (σ₁ : Γ₂ ⟶ CtxCat.extension Γ₁ ht) (ρ₂ : RawValuation Γ₂) (X : Domain Γ₂)
     (hρ : SourceAdmissible σ₁ (ρ₂.push X.val)) :
@@ -63,9 +63,9 @@ theorem rawInterpret_forallE_decode {t : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ
     exact hbody.trans (congrArg (fun Y => body.app _ σ₁.op (ρ₂.push Y)) hfixed)
 
 theorem rawInterpret_ctxPi_decode {k : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
+    (Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)) (hΔ : TeleWF E P Γ₁.as.ctx Δ)
     (hprops : RawTeleProperties E Γ₁.as.ctx Δ) (body : Expr ζ ℓ (Γ₁.as.len + k))
-    {v : Level ℓ} (hbody : E[(CtxCat.extendTele Γ₁ Δ hΔ).as.ctx] ⊢ₛ body : .sort v)
+    {v : Level ℓ} (hbody : E[(CtxCat.extendTele Γ₁ Δ hΔ).as.ctx] ⊢ body : .sort v)
     (pbody : HasIdeality (CtxCat.extendTele Γ₁ Δ hΔ) body)
     (σ₁ : Γ₂ ⟶ CtxCat.extendTele Γ₁ Δ hΔ) (ρ₁ : RawValuation Γ₂) (args : Fin k → Domain Γ₂)
     (hT : ((rawInterpret (piLimit E ℓ) Γ₁ (Ctx.pi body Δ)).app _
@@ -90,7 +90,7 @@ theorem rawInterpret_ctxPi_decode {k : Nat} {P : Level ℓ → Prop}
         (Category.comp_id σ₁)) hρ
   | snoc k Δ t ih =>
     let G := CtxCat.extendTele Γ₁ Δ hΔ.init
-    have ht : E[G.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have ht : E[G.as.ctx] ⊢ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     have pt : RawInterpretationProperties G t := hprops.last G.as.wf
     let σ₂ := σ₁ ≫ CtxCat.rawProjection G ht
     let argsInit : Fin k → Domain Γ₂ := fun i => args i.castSucc

@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Checker.DecEq
-public import Metalean.Strong.Context
+public import Metalean.Typing.Context
 public import Metalean.Control
 public import Metalean.Syntax.Reduction
 import Metalean.Meta.IfRfl

@@ -9,8 +9,8 @@ public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
 import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
 import Metalean.SetSemantics.Environment.Inductive.Rules.Constructor
 import Metalean.SetSemantics.InductiveComputation
-import Metalean.Strong.Inductive
-import Metalean.Strong.InstLevel
+import Metalean.Typing.Inductive
+import Metalean.Typing.InstLevel
 import Metalean.Syntax.Structure.Projection
 import Metalean.Syntax.Substitution
 
@@ -140,7 +140,7 @@ theorem ctorResult_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
 section
 
 variable (hdecl : SemDecls E₁ ε₁ zeroNs)
-  (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+  (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
 include hdecl hrule ho hB
 
 section

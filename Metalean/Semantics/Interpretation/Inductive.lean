@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Inductive
-public import Metalean.Strong.Telescope
+public import Metalean.Typing.Inductive
+public import Metalean.Typing.Telescope
 public import Metalean.Semantics.Domain.Constructors
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.Semantics.Interpretation.Family.Basic
@@ -28,8 +28,8 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 structure IndTyping (Γ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (s : Fin ι.nsorts)
     (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ Γ.as.len)
     (is : Fin (ι.nindices s) → Expr ζ ℓ Γ.as.len) : Prop where
-  param (p : Fin ι.nparams) : E[Γ.as.ctx] ⊢ₛ ps p : (E.get η).block.paramType ls ps p
-  index (i : Fin (ι.nindices s)) : E[Γ.as.ctx] ⊢ₛ is i : (E.get η).block.indexType ls s ps is i
+  param (p : Fin ι.nparams) : E[Γ.as.ctx] ⊢ ps p : (E.get η).block.paramType ls ps p
+  index (i : Fin (ι.nindices s)) : E[Γ.as.ctx] ⊢ is i : (E.get η).block.indexType ls s ps is i
 
 noncomputable def IndTyping.code {ls : Fin ι.nlevels → Level ℓ}
     {ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len} {is : Fin (ι.nindices s) → Expr ζ ℓ Γ₁.as.len}
@@ -41,19 +41,19 @@ namespace IndTyping
 variable {ls : Fin ι.nlevels → Level ℓ} {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len}
   {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ Γ₁.as.len}
 
-theorem ofTyping (hB : (E.get η).block.WFStrong E) {t : Expr ζ ℓ Γ₁.as.len}
-    (h : E[Γ₁.as.ctx] ⊢ₛ .ind η s ls ps₁ is₁ : t) : IndTyping Γ₁ η s ls ps₁ is₁ :=
-  have ⟨_, _, hps, his, _⟩ := DefeqStrong.ind_inv h
+theorem ofTyping (hB : InductiveWF E (E.get η).block) {t : Expr ζ ℓ Γ₁.as.len}
+    (h : E[Γ₁.as.ctx] ⊢ .ind η s ls ps₁ is₁ : t) : IndTyping Γ₁ η s ls ps₁ is₁ :=
+  have ⟨_, _, hps, his, _⟩ := Defeq.ind_inv h
   ⟨fun p => Inductive.paramType_conv hB p hps, fun i => Inductive.indexType_conv hB i hps his⟩
 
-theorem left (hps : ∀ p, E[Γ₁.as.ctx] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
-    (his : ∀ i, E[Γ₁.as.ctx] ⊢ₛ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) :
+theorem left (hps : ∀ p, E[Γ₁.as.ctx] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
+    (his : ∀ i, E[Γ₁.as.ctx] ⊢ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) :
     IndTyping Γ₁ η s ls ps₁ is₁ :=
   ⟨fun p => (hps p).left, fun i => (his i).left⟩
 
-theorem right (hB : (E.get η).block.WFStrong E)
-    (hps : ∀ p, E[Γ₁.as.ctx] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
-    (his : ∀ i, E[Γ₁.as.ctx] ⊢ₛ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) :
+theorem right (hB : InductiveWF E (E.get η).block)
+    (hps : ∀ p, E[Γ₁.as.ctx] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
+    (his : ∀ i, E[Γ₁.as.ctx] ⊢ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) :
     IndTyping Γ₁ η s ls ps₂ is₂ :=
   ⟨fun p => Inductive.paramType_conv hB p hps, fun i => Inductive.indexType_conv hB i hps his⟩
 
@@ -75,9 +75,9 @@ theorem code_rel (h : IndTyping Γ₁ η s ls ps₁ is₁) :
     h.code.rel = Level.rel ((E.get η).block.level.inst ls) :=
   rfl
 
-theorem code_congr (hB : (E.get η).block.WFStrong E)
-    (hps : ∀ p, E[Γ₁.as.ctx] ⊢ₛ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
-    (his : ∀ i, E[Γ₁.as.ctx] ⊢ₛ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i)
+theorem code_congr (hB : InductiveWF E (E.get η).block)
+    (hps : ∀ p, E[Γ₁.as.ctx] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p)
+    (his : ∀ i, E[Γ₁.as.ctx] ⊢ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i)
     (h₁ : IndTyping Γ₁ η s ls ps₁ is₁) (h₂ : IndTyping Γ₁ η s ls ps₂ is₂) : h₁.code = h₂.code := by
   simp only [code]
   congr 1
@@ -93,9 +93,9 @@ structure CtorTyping (Γ : CtxCat E ℓ) (η : Head ζ (.inductive ι)) (s : Fin
     (fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ Γ.as.len)
     (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ Γ.as.len) : Prop where
   ordinary (f : Fin (ι.ctors s c).nfields) :
-    E[Γ.as.ctx] ⊢ₛ fds f : ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f
+    E[Γ.as.ctx] ⊢ fds f : ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f
   recursive (f : Fin (ι.ctors s c).nrecFields) :
-    E[Γ.as.ctx] ⊢ₛ recFds f : ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f
+    E[Γ.as.ctx] ⊢ recFds f : ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f
 
 noncomputable def CtorTyping.names {c : Fin (ι.nctors s)} {ls : Fin ι.nlevels → Level ℓ}
     {ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len} {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ Γ₁.as.len}
@@ -114,28 +114,27 @@ variable {c : Fin (ι.nctors s)} {ls₁ ls₂ : Fin ι.nlevels → Level ℓ}
   {recFieldLevels : Fin (ι.ctors s c).nrecFields → Level ℓ}
 
 theorem left
-    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ fds₁ f ≡ fds₂ f :
+    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ fds₁ f ≡ fds₂ f :
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₁ ps₁ fds₁ f)
-    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ recFds₁ f ≡ recFds₂ f :
+    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ recFds₁ f ≡ recFds₂ f :
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f) :
     CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁ :=
   ⟨fun f => (hfields f).left, fun f => (hrecFields f).left⟩
 
 theorem right
-    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ fds₁ f ≡ fds₂ f :
+    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ fds₁ f ≡ fds₂ f :
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₁ ps₁ fds₁ f)
-    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ recFds₁ f ≡ recFds₂ f :
+    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ recFds₁ f ≡ recFds₂ f :
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f)
-    (hfieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢ₛ
+    (hfieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₁ ps₁ fds₁ f ≡
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₂ ps₂ fds₂ f : .sort (fieldLevels f))
-    (hrecFieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢ₛ
+    (hrecFieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f ≡
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₂ ps₂ fds₂ f : .sort (recFieldLevels f)) :
     CtorTyping Γ₁ η s c ls₂ ps₂ fds₂ recFds₂ :=
-  ⟨fun f => (IsTypeEq.ofDefEq (hfieldTypes f)).convStrong (hfields f).right,
-    fun f => (IsTypeEq.ofDefEq (hrecFieldTypes f)).convStrong
-      (hrecFields f).right⟩
+  ⟨fun f => (IsTypeEq.ofDefEq (hfieldTypes f)).conv (hfields f).right,
+    fun f => (IsTypeEq.ofDefEq (hrecFieldTypes f)).conv (hrecFields f).right⟩
 
 theorem subst (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (σ : Γ₂.as ⟶ Γ₁.as) :
     CtorTyping Γ₂ η s c ls₁ (fun p => (ps₁ p).subst σ.subst) (fun f => (fds₁ f).subst σ.subst)
@@ -155,14 +154,14 @@ theorem names_map (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (σ
     exact congr(Tm.label _ (t := $(by simp)) _)
 
 theorem names_congr
-    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ fds₁ f ≡ fds₂ f :
+    (hfields : ∀ f, E[Γ₁.as.ctx] ⊢ fds₁ f ≡ fds₂ f :
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₁ ps₁ fds₁ f)
-    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ₛ recFds₁ f ≡ recFds₂ f :
+    (hrecFields : ∀ f, E[Γ₁.as.ctx] ⊢ recFds₁ f ≡ recFds₂ f :
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f)
-    (hfieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢ₛ
+    (hfieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₁ ps₁ fds₁ f ≡
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls₂ ps₂ fds₂ f : .sort (fieldLevels f))
-    (hrecFieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢ₛ
+    (hrecFieldTypes : ∀ f, E[Γ₁.as.ctx] ⊢
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f ≡
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₂ ps₂ fds₂ f : .sort (recFieldLevels f))
     (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (h₁ : CtorTyping Γ₁ η s c ls₂ ps₂ fds₂ recFds₂) :

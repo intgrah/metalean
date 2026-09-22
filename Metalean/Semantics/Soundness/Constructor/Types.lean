@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Semantics.Soundness.Telescope.Beta
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 
 @[expose] public section
 
@@ -22,36 +22,36 @@ namespace CoherentShape
 
 def ctorTargetHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ ℓ Γ₁.as.len}
-    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
-    (hΔ : WFTeleStrong E₂ (fun _ => True) (Ctx.instL ls (E₂.get η).block.params)
+    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ ok)
+    (hΔ : TeleWF E₂ (fun _ => True) (Ctx.instL ls (E₂.get η).block.params)
       (Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele))
-    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
-    (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ₛ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f) :
+    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
+    (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f) :
     Γ₁.as ⟶ (CtxCat.extendTele ⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ _ hΔ).as :=
   ⟨Fin.append ps fds, by
-    change E₂[Γ₁.as.ctx] ⊢ₛ Fin.append ps fds ⊣
+    change E₂[Γ₁.as.ctx] ⊢ Fin.append ps fds ⊣
       Ctx.instL ls (E₂.get η).block.params ++ Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele
     rw [← Ctx.instL_append]
     exact Ctor.forall_ordinarySubst le_rfl hps hf⟩
 
 def ctorParamHom {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
-    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
-    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p) :
+    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ ok)
+    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p) :
     Γ₁.as ⟶ (⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ : CtxCat E₂ ℓ).as :=
-  ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
+  ⟨ps, (Inductive.paramSubstEq hps).left⟩
 
 theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ ℓ Γ₁.as.len}
-    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok)
-    (hΔ : WFTeleStrong E₂ (fun _ => True) (Ctx.instL ls (E₂.get η).block.params)
+    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ ok)
+    (hΔ : TeleWF E₂ (fun _ => True) (Ctx.instL ls (E₂.get η).block.params)
       (Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele))
     (pctx : RawTeleProperties E₂ .nil (Ctx.instL ls (E₂.get η).block.params))
     (pbody : RawInterpretationProperties (⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ : CtxCat E₂ ℓ)
       (Expr.instL ls (((E₂.get η).block.ctors s c).ordinaryTele.pi (.sort (E₂.get η).block.level))))
-    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
+    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
     (pps : ∀ p, RawInterpretationProperties Γ₁ (ps p))
     (fps : ∀ p, HasFixedness Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
-    (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ₛ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
+    (hf : ∀ f, E₂[Γ₁.as.ctx] ⊢ fds f : ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ₁ ρ) :
     (σ₁ ≫ RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf)) ≫
         RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ) =
@@ -105,7 +105,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
 
 end CoherentShape
 
-variable (hsound : RawSound E₂ ℓ pre) (η) (hB : I.WFStrong E₁)
+variable (hsound : RawSound E₂ ℓ pre) (η) (hB : InductiveWF E₁ I)
   (hblock : (E₂.get η).block = I.map pre.sigs) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
   (ls : Fin ι.nlevels → Level ℓ)
 
@@ -119,15 +119,15 @@ theorem RawSound.ctorTypeFnProperties :
   simpa using (hsound.properties .nil (hf.instLevel ls)).left
 
 theorem RawSound.ctorFieldProperties
-    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ₛ ok) :
+    (hctx : E₂[Ctx.instL ls (E₂.get η).block.params] ⊢ ok) :
     RawInterpretationProperties (⟨Ctx.instL ls (E₂.get η).block.params, hctx⟩ : CtxCat E₂ ℓ)
       ((((E₂.get η).block.ctors s c).ordinaryTele.pi (.sort (E₂.get η).block.level)).instL ls) := by
   revert hctx
   rw [hblock]
   intro hctx
-  have hp : E₁[I.params] ⊢ₛ ok := by simpa using hB.params.appendCtxWFStrong .nil
-  have ⟨_, ht⟩ := Ctx.pi_isTypeStrong (e := .sort I.level)
-    (((hB.ctors s c).ordinaryTeleAux _ le_rfl).appendCtxWFStrong hp) .sortDF
+  have hp : E₁[I.params] ⊢ ok := by simpa using hB.params.appendCtxWF .nil
+  have ⟨_, ht⟩ := Ctx.pi_isType (e := .sort I.level)
+    (((hB.ctors s c).ordinaryTeleAux _ le_rfl).appendCtxWF hp) .sortDF
   convert (hsound.properties (hp.instLevel ls) (ht.instLevel ls)).left using 1 <;>
     simp [Inductive.map, Ctor.ordinaryTele, Expr.map]
 
@@ -153,7 +153,7 @@ theorem RawSound.ordinaryPrefixProperties (count : Nat)
 
 theorem RawSound.ordinaryTypeJudgment (f : Fin (ι.ctors s c).nfields)
     (hctx : E₂[Ctx.instL ls ((E₂.get η).block.params ++
-      ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le)] ⊢ₛ ok) :
+      ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le)] ⊢ ok) :
     RawJudgment
       (⟨Ctx.instL ls ((E₂.get η).block.params ++
         ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le), hctx⟩ : CtxCat E₂ ℓ)

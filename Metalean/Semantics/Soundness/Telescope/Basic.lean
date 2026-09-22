@@ -27,7 +27,7 @@ namespace CoherentShape
 variable {Src Tgt Γ : CtxCat E₂ ℓ}
 
 theorem RawTeleProperties.extend_admissible {m k : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ₂ ℓ Src.as.len m) (hk : Src.as.len + k = m) (hΔ : WFTeleStrong E₂ P Src.as.ctx Δ)
+    (Δ : Ctx ζ₂ ℓ Src.as.len m) (hk : Src.as.len + k = m) (hΔ : TeleWF E₂ P Src.as.ctx Δ)
     (pΔ : RawTeleProperties E₂ Src.as.ctx Δ) (σ₁ : Tgt.as ⟶ (CtxCat.extendTele Src Δ hΔ).as)
     (pσ₁ : ∀ i : Fin k, RawInterpretationProperties Tgt
       (σ₁.subst ⟨Src.as.len + i.val, show Src.as.len + i.val < m by omega⟩))
@@ -52,7 +52,7 @@ theorem RawTeleProperties.extend_admissible {m k : Nat} {P : Level ℓ → Prop}
   | nil => exact ⟨hsub, hsource⟩
   | snoc k Δ t ih =>
     let S := CtxCat.extendTele Src Δ hΔ.init
-    have ht : E₂[S.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have ht : E₂[S.as.ctx] ⊢ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     obtain ⟨σ₃, arg, harg, rfl⟩ := RawCtx.Hom.exists_snoc (Γ₂ := S.as) ⟨_, ht⟩ σ₁
     have hbase : σ₃.snoc ⟨_, ht⟩ harg ≫ RawCtx.Hom.teleProjection hΔ =
         σ₃ ≫ RawCtx.Hom.teleProjection hΔ.init :=
@@ -90,7 +90,7 @@ theorem RawTeleProperties.extend_admissible {m k : Nat} {P : Level ℓ → Prop}
 namespace RawTeleProperties
 
 theorem fixed_image {ctx : Ctx ζ₂ ℓ 0 n}
-    (hctx : E₂[ctx] ⊢ₛ ok) (pctx : RawTeleProperties E₂ .nil ctx)
+    (hctx : E₂[ctx] ⊢ ok) (pctx : RawTeleProperties E₂ .nil ctx)
     (σ₁ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as) (v : Fin n)
     (pσ₁ : ∀ w < v, HasSubstitution Γ₁ (σ₁.subst w))
     (σ₂ : Γ₂ ⟶ Γ₁) (ρs ρt : RawValuation Γ₂)
@@ -105,7 +105,7 @@ theorem fixed_image {ctx : Ctx ζ₂ ℓ 0 n}
   | nil => exact v.elim0
   | @snoc n ctx t ih =>
     have ht := hctx.last.choose_spec
-    have hctx : E₂[ctx] ⊢ₛ ok := hctx.init
+    have hctx : E₂[ctx] ⊢ ok := hctx.init
     let σ₃ := σ₁ ≫ CtxCat.projectionRaw ⟨ctx, hctx⟩ ht
     have htail := SourceAdmissible.tail (Γ₁ := ⟨ctx, hctx⟩) ht hsource
     rw [Category.assoc] at htail
@@ -145,7 +145,7 @@ theorem fixed_image {ctx : Ctx ζ₂ ℓ 0 n}
       exact hf
 
 theorem admissible_of_images {ctx : Ctx ζ₂ ℓ 0 n}
-    (hctx : E₂[ctx] ⊢ₛ ok) (hprops : RawTeleProperties E₂ .nil ctx)
+    (hctx : E₂[ctx] ⊢ ok) (hprops : RawTeleProperties E₂ .nil ctx)
     (σ₁ : Γ₁.as ⟶ (⟨ctx, hctx⟩ : CtxCat E₂ ℓ).as) (σ₂ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (htarget : SourceAdmissible σ₂ ρ)
     (pσ₁ : ∀ v, RawInterpretationProperties Γ₁ (σ₁.subst v))
@@ -153,7 +153,7 @@ theorem admissible_of_images {ctx : Ctx ζ₂ ℓ 0 n}
     SourceAdmissible (σ₂ ≫ RawCtx.toCtx.map σ₁)
       (RawValuation.pushFin (fun _ => ⊥)
         fun v => (rawInterpret (piLimit E₂ ℓ) Γ₁ (σ₁.subst v)).app _ σ₂.op ρ) := by
-  have hΔ := hctx.wfTeleStrong
+  have hΔ := hctx.teleWF
   generalize hc : ctx = ctx' at hctx σ₁ pσ₁ hf ⊢
   rw [← Tele.nil_append ctx] at hc
   subst ctx'
@@ -164,7 +164,7 @@ theorem admissible_of_images {ctx : Ctx ζ₂ ℓ 0 n}
 end RawTeleProperties
 
 theorem RawFamily.ctxLam_isDirected {b m : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ₂ ℓ Γ₁.as.len m) (hΔ : WFTeleStrong E₂ P Γ₁.as.ctx Δ)
+    (Δ : Ctx ζ₂ ℓ Γ₁.as.len m) (hΔ : TeleWF E₂ P Γ₁.as.ctx Δ)
     (pΔ : RawTeleProperties E₂ Γ₁.as.ctx Δ) (hb : Δ.headRank < b)
     {B : RawFamily (CtxCat.extendTele Γ₁ Δ hΔ)}
     (hB : ∀ ⦃Γ₂ : CtxCat E₂ ℓ⦄ (σ : Γ₂ ⟶ CtxCat.extendTele Γ₁ Δ hΔ) (ρ : RawValuation Γ₂),
@@ -181,9 +181,8 @@ theorem RawFamily.ctxLam_isDirected {b m : Nat} {P : Level ℓ → Prop}
 
 end CoherentShape
 
-theorem RawSound.teleProperties (hsound : RawSound E₂ ℓ pre) {Δ : Ctx ζ₁ ℓ 0 n} (hΔ : E₁[Δ] ⊢ₛ ok)
-    {P : Level ℓ → Prop} {m : Nat} {Θ : Ctx ζ₁ ℓ n m}
-    (hΘ : WFTeleStrong E₁ P Δ Θ) :
+theorem RawSound.teleProperties (hsound : RawSound E₂ ℓ pre) {Δ : Ctx ζ₁ ℓ 0 n} (hΔ : E₁[Δ] ⊢ ok)
+    {P : Level ℓ → Prop} {m : Nat} {Θ : Ctx ζ₁ ℓ n m} (hΘ : TeleWF E₁ P Δ Θ) :
     RawTeleProperties E₂ (Δ.map pre.sigs) (Θ.map pre.sigs) := by
   induction hΘ with
   | nil => exact .nil
@@ -192,12 +191,12 @@ theorem RawSound.teleProperties (hsound : RawSound E₂ ℓ pre) {Δ : Ctx ζ₁
     exact .snoc ih fun wf => by
       revert wf
       rw [← Ctx.map_append]
-      exact fun _ => (hsound.properties (WFTeleStrong.appendCtxWFStrong hΘ hΔ) ht).left
+      exact fun _ => (hsound.properties (TeleWF.appendCtxWF hΘ hΔ) ht).left
 
-theorem RawSound.paramTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
+theorem RawSound.paramTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (ls : Fin ι.nlevels → Level ℓ) :
     RawTeleProperties E₂ .nil (Ctx.instL ls (E₂.get η).block.params) := by
-  have hp := hsound.teleProperties (.nil : E₁[(#t[] : Ctx ζ₁ ℓ 0 0)] ⊢ₛ ok)
+  have hp := hsound.teleProperties (.nil : E₁[(#t[] : Ctx ζ₁ ℓ 0 0)] ⊢ ok)
     (hB.params.instLevel (Q := fun _ => True) ls fun _ => trivial)
   rw [hblock]
   exact congr(RawTeleProperties E₂ _ $(Ctx.map_instL pre.sigs ls I.params)).mp hp

@@ -8,7 +8,7 @@ module
 public import Metalean.Semantics.Soundness.Telescope.Application
 public import Metalean.Semantics.Soundness.Rules.Inductive
 public import Metalean.Semantics.Soundness.Telescope.Transport
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 import Metalean.Semantics.Soundness.Rules.Core
 import Metalean.Semantics.Soundness.Rules.Function
 
@@ -26,9 +26,8 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 
 namespace CoherentShape
 
-theorem RawTyped.motiveSpine (ht' : (E₂.get η).block.WFStrong E₂)
-    (h : IndTyping Γ₁ η s ls ps is)
-    (hm : E₂[Γ₁.as.ctx] ⊢ₛ m : (E₂.get η).block.motiveType η ls ps l s)
+theorem RawTyped.motiveSpine (ht' : InductiveWF E₂ (E₂.get η).block) (h : IndTyping Γ₁ η s ls ps is)
+    (hm : E₂[Γ₁.as.ctx] ⊢ m : (E₂.get η).block.motiveType η ls ps l s)
     (pΔ : RawTeleProperties E₂ Γ₁.as.ctx ((E₂.get η).block.motiveTele η ls ps s))
     (pm : RawInterpretationProperties Γ₁ m) (fm : HasFixedness Γ₁ m ((E₂.get η).block.motiveType η ls ps l s))
     (pis : ∀ i, RawInterpretationProperties Γ₁ (is i))
@@ -41,16 +40,16 @@ theorem RawTyped.motiveSpine (ht' : (E₂.get η).block.WFStrong E₂)
   let t : Expr ζ₂ ℓ T.as.len := .ind η s ls (fun p => (ps p).wkN (ι.nindices s))
     fun i => .var (Fin.natAdd Γ₁.as.len i)
   let u := (ht'.motiveTele (s := s) Γ₁.as.wf h.param).last.choose
-  have ht : E₂[T.as.ctx] ⊢ₛ t : .sort u :=
+  have ht : E₂[T.as.ctx] ⊢ t : .sort u :=
     (ht'.motiveTele (s := s) Γ₁.as.wf h.param).last.choose_spec.2
   have pt : RawInterpretationProperties T t := pΔ.last T.as.wf
   let t' := Expr.forallE t (.sort l)
-  have hcode : E₂[T.as.ctx] ⊢ₛ t' : .sort (.imax u (.succ l)) :=
+  have hcode : E₂[T.as.ctx] ⊢ t' : .sort (.imax u (.succ l)) :=
     .forallEDF ht .sortDF .sortDF
   have pcode : RawInterpretationProperties T t' :=
     .forallE ht .sortDF pt (RawInterpretationProperties.sort (T.extension ht) l)
   let σ₁ : Γ₁.as ⟶ T.as := ⟨Fin.append Subst.id is, by
-    apply WFTeleStrong.extendFamily hΔ (SubstWFStrong.id Γ₁.as.wf)
+    apply TeleWF.extendFamily hΔ (SubstWF.id Γ₁.as.wf)
     simpa using h.index⟩
   have hover : σ₁ ≫ RawCtx.Hom.teleProjection (Γ := Γ₁.as) hΔ = 𝟙 Γ₁.as :=
     RawCtx.Hom.ext (funext fun _ => Fin.append_left _ _ _)
@@ -67,9 +66,9 @@ theorem RawTyped.motiveSpine (ht' : (E₂.get η).block.WFStrong E₂)
   have pc := hσ₁.props pt
   simpa [σ₁, t, t', Expr.applyBound_eq_apps, Expr.subst_apps, Expr.subst] using And.intro papp pc
 
-variable (hB : (E₂.get η).block.WFStrong E₂) (h : IndTyping Γ₁ η s ls ps is)
-  (hmaj : E₂[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps is)
-  (hm : E₂[Γ₁.as.ctx] ⊢ₛ m : (E₂.get η).block.motiveType η ls ps l s)
+variable (hB : InductiveWF E₂ (E₂.get η).block) (h : IndTyping Γ₁ η s ls ps is)
+  (hmaj : E₂[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps is)
+  (hm : E₂[Γ₁.as.ctx] ⊢ m : (E₂.get η).block.motiveType η ls ps l s)
   (pΔ : RawTeleProperties E₂ Γ₁.as.ctx ((E₂.get η).block.motiveTele η ls ps s))
   (pm : RawInterpretationProperties Γ₁ m)
   (fm : HasFixedness Γ₁ m ((E₂.get η).block.motiveType η ls ps l s))
@@ -93,9 +92,9 @@ theorem RawTyped.motiveResult (fmaj : HasFixedness Γ₁ maj (.ind η s ls ps is
 
 end CoherentShape
 
-theorem RawSound.motiveTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
-    (hblock : (E₂.get η).block = I.map pre.sigs) (hI : (E₂.get η).block.WFStrong E₂)
-    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
+theorem RawSound.motiveTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I)
+    (hblock : (E₂.get η).block = I.map pre.sigs) (hI : InductiveWF E₂ (E₂.get η).block)
+    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
     (pps : ∀ p, RawInterpretationProperties Γ₁ (ps p))
     (fps : ∀ p, HasFixedness Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (s : Fin ι.nsorts) :
@@ -107,7 +106,7 @@ theorem RawSound.motiveTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.W
   have pindices : RawTeleProperties E₂ Src.as.ctx (Ctx.instL ls ((E₂.get η).block.indices s)) := by
     simpa [Src, hblock, Inductive.map] using hsound.teleProperties (hB.paramClosedWF ls)
       ((hB.indices s).instLevel (Q := fun _ => True) ls fun _ => trivial)
-  let σ : Γ₁.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEqStrong hps).left⟩
+  let σ : Γ₁.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEq hps).left⟩
   have pf (v : Fin ι.nparams) :
       HasFixedness Γ₁ (σ.subst v) ((Src.as.ctx.get v).subst σ.subst) := by
     rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]

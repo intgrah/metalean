@@ -122,7 +122,7 @@ noncomputable def recursorHyp (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) (c : 
     (fieldTele_headRank_lt (CtxCat.recr hd ls s) (fun p => .var (RecrBinder.param p).resolve)
       (fun _ => Expr.headRank_var_le _) s c)
     (RawFamily.ctxLam D interp (CtxCat.ctorFields (RecTyping.generic hd ls s).toIndData s c) _
-      (fieldTelescopeStrong (RecTyping.generic hd ls s).toIndData s c f)
+      (fieldTelescope_wf (RecTyping.generic hd ls s).toIndData s c f)
       (fieldTelescope_headRank_lt (RecTyping.generic hd ls s).toIndData (fun _ => Expr.headRank_var_le _) s c f)
       (RawFamily.closedApps (V ((ι.ctors s c).recursiveTarget f))
         (fun v => Tm.label (CtxCat.ctorFieldTarget (RecTyping.generic hd ls s).toIndData s c f).as

@@ -8,8 +8,8 @@ module
 public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Semantics.Soundness.Context.Substitution
 import Metalean.Semantics.Interpretation.Binder.Ideality
-public import Metalean.Strong.WeakenEnv
-import Metalean.Strong.Substitution
+public import Metalean.Typing.WeakenEnv
+import Metalean.Typing.Substitution
 
 @[expose] public section
 
@@ -24,7 +24,7 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 namespace CoherentShape
 
 def HasFixedness (Γ₁ : CtxCat E₂ ℓ) (e t : Expr ζ₂ ℓ Γ₁.as.len) : Prop :=
-  ∀ ⦃Γ₂ : CtxCat E₂ ℓ⦄ (he : E₂[Γ₁.as.ctx] ⊢ₛ e : t) (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂),
+  ∀ ⦃Γ₂ : CtxCat E₂ ℓ⦄ (he : E₂[Γ₁.as.ctx] ⊢ e : t) (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂),
     SourceAdmissible σ ρ →
       (piLimit E₂ ℓ).rawExtend ((rawInterpret (piLimit E₂ ℓ) Γ₁ t).app _ σ.op ρ)
         ((Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as he))
@@ -42,11 +42,11 @@ structure RawInterpretationProperties (Γ₁ : CtxCat E₂ ℓ) (e : Expr ζ₂ 
 
 def RawTeleProperties (E₂ : Env ζ₂) (Γ : Ctx ζ₂ ℓ 0 n) (Δ : Ctx ζ₂ ℓ n m) : Prop :=
   Δ.Forall fun Δ' A =>
-    ∀ wf : E₂[Γ ++ Δ'] ⊢ₛ ok, RawInterpretationProperties ⟨Γ ++ Δ', wf⟩ A
+    ∀ wf : E₂[Γ ++ Δ'] ⊢ ok, RawInterpretationProperties ⟨Γ ++ Δ', wf⟩ A
 
 namespace RawTeleProperties
 
-theorem extension {Δ : Ctx ζ₂ ℓ 0 m} (h : RawTeleProperties E₂ .nil Δ) (wf : E₂[Δ] ⊢ₛ ok)
+theorem extension {Δ : Ctx ζ₂ ℓ 0 m} (h : RawTeleProperties E₂ .nil Δ) (wf : E₂[Δ] ⊢ ok)
     (pt : RawInterpretationProperties ⟨Δ, wf⟩ A) : RawTeleProperties E₂ .nil (Δ.snoc A) :=
   .snoc h fun wf' => by
     revert wf'
@@ -77,7 +77,7 @@ theorem of_append {a b c : Nat} {Γ : Ctx ζ₂ ℓ 0 a}
 end RawTeleProperties
 
 structure RawJudgment (Γ₁ : CtxCat E₂ ℓ) (e₁ e₂ t : Expr ζ₂ ℓ Γ₁.as.len) : Prop where
-  syntactic : E₂[Γ₁.as.ctx] ⊢ₛ e₁ ≡ e₂ : t
+  syntactic : E₂[Γ₁.as.ctx] ⊢ e₁ ≡ e₂ : t
   type : RawInterpretationProperties Γ₁ t
   left : RawInterpretationProperties Γ₁ e₁
   right : RawInterpretationProperties Γ₁ e₂
@@ -85,7 +85,7 @@ structure RawJudgment (Γ₁ : CtxCat E₂ ℓ) (e₁ e₂ t : Expr ζ₂ ℓ Γ
   fixed : HasFixedness Γ₁ e₁ t
 
 structure RawTyped (Γ₁ : CtxCat E₂ ℓ) (e t : Expr ζ₂ ℓ Γ₁.as.len) : Prop where
-  typed : E₂[Γ₁.as.ctx] ⊢ₛ e : t
+  typed : E₂[Γ₁.as.ctx] ⊢ e : t
   type : RawInterpretationProperties Γ₁ t
   term : RawInterpretationProperties Γ₁ e
   fixed : HasFixedness Γ₁ e t
@@ -95,7 +95,7 @@ theorem RawJudgment.toRawTyped {e₁ e₂ t : Expr ζ₂ ℓ Γ₁.as.len} (p : 
   ⟨p.syntactic.left, p.type, p.left, p.fixed⟩
 
 theorem RawFamily.bodyAction_isIdealValued {t : Expr ζ₂ ℓ Γ₁.as.len}
-    {u : Level ℓ} (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (pt : HasIdeality Γ₁ t)
+    {u : Level ℓ} (ht : E₂[Γ₁.as.ctx] ⊢ t : .sort u) (pt : HasIdeality Γ₁ t)
     {B : RawFamily (Γ₁.extension ht)}
     (hB : ∀ ⦃Γ₃ : CtxCat E₂ ℓ⦄ (σ : Γ₃ ⟶ Γ₁.extension ht) (ρ : RawValuation Γ₃),
       SourceAdmissible σ ρ → (B.app _ σ.op ρ).IsDirected)
@@ -107,7 +107,7 @@ theorem RawFamily.bodyAction_isIdealValued {t : Expr ζ₂ ℓ Γ₁.as.len}
       hB s.hom _ ((hρ.pullback σ₂).push ht s (pt _ _ (hρ.pullback σ₂)) J.property hJ)
 
 theorem HasSubstitution.instantiate {C : Expr ζ₂ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}
-    (ht : E₂[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E₂[Γ₁.as.ctx] ⊢ₛ e : t)
+    (ht : E₂[Γ₁.as.ctx] ⊢ t : .sort u) (he : E₂[Γ₁.as.ctx] ⊢ e : t)
     (htI : HasIdeality Γ₁ t) (heI : HasIdeality Γ₁ e) (heF : HasFixedness Γ₁ e t)
     (heS : HasSubstitution Γ₁ e) (hC : HasSubstitution (CtxCat.extension Γ₁ ht) C)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
@@ -116,7 +116,7 @@ theorem HasSubstitution.instantiate {C : Expr ζ₂ ℓ (Γ₁.as.len + 1)} {u :
       (rawInterpret (piLimit E₂ ℓ) Γ₁ (C.inst e)).app _ σ.op ρ :=
   have hsource := hρ.push ht ((Raw.ContextSection.ofTerm ht he).pullbackId σ)
     (htI σ ρ hρ) (heI σ ρ hρ) (heF he σ ρ hρ)
-  have he' : E₂[Γ₁.as.ctx] ⊢ₛ e : t.subst (RawCtx.Hom.subst (𝟙 Γ₁.as)) := by
+  have he' : E₂[Γ₁.as.ctx] ⊢ e : t.subst (RawCtx.Hom.subst (𝟙 Γ₁.as)) := by
     rwa [RawCtx.Hom.id_subst, Expr.subst_id]
   (hC (RawCtx.Hom.snoc (𝟙 Γ₁.as) ⟨u, ht⟩ he') σ _ ρ
     (SemanticSubstitution.snoc ht (𝟙 _) he' heS σ ρ ρ hρ (.id σ ρ)) hsource).symm
@@ -135,21 +135,21 @@ theorem eval (h : HasEquality Γ₁ e₁ e₂) {σ : Γ₂ ⟶ Γ₁} {ρ : RawV
     (hρ : SourceAdmissible σ ρ) (he₁ : HasIdeality Γ₁ e₁) (he₂ : HasIdeality Γ₁ e₂) :
     hρ.eval he₁ = hρ.eval he₂ := Subtype.val_injective (h σ ρ hρ)
 
-theorem fixed_right (h : HasEquality Γ₁ e₁ e₂) (he : E₂[Γ₁.as.ctx] ⊢ₛ e₁ ≡ e₂ : t)
+theorem fixed_right (h : HasEquality Γ₁ e₁ e₂) (he : E₂[Γ₁.as.ctx] ⊢ e₁ ≡ e₂ : t)
     (hf : HasFixedness Γ₁ e₁ t) : HasFixedness Γ₁ e₂ t := by
   intro Γ₂ he₂ σ ρ hρ
   rw [← h σ ρ hρ,
-    ← Tm.label_eq (IsTypeStrong.isTypeEq he.regular) he]
+    ← Tm.label_eq (IsType.isTypeEq he.regular) he]
   exact hf he.left σ ρ hρ
 
 end HasEquality
 
 namespace HasFixedness
 
-theorem convert (h : HasFixedness Γ₁ e t₁) (ht : E₂[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
+theorem convert (h : HasFixedness Γ₁ e t₁) (ht : E₂[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ)
     (hteq : HasEquality Γ₁ t₁ t₂) : HasFixedness Γ₁ e t₂ := by
   intro Γ₂ he σ ρ hρ
-  have he₁ : E₂[Γ₁.as.ctx] ⊢ₛ e : t₁ := ht.symm.convStrong he
+  have he₁ : E₂[Γ₁.as.ctx] ⊢ e : t₁ := ht.symm.conv he
   rw [← hteq σ ρ hρ, ← Tm.label_eq ht he₁]
   exact h he₁ σ ρ hρ
 
@@ -183,14 +183,14 @@ end CoherentShape
 
 def RawSound (E₂ : Env ζ₂) (ℓ : Nat) (pre : E₁.as ⟶ E₂.as) : Prop :=
   ∀ {n : Nat} {Δ₁ : Ctx ζ₁ ℓ 0 n} {e₁ e₂ t : Expr ζ₁ ℓ n},
-  E₁[Δ₁] ⊢ₛ e₁ ≡ e₂ : t →
-  ∀ (hΔ₂ : E₂[Δ₁.map pre.sigs] ⊢ₛ ok), RawTeleProperties E₂ .nil (Δ₁.map pre.sigs) →
+  E₁[Δ₁] ⊢ e₁ ≡ e₂ : t →
+  ∀ (hΔ₂ : E₂[Δ₁.map pre.sigs] ⊢ ok), RawTeleProperties E₂ .nil (Δ₁.map pre.sigs) →
   RawJudgment ⟨Δ₁.map pre.sigs, hΔ₂⟩ (e₁.map pre.sigs) (e₂.map pre.sigs) (t.map pre.sigs)
 
 theorem RawSound.properties (hsound : RawSound E₂ ℓ pre)
-    {Δ₁ : Ctx ζ₁ ℓ 0 n} (hΔ₁ : E₁[Δ₁] ⊢ₛ ok)
-    {e₁ e₂ t : Expr ζ₁ ℓ n} (d : E₁[Δ₁] ⊢ₛ e₁ ≡ e₂ : t) :
-    RawJudgment ⟨Δ₁.map pre.sigs, CtxWFStrong.envMono pre hΔ₁⟩
+    {Δ₁ : Ctx ζ₁ ℓ 0 n} (hΔ₁ : E₁[Δ₁] ⊢ ok)
+    {e₁ e₂ t : Expr ζ₁ ℓ n} (d : E₁[Δ₁] ⊢ e₁ ≡ e₂ : t) :
+    RawJudgment ⟨Δ₁.map pre.sigs, CtxWF.envMono pre hΔ₁⟩
       (e₁.map pre.sigs) (e₂.map pre.sigs) (t.map pre.sigs) := by
   refine hsound d _ ?_
   clear d e₁ e₂ t

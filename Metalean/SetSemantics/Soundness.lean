@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Typing.Env
+public import Metalean.Typing.Env.Defs
 public import Metalean.SetSemantics.Soundness.Core
 import Metalean.SetTheory.ZFC.AczelUniverse
 
@@ -120,7 +120,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
 
 theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     (ho : Env.Ordered E) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
     ∀ γ, ε[ν] ⊨ γ : Γ → ε[ν; γ] ⊨ e₁ ≡ e₂ : t := by
   intro h γ hρ
   induction h with

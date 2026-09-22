@@ -7,8 +7,8 @@ module
 
 public import Metalean.FastChecker.Spec
 public import Metalean.FastChecker.LiteralTyping
-import Metalean.Strong.Substitution
-import Metalean.Strong.InstLevel
+import Metalean.Typing.Substitution
+import Metalean.Typing.InstLevel
 
 @[expose] public section
 
@@ -43,11 +43,11 @@ theorem natCtx'_instL {ℓ : Nat} (levelSubst : Param 0 → Level ℓ) :
   rw [Literals.natType_instL, Literals.natType_instL]
 
 theorem natSubstWF {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {x y : Expr ζ ℓ n} :
-    E[Γ] ⊢ₛ x : Literals.natType ηNat →
-    E[Γ] ⊢ₛ y : Literals.natType ηNat →
-    E[Γ] ⊢ₛ natSubst x y ⊣ natCtx' ηNat := by
+    E[Γ] ⊢ x : Literals.natType ηNat →
+    E[Γ] ⊢ y : Literals.natType ηNat →
+    E[Γ] ⊢ natSubst x y ⊣ natCtx' ηNat := by
   intro hx hy
-  refine SubstWFStrong.extend ?_ (SubstWFStrong.extend ?_ fun v => v.elim0)
+  refine SubstWF.extend ?_ (SubstWF.extend ?_ fun v => v.elim0)
   · rwa [Literals.natType_subst]
   · rwa [Literals.natType_subst]
 
@@ -128,8 +128,8 @@ structure NatAt (L : Literals) (F : FEnv) {ζ : Sigs} (E : Env ζ)
   ordered : E.Ordered
   trust : L.NatTrust E
   nat : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩
-  varX : E[Γ] ⊢ₛ x : Literals.natType ηNat
-  varY : E[Γ] ⊢ₛ y : Literals.natType ηNat
+  varX : E[Γ] ⊢ x : Literals.natType ηNat
+  varY : E[Γ] ⊢ y : Literals.natType ηNat
 
 theorem NatAt.eq {Γ : Ctx ζ ℓ 0 n} {ft fe₁ fe₂ : FExpr} {t e₁ e₂ : Expr ζ ℓ n} :
     NatAt L F E ηNat Γ x y →
@@ -137,7 +137,7 @@ theorem NatAt.eq {Γ : Ctx ζ ℓ 0 n} {ft fe₁ fe₂ : FExpr} {t e₁ e₂ : E
     Instantiated L E x y ft t →
     Instantiated L E x y fe₁ e₁ →
     Instantiated L E x y fe₂ e₂ →
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t := by
+    E[Γ] ⊢ e₁ ≡ e₂ : t := by
   intro ha h ht h₁ h₂
   have hlev := (h (natCtxSem ha.nat ha.env ha.ordered ha.trust) ht.denotes h₁.denotes h₂.denotes).instLevel
     (fun p : Param 0 => (p.elim0 : Level ℓ))

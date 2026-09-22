@@ -23,7 +23,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {η : Head ζ .quot} {u v : Level ℓ}
   {α α' r r' β β' f f' h h' a a₁ a₂ : Expr ζ ℓ Γ₁.as.len}
 
-theorem rawInterpret_quotMk_app (ha : E[Γ₁.as.ctx] ⊢ₛ a : α) (σ : Γ₂ ⟶ Γ₁)
+theorem rawInterpret_quotMk_app (ha : E[Γ₁.as.ctx] ⊢ a : α) (σ : Γ₂ ⟶ Γ₁)
     (ρ : RawValuation Γ₂) :
     (rawInterpret (piLimit E ℓ) Γ₁ (.quotMk η u α r a)).app _ σ.op ρ =
       bif u.rel then
@@ -36,7 +36,7 @@ theorem rawInterpret_quotMk_app (ha : E[Γ₁.as.ctx] ⊢ₛ a : α) (σ : Γ₂
   · rw [rawInterpret_quotMk _ ha hu]
     rfl
 
-theorem rawInterpret_quotLift_app (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : β)
+theorem rawInterpret_quotLift_app (hlift : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a : β)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) :
     (rawInterpret (piLimit E ℓ) Γ₁ (.quotLift η u v α r β f h a)).app _ σ.op ρ =
       (piLimit E ℓ).rawExtend ((rawInterpret (piLimit E ℓ) Γ₁ β).app _ σ.op ρ)
@@ -72,7 +72,7 @@ theorem quot (h : QuotTyping Γ₁ u α r) : RawInterpretationProperties Γ₁ (
     rw [rawInterpret_quot _ (h.subst σ₁), rawInterpret_quot _ h, RawFamily.quot_value,
       RawFamily.quot_value, QuotCode.map_comp_hom, h.code_map]
 
-theorem quotMk (ha : E[Γ₁.as.ctx] ⊢ₛ a : α) (pa : RawInterpretationProperties Γ₁ a) :
+theorem quotMk (ha : E[Γ₁.as.ctx] ⊢ a : α) (pa : RawInterpretationProperties Γ₁ a) :
     RawInterpretationProperties Γ₁ (.quotMk η u α r a) where
   ideal _ σ ρ hρ := by
     rw [rawInterpret_quotMk_app ha]
@@ -85,7 +85,7 @@ theorem quotMk (ha : E[Γ₁.as.ctx] ⊢ₛ a : α) (pa : RawInterpretationPrope
     rw [rawInterpret_quotMk_app (ha.substitution σ₁.typed), rawInterpret_quotMk_app ha,
       pa.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ, op_comp, Functor.map_comp_apply, Tm.map_label]
 
-theorem quotLift (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : β)
+theorem quotLift (hlift : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a : β)
     (pα : RawInterpretationProperties Γ₁ α) (pβ : RawInterpretationProperties Γ₁ β)
     (pf : RawInterpretationProperties Γ₁ f) (pa : RawInterpretationProperties Γ₁ a) :
     RawInterpretationProperties Γ₁ (.quotLift η u v α r β f h a) where
@@ -142,7 +142,7 @@ theorem quotMkDF :
   intro pα pr pa
   have h := QuotTyping.left pα.syntactic pr.syntactic
   have ha₁ := pa.syntactic.left
-  have ha₂ : E[Γ₁.as.ctx] ⊢ₛ a₂ : α' := .defeqDF pα.syntactic pa.syntactic.right
+  have ha₂ : E[Γ₁.as.ctx] ⊢ a₂ : α' := .defeqDF pα.syntactic pa.syntactic.right
   exact {
     syntactic := .quotMkDF pα.syntactic pr.syntactic pa.syntactic
     type := RawInterpretationProperties.quot h
@@ -167,10 +167,10 @@ theorem quotLiftDF :
     RawJudgment Γ₁ a₁ a₂ (.quot η u α r) →
     RawJudgment Γ₁ (.quotLift η u v α r β f h a₁) (.quotLift η u v α' r' β' f' h' a₂) β := by
   intro pα pr pβ pf ph pa
-  have hsyn : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a₁ ≡
+  have hsyn : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a₁ ≡
       .quotLift η u v α' r' β' f' h' a₂ : β :=
     .quotLiftDF pα.syntactic pr.syntactic pβ.syntactic pf.syntactic ph.syntactic pa.syntactic
-  have hl' : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α' r' β' f' h' a₂ : β' :=
+  have hl' : E[Γ₁.as.ctx] ⊢ .quotLift η u v α' r' β' f' h' a₂ : β' :=
     .defeqDF pβ.syntactic hsyn.right
   exact {
     syntactic := hsyn
@@ -222,7 +222,7 @@ theorem quotIota :
     RawJudgment Γ₁ (.quotLift η u v α r β f h (.quotMk η u α r a)) (.app f a) β := by
   intro pα pr pβ pf ph pa prhs
   have plhs := (quotLiftDF pα pr pβ pf ph (quotMkDF (η := η) pα pr pa)).leftRefl
-  have hiota := DefeqStrong.quotIota pα.syntactic pr.syntactic pβ.syntactic pf.syntactic
+  have hiota := Defeq.quotIota pα.syntactic pr.syntactic pβ.syntactic pf.syntactic
     ph.syntactic pa.syntactic plhs.syntactic prhs.syntactic
   refine of_typings hiota plhs prhs fun _ σ ρ hρ => ?_
   have hα := pα.syntactic.left

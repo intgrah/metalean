@@ -28,7 +28,7 @@ abbrev Pair (Γ : CtxCat E ℓ) := (pairPresheaf E ℓ).obj (op Γ)
 namespace Repr
 
 theorem forallE_wf (T : Repr Γ) (B : Repr ⟨Γ.as.snoc T.wf⟩) :
-    E[Γ.as.ctx] ⊢ₛ .forallE T.term B.term typ :=
+    E[Γ.as.ctx] ⊢ .forallE T.term B.term typ :=
   have ⟨_, ht⟩ := T.wf
   have ⟨_, hB⟩ := B.wf
   ⟨_, .forallEDF ht hB hB⟩
@@ -41,7 +41,7 @@ def pi (T : Repr Γ) : Ty_ (⟨Γ.as.snoc T.wf⟩ : CtxCat E ℓ) → Ty_ Γ :=
     have ⟨_, ht⟩ := T.wf
     Quotient.sound (IsTypeEq.forallE_cod ht h)
 
-theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ₛ T₁.term ≡ T₂.term typ)
+theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ T₂.term typ)
     (b : Ty_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
     T₂.pi ((Ty E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ.as h)).op b) =
       T₁.pi b := by
@@ -49,7 +49,7 @@ theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ₛ T₁.term �
   | h B =>
     have ⟨_, hB⟩ := B.wf
     refine Quotient.sound (IsTypeEq.symm ?_)
-    change E[Γ.as.ctx] ⊢ₛ .forallE T₁.term B.term ≡ .forallE T₂.term (B.term.subst Subst.id) typ
+    change E[Γ.as.ctx] ⊢ .forallE T₁.term B.term ≡ .forallE T₂.term (B.term.subst Subst.id) typ
     rw [Expr.subst_id]
     exact IsTypeEq.forallE_dom h hB
 
@@ -127,25 +127,25 @@ theorem map_forallE (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty
       (NatTrans.naturality_apply (pi E ℓ) σ.op ⟨A, B⟩).symm)
 
 def familyOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ (Γ.len + 1)}
-    {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
+    {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ t' : .sort v) :
     pullback (CtxCat.rawComprehension ht).type (Tm.typing E ℓ) ⟶ Ty E ℓ :=
   (CtxCat.rawComprehension ht).family (⟦⟨t', v, ht'⟩⟧)
 
 def pairOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ (Γ.len + 1)}
-    {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
+    {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ t : .sort u) (ht' : E[Γ.ctx.snoc t] ⊢ t' : .sort v) :
     Pair (⟨Γ⟩ : CtxCat E ℓ) :=
   ⟨(CtxCat.rawComprehension ht).type, familyOfTyping Γ ht ht'⟩
 
 @[simp] theorem eval_familyOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len}
-    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
+    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ.ctx.snoc t] ⊢ t' : .sort v) :
     (CtxCat.rawComprehension ht).eval (CtxCat.rawComprehension ht).type (familyOfTyping Γ ht ht') rfl =
       ⟦⟨t', v, ht'⟩⟧ :=
   Comprehension.eval_family _ _
 
 @[simp] theorem piApp_ofTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len}
-    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ₛ t : .sort u)
-    (ht' : E[Γ.ctx.snoc t] ⊢ₛ t' : .sort v) :
+    {t' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ} (ht : E[Γ.ctx] ⊢ t : .sort u)
+    (ht' : E[Γ.ctx.snoc t] ⊢ t' : .sort v) :
     piApp (pairOfTyping Γ ht ht').1 (pairOfTyping Γ ht ht').2 =
       ofTyping Γ (.forallEDF ht ht' ht') :=
   piApp_eq_ofRepr _ _ ⟨t, u, ht⟩ (yonedaEquiv.apply_symm_apply _) ⟨t', v, ht'⟩
@@ -153,17 +153,16 @@ def pairOfTyping (Γ : RawCtx E ℓ) {t : Expr ζ ℓ Γ.len} {t' : Expr ζ ℓ 
 
 theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
     {t₁' t₂' : Expr ζ ℓ (Γ.len + 1)} {u₁ v₁ u₂ v₂ : Level ℓ}
-    (ht₁ : E[Γ.ctx] ⊢ₛ t₁ : .sort u₁) (ht₁' : E[Γ.ctx.snoc t₁] ⊢ₛ t₁' : .sort v₁)
-    (ht₂ : E[Γ.ctx] ⊢ₛ t₂ : .sort u₂) (ht₂' : E[Γ.ctx.snoc t₂] ⊢ₛ t₂' : .sort v₂) :
+    (ht₁ : E[Γ.ctx] ⊢ t₁ : .sort u₁) (ht₁' : E[Γ.ctx.snoc t₁] ⊢ t₁' : .sort v₁)
+    (ht₂ : E[Γ.ctx] ⊢ t₂ : .sort u₂) (ht₂' : E[Γ.ctx.snoc t₂] ⊢ t₂' : .sort v₂) :
     pairOfTyping Γ ht₁ ht₁' = pairOfTyping Γ ht₂ ht₂' ↔
-      E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ ∧
-      E[Γ.ctx.snoc t₁] ⊢ₛ t₁' ≡ t₂' typ ∧
-      E[Γ.ctx.snoc t₂] ⊢ₛ t₁' ≡ t₂' typ := by
-  have hconv (hd : E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ typ)
+      E[Γ.ctx] ⊢ t₁ ≡ t₂ typ ∧
+      E[Γ.ctx.snoc t₁] ⊢ t₁' ≡ t₂' typ ∧
+      E[Γ.ctx.snoc t₂] ⊢ t₁' ≡ t₂' typ := by
+  have hconv (hd : E[Γ.ctx] ⊢ t₁ ≡ t₂ typ)
       (hA : (CtxCat.rawComprehension ht₂).type = (CtxCat.rawComprehension ht₁).type) :
       (CtxCat.rawComprehension ht₁).eval (CtxCat.rawComprehension ht₂).type (familyOfTyping Γ ht₂ ht₂') hA =
-        ⟦⟨t₂'.subst Subst.id, v₂, DefeqStrong.substitution
-          (RawCtx.Hom.convert Γ hd.symm).typed ht₂'⟩⟧ :=
+        ⟦⟨t₂'.subst Subst.id, v₂, Defeq.substitution (RawCtx.Hom.convert Γ hd.symm).typed ht₂'⟩⟧ :=
     (Repr.eval_conversion ⟨t₂, u₂, ht₂⟩ ⟨t₁, u₁, ht₁⟩ hd.symm _ _ rfl hA).trans
       (congrArg ((Ty E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ hd.symm)).op)
         (eval_familyOfTyping Γ ht₂ ht₂'))
@@ -174,7 +173,7 @@ theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
     have e := ((eval_familyOfTyping Γ ht₁ ht₁').symm.trans
       ((CtxCat.rawComprehension ht₁).eval_congr h rfl hA.symm)).trans (hconv hd hA.symm)
     have hb := Quotient.exact e
-    change E[Γ.ctx.snoc t₁] ⊢ₛ t₁' ≡ t₂'.subst Subst.id typ at hb
+    change E[Γ.ctx.snoc t₁] ⊢ t₁' ≡ t₂'.subst Subst.id typ at hb
     rw [Expr.subst_id] at hb
     exact ⟨hd, hb, hd.snocConvTy hb⟩
   · intro ⟨hd, hb, _⟩
@@ -188,18 +187,18 @@ theorem pairOfTyping_eq_iff (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
 
 theorem pairOfTyping_congr (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
     {t₁' t₂' : Expr ζ ℓ (Γ.len + 1)} {u v : Level ℓ}
-    (ht : E[Γ.ctx] ⊢ₛ t₁ ≡ t₂ : .sort u) (ht' : E[Γ.ctx.snoc t₁] ⊢ₛ t₁' ≡ t₂' : .sort v) :
+    (ht : E[Γ.ctx] ⊢ t₁ ≡ t₂ : .sort u) (ht' : E[Γ.ctx.snoc t₁] ⊢ t₁' ≡ t₂' : .sort v) :
     pairOfTyping Γ ht.left ht'.left =
-      pairOfTyping Γ ht.right (DefeqStrong.snocConvTy (.ofDefEq ht) ht').right :=
+      pairOfTyping Γ ht.right (Defeq.snocConvTy (.ofDefEq ht) ht').right :=
   (pairOfTyping_eq_iff _ _ _ _ _).mpr
-    ⟨.ofDefEq ht, .ofDefEq ht', .ofDefEq (DefeqStrong.snocConvTy (.ofDefEq ht) ht')⟩
+    ⟨.ofDefEq ht, .ofDefEq ht', .ofDefEq (Defeq.snocConvTy (.ofDefEq ht) ht')⟩
 
 @[simp] theorem pairPresheaf_map_ofTyping {t : Expr ζ ℓ Γ₁.as.len} {t' : Expr ζ ℓ (Γ₁.as.len + 1)}
-    {u v : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ₛ t' : .sort v)
+    {u v : Level ℓ} (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (ht' : E[Γ₁.as.ctx.snoc t] ⊢ t' : .sort v)
     (σ : Γ₂.as ⟶ Γ₁.as) :
     (pairPresheaf E ℓ).map (RawCtx.toCtx.map σ).op (pairOfTyping Γ₁.as ht ht') =
       pairOfTyping Γ₂.as (ht.substitution σ.typed)
-        (ht'.substitution (SubstWFStrong.lift ⟨u, ht⟩ σ.typed)) :=
+        (ht'.substitution (SubstWF.lift ⟨u, ht⟩ σ.typed)) :=
   (CtxCat.rawComprehension ht).label_reindex (CtxCat.rawComprehension (ht.substitution σ.typed))
     (RawCtx.toCtx.map σ) (CtxCat.extensionMap ht σ) (CtxCat.extensionMap_projection ht σ)
     (CtxCat.map_extensionMap_binderVar ht σ)

@@ -19,12 +19,12 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
   {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
   {Γ : CtxCat E₂ ℓ} {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ.as.len} {ms : Fin ι.nsorts → Expr ζ₂ ℓ Γ.as.len}
 
-theorem RawSound.caseTypeProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
+theorem RawSound.caseTypeProperties (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (h : IndData Γ η ls ps)
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pms : ∀ s, RawTyped Γ (ms s) ((E₂.get η).block.motiveType η ls ps l s))
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (wf : E₂[Γ.as.ctx ++ (E₂.get η).block.caseTele η ls ps ms s c] ⊢ₛ ok) :
+    (wf : E₂[Γ.as.ctx ++ (E₂.get η).block.caseTele η ls ps ms s c] ⊢ ok) :
     RawInterpretationProperties
       (⟨Γ.as.ctx ++ (E₂.get η).block.caseTele η ls ps ms s c, wf⟩ : CtxCat E₂ ℓ)
       ((E₂.get η).block.caseType η ls ps ms s c) := by
@@ -41,9 +41,9 @@ theorem RawSound.caseTypeProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
   simp only [Inductive.indexType_subst, Expr.subst, CtxCat.ctorFieldsHom, Fin.append_left] at pi
   simp only [← Ctor.targetIndex.eq_def] at pi
   have hindex i := (pi i).typed
-  have hmajor := DefeqStrong.ctorDF (fun p => (pp p).typed) inst.typed.ordinary inst.typed.recursive
-    ((h.block.ctors s c).ordinaryFieldExprStrong · (fun p => (pp p).typed) inst.typed.ordinary)
-    (fun f => ((h.block.ctors s c).recursiveFieldExprStrong rfl f T.as.wf (fun p => (pp p).typed)
+  have hmajor := Defeq.ctorDF (fun p => (pp p).typed) inst.typed.ordinary inst.typed.recursive
+    ((h.block.ctors s c).ordinaryFieldExpr · (fun p => (pp p).typed) inst.typed.ordinary)
+    (fun f => ((h.block.ctors s c).recursiveFieldExpr rfl f T.as.wf (fun p => (pp p).typed)
       inst.typed.ordinary).choose_spec)
     (.indDF (fun p => (pp p).typed) hindex)
   have pc := RawInterpretationProperties.ctor inst.typed

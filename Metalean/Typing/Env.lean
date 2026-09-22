@@ -5,74 +5,170 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Syntax.Eq
-public import Metalean.Strong.Defs
-import Metalean.Meta.Judgement
+public import Metalean.Typing.Inductive
+public import Metalean.Typing.Env.Defs
+import Metalean.Typing.InstLevel
+import Metalean.Typing.Substitution
+import Metalean.Typing.Telescope
+import Metalean.Typing.WeakenEnv
+import Metalean.Typing.Builtin.Eq
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 
 namespace Metalean
 
-variable {ζ : Sigs} {E : Env ζ} {ℓ n m : Nat} {Γ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ n m}
+open CategoryTheory
 
-namespace Entry
+variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
-judgement WFStrong (E : Env ζ) : {sig : Sig} → Entry ζ sig → Prop where
+namespace EntryWF
 
-  E[.nil] ⊢ₛ t typ
-  ──────────────────── «axiom» {ℓ : Nat} {t : Expr ζ ℓ 0}
-  WFStrong E (.axiom t)
+variable {sig sig₁ : Sig} {entry : Entry ζ sig}
 
-  E[.nil] ⊢ₛ e : t
-  E[.nil] ⊢ₛ t typ
-  ──────────────────── «opaque» {ℓ : Nat} {e t : Expr ζ ℓ 0}
-  WFStrong E (.opaque t)
+theorem weakenEnv {entry' : Entry ζ sig₁} :
+    EntryWF E entry →
+    EntryWF (E.snoc entry') entry.weakenEnv := by
+  intro h
+  induction h with
+  | «axiom» ht =>
+    obtain ⟨l, ht⟩ := ht
+    exact .axiom ⟨l, by
+      simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
+  | «opaque» he ht =>
+    obtain ⟨l, ht⟩ := ht
+    exact .opaque
+      (by simpa [Ctx.weakenEnv, Expr.weakenEnv] using he.weakenEnv entry')
+      ⟨l, by simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
+  | «def» ht he =>
+    obtain ⟨l, ht⟩ := ht
+    exact .def
+      ⟨l, by simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
+      (by simpa [Ctx.weakenEnv, Expr.weakenEnv] using he.weakenEnv entry')
+  | quot heq =>
+    exact .quot <| by
+      simpa using congrArg (Inductive.map (.step .refl : ζ ⟶ ζ.snoc sig₁)) heq
+  | «inductive» hi => exact .inductive hi.weakenEnv
 
-  E[.nil] ⊢ₛ t typ
-  E[.nil] ⊢ₛ e : t
-  ──────────────────── «def» {ℓ : Nat} {e t : Expr ζ ℓ 0}
-  WFStrong E (.def t e)
+theorem block {ι : IndSig} {entry : Entry ζ (.inductive ι)} :
+    EntryWF E entry →
+    InductiveWF E entry.block := by
+  intro h
+  cases h with
+  | «inductive» hi => exact hi
 
-  (E.get η).block = Eq.block
-  ──────────────────── quot {η : Head ζ (.inductive Eq.sig)}
-  WFStrong E (.quot η)
+theorem value {entry : Entry ζ (.const .def ℓ)} :
+    EntryWF E entry →
+    E[.nil] ⊢ entry.defValue : entry.constType := by
+  intro h
+  cases h with
+  | «def» _ he => exact he
 
-  I.WFStrong E
-  ──────────────────── «inductive» {ι : IndSig} {I : Inductive ζ ι}
-  WFStrong E (.inductive I)
+theorem type {kind : ConstKind} {entry : Entry ζ (.const kind ℓ)} :
+    EntryWF E entry →
+    E[.nil] ⊢ entry.constType typ := by
+  intro h
+  cases h with
+  | «axiom» ht | «opaque» _ ht | «def» ht _ => exact ht
 
-end Entry
+theorem constType {kind : ConstKind} {ℓ' : Nat}
+    {η : Head ζ (.const kind ℓ')} (h : EntryWF E (E.get η)) (ls : Fin ℓ' → Level ℓ) :
+    E[Γ] ⊢ ((E.get η).constType.instL ls).wkClosed typ :=
+  have ⟨l, ht⟩ := h.type
+  ⟨l.inst ls, by simpa! using (ht.instLevel ls).wkClosed⟩
 
-theorem Expr.falseTy_isType (E : Env ζ) : E[.nil] ⊢ₛ (.falseTy : Expr ζ 0 0) typ :=
-  ⟨_, .forallEDF .sortDF (.var .sortDF) (.var .sortDF)⟩
+theorem defValue {ℓ' : Nat} {η : Head ζ (.const .def ℓ')}
+    (h : EntryWF E (E.get η)) (ls : Fin ℓ' → Level ℓ) :
+    E[Γ] ⊢ ((E.get η).defValue.instL ls).wkClosed :
+      ((E.get η).constType.instL ls).wkClosed :=
+  (h.value.instLevel ls).wkClosed
 
-namespace Env
+theorem ctorType {ι : IndSig} {η : Head ζ (.inductive ι)} (h : EntryWF E (E.get η))
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    {ls : Fin ι.nlevels → Level ℓ}
+    {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
+    {fds₁ fds₂ : Fin (ι.ctors s c).nfields → Expr ζ ℓ n} :
+    (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
+      (E.get η).block.paramType ls ps₁ p) →
+    (∀ f, E[Γ] ⊢ fds₁ f ≡ fds₂ f :
+      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+        (Fin.append ps₁ fun previous : Fin f.val =>
+          fds₁ (previous.castLE f.isLt.le))) →
+    E[Γ] ⊢ .ind η s ls ps₁ (((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁) ≡
+      .ind η s ls ps₂ (((E.get η).block.ctors s c).targetIndex ls ps₂ fds₂) :
+      .sort ((E.get η).block.level.inst ls) := by
+  intro hps hfields
+  have hctor := h.block.ctors s c
+  exact .indDF hps (hctor.targetIndex_congr h.block.params · hps hfields)
 
--- TODO rename to WF
--- TODO do the TODO
-inductive Ordered : {ζ : Sigs} → Env ζ → Prop
-  | nil : Ordered .nil
-  | snoc {ζ : Sigs} {sig : Sig} {E : Env ζ} {entry : Entry ζ sig} :
-      Ordered E → Entry.WFStrong E entry → Ordered (.snoc E entry)
+end EntryWF
 
-theorem Ordered.ofPrefix {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
-    (pre : Prefix E₁ E₂) (ho : E₂.Ordered) : E₁.Ordered := by
-  induction pre with
-  | refl => exact ho
-  | step _ ih =>
-    have .snoc ho _ := ho
-    exact ih ho
+theorem Env.Ordered.entryWF (ho : E.Ordered) {sig : Sig} (η : Head ζ sig) :
+    EntryWF E (E.get η) := by
+  induction ho generalizing sig with
+  | nil => exact nomatch η
+  | snoc _ hentry ih =>
+    cases η with
+    | here =>
+      simpa [Env.get] using hentry.weakenEnv
+    | there η =>
+      simpa [Env.get] using (ih η).weakenEnv
 
-/--
-It is not the case that every closed type has a closed inhabitant
-This is for a particular environment.
-This effectively means you cannot enter new things into the environment like
-inductive types, or axioms or definitions.
-However definitions are admissible because of let bindings/inlining.
--/
-def Con (E : Env ζ) : Prop :=
-  ¬∀ t : Expr ζ 0 0, E[.nil] ⊢ₛ t typ → ∃ e, E[.nil] ⊢ₛ e : t
+theorem Env.Ordered.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (ho : E₀.Ordered)
+    (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.inductive ι)) :
+    ∃ (ζ₂ : Sigs) (E₂ : Env ζ₂) (pre₂ : E₂.as ⟶ E₀.as) (I : Inductive ζ₂ ι),
+      ζ₂.length < ζ₀.length ∧ InductiveWF E₂ I ∧
+        (E.get (η.map pre.sigs)).block = I.map (pre₂ ≫ pre).sigs := by
+  induction ho with
+  | nil => cases η
+  | @snoc ζ₁ sig E₀ entry ho hentry ih =>
+    cases η with
+    | here =>
+      cases entry with
+      | «inductive» I =>
+        have .«inductive» hi := hentry
+        refine ⟨_, E₀, .step .refl, I, Nat.lt_succ_self _, hi, ?_⟩
+        rw [dsimp% (Env.lookup _).naturality_apply pre Head.here]
+        exact (Functor.map_comp_apply (Env.forget ⋙ Inductive.functor ι) (X := E₀.as)
+          (Y := (E₀.snoc (.inductive I)).as) (Z := E.as) (.step .refl) pre I).symm
+    | there η =>
+      have ⟨ζ₂, E₂, pre₂, I, hlen, hi, hget⟩ := ih (.step .refl ≫ pre) η
+      refine ⟨ζ₂, E₂, pre₂ ≫ .step .refl, I, Nat.lt_succ_of_lt hlen, hi, ?_⟩
+      have hsigs := Env.forget.map_comp (X := E₀.as) (Y := (E₀.snoc entry).as) (Z := E.as)
+        (.step .refl) pre
+      have hη := ConcreteCategory.congr_hom ((Head.functor _).map_comp
+        (Sigs.Prefix.step .refl : ζ₁ ⟶ ζ₁.snoc sig) pre.sigs) η
+      dsimp at hsigs hη
+      rw [Category.assoc, ← hget, hsigs]
+      exact congrArg (fun η => (E.get η).block) hη.symm
 
-end Env
+open CategoryTheory in
+theorem Env.Ordered.def_spec {ℓ' : Nat} {ζ₀ : Sigs} {E₀ : Env ζ₀} (ho : E₀.Ordered)
+    (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.const .def ℓ')) :
+    ∃ (ζ₂ : Sigs) (E₂ : Env ζ₂) (pre₂ : E₂.as ⟶ E₀.as) (t e : Expr ζ₂ ℓ' 0),
+      ζ₂.length < ζ₀.length ∧ E₂[.nil] ⊢ e : t ∧
+        E.get (η.map pre.sigs) = (Entry.def t e).map (pre₂ ≫ pre).sigs := by
+  induction ho with
+  | nil => cases η
+  | @snoc ζ₁ sig E₀ entry ho hentry ih =>
+    cases η with
+    | here =>
+      cases entry with
+      | «def» t e =>
+        have .«def» _ he := hentry
+        refine ⟨_, E₀, .step .refl, t, e, Nat.lt_succ_self _, he, ?_⟩
+        rw [dsimp% (Env.lookup _).naturality_apply pre Head.here]
+        exact (Functor.map_comp_apply (Env.forget ⋙ Entry.functor _) (X := E₀.as)
+          (Y := (E₀.snoc (.def t e)).as) (Z := E.as) (.step .refl) pre (.def t e)).symm
+    | there η =>
+      have ⟨ζ₂, E₂, pre₂, t, e, hlen, he, hget⟩ := ih (.step .refl ≫ pre) η
+      refine ⟨ζ₂, E₂, pre₂ ≫ .step .refl, t, e, Nat.lt_succ_of_lt hlen, he, ?_⟩
+      have hsigs := Env.forget.map_comp (X := E₀.as) (Y := (E₀.snoc entry).as) (Z := E.as)
+        (.step .refl) pre
+      have hη := ConcreteCategory.congr_hom ((Head.functor _).map_comp
+        (Sigs.Prefix.step .refl : ζ₁ ⟶ ζ₁.snoc sig) pre.sigs) η
+      dsimp at hsigs hη
+      rw [Category.assoc, ← hget, hsigs]
+      exact congrArg E.get hη.symm
 
 end Metalean

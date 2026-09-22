@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Finset.Lattice.Fold
-public import Metalean.Typing.Env
+public import Metalean.Typing.Env.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 @[expose] public section

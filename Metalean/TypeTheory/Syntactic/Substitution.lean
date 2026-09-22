@@ -21,11 +21,11 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ Γ₁ Γ₂ Γ₃ : CtxCat E �
 
 namespace CtxCat
 
-def extensionMap (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
+def extensionMap (ht : E[Γ₂.as.ctx] ⊢ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
     extension Γ₁ (ht.substitution σ.typed) ⟶ extension Γ₂ ht :=
   RawCtx.toCtx.map (σ.lift ⟨u, ht⟩)
 
-theorem extensionMap_projection (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
+theorem extensionMap_projection (ht : E[Γ₂.as.ctx] ⊢ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
     extensionMap ht σ ≫ rawProjection Γ₂ ht =
       rawProjection Γ₁ (ht.substitution σ.typed) ≫ RawCtx.toCtx.map σ := by
   change RawCtx.toCtx.map (σ.lift ⟨u, ht⟩) ≫ RawCtx.toCtx.map (projectionRaw Γ₂ ht) =
@@ -38,12 +38,12 @@ theorem extensionMap_projection (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : 
   rw [Subst.lift_castSucc, Expr.subst_wk]
 
 @[simp]
-theorem map_extensionMap_binderVar (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
+theorem map_extensionMap_binderVar (ht : E[Γ₂.as.ctx] ⊢ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
     (Tm E ℓ).map (extensionMap ht σ).op (Tm.rawBinderVar Γ₂.as ht) =
       Tm.rawBinderVar Γ₁.as (ht.substitution σ.typed) :=
   (Tm.map_varLabel (σ.lift ⟨u, ht⟩) _).trans (Tm.label_eq_var _ (Subst.lift_last σ.subst))
 
-theorem extensionIsPullback (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
+theorem extensionIsPullback (ht : E[Γ₂.as.ctx] ⊢ t : .sort u) (σ : Γ₁.as ⟶ Γ₂.as) :
     IsPullback (extensionMap ht σ)
       (rawProjection Γ₁ (ht.substitution σ.typed))
       (rawProjection Γ₂ ht) (RawCtx.toCtx.map σ) := by
@@ -59,18 +59,18 @@ theorem extensionIsPullback (ht : E[Γ₂.as.ctx] ⊢ₛ t : .sort u) (σ : Γ�
   exact h.of_right (by simpa using congrArg yoneda.map (extensionMap_projection ht σ))
     (rawExtensionIsRepresented ht)
 
-def contextConversionRaw (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ) (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁)
-    (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
+def contextConversionRaw (h : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ) (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u₁)
+    (ht₂ : E[Γ₁.as.ctx] ⊢ t₂ : .sort u₂) :
     (extension Γ₁ ht₂).as ⟶ (extension Γ₁ ht₁).as :=
   RawCtx.Hom.convert Γ₁.as h
 
-def contextConversion (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ) (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁)
-    (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
+def contextConversion (h : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ) (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u₁)
+    (ht₂ : E[Γ₁.as.ctx] ⊢ t₂ : .sort u₂) :
     extension Γ₁ ht₂ ⟶ extension Γ₁ ht₁ :=
   RawCtx.toCtx.map (contextConversionRaw h ht₁ ht₂)
 
-instance contextConversion_isIso (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
-    (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
+instance contextConversion_isIso (h : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ)
+    (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ t₂ : .sort u₂) :
     IsIso (contextConversion h ht₁ ht₂) :=
   let i : (extension Γ₁ ht₂).as ≅ (extension Γ₁ ht₁).as := {
     hom := contextConversionRaw h ht₁ ht₂
@@ -80,14 +80,14 @@ instance contextConversion_isIso (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
   inferInstanceAs (IsIso (RawCtx.toCtx.mapIso i).hom)
 
 @[simp]
-theorem contextConversion_projection (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
-    (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
+theorem contextConversion_projection (h : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ)
+    (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ t₂ : .sort u₂) :
     contextConversion h ht₁ ht₂ ≫ rawProjection Γ₁ ht₁ = rawProjection Γ₁ ht₂ :=
   rfl
 
 @[simp]
-theorem contextConversion_binderVar (h : E[Γ₁.as.ctx] ⊢ₛ t₁ ≡ t₂ typ)
-    (ht₁ : E[Γ₁.as.ctx] ⊢ₛ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ₛ t₂ : .sort u₂) :
+theorem contextConversion_binderVar (h : E[Γ₁.as.ctx] ⊢ t₁ ≡ t₂ typ)
+    (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u₁) (ht₂ : E[Γ₁.as.ctx] ⊢ t₂ : .sort u₂) :
     (Tm E ℓ).map (contextConversion h ht₁ ht₂).op (Tm.rawBinderVar Γ₁.as ht₁) =
       Tm.rawBinderVar Γ₁.as ht₂ :=
   (Tm.map_varLabel (contextConversionRaw h ht₁ ht₂) _).trans (Tm.label_eq_var _ rfl)
@@ -98,7 +98,7 @@ namespace Ty.Repr
 
 variable {X : (CtxCat E ℓ)ᵒᵖ ⥤ Type}
 
-theorem eval_conversion (T₁ T₂ : Repr Γ₁) (h : E[Γ₁.as.ctx] ⊢ₛ T₁.term ≡ T₂.term typ)
+theorem eval_conversion (T₁ T₂ : Repr Γ₁) (h : E[Γ₁.as.ctx] ⊢ T₁.term ≡ T₂.term typ)
     (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ X)
     (h₁ : A = T₁.comprehension.type) (h₂ : A = T₂.comprehension.type) :
     T₂.comprehension.eval A B h₂ =

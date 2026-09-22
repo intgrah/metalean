@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Syntax.Inductive.Recovery
-public import Metalean.Strong.ProofFields
+public import Metalean.Typing.ProofFields
 public import Metalean.Semantics.Interpretation.Recursor.Recovery
 public import Metalean.Semantics.Interpretation.Recursor.Section
 public import Metalean.Semantics.Soundness.Judgment
@@ -35,12 +35,12 @@ theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level.inst ls = .
     (hn' : RecoveryNames η s c ls indexNames sect'.names) : sect = sect' := by
   have ⟨α, hα⟩ := RawCtx.toCtx.map_surjective sect.hom
   have ⟨β, hβ⟩ := RawCtx.toCtx.map_surjective sect'.hom
-  have heq : E[Γ₂.as.ctx] ⊢ₛ α.subst ≡ β.subst ⊣ (CtxCat.ctorFields h.toIndData s c).as.ctx := by
+  have heq : E[Γ₂.as.ctx] ⊢ α.subst ≡ β.subst ⊣ (CtxCat.ctorFields h.toIndData s c).as.ctx := by
     refine .of_proof_or_eq (CtxCat.ctorFields h.toIndData s c).as.wf α.typed β.typed fun v => ?_
     have of_names (v : Var (CtxCat.ctorFields h.toIndData s c).as.len)
         (hv : (Tm E ℓ).map sect.hom.op (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) v) =
           (Tm E ℓ).map sect'.hom.op (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) v)) :
-        E[Γ₂.as.ctx] ⊢ₛ α.subst v ≡ β.subst v :
+        E[Γ₂.as.ctx] ⊢ α.subst v ≡ β.subst v :
           (Ctx.get v (CtxCat.ctorFields h.toIndData s c).as.ctx).subst α.subst := by
       rw [← hα, ← hβ] at hv
       exact (Quotient.exact
@@ -56,22 +56,22 @@ theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level.inst ls = .
           exact Or.inr (of_names _ (hni.trans hnj.symm))
         · have hz : (((E.get η).block.ctors s c).ordinary f).level.inst ls = .zero := by
             simpa using hf
-          have hp := (h.block.ctors s c).ordinaryFieldExprStrong f
+          have hp := (h.block.ctors s c).ordinaryFieldExpr f
             (h.fields s c).param (CtorInstance.generic h.toIndData s c).typed.ordinary
           rw [hz] at hp
-          refine Or.inl (DefeqStrong.substitution (t := .prop) α.typed ?_)
-          change E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢ₛ
+          refine Or.inl (Defeq.substitution (t := .prop) α.typed ?_)
+          change E[(CtxCat.ctorFields h.toIndData s c).as.ctx] ⊢
             Ctx.get (fieldVar h.toIndData s c (f.castAdd _))
               (CtxCat.ctorFields h.toIndData s c).as.ctx : .prop
           rw [CtxCat.ctorFields_get_ordinary]
           exact hp
     · rw [← fieldVar_natAdd h.toIndData s c f]
       have hi := h.ihTyping s c f
-      have hp := DefeqStrong.indDF hi.param hi.index
+      have hp := Defeq.indDF hi.param hi.index
       rw [herased] at hp
-      have hp := Ctx.pi_propStrong (fieldTelescope h.toIndData s c f)
+      have hp := Ctx.pi_prop (fieldTelescope h.toIndData s c f)
         (CtxCat.ctorFieldTarget h.toIndData s c f).as.wf hp
-      refine Or.inl (DefeqStrong.substitution (t := .prop) α.typed ?_)
+      refine Or.inl (Defeq.substitution (t := .prop) α.typed ?_)
       rw [CtxCat.ctorFields_get_recursive]
       exact hp
   exact CtorSection.ext (hα ▸ hβ ▸ (RawCtx.toCtx_map_eq_iff α β).mpr heq)

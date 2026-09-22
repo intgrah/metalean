@@ -10,7 +10,7 @@ public import Metalean.Semantics.Domain.Quotient.Basic
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.Semantics.Interpretation.Family.Basic
 import Mathlib.Order.Filter.Basic
-import Metalean.Strong.Quot
+import Metalean.Typing.Quot
 
 @[expose] public section
 
@@ -198,19 +198,19 @@ section QuotFamily
 variable {η : Head ζ .quot} {u : Level ℓ} {α α' r r' : Expr ζ ℓ Γ₁.as.len}
 
 structure QuotTyping (Γ : CtxCat E ℓ) (u : Level ℓ) (α r : Expr ζ ℓ Γ.as.len) : Prop where
-  carrier : E[Γ.as.ctx] ⊢ₛ α : .sort u
-  relation : E[Γ.as.ctx] ⊢ₛ r : Quot.relType α
+  carrier : E[Γ.as.ctx] ⊢ α : .sort u
+  relation : E[Γ.as.ctx] ⊢ r : Quot.relType α
 
 namespace QuotTyping
 
 variable (Γ₁) in
-theorem ofTyping {t : Expr ζ ℓ Γ₁.as.len} (h : E[Γ₁.as.ctx] ⊢ₛ .quot η u α r : t) :
+theorem ofTyping {t : Expr ζ ℓ Γ₁.as.len} (h : E[Γ₁.as.ctx] ⊢ .quot η u α r : t) :
     QuotTyping Γ₁ u α r :=
   have ⟨hα, hr⟩ := h.quot_formation_inv
   ⟨hα, hr⟩
 
 theorem ofLift {v : Level ℓ} {β f h a t : Expr ζ ℓ Γ₁.as.len}
-    (hlift : E[Γ₁.as.ctx] ⊢ₛ .quotLift η u v α r β f h a : t) :
+    (hlift : E[Γ₁.as.ctx] ⊢ .quotLift η u v α r β f h a : t) :
     QuotTyping Γ₁ u α r :=
   have ⟨_, _, _, _, _, _, hα, hr, _⟩ := hlift.quotLift_prem
   ⟨hα.right, .defeqDF (Quot.relType_congr hα) hr.right⟩
@@ -218,12 +218,12 @@ theorem ofLift {v : Level ℓ} {β f h a t : Expr ζ ℓ Γ₁.as.len}
 noncomputable def code (h : QuotTyping Γ₁ u α r) (η : Head ζ .quot) : QuotCode Γ₁ :=
   ⟨η, u, Tm.label Γ₁.as h.carrier, Tm.label Γ₁.as h.relation⟩
 
-theorem left (hα : E[Γ₁.as.ctx] ⊢ₛ α ≡ α' : .sort u)
-    (hr : E[Γ₁.as.ctx] ⊢ₛ r ≡ r' : Quot.relType α) : QuotTyping Γ₁ u α r :=
+theorem left (hα : E[Γ₁.as.ctx] ⊢ α ≡ α' : .sort u)
+    (hr : E[Γ₁.as.ctx] ⊢ r ≡ r' : Quot.relType α) : QuotTyping Γ₁ u α r :=
   ⟨hα.left, hr.left⟩
 
-theorem right (hα : E[Γ₁.as.ctx] ⊢ₛ α ≡ α' : .sort u)
-    (hr : E[Γ₁.as.ctx] ⊢ₛ r ≡ r' : Quot.relType α) : QuotTyping Γ₁ u α' r' :=
+theorem right (hα : E[Γ₁.as.ctx] ⊢ α ≡ α' : .sort u)
+    (hr : E[Γ₁.as.ctx] ⊢ r ≡ r' : Quot.relType α) : QuotTyping Γ₁ u α' r' :=
   ⟨hα.right, .defeqDF (Quot.relType_congr hα) hr.right⟩
 
 theorem subst (h : QuotTyping Γ₁ u α r) (σ : Γ₂.as ⟶ Γ₁.as) :
@@ -237,8 +237,8 @@ theorem code_map (h : QuotTyping Γ₁ u α r) (η : Head ζ .quot) (σ : Γ₂.
   congr 1
   exact congr(Tm.label _ (t := $(by simp)) _)
 
-theorem code_congr (hα : E[Γ₁.as.ctx] ⊢ₛ α ≡ α' : .sort u)
-    (hr : E[Γ₁.as.ctx] ⊢ₛ r ≡ r' : Quot.relType α)
+theorem code_congr (hα : E[Γ₁.as.ctx] ⊢ α ≡ α' : .sort u)
+    (hr : E[Γ₁.as.ctx] ⊢ r ≡ r' : Quot.relType α)
     (h : QuotTyping Γ₁ u α r) (h' : QuotTyping Γ₁ u α' r') (η : Head ζ .quot) :
     h.code η = h'.code η := by
   unfold code

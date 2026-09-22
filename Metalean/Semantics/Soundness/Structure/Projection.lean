@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.TypeTheory.Syntactic.Section
-public import Metalean.Strong.Structure
+public import Metalean.Typing.Structure
 public import Metalean.Semantics.Soundness.Recursor.Typing
 public import Metalean.Semantics.Soundness.Structure.Case
 
@@ -36,14 +36,14 @@ theorem rawApps_append_no_recursive {k : Nat}
   rw [rawApps_append, rawApps_zero]
 
 theorem RecTyping.structure_projection (hs : (E₂.get η).block.IsStructure s c)
-    (hB : (E₂.get η).block.WFStrong E₂)
-    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
-    (hmaj : E₂[Γ₁.as.ctx] ⊢ₛ maj : .ind η s ls ps hs.indices)
+    (hB : InductiveWF E₂ (E₂.get η).block)
+    (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
+    (hmaj : E₂[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hs.indices)
     (f : Fin (ι.ctors s c).nfields) :
     RecTyping Γ₁ η s ls ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)
       ps (hs.projectionMotives η ls ps f)
       (hs.projectionCases η ls ps f (hs.projectionMotives η ls ps f)) hs.indices maj := by
-  have hp := hs.projectionStrong hB Γ₁.as.wf hps hmaj f
+  have hp := hs.projection_spec hB Γ₁.as.wf hps hmaj f
   exact {
     block := hB
     allowed := hs.recAllowed _
@@ -91,7 +91,7 @@ theorem rawRecCase_of_structural (hs : (E₂.get η).block.IsStructure s c)
     rw [caseArgs, rawApps_append_no_recursive hs]
     simpa using hy
 
-theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hs : (E₂.get η).block.IsStructure s c)
     (h : RecTyping Γ₁ η s ls l ps ms mins hs.indices maj) (hrel : l.rel = true)
     (hcarrier : Level.rel ((E₂.get η).block.level.inst ls) = true)
@@ -105,13 +105,13 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : I.WFStro
         ((Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as h.typed))
         (rawApps ((rawInterpret (piLimit E₂ ℓ) Γ₁ (mins s c)).app _ σ.op ρ)
           (Fin.append (fun f => (Tm E₂ ℓ).map σ.op (Tm.label Γ₁.as
-              (hs.projTerm_hasTypeStrong h.block f Γ₁.as.wf h.param h.major)))
+              (hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major)))
             hs.no_recursive.elim)
           fun i => RawValue.proj ⟨η, s, c⟩ i ((rawInterpret (piLimit E₂ ℓ) Γ₁ maj).app _ σ.op ρ)) := by
   let hd := h.toRecDecl
   let gen := RecTyping.generic hd ls s
-  have hA := hs.indTypeStrong gen.param
-  have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ₛ .var (RecrBinder.major (s := s)).resolve :
+  have hA := hs.indType gen.param
+  have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
       .ind η s ls (fun p => .var (RecrBinder.param p).resolve) hs.indices := by
     have hm := gen.major
     rwa [show (fun i => (Expr.var (RecrBinder.index (s := s) i).resolve :
@@ -140,11 +140,10 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : I.WFStro
       refine congrArg _ (Quotient.sound ⟨?_, ?_⟩) <;> dsimp only [Tm.Repr.ty, Tm.Repr.val]
       · simp only [Inductive.IsStructure.projType_subst, RecTyping.recrHom, Expr.subst,
           Inductive.recrSubst_param, Inductive.recrSubst_major]
-        exact IsTypeStrong.isTypeEq
-          (hs.projTerm_hasTypeStrong h.block f Γ₁.as.wf h.param h.major).regular
+        exact IsType.isTypeEq (hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major).regular
       · simp only [Inductive.IsStructure.projType_subst, Inductive.IsStructure.projTerm_subst,
           RecTyping.recrHom, Expr.subst, Inductive.recrSubst_param, Inductive.recrSubst_major]
-        exact hs.projTerm_hasTypeStrong h.block f Γ₁.as.wf h.param h.major
+        exact hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major
     | right f => exact hs.no_recursive.elim f
   · simp [RawFamily.lookup, RawValuation.pushFin]
     rfl

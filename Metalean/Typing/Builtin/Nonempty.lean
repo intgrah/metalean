@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Builtin.Nonempty
-public import Metalean.Typing.Env
+public import Metalean.Typing.Env.Defs
 
 @[expose] public section
 
@@ -24,7 +24,7 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   dsimp [Ctor.map]
   congr <;> exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WFStrong E :=
+theorem wf (E : Env ζ) : InductiveWF E block :=
   ⟨.snoc .nil ⟨_, trivial, .sortDF⟩,
     fun _ => .nil,
     fun ⟨0, _⟩ ⟨0, _⟩ => {

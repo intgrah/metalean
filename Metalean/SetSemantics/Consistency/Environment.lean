@@ -7,7 +7,7 @@ module
 
 public import Metalean.SetSemantics.Environment.Inductive.Soundness
 public import Metalean.SetSemantics.Environment.Quot
-public import Metalean.Strong.InstLevel
+public import Metalean.Typing.InstLevel
 
 @[expose] public section
 
@@ -213,9 +213,9 @@ noncomputable def Env.Model.addAxiom {pre : Env ζ} {nlevels : Nat}
 
 noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
     {t : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
-    (hwf : Entry.WFStrong pre (.opaque t)) : Model.{u} (pre.snoc (.opaque t)) := by
-  have hex : ∃ e, pre[.nil] ⊢ₛ e : t :=
-    have @Entry.WFStrong.opaque _ _ _ e _ heq _ := hwf
+    (hwf : EntryWF pre (.opaque t)) : Model.{u} (pre.snoc (.opaque t)) := by
+  have hex : ∃ e, pre[.nil] ⊢ e : t :=
+    have @EntryWF.opaque _ _ _ e _ heq _ := hwf
     ⟨e, heq⟩
   apply m.addConst (m.atoms[![]]⟦hex.choose.instL ·⟧)
   intro ε hatoms heq
@@ -225,7 +225,7 @@ noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
 
 noncomputable def Env.Model.addDef {pre : Env ζ} {ℓ : Nat}
     {t e : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
-    (hwf : Entry.WFStrong pre (.def t e)) : Model.{u} (pre.snoc (.def t e)) := by
+    (hwf : EntryWF pre (.def t e)) : Model.{u} (pre.snoc (.def t e)) := by
   apply m.addConst (m.atoms[![]]⟦e.instL ·⟧)
   intro ε hatoms heq
   refine .def (fun ls => ?_) fun ls => ?_

@@ -20,7 +20,7 @@ open CategoryTheory Presheaf CodeAssignment
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
 theorem RawFamily.ctxLam_openBeta {P : Level ℓ → Prop} {b m k : Nat}
-    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hk : Γ₁.as.len + k = m) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
+    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hk : Γ₁.as.len + k = m) (hΔ : TeleWF E P Γ₁.as.ctx Δ)
     (pΔ : RawTeleProperties E Γ₁.as.ctx Δ) (hb : Δ.headRank < b)
     (B : RawFamily (CtxCat.extendTele Γ₁ Δ hΔ)) (fB : B.IsFinitary)
     (iB : ∀ ⦃Γ₄ : CtxCat E ℓ⦄ (σ : Γ₄ ⟶ CtxCat.extendTele Γ₁ Δ hΔ) (ρ₂ : RawValuation Γ₄),
@@ -40,7 +40,7 @@ theorem RawFamily.ctxLam_openBeta {P : Level ℓ → Prop} {b m k : Nat}
     rw [Category.comp_id]
   | snoc k Δ A ih =>
     let G := CtxCat.extendTele Γ₁ Δ hΔ.init
-    have hA : E[G.as.ctx] ⊢ₛ A : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have hA : E[G.as.ctx] ⊢ A : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     have pA : RawInterpretationProperties G A := pΔ.last G.as.wf
     have .cons _ _ _ htail _ hdir hfixed := hρ
     rw [rawApps_last]
@@ -68,19 +68,19 @@ theorem RawFamily.ctxLam_openBeta {P : Level ℓ → Prop} {b m k : Nat}
     exact hb.trans (congrArg (fun X => B.app _ σ.op ((ρ₁.pushFin fun i => args i.castSucc).push X)) hfixed)
 
 theorem RawInterpretationProperties.ctxLam {m : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
+    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hΔ : TeleWF E P Γ₁.as.ctx Δ)
     (pΔ : RawTeleProperties E Γ₁.as.ctx Δ) (body : Expr ζ ℓ m)
     (pbody : RawInterpretationProperties (CtxCat.extendTele Γ₁ Δ hΔ) body) :
     RawInterpretationProperties Γ₁ (Ctx.lam body Δ) := by
   induction Δ with
   | nil => exact pbody
   | snoc Δ t ih =>
-    have ht : E[Γ₁.as.ctx ++ Δ] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have ht : E[Γ₁.as.ctx ++ Δ] ⊢ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     exact ih hΔ.init pΔ.init (.lam t body)
       (RawInterpretationProperties.lam ht (pΔ.last _) pbody)
 
 theorem RawTyped.ctxLam {m : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
+    (Δ : Ctx ζ ℓ Γ₁.as.len m) (hΔ : TeleWF E P Γ₁.as.ctx Δ)
     (pΔ : RawTeleProperties E Γ₁.as.ctx Δ) {e t : Expr ζ ℓ m}
     (pb : RawTyped (CtxCat.extendTele Γ₁ Δ hΔ) e t) :
     RawTyped Γ₁ (Ctx.lam e Δ) (Ctx.pi t Δ) := by
@@ -88,7 +88,7 @@ theorem RawTyped.ctxLam {m : Nat} {P : Level ℓ → Prop}
   | nil => exact pb
   | snoc Δ A ih => exact ih hΔ.init pΔ.init (pb.lam hΔ.last.choose_spec.2 (pΔ.last _))
 
-theorem rawInterpret_ctxLam_beta {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok)
+theorem rawInterpret_ctxLam_beta {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ ok)
     (hprops : RawTeleProperties E .nil ctx) (body : Expr ζ ℓ n)
     (pbody : RawInterpretationProperties (⟨ctx, hctx⟩ : CtxCat E ℓ) body)
     (σ : Γ₁ ⟶ (⟨ctx, hctx⟩ : CtxCat E ℓ)) (ρ₁ ρ₂ : RawValuation Γ₁)
@@ -98,7 +98,7 @@ theorem rawInterpret_ctxLam_beta {ctx : Ctx ζ ℓ 0 n} (hctx : E[ctx] ⊢ₛ ok
       (fun v : Var n => (Tm E ℓ).map σ.op (Tm.varLabel ⟨ctx, hctx⟩ v))
       (fun v : Var n => ρ₂ v.db) =
       (rawInterpret (piLimit E ℓ) ⟨ctx, hctx⟩ body).app _ σ.op ρ₂ := by
-  have hΔ := hctx.wfTeleStrong
+  have hΔ := hctx.teleWF
   generalize hc : ctx = ctx' at hctx pbody σ hρ ⊢
   rw [← Tele.nil_append ctx] at hc
   subst ctx'

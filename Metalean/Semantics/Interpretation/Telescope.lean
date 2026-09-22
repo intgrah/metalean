@@ -16,7 +16,7 @@ open CategoryTheory IndSig
 variable {ζ : Sigs} {E : Env ζ} {ℓ b m : Nat} {P : Level ℓ → Prop}
 
 theorem rawInterpret_ctxLam (D : CodeAssignment E ℓ) {Γ : CtxCat E ℓ}
-    (Δ : Ctx ζ ℓ Γ.as.len m) (hΔ : WFTeleStrong E P Γ.as.ctx Δ) (hb : Δ.headRank < b)
+    (Δ : Ctx ζ ℓ Γ.as.len m) (hΔ : TeleWF E P Γ.as.ctx Δ) (hb : Δ.headRank < b)
     (body : Expr ζ ℓ m) :
     rawInterpret D Γ (Ctx.lam body Δ) =
       RawFamily.ctxLam D (fun Γ e _ => rawInterpret D Γ e) Γ Δ hΔ hb
@@ -52,7 +52,7 @@ theorem recursorHyp_eq (D : CodeAssignment E ℓ) (hd : RecDecl E η l) (hrel : 
               (ι.ctors s c).nrecFields)
             (fun t c₁ => ((Expr.var (RecrBinder.case t c₁).resolve).wkN (ι.ctors s c).nfields).wkN
               (ι.ctors s c).nrecFields) f)) := by
-  rw [CtorInstance.generic_ih_eq_lam, rawInterpret_ctxLam D _ (fieldTelescopeStrong _ s c f)
+  rw [CtorInstance.generic_ih_eq_lam, rawInterpret_ctxLam D _ (fieldTelescope_wf _ s c f)
       (fieldTelescope_headRank_lt _ (fun _ => Expr.headRank_var_le _) s c f),
     rawInterpret_recr D ((RecTyping.generic hd ls s).toRecData.ihTyping s c f) hrel]
   rfl

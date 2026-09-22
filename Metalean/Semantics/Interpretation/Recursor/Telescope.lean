@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Telescope
+public import Metalean.Typing.Telescope
 public import Metalean.Semantics.Interpretation.Binder.Abstraction
 public import Metalean.Semantics.Syntax.Rank
 
@@ -16,8 +16,8 @@ namespace Metalean.CoherentShape
 variable {ζ : Sigs} {E : Env ζ} {ℓ b : Nat} {P : Level ℓ → Prop}
 
 abbrev CtxCat.extendTele {m : Nat} (Γ : CtxCat E ℓ) (Δ : Ctx ζ ℓ Γ.as.len m)
-    (hΔ : WFTeleStrong E P Γ.as.ctx Δ) : CtxCat E ℓ :=
-  ⟨Γ.as.ctx ++ Δ, hΔ.appendCtxWFStrong Γ.as.wf⟩
+    (hΔ : TeleWF E P Γ.as.ctx Δ) : CtxCat E ℓ :=
+  ⟨Γ.as.ctx ++ Δ, hΔ.appendCtxWF Γ.as.wf⟩
 
 namespace RawFamily
 
@@ -25,7 +25,7 @@ variable (D : CodeAssignment E ℓ)
   (interp : (Γ : CtxCat E ℓ) → (e : Expr ζ ℓ Γ.as.len) → e.headRank < b → RawFamily Γ)
 
 noncomputable def ctxLam (Γ : CtxCat E ℓ) {m : Nat} :
-    (Δ : Ctx ζ ℓ Γ.as.len m) → (hΔ : WFTeleStrong E P Γ.as.ctx Δ) → Δ.headRank < b →
+    (Δ : Ctx ζ ℓ Γ.as.len m) → (hΔ : TeleWF E P Γ.as.ctx Δ) → Δ.headRank < b →
       RawFamily (CtxCat.extendTele Γ Δ hΔ) → RawFamily Γ
   | .nil => fun _ _ B => B
   | .snoc Δ t => fun hΔ hb B =>
@@ -33,7 +33,7 @@ noncomputable def ctxLam (Γ : CtxCat E ℓ) {m : Nat} :
       (abstraction D (CtxCat.rawComprehension hΔ.last.choose_spec.2)
         (interp _ t (lt_of_le_of_lt (le_max_right _ _) hb)) B)
 
-variable {D interp} {Γ : CtxCat E ℓ} {m : Nat} {Δ : Ctx ζ ℓ Γ.as.len m} {hΔ : WFTeleStrong E P Γ.as.ctx Δ}
+variable {D interp} {Γ : CtxCat E ℓ} {m : Nat} {Δ : Ctx ζ ℓ Γ.as.len m} {hΔ : TeleWF E P Γ.as.ctx Δ}
   {hb : Δ.headRank < b}
 
 theorem ctxLam_mono {B₁ B₂ : RawFamily (CtxCat.extendTele Γ Δ hΔ)} (hB : B₁ ≤ B₂) :

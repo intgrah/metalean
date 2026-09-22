@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Defs
+public import Metalean.Typing.Defs
 public import Metalean.Syntax.Substitution
 public import Metalean.Syntax.Weakening
 import Metalean.Syntax.Structure.Projection
@@ -18,7 +18,7 @@ variable {ζ : Sigs} (E : Env ζ) {ℓ n m : Nat}
   (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m)
 
 private inductive SubstImage (v : Var n) : Prop where
-  | typed (h : E[Γ₂] ⊢ₛ σ v : (Γ₁.get v).subst σ)
+  | typed (h : E[Γ₂] ⊢ σ v : (Γ₁.get v).subst σ)
   | renamed (w : Var m) (hσ : σ v = .var w)
       (htype : Γ₂.get w = (Γ₁.get v).subst σ)
 
@@ -27,7 +27,7 @@ private def SubstRen : Prop :=
 
 variable {E Γ₁ Γ₂ σ} {σ₁ σ₂ : Subst ζ ℓ n m} {σ' σ₁' σ₂' : Subst ζ ℓ (n + 1) m} {Γ : Ctx ζ ℓ 0 m}
 
-namespace DefeqStrong
+namespace Defeq
 
 private theorem substOf
     (P : ∀ {n m : Nat}, Ctx ζ ℓ 0 n → Ctx ζ ℓ 0 m → Subst ζ ℓ n m → Prop)
@@ -37,8 +37,8 @@ private theorem substOf
       {t : Expr ζ ℓ n}, P Γ₁ Γ₂ σ → P (Γ₁.snoc t) (Γ₂.snoc (t.subst σ)) σ.lift)
     {n : Nat} {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m} {e₁ e₂ t : Expr ζ ℓ n}
     {σ : Subst ζ ℓ n m} (hσ : P Γ₁ Γ₂ σ) :
-    E[Γ₁] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ₂] ⊢ₛ e₁.subst σ ≡ e₂.subst σ : t.subst σ := by
+    E[Γ₁] ⊢ e₁ ≡ e₂ : t →
+    E[Γ₂] ⊢ e₁.subst σ ≡ e₂.subst σ : t.subst σ := by
   intro h
   induction h generalizing m Γ₂ with
     try simp! [Expr.inst_subst, Expr.wk_subst_lift] at *
@@ -120,19 +120,19 @@ private theorem substOf
 
 theorem wkFrom {cut n : Nat} {e₁ e₂ t : Expr ζ ℓ n}
     (Γ₀ : Ctx ζ ℓ 0 cut) (Δ : Ctx ζ ℓ cut n) (t₁ : Expr ζ ℓ cut) :
-    E[Γ₀ ++ Δ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ₀.insert t₁ Δ] ⊢ₛ e₁.wkFrom cut ≡ e₂.wkFrom cut : t.wkFrom cut := by
+    E[Γ₀ ++ Δ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ₀.insert t₁ Δ] ⊢ e₁.wkFrom cut ≡ e₂.wkFrom cut : t.wkFrom cut := by
   simpa [Expr.wkFrom_eq_subst] using
     substOf Subst.Renames
       (fun hσ v => have ⟨w, hw, htype⟩ := hσ v; .renamed w hw htype)
       Subst.Renames.lift (Subst.renames_wkFrom Γ₀ t₁ Δ)
 
 theorem wk {e₁ e₂ t : Expr ζ ℓ m} (t₁ : Expr ζ ℓ m) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ.snoc t₁] ⊢ₛ e₁.wk ≡ e₂.wk : t.wk :=
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ.snoc t₁] ⊢ e₁.wk ≡ e₂.wk : t.wk :=
   wkFrom Γ #t[] t₁
 
-end DefeqStrong
+end Defeq
 
 private theorem SubstRen.lift {t : Expr ζ ℓ n} (h : SubstRen E Γ₁ Γ₂ σ) :
     SubstRen E (Γ₁.snoc t) (Γ₂.snoc (t.subst σ)) σ.lift := fun v => by
@@ -159,7 +159,7 @@ private theorem SubstRen.liftN (h : SubstRen E Γ₁ Γ₂ σ)
   | snoc k Δ t ih => simpa [Ctx.substN, Subst.liftN] using ih.lift
 
 private theorem SubstRen.inst
-    {t e : Expr ζ ℓ m} (he : E[Γ] ⊢ₛ e : t) :
+    {t e : Expr ζ ℓ m} (he : E[Γ] ⊢ e : t) :
     SubstRen E (Γ.snoc t) Γ (Subst.id.extend e) := fun v => by
   cases v using Fin.lastCases with
   | last =>
@@ -170,47 +170,45 @@ private theorem SubstRen.inst
     change _ = (Γ.get v).wk.inst e
     simp
 
-namespace DefeqStrong
+namespace Defeq
 
 private theorem substRen {e₁ e₂ t : Expr ζ ℓ n} :
     SubstRen E Γ₁ Γ₂ σ →
-    E[Γ₁] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ₂] ⊢ₛ e₁.subst σ ≡ e₂.subst σ : t.subst σ :=
+    E[Γ₁] ⊢ e₁ ≡ e₂ : t →
+    E[Γ₂] ⊢ e₁.subst σ ≡ e₂.subst σ : t.subst σ :=
   substOf (SubstRen E) id SubstRen.lift
 
 theorem substitution {e₁ e₂ t : Expr ζ ℓ n} :
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₁] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ₂] ⊢ₛ e₁.subst σ ≡ e₂.subst σ : t.subst σ :=
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₁] ⊢ e₁ ≡ e₂ : t →
+    E[Γ₂] ⊢ e₁.subst σ ≡ e₂.subst σ : t.subst σ :=
   fun hσ h => h.substRen fun v => .typed (hσ v)
 
 theorem inst_congr {e₁ e₂ t : Expr ζ ℓ m} {e' t' : Expr ζ ℓ (m + 1)} :
-    E[Γ.snoc t] ⊢ₛ e' : t' →
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ₛ e'.inst e₁ ≡ e'.inst e₂ : t'.inst e₁ := by
+    E[Γ.snoc t] ⊢ e' : t' →
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ] ⊢ e'.inst e₁ ≡ e'.inst e₂ : t'.inst e₁ := by
   intro he' he
   have ⟨u, ht⟩ := he.regular
   have ⟨v, ht'⟩ := he'.regular
   have he₁ := he.left
   have he₂ := he.right
-  have hte₁' : E[Γ] ⊢ₛ t'.inst e₁ : .sort v := ht'.substRen (SubstRen.inst he₁)
-  have hte₂' : E[Γ] ⊢ₛ t'.inst e₂ : .sort v := ht'.substRen (SubstRen.inst he₂)
+  have hte₁' : E[Γ] ⊢ t'.inst e₁ : .sort v := ht'.substRen (SubstRen.inst he₁)
+  have hte₂' : E[Γ] ⊢ t'.inst e₂ : .sort v := ht'.substRen (SubstRen.inst he₂)
   have hte' :=
-    (DefeqStrong.beta ht .sortDF ht' he₁ .sortDF hte₁').symm.trans
-      ((DefeqStrong.appDF ht .sortDF
-        (.lamDF ht .sortDF .sortDF ht' ht') he .sortDF).trans
-          (.beta ht .sortDF ht' he₂ .sortDF hte₂'))
-  exact (DefeqStrong.beta ht ht' he' he₁ hte₁'
-    (he'.substRen (SubstRen.inst he₁))).symm.trans
-      ((DefeqStrong.appDF ht ht' (.lamDF ht ht' ht' he' he') he hte').trans
-        (.defeqDF hte'.symm (.beta ht ht' he' he₂ hte₂'
-          (he'.substRen (SubstRen.inst he₂)))))
+    (Defeq.beta ht .sortDF ht' he₁ .sortDF hte₁').symm.trans
+      ((Defeq.appDF ht .sortDF (.lamDF ht .sortDF .sortDF ht' ht') he .sortDF).trans
+        (.beta ht .sortDF ht' he₂ .sortDF hte₂'))
+  exact (Defeq.beta ht ht' he' he₁ hte₁' (he'.substRen (SubstRen.inst he₁))).symm.trans
+    ((Defeq.appDF ht ht' (.lamDF ht ht' ht' he' he') he hte').trans
+      (.defeqDF hte'.symm (.beta ht ht' he' he₂ hte₂'
+        (he'.substRen (SubstRen.inst he₂)))))
 
 theorem snocConv {t₁ t₂ : Expr ζ ℓ m} {l : Level ℓ}
     {e₁' e₂' t' : Expr ζ ℓ (m + 1)} :
-    E[Γ] ⊢ₛ t₁ ≡ t₂ : .sort l →
-    E[Γ.snoc t₁] ⊢ₛ e₁' ≡ e₂' : t' →
-    E[Γ.snoc t₂] ⊢ₛ e₁' ≡ e₂' : t' := by
+    E[Γ] ⊢ t₁ ≡ t₂ : .sort l →
+    E[Γ.snoc t₁] ⊢ e₁' ≡ e₂' : t' →
+    E[Γ.snoc t₂] ⊢ e₁' ≡ e₂' : t' := by
   intro ht d
   have hσ : SubstRen E (Γ.snoc t₁) (Γ.snoc t₂) Subst.id := fun v => by
     cases v using Fin.lastCases with
@@ -229,56 +227,56 @@ theorem snocConv {t₁ t₂ : Expr ζ ℓ m} {l : Level ℓ}
           Γ.get_snoc t₁ v.castSucc (Nat.ne_of_lt v.isLt)]
   simpa using d.substRen hσ
 
-end DefeqStrong
+end Defeq
 
-theorem IsTypeStrong.substitution {t : Expr ζ ℓ n} :
-    E[Γ₁] ⊢ₛ t typ →
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₂] ⊢ₛ t.subst σ typ :=
+theorem IsType.substitution {t : Expr ζ ℓ n} :
+    E[Γ₁] ⊢ t typ →
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₂] ⊢ t.subst σ typ :=
   fun ⟨u, ht⟩ hσ => ⟨u, ht.substitution hσ⟩
 
-theorem DefeqStrong.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ m} {e₁' e₂' t' : Expr ζ ℓ (m + 1)} :
-    E[Γ.snoc t] ⊢ₛ e₁' ≡ e₂' : t' →
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ₛ e₁'.inst e₁ ≡ e₂'.inst e₂ : t'.inst e₁ :=
+theorem Defeq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ m} {e₁' e₂' t' : Expr ζ ℓ (m + 1)} :
+    E[Γ.snoc t] ⊢ e₁' ≡ e₂' : t' →
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ] ⊢ e₁'.inst e₁ ≡ e₂'.inst e₂ : t'.inst e₁ :=
   fun he' h => (he'.substRen (SubstRen.inst h.left)).trans
     (he'.right.inst_congr h)
 
-theorem SubstWFStrong.extend {t : Expr ζ ℓ n} {e : Expr ζ ℓ m} :
-    E[Γ₂] ⊢ₛ e : t.subst σ →
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₂] ⊢ₛ σ.extend e ⊣ Γ₁.snoc t := by
+theorem SubstWF.extend {t : Expr ζ ℓ n} {e : Expr ζ ℓ m} :
+    E[Γ₂] ⊢ e : t.subst σ →
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₂] ⊢ σ.extend e ⊣ Γ₁.snoc t := by
   intro he hσ v
   cases v using Fin.lastCases with
   | last => simpa [Expr.wk_subst_extend]
   | cast v => simpa [Expr.wk_subst_extend] using hσ v
 
-theorem SubstEqStrong.nil {σ₁ σ₂ : Subst ζ ℓ 0 m} :
-    E[Γ] ⊢ₛ σ₁ ≡ σ₂ ⊣ #t[] := nofun
+theorem SubstEq.nil {σ₁ σ₂ : Subst ζ ℓ 0 m} :
+    E[Γ] ⊢ σ₁ ≡ σ₂ ⊣ #t[] := nofun
 
-theorem SubstEqStrong.extend {t : Expr ζ ℓ n} {e₁ e₂ : Expr ζ ℓ m} :
-    E[Γ₂] ⊢ₛ e₁ ≡ e₂ : t.subst σ₁ →
-    E[Γ₂] ⊢ₛ σ₁ ≡ σ₂ ⊣ Γ₁ →
-    E[Γ₂] ⊢ₛ σ₁.extend e₁ ≡ σ₂.extend e₂ ⊣ Γ₁.snoc t := by
+theorem SubstEq.extend {t : Expr ζ ℓ n} {e₁ e₂ : Expr ζ ℓ m} :
+    E[Γ₂] ⊢ e₁ ≡ e₂ : t.subst σ₁ →
+    E[Γ₂] ⊢ σ₁ ≡ σ₂ ⊣ Γ₁ →
+    E[Γ₂] ⊢ σ₁.extend e₁ ≡ σ₂.extend e₂ ⊣ Γ₁.snoc t := by
   intro he hσ v
   cases v using Fin.lastCases with
   | last => simpa [Expr.wk_subst_extend]
   | cast v => simpa [Expr.wk_subst_extend] using hσ v
 
-theorem SubstWFStrong.wk_comp {t : Expr ζ ℓ n} :
-    E[Γ₂] ⊢ₛ σ' ⊣ Γ₁.snoc t →
-    E[Γ₂] ⊢ₛ Subst.wk.comp σ' ⊣ Γ₁ :=
+theorem SubstWF.wk_comp {t : Expr ζ ℓ n} :
+    E[Γ₂] ⊢ σ' ⊣ Γ₁.snoc t →
+    E[Γ₂] ⊢ Subst.wk.comp σ' ⊣ Γ₁ :=
   fun hσ v => by simpa [Expr.wk_subst] using hσ v.castSucc
 
-theorem SubstEqStrong.wk_comp {t : Expr ζ ℓ n} :
-    E[Γ₂] ⊢ₛ σ₁' ≡ σ₂' ⊣ Γ₁.snoc t →
-    E[Γ₂] ⊢ₛ Subst.wk.comp σ₁' ≡ Subst.wk.comp σ₂' ⊣ Γ₁ :=
+theorem SubstEq.wk_comp {t : Expr ζ ℓ n} :
+    E[Γ₂] ⊢ σ₁' ≡ σ₂' ⊣ Γ₁.snoc t →
+    E[Γ₂] ⊢ Subst.wk.comp σ₁' ≡ Subst.wk.comp σ₂' ⊣ Γ₁ :=
   fun hσ v => by simpa [Expr.wk_subst] using hσ v.castSucc
 
-theorem WFTeleStrong.substitution {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ n (n + k)} :
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    WFTeleStrong E P Γ₁ Δ →
-    WFTeleStrong E P Γ₂ (Δ.substN σ k) := by
+theorem TeleWF.substitution {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ n (n + k)} :
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    TeleWF E P Γ₁ Δ →
+    TeleWF E P Γ₂ (Δ.substN σ k) := by
   intro hσ hΔ
   induction Δ using Tele.addInduction with
   | nil => exact .nil
@@ -287,10 +285,10 @@ theorem WFTeleStrong.substitution {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx �
     have .snoc hΔ ⟨u, hu, ht⟩ := hΔ
     exact .snoc (ih hΔ) ⟨u, hu, ht.substRen (hren.liftN k Δ)⟩
 
-theorem SubstWFStrong.lift {t : Expr ζ ℓ n} :
-    E[Γ₁] ⊢ₛ t typ →
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₂.snoc (t.subst σ)] ⊢ₛ σ.lift ⊣ Γ₁.snoc t := by
+theorem SubstWF.lift {t : Expr ζ ℓ n} :
+    E[Γ₁] ⊢ t typ →
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₂.snoc (t.subst σ)] ⊢ σ.lift ⊣ Γ₁.snoc t := by
   intro ⟨u, ht⟩ hσ v
   cases v using Fin.lastCases with
   | last =>
@@ -300,11 +298,10 @@ theorem SubstWFStrong.lift {t : Expr ζ ℓ n} :
       simpa [Expr.wk] using (ht.substitution hσ).wk (t.subst σ)
   | cast v => simpa [Expr.wk_subst_lift] using (hσ v).wk (t.subst σ)
 
-theorem SubstWFStrong.liftN {k : Nat} {P : Level ℓ → Prop}
-    {Δ : Ctx ζ ℓ n (n + k)}
-    (hΔ : WFTeleStrong E P Γ₁ Δ) :
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₂ ++ Ctx.substN σ k Δ] ⊢ₛ σ.liftN k ⊣ Γ₁ ++ Δ := by
+theorem SubstWF.liftN {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ n (n + k)}
+    (hΔ : TeleWF E P Γ₁ Δ) :
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₂ ++ Ctx.substN σ k Δ] ⊢ σ.liftN k ⊣ Γ₁ ++ Δ := by
   intro hσ
   induction Δ using Tele.addInduction with
   | nil => exact hσ

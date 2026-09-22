@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Semantics.Interpretation
-import Metalean.Strong.Env
+import Metalean.Typing.Env
 import Metalean.Semantics.Soundness
 
 @[expose] public section
@@ -17,17 +17,17 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Δ : Ctx ζ ℓ 0 n}
 
 open CategoryTheory CoherentShape CodeAssignment Presheaf
 
-theorem DefeqStrong.ind_model_inv (ho : E.Ordered) {ι : IndSig}
+theorem Defeq.ind_model_inv (ho : E.Ordered) {ι : IndSig}
     {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {ls₁ ls₂ : Fin ι.nlevels → Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
     {X : Expr ζ ℓ n} :
-    E[Δ] ⊢ₛ ok →
-    E[Δ] ⊢ₛ .ind η s ls₁ ps₁ is₁ ≡ .ind η s ls₂ ps₂ is₂ : X →
+    E[Δ] ⊢ ok →
+    E[Δ] ⊢ .ind η s ls₁ ps₁ is₁ ≡ .ind η s ls₂ ps₂ is₂ : X →
     ls₁ = ls₂ ∧
-      (∀ p, ∃ t : Expr ζ ℓ n, E[Δ] ⊢ₛ ps₁ p ≡ ps₂ p : t) ∧
-      ∀ i, ∃ t : Expr ζ ℓ n, E[Δ] ⊢ₛ is₁ i ≡ is₂ i : t := by
+      (∀ p, ∃ t : Expr ζ ℓ n, E[Δ] ⊢ ps₁ p ≡ ps₂ p : t) ∧
+      ∀ i, ∃ t : Expr ζ ℓ n, E[Δ] ⊢ is₁ i ≡ is₂ i : t := by
   intro hΔ h
-  have hB := (ho.entryWFStrong η).block
+  have hB := (ho.entryWF η).block
   have hI₁ := IndTyping.ofTyping (Γ₁ := ⟨Δ, hΔ⟩) hB h.left
   have hI₂ := IndTyping.ofTyping (Γ₁ := ⟨Δ, hΔ⟩) hB h.right
   have heq := (h.rawSoundness ho hΔ).equal (𝟙 _) (fun _ ↦ ⊥) (hΔ.bottom_admissible ho (𝟙 _))
@@ -38,9 +38,9 @@ theorem DefeqStrong.ind_model_inv (ho : E.Ordered) {ι : IndSig}
     fun p => ⟨_, (Quotient.exact (congrFun hcode.2.1 p)).2⟩,
     fun i => ⟨_, (Quotient.exact (congrFun hcode.2.2 i)).2⟩⟩
 
-theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ₛ ok)
+theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok)
     {t t' : Expr ζ ℓ n} :
-    E[Δ] ⊢ₛ t ≡ t' typ →
+    E[Δ] ⊢ t ≡ t' typ →
     (rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) t).app _ (𝟙 _).op (fun _ ↦ ⊥) =
       (rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) t').app _ (𝟙 _).op fun _ ↦ ⊥ := by
   intro h
@@ -51,8 +51,8 @@ theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ₛ ok)
       (hΔ.bottom_admissible ho (𝟙 _))
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem IsTypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ₛ ok) {l₁ l₂ : Level ℓ}
-    (h : E[Δ] ⊢ₛ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ := by
+theorem IsTypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok) {l₁ l₂ : Level ℓ}
+    (h : E[Δ] ⊢ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ := by
   have heq := h.rawInterpret_eq ho hΔ
   rw [rawInterpret_sort, rawInterpret_sort, RawFamily.sort_value, RawFamily.sort_value] at heq
   have hmem : (principalIdeal (sortAtom l₂ : CoherentShape (⟨Δ, hΔ⟩ : CtxCat E ℓ))).mem
@@ -63,9 +63,9 @@ theorem IsTypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ₛ ok) {l₁ l
 
 theorem IsTypeEq.forallE_model_inj (ho : E.Ordered)
     {t₁ t₂ : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} :
-    E[Δ] ⊢ₛ ok →
-    E[Δ] ⊢ₛ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ →
-    E[Δ] ⊢ₛ t₁ ≡ t₂ typ ∧ E[Δ.snoc t₁] ⊢ₛ t₁' ≡ t₂' typ ∧ E[Δ.snoc t₂] ⊢ₛ t₁' ≡ t₂' typ := by
+    E[Δ] ⊢ ok →
+    E[Δ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ →
+    E[Δ] ⊢ t₁ ≡ t₂ typ ∧ E[Δ.snoc t₁] ⊢ t₁' ≡ t₂' typ ∧ E[Δ.snoc t₂] ⊢ t₁' ≡ t₂' typ := by
   intro hΔ h
   have ⟨⟨_, hl⟩, ⟨_, hr⟩⟩ := h.isType
   have ⟨⟨_, ht₁⟩, ⟨_, ht₁'⟩⟩ := hl.forallE_inv
@@ -81,9 +81,9 @@ theorem IsTypeEq.forallE_model_inj (ho : E.Ordered)
 
 theorem IsTypeEq.quot_model_inj (ho : E.Ordered)
     {η : Head ζ .quot} {u u' : Level ℓ} {α α' r r' : Expr ζ ℓ n} :
-    E[Δ] ⊢ₛ ok →
-    E[Δ] ⊢ₛ .quot η u α r ≡ .quot η u' α' r' typ →
-    u = u' ∧ E[Δ] ⊢ₛ α ≡ α' : .sort u ∧ E[Δ] ⊢ₛ r ≡ r' : Quot.relType α := by
+    E[Δ] ⊢ ok →
+    E[Δ] ⊢ .quot η u α r ≡ .quot η u' α' r' typ →
+    u = u' ∧ E[Δ] ⊢ α ≡ α' : .sort u ∧ E[Δ] ⊢ r ≡ r' : Quot.relType α := by
   intro hΔ h
   have ⟨⟨_, hl⟩, ⟨_, hr⟩⟩ := h.isType
   have h₁ := QuotTyping.ofTyping ⟨Δ, hΔ⟩ hl

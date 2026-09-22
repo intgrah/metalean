@@ -30,7 +30,7 @@ Terms [(Expr.lean)](Metalean/Syntax/Expr.lean)
 - `ℓ : Nat` represents the number of universe variables.
 - `n : Nat` represents the number of binders in the local context.
 
-Typing [(Defs.lean)](Metalean/Strong/Defs.lean)
+Typing [(Defs.lean)](Metalean/Typing/Defs.lean)
 
 - We include transitivity as a rule.
 - "Unit-like" η is admissible from regular η for structures.

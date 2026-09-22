@@ -5,14 +5,14 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Defs
+public import Metalean.Typing.Defs
 public import Metalean.Syntax.Weakening
 import Metalean.Syntax.Structure.Projection
 import Metalean.Syntax.Substitution
 
 @[expose] public section
 
-namespace Metalean.DefeqStrong
+namespace Metalean.Defeq
 
 open CategoryTheory
 
@@ -20,8 +20,8 @@ variable {sig : Sig} {ζ ζ₁ ζ₂ : Sigs} {E : Env ζ} {E₁ : Env ζ₁} {E�
   {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {Γ₁ : Ctx ζ₁ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
 
 theorem weakenEnv (entry : Entry ζ sig) :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    (E.snoc entry)[Γ.weakenEnv] ⊢ₛ e₁.weakenEnv ≡ e₂.weakenEnv : t.weakenEnv := by
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    (E.snoc entry)[Γ.weakenEnv] ⊢ e₁.weakenEnv ≡ e₂.weakenEnv : t.weakenEnv := by
   intro h
   induction h with simp [Expr.weakenEnv, Expr.map] at *
   | var _ ih =>
@@ -35,12 +35,12 @@ theorem weakenEnv (entry : Entry ζ sig) :
     exact .constDF ihtype
   | indDF _ _ ihps ihis =>
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at ihps ihis
-    have d := DefeqStrong.indDF ihps ihis
+    have d := Defeq.indDF ihps ihis
     simpa [Inductive.map] using d
   | ctorDF _ _ _ _ _ _ ihps ihfields ihrecFields
       ihfieldTypes ihrecFieldTypes ihtype =>
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map_step] at ihps
-    have d := DefeqStrong.ctorDF ihps
+    have d := Defeq.ctorDF ihps
       (by simpa [Inductive.map, Ctor.map, Field.map] using ihfields)
       (by simpa [Inductive.map, Ctor.map] using ihrecFields)
       (by simpa [Inductive.map] using ihfieldTypes)
@@ -89,7 +89,7 @@ theorem weakenEnv (entry : Entry ζ sig) :
     have hmins := by simpa using ihmins
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply] at hps hms hmins ihtype ihlhs ihrhs
     simpa using
-      DefeqStrong.iota hallowed' hps hms hmins
+      Defeq.iota hallowed' hps hms hmins
         (by simpa [Inductive.map, Ctor.map, Field.map] using ihfields)
         (by simpa [Inductive.map, Ctor.map] using ihrecFields)
         ihtype ihlhs ihrhs
@@ -110,27 +110,27 @@ theorem weakenEnv (entry : Entry ζ sig) :
     exact .delta ihtype ihvalue
 
 theorem envMono {e₁ e₂ t : Expr ζ₁ ℓ n} (pre : E₁.as ⟶ E₂.as) :
-    E₁[Γ₁] ⊢ₛ e₁ ≡ e₂ : t →
-    E₂[Γ₁.map pre.sigs] ⊢ₛ e₁.map pre.sigs ≡ e₂.map pre.sigs : t.map pre.sigs := by
+    E₁[Γ₁] ⊢ e₁ ≡ e₂ : t →
+    E₂[Γ₁.map pre.sigs] ⊢ e₁.map pre.sigs ≡ e₂.map pre.sigs : t.map pre.sigs := by
   intro h
   induction pre with
   | refl =>
     simpa! [dsimp% [CategoryStruct.id] (Expr.functor ℓ n).map_id_apply ζ₁,
       dsimp% [CategoryStruct.id] (Ctx.functor ℓ 0 n).map_id_apply ζ₁ Γ₁] using h
   | step pre ih =>
-    exact congr(_[$(Ctx.map_step pre.sigs Γ₁)] ⊢ₛ
+    exact congr(_[$(Ctx.map_step pre.sigs Γ₁)] ⊢
       $(Expr.map_step pre.sigs e₁) ≡ $(Expr.map_step pre.sigs e₂) :
       $(Expr.map_step pre.sigs t)).mp ((ih h).weakenEnv _)
 
-end Metalean.DefeqStrong
+end Metalean.Defeq
 
 namespace Metalean
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ₁ ℓ 0 n}
 
-theorem CtxWFStrong.envMono (pre : E₁.as ⟶ E₂.as) :
-    E₁[Γ] ⊢ₛ ok →
-    E₂[Γ.map pre.sigs] ⊢ₛ ok := by
+theorem CtxWF.envMono (pre : E₁.as ⟶ E₂.as) :
+    E₁[Γ] ⊢ ok →
+    E₂[Γ.map pre.sigs] ⊢ ok := by
   intro h
   induction h with
   | nil => exact .nil

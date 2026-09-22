@@ -8,8 +8,8 @@ module
 public import Metalean.FastChecker.Instantiate
 public import Metalean.Metatheory.SubjectReduction
 public import Metalean.Metatheory.Unique
-public import Metalean.Strong.Inversion
-public import Metalean.Strong.Env
+public import Metalean.Typing.Inversion
+public import Metalean.Typing.Env
 public import Metalean.Metatheory.Conversion
 public import Metalean.Metatheory.Injectivity
 
@@ -20,7 +20,7 @@ namespace Metalean.FastChecker
 variable {ζ : Sigs} {E : Env ζ} {L : Literals} {ℓ : Nat}
 
 def SubstRel (E : Env ζ) {n m : Nat} (Δ : Ctx ζ ℓ 0 m) (σ₁ σ₂ : Subst ζ ℓ n m) : Prop :=
-  ∀ v, σ₁ v = σ₂ v ∨ ∃ T, E[Δ] ⊢ₛ σ₁ v ≡ σ₂ v : T
+  ∀ v, σ₁ v = σ₂ v ∨ ∃ T, E[Δ] ⊢ σ₁ v ≡ σ₂ v : T
 
 theorem SubstRel.lift {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst ζ ℓ n m}
     (A : Expr ζ ℓ m) :
@@ -39,7 +39,7 @@ theorem SubstRel.lift {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst ζ 
 theorem SubstRel.extend {n m : Nat} {Δ : Ctx ζ ℓ 0 m} {σ₁ σ₂ : Subst ζ ℓ n m}
     {v₁ v₂ T : Expr ζ ℓ m} :
     SubstRel E Δ σ₁ σ₂ →
-    E[Δ] ⊢ₛ v₁ ≡ v₂ : T →
+    E[Δ] ⊢ v₁ ≡ v₂ : T →
     SubstRel E Δ (σ₁.extend v₁) (σ₂.extend v₂) := by
   intro h hv v
   by_cases hlt : v.val < n
@@ -55,11 +55,11 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     FExpr.Denotes L E k fe e₁ →
     FExpr.Denotes L E k fe e₂ →
     ∀ {m : Nat} {Δ : Ctx E.1 ℓ 0 m} {σ₁ σ₂ : Subst E.1 ℓ n m} {t₁ t₂ : Expr E.1 ℓ m},
-    E.2[Δ] ⊢ₛ ok →
+    E.2[Δ] ⊢ ok →
     SubstRel E.2 Δ σ₁ σ₂ →
-    E.2[Δ] ⊢ₛ e₁.subst σ₁ : t₁ →
-    E.2[Δ] ⊢ₛ e₂.subst σ₂ : t₂ →
-    E.2[Δ] ⊢ₛ e₁.subst σ₁ ≡ e₂.subst σ₂ : t₁ := by
+    E.2[Δ] ⊢ e₁.subst σ₁ : t₁ →
+    E.2[Δ] ⊢ e₂.subst σ₂ : t₂ →
+    E.2[Δ] ⊢ e₁.subst σ₁ ≡ e₂.subst σ₂ : t₁ := by
   intro h₁ h₂ m Δ σ₁ σ₂ t₁ t₂ hΔ hσ he₁ he₂
   induction h₁ generalizing m Δ t₁ t₂ with
   | @bvar n k i j hi hj =>
@@ -69,14 +69,14 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     rcases hσ ⟨i, by omega⟩ with heq | ⟨_, hT⟩
     · rw [← heq]
       exact he₁
-    · exact DefeqStrong.retype ho hΔ hT he₁
+    · exact Defeq.retype ho hΔ hT he₁
   | @fvar n k i hi =>
     have .fvar hi₂ := h₂
     simp only [Expr.subst] at he₁ ⊢
     rcases hσ ⟨i, by omega⟩ with heq | ⟨_, hT⟩
     · rw [← heq]
       exact he₁
-    · exact DefeqStrong.retype ho hΔ hT he₁
+    · exact Defeq.retype ho hΔ hT he₁
   | sort hl =>
     have .sort hl₂ := h₂
     obtain rfl := hl.unique hl₂
@@ -98,12 +98,12 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have ⟨_, _, hf', ha', hty₁⟩ := he₁.app_inv
     have ⟨_, _, hg', hb', _⟩ := he₂.app_inv
     have hfg := ihf hf₂ hΔ hσ hf' hg'
-    have hteq := DefeqStrong.uniqTy ho hΔ hfg.right hg'
+    have hteq := Defeq.uniqTy ho hΔ hfg.right hg'
     have ⟨hdom, _⟩ := IsTypeEq.forallE_inj ho hΔ hteq
-    have hab := iha ha₂ hΔ hσ ha' (hdom.symm.convStrong hb')
+    have hab := iha ha₂ hΔ hσ ha' (hdom.symm.conv hb')
     have ⟨_, hpi⟩ := hf'.regular
     have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
-    exact hty₁.symm.convStrong (DefeqStrong.appDF ht ht' hfg hab (ht'.inst_congr hab))
+    exact hty₁.symm.conv (Defeq.appDF ht ht' hfg hab (ht'.inst_congr hab))
   | lam _ _ iht ihb =>
     have .lam ht₂d hb₂d := h₂
     have ⟨_, hb₁', hchain₁⟩ := he₁.lam_inv hΔ
@@ -112,29 +112,29 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have ⟨_, hpi₂⟩ := hchain₂.isType.2
     have ⟨ht₁@⟨_, ht₁'⟩, _⟩ := hpi₁.forallE_inv
     have ⟨ht₂@⟨_, ht₂'⟩, _⟩ := hpi₂.forallE_inv
-    have hd : E.2[Δ] ⊢ₛ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
-    have hb₂'' := DefeqStrong.snocConvTy hd.symm hb₂'
+    have hd : E.2[Δ] ⊢ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
+    have hb₂'' := Defeq.snocConvTy hd.symm hb₂'
     have hb := ihb hb₂d (hΔ.snoc ht₁) (hσ.lift _) hb₁' hb₂''
     have ⟨_, hdl⟩ := hd.sort_uniq ho hΔ
     have ⟨_, htb⟩ := hb₁'.regular
-    have htb₂ := DefeqStrong.snocConvTy hd htb
-    have hb₂ := DefeqStrong.snocConvTy hd hb
-    have hlam := DefeqStrong.lamDF hdl htb htb₂ hb hb₂
-    exact hchain₁.symm.convStrong hlam
+    have htb₂ := Defeq.snocConvTy hd htb
+    have hb₂ := Defeq.snocConvTy hd hb
+    have hlam := Defeq.lamDF hdl htb htb₂ hb hb₂
+    exact hchain₁.symm.conv hlam
   | forallE _ _ iht ihb =>
     have .forallE ht₂d hb₂d := h₂
     have hinv₁ := he₁.forallE_inv
     have hinv₂ := he₂.forallE_inv
     have ⟨_, ht₁'⟩ := hinv₁.1
     have ⟨_, ht₂'⟩ := hinv₂.1
-    have hd : E.2[Δ] ⊢ₛ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
+    have hd : E.2[Δ] ⊢ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
     have ⟨_, hc₁⟩ := hinv₁.2
     have ⟨_, hc₂⟩ := hinv₂.2
-    have hc₂' := DefeqStrong.snocConvTy hd.symm hc₂
-    have hcod : E.2[Δ.snoc _] ⊢ₛ _ ≡ _ typ :=
+    have hc₂' := Defeq.snocConvTy hd.symm hc₂
+    have hcod : E.2[Δ.snoc _] ⊢ _ ≡ _ typ :=
       .ofDefEq (ihb hb₂d (hΔ.snoc hinv₁.1) (hσ.lift _) hc₁ hc₂')
     have ⟨_, hpi⟩ := (hd.forallE_congr' ho hΔ hcod).sort_uniq ho hΔ
-    exact DefeqStrong.retype ho hΔ hpi he₁
+    exact Defeq.retype ho hΔ hpi he₁
   | letE _ _ _ iht ihv ihb =>
     have .letE ht₂d hv₂d hb₂d := h₂
     have ⟨_, ⟨_, hts₁⟩, hv₁, hbody₁, _⟩ := he₁.letE_inv hΔ
@@ -144,11 +144,11 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have hb := ihb hb₂d hΔ (hσ.extend hv) hbody₁ hbody₂
     have ⟨_, hr₁⟩ := hbody₁.regular
     have ⟨_, hr₂⟩ := hbody₂.regular
-    have hz₁ := DefeqStrong.zeta hts₁ hv₁ hr₁ (Expr.inst_subst_lift _ _ _ ▸ hbody₁)
-    have hz₂ := DefeqStrong.zeta hts₂ hv₂ hr₂ (Expr.inst_subst_lift _ _ _ ▸ hbody₂)
+    have hz₁ := Defeq.zeta hts₁ hv₁ hr₁ (Expr.inst_subst_lift _ _ _ ▸ hbody₁)
+    have hz₂ := Defeq.zeta hts₂ hv₂ hr₂ (Expr.inst_subst_lift _ _ _ ▸ hbody₂)
     rw [Expr.inst_subst_lift] at hz₁ hz₂
-    have hchain := hz₁.trans (hb.trans (DefeqStrong.retype ho hΔ hz₂.symm hb.right))
-    exact DefeqStrong.retype ho hΔ hchain he₁
+    have hchain := hz₁.trans (hb.trans (Defeq.retype ho hΔ hz₂.symm hb.right))
+    exact Defeq.retype ho hΔ hchain he₁
   | natLit hNat =>
     have .natLit hNat₂ := h₂
     cases hNat.symm.trans hNat₂
@@ -174,15 +174,14 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       (ihps p (hps₂d p) hΔ hσ (hpsw₁ p).right (hpsw₂ p).right)
     have hisE i := (hisw₁ i).trans
       (ihis i (his₂d i) hΔ hσ (hisw₁ i).right (hisw₂ i).right)
-    exact DefeqStrong.retype ho hΔ
-      ((DefeqStrong.indDF hpsw₁ hisw₁).symm.trans (.indDF hpsE hisE)) he₁
+    exact Defeq.retype ho hΔ ((Defeq.indDF hpsw₁ hisw₁).symm.trans (.indDF hpsE hisE)) he₁
   | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
     have .ctor _ _ _ _ hη₂ hs₂ hc₂ hls'₂ hps₂d hfds₂d hrecFds₂d := h₂
     cases hη.symm.trans hη₂
     obtain rfl := Fin.ext (hs.trans hs₂.symm)
     obtain rfl := Fin.ext (hc.trans hc₂.symm)
     obtain rfl : _ = _ := funext fun i => (hls' i).unique (hls'₂ i)
-    have hB := (ho.entryWFStrong ‹Head E.1 (Sig.inductive _)›).block
+    have hB := (ho.entryWF ‹Head E.1 (Sig.inductive _)›).block
     have ⟨_, _, _, hpsw₁, hfdsw₁, hrecFdsw₁, hindw₁, _⟩ := he₁.ctor_inv
     have ⟨_, _, _, hpsw₂, hfdsw₂, hrecFdsw₂, _, _⟩ := he₂.ctor_inv
     have hpsE p := (hpsw₁ p).trans
@@ -195,18 +194,18 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have hleft := hindw₁.ctorDF hpsw₁ hfdsw₁ hrecFdsw₁
       (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ (fun g _ => hfdsw₁ g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsw₁ hfdsw₁).choose_spec)
-    have hright := (DefeqStrong.indDF hpsE fun i =>
+    have hright := (Defeq.indDF hpsE fun i =>
       hctor.targetIndex_congr hB.params i hpsE hfdsE).ctorDF hpsE hfdsE hrecFdsE
       (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsE (fun g _ => hfdsE g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsE hfdsE).choose_spec)
-    exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
+    exact Defeq.retype ho hΔ (hleft.symm.trans hright) he₁
   | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
     have .recr _ _ _ _ _ hη₂ hs₂ hls'₂ hl₂ hps₂d hms₂d hmins₂d his₂d hmaj₂d := h₂
     cases hη.symm.trans hη₂
     obtain rfl := Fin.ext (hs.trans hs₂.symm)
     obtain rfl : _ = _ := funext fun i => (hls' i).unique (hls'₂ i)
     obtain rfl := hl.unique hl₂
-    have hB := (ho.entryWFStrong ‹Head E.1 (Sig.inductive _)›).block
+    have hB := (ho.entryWF ‹Head E.1 (Sig.inductive _)›).block
     have ⟨_, _, _, _, _, hallowed, hpsw₁, hmsw₁, hminsw₁, hisw₁, hmajw₁, hresw₁, _⟩ :=
       he₁.recr_inv
     have ⟨_, _, _, _, _, _, hpsw₂, hmsw₂, hminsw₂, hisw₂, hmajw₂, _, _⟩ :=
@@ -220,30 +219,29 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have hisE i := (hisw₁ i).trans
       (ihis i (his₂d i) hΔ hσ (hisw₁ i).right (hisw₂ i).right)
     have hmajE := hmajw₁.trans (ihmaj hmaj₂d hΔ hσ hmajw₁.right hmajw₂.right)
-    have hleft := DefeqStrong.recrDF hallowed hpsw₁ hmsw₁ hminsw₁ hisw₁ hmajw₁ hresw₁
-    have hright := DefeqStrong.recrDF hallowed hpsE hmsE hminsE hisE hmajE
+    have hleft := Defeq.recrDF hallowed hpsw₁ hmsw₁ hminsw₁ hisw₁ hmajw₁ hresw₁
+    have hright := Defeq.recrDF hallowed hpsE hmsE hminsE hisE hmajE
       (hB.motiveResult_congr hΔ hpsE hmsE hisE hmajE)
-    exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
+    exact Defeq.retype ho hΔ (hleft.symm.trans hright) he₁
   | quot hη hl _ _ ihα ihr =>
     have .quot hη₂ hl₂ hα₂ hr₂ := h₂
     cases hη.symm.trans hη₂
     obtain rfl := hl.unique hl₂
     have ⟨hαt₁, hrt₁⟩ := he₁.quot_formation_inv
     have ⟨hαt₂, hrt₂⟩ := he₂.quot_formation_inv
-    exact DefeqStrong.retype ho hΔ
-      (.quotDF (ihα hα₂ hΔ hσ hαt₁ hαt₂) (ihr hr₂ hΔ hσ hrt₁ hrt₂)) he₁
+    exact Defeq.retype ho hΔ (.quotDF (ihα hα₂ hΔ hσ hαt₁ hαt₂) (ihr hr₂ hΔ hσ hrt₁ hrt₂)) he₁
   | quotMk hη hl _ _ _ ihα ihr iha =>
     have .quotMk hη₂ hl₂ hα₂ hr₂ ha₂ := h₂
     cases hη.symm.trans hη₂
     obtain rfl := hl.unique hl₂
     have ⟨_, _, _, hαw₁, hrw₁, haw₁, _⟩ := he₁.quotMk_prem
     have ⟨_, _, _, hαw₂, hrw₂, haw₂, _⟩ := he₂.quotMk_prem
-    have hleft := DefeqStrong.quotMkDF (η := ‹Head E.1 .quot›) hαw₁ hrw₁ haw₁
-    have hright := DefeqStrong.quotMkDF (η := ‹Head E.1 .quot›)
+    have hleft := Defeq.quotMkDF (η := ‹Head E.1 .quot›) hαw₁ hrw₁ haw₁
+    have hright := Defeq.quotMkDF (η := ‹Head E.1 .quot›)
       (hαw₁.trans (ihα hα₂ hΔ hσ hαw₁.right hαw₂.right))
       (hrw₁.trans (ihr hr₂ hΔ hσ hrw₁.right hrw₂.right))
       (haw₁.trans (iha ha₂ hΔ hσ haw₁.right haw₂.right))
-    exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
+    exact Defeq.retype ho hΔ (hleft.symm.trans hright) he₁
   | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
     have .quotLift hη₂ hl₁' hl₂' hα₂ hr₂ hβ₂ hf₂ hh₂ ha₂ := h₂
     cases hη.symm.trans hη₂
@@ -253,15 +251,15 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       he₁.quotLift_prem
     have ⟨_, _, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, hhw₂, haw₂, _⟩ :=
       he₂.quotLift_prem
-    have hleft := DefeqStrong.quotLiftDF hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
-    have hright := DefeqStrong.quotLiftDF
+    have hleft := Defeq.quotLiftDF hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
+    have hright := Defeq.quotLiftDF
       (hαw₁.trans (ihα hα₂ hΔ hσ hαw₁.right hαw₂.right))
       (hrw₁.trans (ihr hr₂ hΔ hσ hrw₁.right hrw₂.right))
       (hβw₁.trans (ihβ hβ₂ hΔ hσ hβw₁.right hβw₂.right))
       (hfw₁.trans (ihf hf₂ hΔ hσ hfw₁.right hfw₂.right))
       (hhw₁.trans (ihh hh₂ hΔ hσ hhw₁.right hhw₂.right))
       (haw₁.trans (iha ha₂ hΔ hσ haw₁.right haw₂.right))
-    exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
+    exact Defeq.retype ho hΔ (hleft.symm.trans hright) he₁
   | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
     have .quotInd hη₂ hl₂ hα₂ hr₂ hβ₂ hf₂ ha₂ := h₂
     cases hη.symm.trans hη₂
@@ -270,28 +268,28 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
       he₁.quotInd_prem
     have ⟨_, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, haw₂, _, _⟩ :=
       he₂.quotInd_prem
-    have hleft := DefeqStrong.quotIndDF hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
+    have hleft := Defeq.quotIndDF hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
     have hβ' := hβw₁.trans (ihβ hβ₂ hΔ hσ hβw₁.right hβw₂.right)
     have ha' := haw₁.trans (iha ha₂ hΔ hσ haw₁.right haw₂.right)
     have ⟨_, hmotive⟩ := hβ'.regular
     have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv
-    have hright := DefeqStrong.quotIndDF
+    have hright := Defeq.quotIndDF
       (hαw₁.trans (ihα hα₂ hΔ hσ hαw₁.right hαw₂.right))
       (hrw₁.trans (ihr hr₂ hΔ hσ hrw₁.right hrw₂.right))
       hβ'
       (hfw₁.trans (ihf hf₂ hΔ hσ hfw₁.right hfw₂.right))
       ha'
       (.appDF hquot hprop hβ' ha' (hprop.inst_congr ha'))
-    exact DefeqStrong.retype ho hΔ (hleft.symm.trans hright) he₁
+    exact Defeq.retype ho hΔ (hleft.symm.trans hright) he₁
 
 theorem FExpr.Denotes.defeq {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat} {fe : FExpr}
     {e₁ e₂ t₁ t₂ : Expr E.1 ℓ n} {Γ : Ctx E.1 ℓ 0 n} :
-    E.2[Γ] ⊢ₛ ok →
+    E.2[Γ] ⊢ ok →
     FExpr.Denotes L E k fe e₁ →
     FExpr.Denotes L E k fe e₂ →
-    E.2[Γ] ⊢ₛ e₁ : t₁ →
-    E.2[Γ] ⊢ₛ e₂ : t₂ →
-    E.2[Γ] ⊢ₛ e₁ ≡ e₂ : t₁ := by
+    E.2[Γ] ⊢ e₁ : t₁ →
+    E.2[Γ] ⊢ e₂ : t₂ →
+    E.2[Γ] ⊢ e₁ ≡ e₂ : t₁ := by
   intro hΓ h₁ h₂ he₁ he₂
   have h := h₁.coherent ho h₂ (σ₁ := Subst.id) (σ₂ := Subst.id) hΓ (fun _ => .inl rfl)
     (by simpa using he₁) (by simpa using he₂)

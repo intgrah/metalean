@@ -241,7 +241,7 @@ theorem recursiveIotaLeaf
 
 theorem iotaRuleSound
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hsourceRule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hblock : (E₂.get η).block = I.map pre.sigs)
     (hsorts : ∀ s vps vis,

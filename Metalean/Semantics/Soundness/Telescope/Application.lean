@@ -25,8 +25,8 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Src Tgt Γ : CtxCat E ℓ}
 
 theorem RawTyped.apps {k m : Nat} {P : Level ℓ → Prop}
     (Δ : Ctx ζ ℓ Src.as.len m) (hk : Src.as.len + k = m)
-    (hΔ : WFTeleStrong E P Src.as.ctx Δ) (pΔ : RawTeleProperties E Src.as.ctx Δ)
-    {body : Expr ζ ℓ m} (hbody : E[Src.as.ctx ++ Δ] ⊢ₛ body : .sort v)
+    (hΔ : TeleWF E P Src.as.ctx Δ) (pΔ : RawTeleProperties E Src.as.ctx Δ)
+    {body : Expr ζ ℓ m} (hbody : E[Src.as.ctx ++ Δ] ⊢ body : .sort v)
     (pbody : RawInterpretationProperties (CtxCat.extendTele Src Δ hΔ) body)
     (σ : Tgt.as ⟶ (CtxCat.extendTele Src Δ hΔ).as)
     (hσ : SemanticHom (σ ≫ RawCtx.Hom.teleProjection hΔ))
@@ -48,7 +48,7 @@ theorem RawTyped.apps {k m : Nat} {P : Level ℓ → Prop}
     exact ⟨he ▸ pe, fun _ _ _ => rfl⟩
   | snoc k Δ t ih =>
     let S := CtxCat.extendTele Src Δ hΔ.init
-    have ht : E[S.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have ht : E[S.as.ctx] ⊢ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
     have pt : RawInterpretationProperties S t := pΔ.last _
     obtain ⟨σ₁, arg, harg, rfl⟩ := RawCtx.Hom.exists_snoc (Γ₂ := S.as) ⟨_, ht⟩ σ
     have hbase : σ₁.snoc ⟨_, ht⟩ harg ≫ RawCtx.Hom.teleProjection hΔ =
@@ -89,9 +89,9 @@ theorem RawTyped.apps {k m : Nat} {P : Level ℓ → Prop}
 
 theorem RawTyped.applyBound {Γ₁ : CtxCat E ℓ} {k : Nat} {P : Level ℓ → Prop}
     {Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)} {e : Expr ζ ℓ Γ₁.as.len}
-    {body : Expr ζ ℓ (Γ₁.as.len + k)} (hΔ : WFTeleStrong E P Γ₁.as.ctx Δ)
+    {body : Expr ζ ℓ (Γ₁.as.len + k)} (hΔ : TeleWF E P Γ₁.as.ctx Δ)
     (pΔ : RawTeleProperties E Γ₁.as.ctx Δ)
-    (hbody : E[Γ₁.as.ctx ++ Δ] ⊢ₛ body : .sort v)
+    (hbody : E[Γ₁.as.ctx ++ Δ] ⊢ body : .sort v)
     (pbody : RawInterpretationProperties (CtxCat.extendTele Γ₁ Δ hΔ) body)
     (pe : RawTyped Γ₁ e (Ctx.pi body Δ)) :
     RawTyped (CtxCat.extendTele Γ₁ Δ hΔ) (e.applyBound k) body := by

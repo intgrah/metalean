@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.InstLevel
+public import Metalean.Typing.InstLevel
 public import Metalean.Semantics.Interpretation.Recursor.Typing
 public import Metalean.TypeTheory.Syntactic.Telescope
 import Metalean.Syntax.Substitution
@@ -16,25 +16,25 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 
-theorem Inductive.WFStrong.ordinaryClosedWF {ι : IndSig} {I : Inductive ζ ι} (hB : I.WFStrong E)
+theorem InductiveWF.ordinaryClosedWF {ι : IndSig} {I : Inductive ζ ι} (hB : InductiveWF E I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) (count : Nat)
     (hcount : count ≤ (ι.ctors s c).nfields) :
-    E[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTeleAux count hcount)] ⊢ₛ ok := by
-  have htele : WFTeleStrong E I.LevelOK ((#t[] : Ctx ζ ι.nlevels 0 0) ++ I.params)
+    E[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTeleAux count hcount)] ⊢ ok := by
+  have htele : TeleWF E I.LevelOK ((#t[] : Ctx ζ ι.nlevels 0 0) ++ I.params)
       ((I.ctors s c).ordinaryTeleAux count hcount) := by
     simpa using (hB.ctors s c).ordinaryTeleAux count hcount
   simpa [Ctx.instL] using
     ((hB.params.append (htele.mono fun _ => trivial)).instLevel (Q := fun _ => True) ls
-      fun _ => trivial).appendCtxWFStrong .nil
+      fun _ => trivial).appendCtxWF .nil
 
 theorem Inductive.paramType_var {k : Nat} {ι : IndSig} {I : Inductive ζ ι}
     {ls : Fin ι.nlevels → Level ℓ} {Δ : Ctx ζ ι.nlevels ι.nparams (ι.nparams + k)}
     (p : Fin ι.nparams) :
-    E[Ctx.instL ls (I.params ++ Δ)] ⊢ₛ ok →
-    E[Ctx.instL ls (I.params ++ Δ)] ⊢ₛ .var (p.castAdd k) :
+    E[Ctx.instL ls (I.params ++ Δ)] ⊢ ok →
+    E[Ctx.instL ls (I.params ++ Δ)] ⊢ .var (p.castAdd k) :
       I.paramType ls (fun q => .var (q.castAdd k)) p := by
   intro hΓ
-  have hv := SubstWFStrong.id hΓ (p.castAdd k)
+  have hv := SubstWF.id hΓ (p.castAdd k)
   have hrestrict : (fun w : Var p.val =>
       Subst.id (w.castLE (show p.val ≤ ι.nparams + k by omega))) =
       fun w : Var p.val =>
@@ -44,15 +44,15 @@ theorem Inductive.paramType_var {k : Nat} {ι : IndSig} {I : Inductive ζ ι}
   rw [Ctx.get_subst _ _ (p.castAdd k) p.val (by omega) rfl, hrestrict] at hv
   simpa [Inductive.paramType, Subst.id] using hv
 
-theorem SubstWFStrong.wkN {n m k : Nat} {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}
+theorem SubstWF.wkN {n m k : Nat} {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}
     {Δ : Ctx ζ ℓ m (m + k)} {σ : Subst ζ ℓ n m} :
-    E[Γ₂] ⊢ₛ σ ⊣ Γ₁ →
-    E[Γ₂ ++ Δ] ⊢ₛ (fun v => (σ v).wkN k) ⊣ Γ₁ := by
+    E[Γ₂] ⊢ σ ⊣ Γ₁ →
+    E[Γ₂ ++ Δ] ⊢ (fun v => (σ v).wkN k) ⊣ Γ₁ := by
   intro hσ v
   have heq : ((Γ₁.get v).subst σ).wkN k = (Γ₁.get v).subst fun w => (σ w).wkN k := by
     simp only [Expr.wkN_eq_rename, Expr.subst_rename]
     rfl
-  have hv : E[Γ₂ ++ Δ] ⊢ₛ (σ v).wkN k : ((Γ₁.get v).subst σ).wkN k := (hσ v).wkN
+  have hv : E[Γ₂ ++ Δ] ⊢ (σ v).wkN k : ((Γ₁.get v).subst σ).wkN k := (hσ v).wkN
   rwa [heq] at hv
 
 namespace CoherentShape
@@ -94,15 +94,14 @@ abbrev CtxCat.ctorSource : CtxCat E ℓ :=
   ⟨Ctx.instL ls ((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele),
     h.block.ordinaryClosedWF s c ls _ le_rfl⟩
 
-theorem recursiveSourceTeleStrong :
-    WFTeleStrong E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx
-      (recursiveSourceTele E η ls s c) := by
+theorem recursiveSourceTele_wf :
+    TeleWF E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx (recursiveSourceTele E η ls s c) := by
   let := Subst.category ζ ℓ
   have hparams := h.block.paramClosedWF ls
   have hfield := (h.block.ctors s c).fieldTele rfl hparams
     (ps := (Subst.id : Subst ζ ℓ ι.nparams ι.nparams))
     (fun p => Inductive.paramType_var (k := 0) (Δ := #t[]) p hparams)
-  have hsplit := (WFTeleStrong.of_append hfield).2
+  have hsplit := (TeleWF.of_append hfield).2
   have hctx : Ctx.instL ls (E.get η).block.params ++
       ((E.get η).block.ctors s c).ordinaryFieldTele η ls (Subst.id : Subst ζ ℓ ι.nparams ι.nparams) =
       Ctx.instL ls ((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele) :=
@@ -111,21 +110,21 @@ theorem recursiveSourceTeleStrong :
       (Ctx.instL_append _ _ _).symm
   rwa [hctx] at hsplit
 
-theorem sourceTelescopeStrong :
-    WFTeleStrong E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx ((((E.get η).block.ctors s c).recursive f).tele.instL ls) :=
+theorem sourceTelescope_wf :
+    TeleWF E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx ((((E.get η).block.ctors s c).recursive f).tele.instL ls) :=
   ((h.block.ctors s c).recursive f).tele.instLevel ls fun _ => trivial
 
 abbrev CtxCat.sourceFieldTarget : CtxCat E ℓ :=
   CtxCat.extendTele (CtxCat.ctorSource h s c) ((((E.get η).block.ctors s c).recursive f).tele.instL ls)
-    (sourceTelescopeStrong h s c f)
+    (sourceTelescope_wf h s c f)
 
 theorem sourceIndexTyping (i : Fin (ι.nindices ((ι.ctors s c).recursiveTarget f))) :
-    E[(CtxCat.sourceFieldTarget h s c f).as.ctx] ⊢ₛ (fun i => ((((E.get η).block.ctors s c).recursive f).indices i).instL ls) i :
+    E[(CtxCat.sourceFieldTarget h s c f).as.ctx] ⊢ (fun i => ((((E.get η).block.ctors s c).recursive f).indices i).instL ls) i :
       (E.get η).block.indexType ls ((ι.ctors s c).recursiveTarget f)
         (fun p => ((Expr.var (p.castAdd (ι.ctors s c).nfields))).wkN ((ι.ctors s c).recursiveArity f))
         ((fun i => ((((E.get η).block.ctors s c).recursive f).indices i).instL ls)) i := by
   have hi := ((h.block.ctors s c).recursive f).instantiatedIndices
-    (fun _ => rfl) i (SubstWFStrong.id (CtxCat.ctorSource h s c).as.wf)
+    (fun _ => rfl) i (SubstWF.id (CtxCat.ctorSource h s c).as.wf)
   simp only [RecField.instantiatedTelescope_id, RecField.instantiatedIndices_id] at hi
   exact hi
 
@@ -146,13 +145,12 @@ abbrev fieldTelescope :
   (((E.get η).block.ctors s c).recursive f).instantiatedTelescope ls
     (Fin.append ((ι.ctors s c).fieldParams ps) (ι.ctors s c).fieldOrdinary)
 
-theorem fieldTelescopeStrong :
-    WFTeleStrong E (fun _ => True) (CtxCat.ctorFields h s c).as.ctx (fieldTelescope h s c f) :=
-  (sourceTelescopeStrong h s c f).substitution (CtxCat.ctorFieldsHom h s c).typed
+theorem fieldTelescope_wf :
+    TeleWF E (fun _ => True) (CtxCat.ctorFields h s c).as.ctx (fieldTelescope h s c f) :=
+  (sourceTelescope_wf h s c f).substitution (CtxCat.ctorFieldsHom h s c).typed
 
 abbrev CtxCat.ctorFieldTarget : CtxCat E ℓ :=
-  CtxCat.extendTele (CtxCat.ctorFields h s c) (fieldTelescope h s c f)
-    (fieldTelescopeStrong h s c f)
+  CtxCat.extendTele (CtxCat.ctorFields h s c) (fieldTelescope h s c f) (fieldTelescope_wf h s c f)
 
 def fieldIndices :
     Fin (ι.nindices ((ι.ctors s c).recursiveTarget f)) →
@@ -164,18 +162,18 @@ def appliedMajor : Expr ζ ℓ (CtxCat.ctorFieldTarget h s c f).as.len :=
   ((ι.ctors s c).fieldRecursive f).applyBound ((ι.ctors s c).recursiveArity f)
 
 theorem appliedMajor_typed :
-    E[(CtxCat.ctorFieldTarget h s c f).as.ctx] ⊢ₛ appliedMajor h s c f :
+    E[(CtxCat.ctorFieldTarget h s c f).as.ctx] ⊢ appliedMajor h s c f :
       .ind η ((ι.ctors s c).recursiveTarget f) ls
         (fun p => ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f))
         (fieldIndices h s c f) := by
   have hfield := (h.block.ctors s c).fieldRecursive f Γ₁.as.wf h.param
   rw [RecField.instantiatedType] at hfield
   have ⟨_, hpi⟩ := hfield.regular
-  have ⟨_, _, hind⟩ := Ctx.pi_isTypeStrong_inv _ (CtxCat.ctorFields h s c).as.wf hpi
-  exact Ctx.pi_applyBoundStrong (CtxCat.ctorFieldTarget h s c f).as.wf hind hfield
+  have ⟨_, _, hind⟩ := Ctx.pi_isType_inv _ (CtxCat.ctorFields h s c).as.wf hpi
+  exact Ctx.pi_applyBound (CtxCat.ctorFieldTarget h s c f).as.wf hind hfield
 
 theorem indexTyping (i : Fin (ι.nindices ((ι.ctors s c).recursiveTarget f))) :
-    E[(CtxCat.ctorFieldTarget h s c f).as.ctx] ⊢ₛ fieldIndices h s c f i :
+    E[(CtxCat.ctorFieldTarget h s c f).as.ctx] ⊢ fieldIndices h s c f i :
       (E.get η).block.indexType ls ((ι.ctors s c).recursiveTarget f)
         (fun p => ((ι.ctors s c).fieldParams ps p).wkN ((ι.ctors s c).recursiveArity f))
         (fieldIndices h s c f) i :=
@@ -184,7 +182,7 @@ theorem indexTyping (i : Fin (ι.nindices ((ι.ctors s c).recursiveTarget f))) :
 
 def CtxCat.ctorFieldTargetHom : (CtxCat.ctorFieldTarget h s c f).as ⟶ Γ₁.as where
   subst v := ((CtxCat.ctorFieldsProjection h s c).subst v).wkN ((ι.ctors s c).recursiveArity f)
-  typed := SubstWFStrong.wkN (CtxCat.ctorFieldsProjection h s c).typed
+  typed := SubstWF.wkN (CtxCat.ctorFieldsProjection h s c).typed
 
 theorem CtxCat.ctorFieldsHom_subst :
     (CtxCat.ctorFieldsHom h s c).subst =
@@ -258,9 +256,9 @@ theorem RecData.fields :
       fun s₁ c₁ => ((mins s₁ c₁).wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields where
   block := h.block
   allowed := h.allowed
-  param := (Ctor.WFStrong.fieldParams _ · h.param)
-  motive := (Ctor.WFStrong.fieldMotive _ · h.motive)
-  case := (Ctor.WFStrong.fieldCase _ · · h.case)
+  param := (CtorWF.fieldParams _ · h.param)
+  motive := (CtorWF.fieldMotive _ · h.motive)
+  case := (CtorWF.fieldCase _ · · h.case)
 
 theorem RecData.ihTyping :
     RecTyping (CtxCat.ctorFieldTarget h.toIndData s c f) η ((ι.ctors s c).recursiveTarget f) ls l

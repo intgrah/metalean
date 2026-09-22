@@ -8,8 +8,8 @@ module
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
 import Metalean.SetSemantics.InductiveComputation
 import Metalean.Syntax.Inductive.LargeElimination
-import Metalean.Strong.Inductive
-import Metalean.Strong.InstLevel
+import Metalean.Typing.Inductive
+import Metalean.Typing.InstLevel
 
 @[expose] public section
 
@@ -101,7 +101,7 @@ theorem ordinarySemCtx
 
 theorem ordinary_eq_proof
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
     (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
@@ -120,7 +120,7 @@ theorem ordinary_eq_proof
 
 theorem large_argAgree
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (heligible : (I.ctors s c).Eligible I.level)
     (vps : Slots ι.nparams)
@@ -187,7 +187,7 @@ theorem large_argAgree
 
 theorem large_key_accessible
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)

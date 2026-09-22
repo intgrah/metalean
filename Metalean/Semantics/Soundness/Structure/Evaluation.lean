@@ -9,7 +9,7 @@ public import Metalean.Semantics.Soundness.Telescope.Decoder
 public import Metalean.Semantics.Soundness.Telescope.Substitution
 public import Metalean.Semantics.Soundness.Structure.Projection
 public import Metalean.Semantics.Soundness.Structure.Reconstruction
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 import Metalean.Semantics.Interpretation.Computation
 
 @[expose] public section
@@ -24,9 +24,9 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
   {Γ₁ Γ₂ : CtxCat E₂ ℓ} {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.len} {maj : Expr ζ₂ ℓ Γ₁.as.len}
 
 theorem rawInterpret_structure_projection_of_previous
-    (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+    (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hs : (E₂.get η).block.IsStructure s c) (hB : (E₂.get η).block.WFStrong E₂)
+    (hs : (E₂.get η).block.IsStructure s c) (hB : InductiveWF E₂ (E₂.get η).block)
     (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
@@ -62,10 +62,10 @@ theorem rawInterpret_structure_projection_of_previous
     have pfn (d : Fin (ι.nctors s)) : HasIdeality (CtxCat.nil E₂ ℓ)
         (((E₂.get η).block.ctorTypeFn s d).instL fun p => ls p) :=
       (hsound.ctorTypeFnProperties η hI hblock s d ls).ideal
-    have hf (g : Fin (ι.ctors s c).nfields) : E₂[Γ₁.as.ctx] ⊢ₛ hs.projTerm η ls ps g maj :
+    have hf (g : Fin (ι.ctors s c).nfields) : E₂[Γ₁.as.ctx] ⊢ hs.projTerm η ls ps g maj :
         ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps (fun g => hs.projTerm η ls ps g maj) g := by
       rw [← hs.projType_eq]
-      exact hs.projTerm_hasTypeStrong hB g Γ₁.as.wf hps pmaj.typed
+      exact hs.projTerm_hasType hB g Γ₁.as.wf hps pmaj.typed
     let T : Domain Γ₂ := ctorFieldTypes pfn (fun p => Tm.label Γ₁.as (hps p)) σ₁ ρ
       (fun p => (pparams p).ideal σ₁ ρ hρ) c
     have hfixed := pmaj.structural_field_telescope hs hB hcarrier pfn hps (fun p => (pparams p).ideal)
@@ -149,7 +149,7 @@ theorem rawInterpret_structure_projection_of_previous
       have pbody :=
         (structure_projection_body_properties hsound hI hblock hs hB hR pps pmaj f hprev).term
       let h := RecTyping.structure_projection hs hB hps pmaj.typed f
-      have hpr := hs.projectionStrong hB Γ₁.as.wf hps pmaj.typed f
+      have hpr := hs.projection_spec hB Γ₁.as.wf hps pmaj.typed f
       have hlabel : Tm.label Γ₁.as h.typed = Tm.label Γ₁.as hpr.term := by
         refine Quotient.sound ⟨.ofDefEq hpr.result, ?_⟩
         dsimp only [Tm.Repr.ty, Tm.Repr.val]
@@ -158,7 +158,7 @@ theorem rawInterpret_structure_projection_of_previous
         (Tm.varLabel (CtxCat.extendTele Γ₁
           (((E₂.get η).block.ctors s c).ordinaryFieldTele η ls ps) hΔ) (Fin.natAdd Γ₁.as.len i))
       have hns : (fun i => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as
-          (hs.projTerm_hasTypeStrong h.block i Γ₁.as.wf h.param h.major))) = ns :=
+          (hs.projTerm_hasType h.block i Γ₁.as.wf h.param h.major))) = ns :=
         funext fun i => (hn i).symm
       have hvals : (fun i => RawValue.proj (CtorHead.mk η s c) i
           ((rawInterpret (piLimit E₂ ℓ) Γ₁ maj).app _ σ₁.op ρ)) =

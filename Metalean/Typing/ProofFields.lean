@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Telescope
-import Metalean.Strong.Substitution
+public import Metalean.Typing.Telescope
+import Metalean.Typing.Substitution
 import Metalean.Syntax.Substitution
 
 @[expose] public section
@@ -17,14 +17,14 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n m : Nat}
   {Γ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ 0 m}
   {σ₁ σ₂ : Subst ζ ℓ m n}
 
-theorem SubstEqStrong.of_proof_or_eq :
-    E[Δ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ σ₁ ⊣ Δ →
-    E[Γ] ⊢ₛ σ₂ ⊣ Δ →
+theorem SubstEq.of_proof_or_eq :
+    E[Δ] ⊢ ok →
+    E[Γ] ⊢ σ₁ ⊣ Δ →
+    E[Γ] ⊢ σ₂ ⊣ Δ →
     (∀ v,
-      E[Γ] ⊢ₛ (Δ.get v).subst σ₁ : .prop ∨
-      E[Γ] ⊢ₛ σ₁ v ≡ σ₂ v : (Δ.get v).subst σ₁) →
-    E[Γ] ⊢ₛ σ₁ ≡ σ₂ ⊣ Δ := by
+      E[Γ] ⊢ (Δ.get v).subst σ₁ : .prop ∨
+      E[Γ] ⊢ σ₁ v ≡ σ₂ v : (Δ.get v).subst σ₁) →
+    E[Γ] ⊢ σ₁ ≡ σ₂ ⊣ Δ := by
   intro hΔ hσ₁ hσ₂ h
   induction hΔ with
   | nil => exact .nil
@@ -36,17 +36,16 @@ theorem SubstEqStrong.of_proof_or_eq :
     | last =>
       rcases h (Fin.last m) with hp | hlast
       · have ⟨u, ht⟩ := ht
-        have htypes : E[Γ] ⊢ₛ (Ctx.get (Fin.last m) (Δ.snoc t)).subst σ₂ ≡
+        have htypes : E[Γ] ⊢ (Ctx.get (Fin.last m) (Δ.snoc t)).subst σ₂ ≡
             (Ctx.get (Fin.last m) (Δ.snoc t)).subst σ₁ : .sort u := by
-          simpa [Expr.wk_subst] using
-            ((CtxWFStrong.wfTeleStrong hΔ).substitution_congr hσ ht).symm
+          simpa [Expr.wk_subst] using ((CtxWF.teleWF hΔ).substitution_congr hσ ht).symm
         exact .proofIrrel hp (hσ₁ _) (.defeqDF htypes (hσ₂ _))
       · exact hlast
 
-theorem Ctx.pi_propStrong {k : Nat} (Θ : Ctx ζ ℓ n k) {p : Expr ζ ℓ k} :
-    E[Γ ++ Θ] ⊢ₛ ok →
-    E[Γ ++ Θ] ⊢ₛ p : .prop →
-    E[Γ] ⊢ₛ Θ.pi p : .prop := by
+theorem Ctx.pi_prop {k : Nat} (Θ : Ctx ζ ℓ n k) {p : Expr ζ ℓ k} :
+    E[Γ ++ Θ] ⊢ ok →
+    E[Γ ++ Θ] ⊢ p : .prop →
+    E[Γ] ⊢ Θ.pi p : .prop := by
   intro hΓΘ hp
   induction Θ with
   | nil => exact hp

@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Metatheory.Injectivity
-import Metalean.Strong.Inversion
+import Metalean.Typing.Inversion
 import Metalean.Syntax.Substitution
 
 @[expose] public section
@@ -17,14 +17,14 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
   {e t t₁ t₂ : Expr ζ ℓ n}
 
 abbrev UniqTyFrom (E : Env ζ) (Γ : Ctx ζ ℓ 0 n) (e t₁ : Expr ζ ℓ n) : Prop :=
-  ∀ {t₂}, E[Γ] ⊢ₛ e : t₂ → E[Γ] ⊢ₛ t₁ ≡ t₂ typ
+  ∀ {t₂}, E[Γ] ⊢ e : t₂ → E[Γ] ⊢ t₁ ≡ t₂ typ
 
 local notation:65 E "[" Γ "]" " ⊢ " e " !: " t:lead => UniqTyFrom E Γ e t
 
 namespace UniqTyFrom
 
 theorem conv {l : Level ℓ} :
-    E[Γ] ⊢ₛ t₁ ≡ t₂ : .sort l →
+    E[Γ] ⊢ t₁ ≡ t₂ : .sort l →
     E[Γ] ⊢ e !: t₂ →
     E[Γ] ⊢ e !: t₁ :=
   fun ht h _ hc => (IsTypeEq.ofDefEq ht).trans (h hc)
@@ -95,8 +95,8 @@ section
 variable {l l₁ l₂ : Level ℓ} {e' t' : Expr ζ ℓ (n + 1)}
 
 theorem lam :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ t : .sort l →
+    E[Γ] ⊢ ok →
+    E[Γ] ⊢ t : .sort l →
     E[Γ.snoc t] ⊢ e' !: t' →
     E[Γ] ⊢ .lam t e' !: .forallE t t' :=
   fun hΓ ht hl _ hc =>
@@ -104,7 +104,7 @@ theorem lam :
     (IsTypeEq.forallE_congr ht (hl he')).trans hres.symm
 
 theorem letE {v r : Expr ζ ℓ n} :
-    E[Γ] ⊢ₛ ok →
+    E[Γ] ⊢ ok →
     E[Γ] ⊢ e'.inst v !: r →
     E[Γ] ⊢ .letE t v e' !: r :=
   fun hΓ hl _ hc =>
@@ -112,9 +112,9 @@ theorem letE {v r : Expr ζ ℓ n} :
     (hl he).trans hres.symm
 
 theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
-    E[Γ] ⊢ₛ ok →
+    E[Γ] ⊢ ok →
     E[Γ] ⊢ f !: .forallE t₁ t' →
-    E[Γ] ⊢ₛ a : t₁ →
+    E[Γ] ⊢ a : t₁ →
     E[Γ] ⊢ .app f a !: t₂ := by
   subst hinst
   intro hΓ hl ha _ hc
@@ -123,7 +123,7 @@ theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
   exact (IsTypeEq.instCongr hΓ ha hcod).trans ht.symm
 
 theorem forallE (ho : E.Ordered) :
-    E[Γ] ⊢ₛ ok →
+    E[Γ] ⊢ ok →
     E[Γ] ⊢ t !: .sort l₁ →
     E[Γ.snoc t] ⊢ t' !: .sort l₂ →
     E[Γ] ⊢ .forallE t t' !: .sort (.imax l₁ l₂) := by
@@ -138,14 +138,14 @@ end
 end UniqTyFrom
 
 open UniqTyFrom in
-theorem DefeqStrong.uniqTy (ho : E.Ordered) :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ e : t₁ →
-    E[Γ] ⊢ₛ e : t₂ →
-    E[Γ] ⊢ₛ t₁ ≡ t₂ typ := by
+theorem Defeq.uniqTy (ho : E.Ordered) :
+    E[Γ] ⊢ ok →
+    E[Γ] ⊢ e : t₁ →
+    E[Γ] ⊢ e : t₂ →
+    E[Γ] ⊢ t₁ ≡ t₂ typ := by
   intro hΓ
   suffices huniq : ∀ {e₁ e₂ t},
-      E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
+      E[Γ] ⊢ e₁ ≡ e₂ : t →
       E[Γ] ⊢ e₁ !: t ∧ E[Γ] ⊢ e₂ !: t from
     fun h₁ => (huniq h₁).1
   clear uniqTy e t₁ t₂
@@ -164,8 +164,7 @@ theorem DefeqStrong.uniqTy (ho : E.Ordered) :
     exact ⟨app ho rfl hΓ hfl ha.left, conv hresult (app ho rfl hΓ hfr ha.right)⟩
   | lamDF ht ht' ht₂' _ _ _ _ _ ihe' ihbody' =>
     exact ⟨lam hΓ ht.left (ihe' (hΓ.snoc ⟨_, ht.left⟩)).1,
-      conv (.forallEDF ht ht'.left ht₂'.left)
-        (lam hΓ ht.right (ihbody' (hΓ.snoc ⟨_, ht.right⟩)).2)⟩
+      conv (.forallEDF ht ht'.left ht₂'.left) (lam hΓ ht.right (ihbody' (hΓ.snoc ⟨_, ht.right⟩)).2)⟩
   | forallEDF ht _ _ iht ihe' ihbody' =>
     have ⟨htl, htr⟩ := iht hΓ
     exact ⟨forallE ho hΓ htl (ihe' (hΓ.snoc ⟨_, ht.left⟩)).1,
@@ -179,7 +178,7 @@ theorem DefeqStrong.uniqTy (ho : E.Ordered) :
     have ⟨hr, _⟩ := ihbody hΓ
     exact ⟨letE hΓ hr, hr⟩
   | @eta _ Γ _ _ _ _ _ ht _ _ _ _ _ _ _ ihfn ihe =>
-    have hΓt : E[Γ.snoc _] ⊢ₛ ok := hΓ.snoc ⟨_, ht⟩
+    have hΓt : E[Γ.snoc _] ⊢ ok := hΓ.snoc ⟨_, ht⟩
     have hvar := hΓt.var (Fin.last _)
     rw [Ctx.get_last] at hvar
     exact ⟨lam hΓ ht (app ho (Expr.inst_wkFrom_last _) hΓt (ihfn hΓt).1 hvar), (ihe hΓ).1⟩
@@ -194,16 +193,16 @@ theorem DefeqStrong.uniqTy (ho : E.Ordered) :
   | delta _ _ _ ihvalue => exact ⟨const, (ihvalue hΓ).1⟩
 
 theorem IsTypeEq.sort_uniq (ho : E.Ordered) :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ t₁ ≡ t₂ typ →
-    ∃ l, E[Γ] ⊢ₛ t₁ ≡ t₂ : .sort l := by
+    E[Γ] ⊢ ok →
+    E[Γ] ⊢ t₁ ≡ t₂ typ →
+    ∃ l, E[Γ] ⊢ t₁ ≡ t₂ : .sort l := by
   intro hΓ h
   induction h using Relation.TransGen.trans_induction_on with
   | single h => exact h
   | trans _ _ ih₁ ih₂ =>
     have ⟨l₁, h₁⟩ := ih₁
     have ⟨l₂, h₂⟩ := ih₂
-    obtain rfl := IsTypeEq.sort_inj ho hΓ (DefeqStrong.uniqTy ho hΓ h₁.right h₂.left)
+    obtain rfl := IsTypeEq.sort_inj ho hΓ (Defeq.uniqTy ho hΓ h₁.right h₂.left)
     exact ⟨l₁, h₁.trans h₂⟩
 
 end Metalean

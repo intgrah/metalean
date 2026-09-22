@@ -21,7 +21,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {t e : Expr ζ ℓ Γ₁.as.len} {e' : Expr ζ ℓ (Γ₁.as.len + 1)} {u : Level ℓ}
 
 theorem rawInterpret_beta (D : CodeAssignment E ℓ)
-    (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E[Γ₁.as.ctx] ⊢ₛ e : t)
+    (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (he : E[Γ₁.as.ctx] ⊢ e : t)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (hF : (RawFamily.normalizedBodyAction D (CtxCat.rawComprehension ht) (rawInterpret D Γ₁ t)
       (rawInterpret D (CtxCat.extension Γ₁ ht) e') σ ρ).IsIdealValued)

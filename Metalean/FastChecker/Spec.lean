@@ -8,18 +8,18 @@ module
 public import Metalean.FastChecker.LiteralTyping
 public import Metalean.FastChecker.Quot
 public import Metalean.FastChecker.Whnf
-public import Metalean.Strong.Inversion
+public import Metalean.Typing.Inversion
 public import Metalean.Control
 public import Metalean.Export.Basic
 public import Metalean.Frontend.Failure
 public import Metalean.Metatheory.Conversion
 public import Metalean.Metatheory.Injectivity
 public import Metalean.Metatheory.SubjectReduction
-public import Metalean.Strong.Context
+public import Metalean.Typing.Context
 import Metalean.Metatheory.Unique
 public import Metalean.FastChecker.Coherence
-import Metalean.Strong.Env
-import Metalean.Strong.Telescope
+import Metalean.Typing.Env
+import Metalean.Typing.Telescope
 
 @[expose] public section
 
@@ -37,121 +37,121 @@ structure Sem (G : FCtx) {ζ : Sigs} {ℓ : Nat} (E : Env ζ) {n : Nat} (Γ : Ct
   ordered : E.Ordered
   trust : L.NatTrust E
   ctx : FCtx.Denotes L ⟨ζ, E⟩ G Γ
-  wf : E[Γ] ⊢ₛ ok
+  wf : E[Γ] ⊢ ok
 
 def InferSpec (G : FCtx) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
   ∃ e t : Expr ζ ℓ n, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ FExpr.Denotes L ⟨ζ, E⟩ 0 ft t ∧
-    E[Γ] ⊢ₛ e : t
+    E[Γ] ⊢ e : t
 
 def InferOnlySpec (G : FCtx) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e →
-  E[Γ] ⊢ₛ e : t →
-  ∃ t', FExpr.Denotes L ⟨ζ, E⟩ 0 ft t' ∧ E[Γ] ⊢ₛ e : t'
+  E[Γ] ⊢ e : t →
+  ∃ t', FExpr.Denotes L ⟨ζ, E⟩ 0 ft t' ∧ E[Γ] ⊢ e : t'
 
 def InferTeleSpec (G : FCtx) (k : Nat) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ k fe e₀ →
   ∃ e t : Expr ζ ℓ n, FExpr.Denotes L ⟨ζ, E⟩ k fe e ∧ FExpr.Denotes L ⟨ζ, E⟩ 0 ft t ∧
-    E[Γ] ⊢ₛ e : t
+    E[Γ] ⊢ e : t
 
 def InferOnlyTeleSpec (G : FCtx) (k : Nat) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ k fe e →
-  E[Γ] ⊢ₛ e : t →
-  ∃ t', FExpr.Denotes L ⟨ζ, E⟩ 0 ft t' ∧ E[Γ] ⊢ₛ e : t'
+  E[Γ] ⊢ e : t →
+  ∃ t', FExpr.Denotes L ⟨ζ, E⟩ 0 ft t' ∧ E[Γ] ⊢ e : t'
 
 def TypeEqTeleSpec (G : FCtx) (k : Nat) (ft₁ ft₂ : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃t₁ t₂ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ k ft₁ t₁ →
   FExpr.Denotes L ⟨ζ, E⟩ k ft₂ t₂ →
-  E[Γ] ⊢ₛ t₁ typ →
-  E[Γ] ⊢ₛ t₂ typ →
-  E[Γ] ⊢ₛ t₁ ≡ t₂ typ
+  E[Γ] ⊢ t₁ typ →
+  E[Γ] ⊢ t₂ typ →
+  E[Γ] ⊢ t₁ ≡ t₂ typ
 
 def DefEqTeleSpec (G : FCtx) (k : Nat) (fe₁ fe₂ : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₁ e₂ t₁ t₂ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ k fe₁ e₁ →
   FExpr.Denotes L ⟨ζ, E⟩ k fe₂ e₂ →
-  E[Γ] ⊢ₛ e₁ : t₁ →
-  E[Γ] ⊢ₛ e₂ : t₂ →
-  E[Γ] ⊢ₛ e₁ ≡ e₂ : t₁
+  E[Γ] ⊢ e₁ : t₁ →
+  E[Γ] ⊢ e₂ : t₂ →
+  E[Γ] ⊢ e₁ ≡ e₂ : t₁
 
 def SortSpec (G : FCtx) (ft : FExpr) (l : FLevel) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t →
-  E[Γ] ⊢ₛ t typ →
-  ∃ l', FLevel.Denotes l l' ∧ E[Γ] ⊢ₛ t ≡ .sort ⟦l'⟧ typ
+  E[Γ] ⊢ t typ →
+  ∃ l', FLevel.Denotes l l' ∧ E[Γ] ⊢ t ≡ .sort ⟦l'⟧ typ
 
 def ForallSpec (G : FCtx) (ft ft₁ fb : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t →
-  E[Γ] ⊢ₛ t typ →
+  E[Γ] ⊢ t typ →
   ∃ t₁ b, FExpr.Denotes L ⟨ζ, E⟩ 0 ft₁ t₁ ∧ FExpr.Denotes L ⟨ζ, E⟩ 1 fb b ∧
-    E[Γ] ⊢ₛ t ≡ .forallE t₁ b typ
+    E[Γ] ⊢ t ≡ .forallE t₁ b typ
 
 def CheckSpec (G : FCtx) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t →
-  E[Γ] ⊢ₛ t typ →
-  ∃ e : Expr ζ ℓ n, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ₛ e : t
+  E[Γ] ⊢ t typ →
+  ∃ e : Expr ζ ℓ n, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ e : t
 
 def TypeEqSpec (G : FCtx) (ft₁ ft₂ : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃t₁ t₂ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft₁ t₁ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft₂ t₂ →
-  E[Γ] ⊢ₛ t₁ typ →
-  E[Γ] ⊢ₛ t₂ typ →
-  E[Γ] ⊢ₛ t₁ ≡ t₂ typ
+  E[Γ] ⊢ t₁ typ →
+  E[Γ] ⊢ t₂ typ →
+  E[Γ] ⊢ t₁ ≡ t₂ typ
 
 def DefEqSpec (G : FCtx) (fe₁ fe₂ : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₁ e₂ t₁ t₂ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ →
-  E[Γ] ⊢ₛ e₁ : t₁ →
-  E[Γ] ⊢ₛ e₂ : t₂ →
-  E[Γ] ⊢ₛ e₁ ≡ e₂ : t₁
+  E[Γ] ⊢ e₁ : t₁ →
+  E[Γ] ⊢ e₂ : t₂ →
+  E[Γ] ⊢ e₁ ≡ e₂ : t₁
 
 def SortedSpec (G : FCtx) (fe : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
-  ∃ (e : Expr ζ ℓ n) (u : Level ℓ), FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ₛ e : .sort u
+  ∃ (e : Expr ζ ℓ n) (u : Level ℓ), FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ e : .sort u
 
 def SortedAtSpec (G : FCtx) (fe : FExpr) (l : FLevel) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
   ∃ (e : Expr ζ ℓ n) (l' : RawLevel ℓ), FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ FLevel.Denotes l l' ∧
-    E[Γ] ⊢ₛ e : .sort ⟦l'⟧
+    E[Γ] ⊢ e : .sort ⟦l'⟧
 
 def PropSpec (G : FCtx) (ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t →
-  E[Γ] ⊢ₛ t typ →
-  E[Γ] ⊢ₛ t : .prop
+  E[Γ] ⊢ t typ →
+  E[Γ] ⊢ t : .prop
 
 def RedSpec (G : FCtx) (fe₁ fe₂ : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₁ t : Expr ζ ℓ n⦄,
   Sem L F G E Γ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ →
-  E[Γ] ⊢ₛ e₁ : t →
-  ∃ e₂, FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ ∧ E[Γ] ⊢ₛ e₁ ≡ e₂ : t
+  E[Γ] ⊢ e₁ : t →
+  ∃ e₂, FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ ∧ E[Γ] ⊢ e₁ ≡ e₂ : t
 
 def TypedSpec (G : FCtx) (fe ft : FExpr) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃e₀ t₀ : Expr ζ ℓ n⦄,
@@ -159,7 +159,7 @@ def TypedSpec (G : FCtx) (fe ft : FExpr) : Prop :=
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t₀ →
   ∃ e t : Expr ζ ℓ n, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ FExpr.Denotes L ⟨ζ, E⟩ 0 ft t ∧
-    E[Γ] ⊢ₛ e : t
+    E[Γ] ⊢ e : t
 
 partial def FExpr.noProj : (fe : FExpr) → Option (PLift fe.NoProj)
   | .bvar i => some ⟨.bvar i⟩
@@ -239,7 +239,7 @@ def DefEqAtSpec (G : FCtx) (ft fe₁ fe₂ : FExpr) : Prop :=
   FExpr.Denotes L ⟨ζ, E⟩ 0 ft t →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ →
   FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ →
-  E[Γ] ⊢ₛ e₁ ≡ e₂ : t
+  E[Γ] ⊢ e₁ ≡ e₂ : t
 
 def UnfoldsTo (F : FEnv) (pos : Nat) (ls : Array FLevel) (v : FExpr) : Prop :=
   ∀ nlevels t v₀, F[pos]? = some (.def nlevels t v₀) → v = v₀.instL ls
@@ -291,7 +291,7 @@ theorem Sem.size {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
 theorem Sem.snoc {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (hS : Sem L F G E Γ) {ft : FExpr} {t : Expr ζ ℓ n} {l : Level ℓ}
-    (ht : FExpr.Denotes L ⟨ζ, E⟩ 0 ft t) (hty : E[Γ] ⊢ₛ t : .sort l) :
+    (ht : FExpr.Denotes L ⟨ζ, E⟩ 0 ft t) (hty : E[Γ] ⊢ t : .sort l) :
     Sem L F (G.push ft) E (Γ.snoc t) :=
   ⟨hS.env, hS.ordered, hS.trust, hS.ctx.snoc ht, hS.wf.snoc ⟨l, hty⟩⟩
 
@@ -303,9 +303,9 @@ theorem InferSpec.push {G : FCtx} {fe ft : FExpr} (t : FExpr)
   have hwf := hS.wf
   revert e₀ hwf
   refine hS.ctx.push_elim
-    (motive := fun {b} Γ => ∀ e₀ : Expr ζ ℓ b, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ → E[Γ] ⊢ₛ ok →
+    (motive := fun {b} Γ => ∀ e₀ : Expr ζ ℓ b, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ → E[Γ] ⊢ ok →
       ∃ e t' : Expr ζ ℓ b, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ FExpr.Denotes L ⟨ζ, E⟩ 0 ft t' ∧
-        E[Γ] ⊢ₛ e : t') ?_
+        E[Γ] ⊢ e : t') ?_
   intro b₀ Γ₀ t' hΓ₀ _ e₀ hden hwf
   cases hwf with
   | snoc hwf₀ _ =>
@@ -333,9 +333,9 @@ theorem RedSpec.push {G : FCtx} {fe₁ fe₂ ft : FExpr} (t : FExpr)
     RedSpec L F ℓ (G.push t) fe₁ fe₂ := by
   intro h ζ E n Γ e₁ ty hS hd hty
   refine hS.ctx.push_elim
-    (motive := fun {b} Γ => E[Γ] ⊢ₛ ok → ∀ e₁ ty : Expr ζ ℓ b,
-      FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ → E[Γ] ⊢ₛ e₁ : ty →
-      ∃ e₂, FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ ∧ E[Γ] ⊢ₛ e₁ ≡ e₂ : ty) ?_ hS.wf e₁ ty hd hty
+    (motive := fun {b} Γ => E[Γ] ⊢ ok → ∀ e₁ ty : Expr ζ ℓ b,
+      FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ → E[Γ] ⊢ e₁ : ty →
+      ∃ e₂, FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ ∧ E[Γ] ⊢ e₁ ≡ e₂ : ty) ?_ hS.wf e₁ ty hd hty
   intro b₀ Γ₀ t' hΓ₀ _ hwf e₁ ty hd hty
   cases hwf with
   | snoc hwf₀ _ =>
@@ -344,9 +344,9 @@ theorem RedSpec.push {G : FCtx} {fe₁ fe₂ ft : FExpr} (t : FExpr)
     have hS₀ : Sem L F G E Γ₀ := ⟨hS.env, hS.ordered, hS.trust, hΓ₀, hwf₀⟩
     have ⟨e'', _, he'', _, hty''⟩ := hinf hS₀ he'
     have ⟨e₂, he₂, heq⟩ := h hS₀ he'' hty''
-    have hΓ : E[Γ₀.snoc t'] ⊢ₛ ok := hwf₀.snoc ‹_›
+    have hΓ : E[Γ₀.snoc t'] ⊢ ok := hwf₀.snoc ‹_›
     have hco := FExpr.Denotes.defeq hS.ordered hΓ hd he''.wk hty (hty''.wk t')
-    exact ⟨e₂.wk, he₂.wk, hco.trans (DefeqStrong.retype hS.ordered hΓ (heq.wk t') hco.right)⟩
+    exact ⟨e₂.wk, he₂.wk, hco.trans (Defeq.retype hS.ordered hΓ (heq.wk t') hco.right)⟩
 
 theorem RedSpec.extend {G₀ G : FCtx} {fe₁ fe₂ ft : FExpr}
     (hr : fe₁.fvarRange ≤ G₀.size) (hc : fe₁.data.looseBVarRange.toNat = 0)
@@ -369,10 +369,10 @@ theorem DefEqSpec.push {G : FCtx} {fe₁ fe₂ ft₁ ft₂ : FExpr} (t : FExpr)
     DefEqSpec L F ℓ (G.push t) fe₁ fe₂ := by
   intro h ζ E n Γ e₁ e₂ ty₁ ty₂ hS hd₁ hd₂ hty₁ hty₂
   refine hS.ctx.push_elim
-    (motive := fun {b} Γ => E[Γ] ⊢ₛ ok → ∀ e₁ e₂ ty₁ ty₂ : Expr ζ ℓ b,
+    (motive := fun {b} Γ => E[Γ] ⊢ ok → ∀ e₁ e₂ ty₁ ty₂ : Expr ζ ℓ b,
       FExpr.Denotes L ⟨ζ, E⟩ 0 fe₁ e₁ → FExpr.Denotes L ⟨ζ, E⟩ 0 fe₂ e₂ →
-      E[Γ] ⊢ₛ e₁ : ty₁ → E[Γ] ⊢ₛ e₂ : ty₂ →
-      E[Γ] ⊢ₛ e₁ ≡ e₂ : ty₁) ?_ hS.wf e₁ e₂ ty₁ ty₂ hd₁ hd₂ hty₁ hty₂
+      E[Γ] ⊢ e₁ : ty₁ → E[Γ] ⊢ e₂ : ty₂ →
+      E[Γ] ⊢ e₁ ≡ e₂ : ty₁) ?_ hS.wf e₁ e₂ ty₁ ty₂ hd₁ hd₂ hty₁ hty₂
   intro b₀ Γ₀ t' hΓ₀ _ hwf e₁ e₂ ty₁ ty₂ hd₁ hd₂ hty₁ hty₂
   cases hwf with
   | snoc hwf₀ _ =>
@@ -383,11 +383,11 @@ theorem DefEqSpec.push {G : FCtx} {fe₁ fe₂ ft₁ ft₂ : FExpr} (t : FExpr)
     have ⟨v₁, _, hv₁, _, htv₁⟩ := hinf₁ hS₀ hu₁
     have ⟨v₂, _, hv₂, _, htv₂⟩ := hinf₂ hS₀ hu₂
     have heq := h hS₀ hv₁ hv₂ htv₁ htv₂
-    have hΓ : E[Γ₀.snoc t'] ⊢ₛ ok := hwf₀.snoc ‹_›
+    have hΓ : E[Γ₀.snoc t'] ⊢ ok := hwf₀.snoc ‹_›
     have hco₁ := FExpr.Denotes.defeq hS.ordered hΓ hd₁ hv₁.wk hty₁ (htv₁.wk t')
     have hco₂ := FExpr.Denotes.defeq hS.ordered hΓ hd₂ hv₂.wk hty₂ (htv₂.wk t')
-    have hmid := DefeqStrong.retype hS.ordered hΓ (heq.wk t') hco₁.right
-    exact hco₁.trans (hmid.trans (DefeqStrong.retype hS.ordered hΓ hco₂.symm hmid.right))
+    have hmid := Defeq.retype hS.ordered hΓ (heq.wk t') hco₁.right
+    exact hco₁.trans (hmid.trans (Defeq.retype hS.ordered hΓ hco₂.symm hmid.right))
 
 theorem DefEqSpec.extend {G₀ G : FCtx} {fe₁ fe₂ ft₁ ft₂ : FExpr}
     (hr₁ : fe₁.fvarRange ≤ G₀.size) (hr₂ : fe₂.fvarRange ≤ G₀.size)
@@ -421,7 +421,7 @@ theorem CheckSpec.ofInfer {G : FCtx} {fe te ft : FExpr} :
     CheckSpec L F ℓ G fe ft :=
   fun he hconv {_ _ _ _ _ _} hS hed htd htt =>
     have ⟨_, _, hed', hte, hety⟩ := he hS hed
-    ⟨_, hed', (hconv hS hte htd hety.regular htt).convStrong hety⟩
+    ⟨_, hed', (hconv hS hte htd hety.regular htt).conv hety⟩
 
 theorem TypedSpec.ofCheck {G : FCtx} {fe ft tt : FExpr} {l : FLevel} :
     InferSpec L F ℓ G ft tt →
@@ -431,7 +431,7 @@ theorem TypedSpec.ofCheck {G : FCtx} {fe ft tt : FExpr} {l : FLevel} :
   fun htt hl hc {_ _ _ _ _ _} hS hed htd =>
     have ⟨_, _, htd', htt', hty⟩ := htt hS htd
     have ⟨_, _, hconv⟩ := hl hS htt' hty.regular
-    have ⟨_, hed', hety⟩ := hc hS hed htd' ⟨_, hconv.convStrong hty⟩
+    have ⟨_, hed', hety⟩ := hc hS hed htd' ⟨_, hconv.conv hty⟩
     ⟨_, _, hed', htd', hety⟩
 
 theorem InferSpec.app {G : FCtx} {f a tf t b : FExpr} :
@@ -442,7 +442,7 @@ theorem InferSpec.app {G : FCtx} {f a tf t b : FExpr} :
   fun hf hpi ha {_ _ _ _ _} hS (.app hfd had) =>
     have ⟨_, _, hfd', htf, hfty⟩ := hf hS hfd
     have ⟨_, _, ht₁, hb, hconv⟩ := hpi hS htf hfty.regular
-    have hfty' := hconv.convStrong hfty
+    have hfty' := hconv.conv hfty
     have ⟨_, hty⟩ := hfty'.regular
     have hinv := hty.forallE_inv
     have ⟨_, had', haty⟩ := ha hS had ht₁ hinv.1
@@ -469,7 +469,7 @@ theorem InferTeleSpec.baseSort {G : FCtx} {k : Nat} {fe tb : FExpr} {l : FLevel}
   subst hn
   have ⟨_, _, he, htb, hety⟩ := h hS (hden.openBVars (by omega))
   have ⟨_, hl', hconv⟩ := hl hS htb hety.regular
-  exact ⟨_, _, hden.unopenBVars (by omega) he, .sort hl', hconv.convStrong hety⟩
+  exact ⟨_, _, hden.unopenBVars (by omega) he, .sort hl', hconv.conv hety⟩
 
 theorem InferTeleSpec.lam {G : FCtx} {k : Nat} {t b tt ty : FExpr} {l : FLevel}
     {ds : List FExpr} (hk : k ≤ G.size) :
@@ -485,7 +485,7 @@ theorem InferTeleSpec.lam {G : FCtx} {k : Nat} {t b tt ty : FExpr} {l : FLevel}
   have .lam htd hbd := hden
   have ⟨_, _, hd', htt', htty⟩ := htt hS (htd.openBVars (by omega))
   have ⟨_, _, hconv⟩ := hl hS htt' htty.regular
-  have hts := hconv.convStrong htty
+  have hts := hconv.conv htty
   have ⟨_, _, hb', htb', hbty⟩ := hr (hS.snoc hd' hts) hbd
   have ⟨_, htb''⟩ := hbty.regular
   simp only [Array.size_push] at htb'
@@ -504,7 +504,7 @@ theorem InferTeleSpec.pi {G : FCtx} {k : Nat} {t b tt : FExpr} {l₁ l₂ : FLev
   have .forallE htd hbd := hden
   have ⟨_, _, hd', htt', htty⟩ := htt hS (htd.openBVars (by omega))
   have ⟨_, hl₁', hconv₁⟩ := hl₁ hS htt' htty.regular
-  have hts := hconv₁.convStrong htty
+  have hts := hconv₁.conv htty
   have ⟨_, _, hb', hs, hbs⟩ := hr (hS.snoc hd' hts) hbd
   have .sort hl₂' := hs
   exact ⟨_, _, .forallE (htd.unopenBVars (by omega) hd') hb', .sort (.imax hl₁' hl₂'),
@@ -519,15 +519,15 @@ theorem TypedSpec.fixArgs {G : FCtx} {E : Env ζ} {n k : Nat} {Γ : Ctx ζ ℓ 0
       (∀ p, FExpr.Denotes L ⟨ζ, E⟩ 0 (xs[p.val]'(hxs.symm ▸ p.isLt)) (e p)) →
       ∀ p, FExpr.Denotes L ⟨ζ, E⟩ 0 (fts p) (S e p))
     (hpre : ∀ (e : Fin k → Expr ζ ℓ n) (p : Fin k),
-      (∀ q : Fin k, q < p → E[Γ] ⊢ₛ e q : S e q) → E[Γ] ⊢ₛ S e p typ)
+      (∀ q : Fin k, q < p → E[Γ] ⊢ e q : S e q) → E[Γ] ⊢ S e p typ)
     (htyped : ∀ p : Fin k, TypedSpec L F ℓ G (xs[p.val]'(hxs.symm ▸ p.isLt)) (fts p)) :
     ∃ e : Fin k → Expr ζ ℓ n,
       (∀ p, FExpr.Denotes L ⟨ζ, E⟩ 0 (xs[p.val]'(hxs.symm ▸ p.isLt)) (e p)) ∧
-      ∀ p, E[Γ] ⊢ₛ e p : S e p := by
+      ∀ p, E[Γ] ⊢ e p : S e p := by
   have hex (p : Fin k) := htyped p hS (he₀ p) (hden e₀ he₀ p)
   choose e t hde hdt hty using hex
   refine ⟨e, hde, ?_⟩
-  have key : ∀ N (p : Fin k), p.val < N → E[Γ] ⊢ₛ e p : S e p := by
+  have key : ∀ N (p : Fin k), p.val < N → E[Γ] ⊢ e p : S e p := by
     intro N
     induction N with
     | zero => exact fun p hp => absurd hp (Nat.not_lt_zero _)
@@ -536,7 +536,7 @@ theorem TypedSpec.fixArgs {G : FCtx} {E : Env ζ} {n k : Nat} {Γ : Ctx ζ ℓ 0
       have ⟨_, hSp⟩ := hpre e p fun q hq => ih q (by have := Fin.lt_def.mp hq; omega)
       have ⟨_, htp⟩ := (hty p).regular
       have heq := FExpr.Denotes.defeq hS.ordered hS.wf (hdt p) (hden e hde p) htp hSp
-      exact (IsTypeEq.ofDefEq heq).convStrong (hty p)
+      exact (IsTypeEq.ofDefEq heq).conv (hty p)
   exact fun p => key (p.val + 1) p (Nat.lt_succ_self _)
 
 theorem TypedSpec.at {G : FCtx} {fe ft : FExpr} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
@@ -545,18 +545,17 @@ theorem TypedSpec.at {G : FCtx} {fe ft : FExpr} {E : Env ζ} {n : Nat} {Γ : Ctx
     Sem L F G E Γ →
     FExpr.Denotes L ⟨ζ, E⟩ 0 fe e₀ →
     FExpr.Denotes L ⟨ζ, E⟩ 0 ft T →
-    E[Γ] ⊢ₛ T typ →
-    ∃ e, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ₛ e : T := by
+    E[Γ] ⊢ T typ →
+    ∃ e, FExpr.Denotes L ⟨ζ, E⟩ 0 fe e ∧ E[Γ] ⊢ e : T := by
   intro h hS he₀ hT ⟨_, hTty⟩
   have ⟨_, _, hd, htd, hty⟩ := h hS he₀ hT
   have ⟨_, htty⟩ := hty.regular
-  exact ⟨_, hd, (IsTypeEq.ofDefEq
-    (FExpr.Denotes.defeq hS.ordered hS.wf htd hT htty hTty)).convStrong hty⟩
+  exact ⟨_, hd, (IsTypeEq.ofDefEq (FExpr.Denotes.defeq hS.ordered hS.wf htd hT htty hTty)).conv hty⟩
 
 theorem Sem.eqBlock {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (hS : Sem L F G E Γ) (η : Head ζ .quot) :
     (E.get (E.get η).eqHead).block = Eq.block := by
-  have h := hS.ordered.entryWFStrong η
+  have h := hS.ordered.entryWF η
   generalize E.get η = entry at h
   cases h with
   | quot heq => exact heq
@@ -572,10 +571,10 @@ theorem InferOnlySpec.app {G : FCtx} {f a tf t b : FExpr} :
     have ⟨_, _, hfty, haty, _⟩ := he.app_inv
     have ⟨_, htf, hfty'⟩ := hf hS hfd hfty
     have ⟨_, _, _, hb, hconv⟩ := hpi hS htf hfty'.regular
-    have hfAB := hconv.convStrong hfty'
+    have hfAB := hconv.conv hfty'
     have ⟨hdom, _⟩ := IsTypeEq.forallE_inj hS.ordered hS.wf
-      (DefeqStrong.uniqTy hS.ordered hS.wf hfty hfAB)
-    have haA := hdom.convStrong haty
+      (Defeq.uniqTy hS.ordered hS.wf hfty hfAB)
+    have haA := hdom.conv haty
     have ⟨_, hty⟩ := hfAB.regular
     have hinv := hty.forallE_inv
     have ⟨_, ht⟩ := hinv.1
@@ -598,7 +597,7 @@ theorem InferOnlySpec.letE {G : FCtx} {t v b r : FExpr} :
     have ⟨_, ⟨_, hts⟩, hvty, hbody, _⟩ := he.letE_inv hS.wf
     have ⟨_, hr', hbty⟩ := hr hS (hbd.inst hvd) hbody
     have ⟨_, hrs⟩ := hbty.regular
-    ⟨_, hr', (DefeqStrong.zeta hts hvty hrs hbty).left⟩
+    ⟨_, hr', (Defeq.zeta hts hvty hrs hbty).left⟩
 
 theorem InferOnlySpec.letPending {G : FCtx} {t v b r : FExpr} {rev : List FExpr} :
     InferOnlySpec L F ℓ G (FExpr.instManyRev (FExpr.instManyRev rev v :: rev) b) r →
@@ -645,7 +644,7 @@ theorem RedSpec.frame {G : FCtx} {fe₁ fe₂ : FExpr} (K : FFrame) :
     RedSpec L F ℓ G (K.plug fe₁) (K.plug fe₂) := by
   intro h ζ E n Γ e₁ t hS hd he
   obtain ⟨K', e₁'', rfl, hd₁, hK⟩ := FFrame.denotes hd
-  have ⟨ft₁, ht₁⟩ : ∃ ft₁, E[Γ] ⊢ₛ e₁'' : ft₁ := by
+  have ⟨ft₁, ht₁⟩ : ∃ ft₁, E[Γ] ⊢ e₁'' : ft₁ := by
     cases K' with
     | app fa =>
       have ⟨_, _, hf, _, _⟩ := he.app_inv
@@ -661,7 +660,7 @@ theorem RedSpec.frame {G : FCtx} {fe₁ fe₂ : FExpr} (K : FFrame) :
       exact ⟨_, ha.right⟩
   have ⟨e₂, hd₂, hc₀⟩ := h hS hd₁ ht₁
   exact ⟨_, hK hd₂, K'.plug_defeq hS.ordered hS.wf
-    (fun hf => DefeqStrong.retype hS.ordered hS.wf hc₀ hf) he⟩
+    (fun hf => Defeq.retype hS.ordered hS.wf hc₀ hf) he⟩
 
 theorem RedSpec.appList {G : FCtx} {fe₁ fe₂ : FExpr} (as : List FExpr) :
     RedSpec L F ℓ G fe₁ fe₂ →
@@ -717,7 +716,7 @@ theorem RedSpec.arg {G : FCtx} {ff a₁ a₂ : FExpr} :
   have ⟨⟨_, ht₁⟩, ⟨_, ht₂⟩⟩ := hπ.forallE_inv
   have ⟨a₂', hd₂, hc⟩ := h hS ha hay
   exact ⟨.app f a₂', .app hf hd₂,
-    ht.symm.convStrong (.appDF ht₁ ht₂ hfty hc (ht₂.inst_congr hc))⟩
+    ht.symm.conv (.appDF ht₁ ht₂ hfty hc (ht₂.inst_congr hc))⟩
 
 theorem RedSpec.strLit {G : FCtx} (str : String) :
     RedSpec L F ℓ G (.strLit str) (FExpr.strLitExpand L str) :=
@@ -756,20 +755,20 @@ theorem DefEqSpec.app {G : FCtx} {ff g fa fb : FExpr} :
   have ⟨_, _, hf', ha', hty₁⟩ := he₁.app_inv
   have ⟨_, _, hg', hb', _⟩ := he₂.app_inv
   have hfg := hf hS hdf hdg hf' hg'
-  have hteq := DefeqStrong.uniqTy hS.ordered hS.wf hfg.right hg'
+  have hteq := Defeq.uniqTy hS.ordered hS.wf hfg.right hg'
   have ⟨hdom, _⟩ := IsTypeEq.forallE_inj hS.ordered hS.wf hteq
-  have hab := ha hS hda hdb ha' (hdom.symm.convStrong hb')
+  have hab := ha hS hda hdb ha' (hdom.symm.conv hb')
   have ⟨_, hpi⟩ := hf'.regular
   have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
-  exact hty₁.symm.convStrong (DefeqStrong.appDF ht ht' hfg hab (ht'.inst_congr hab))
+  exact hty₁.symm.conv (Defeq.appDF ht ht' hfg hab (ht'.inst_congr hab))
 
 theorem Sem.append {G ts : FCtx} {E : Env ζ} {n b : Nat} {Γ : Ctx ζ ℓ 0 n}
     {Δ : Ctx ζ ℓ n b} {P : Level ℓ → Prop} :
     Sem L F G E Γ →
     FCtx.Denotes L ⟨ζ, E⟩ ts Δ →
-    WFTeleStrong E P Γ Δ →
+    TeleWF E P Γ Δ →
     Sem L F (G ++ ts) E (Γ ++ Δ) := fun hS hΔ hwf =>
-  ⟨hS.env, hS.ordered, hS.trust, hS.ctx.append hΔ, hwf.appendCtxWFStrong hS.wf⟩
+  ⟨hS.env, hS.ordered, hS.trust, hS.ctx.append hΔ, hwf.appendCtxWF hS.wf⟩
 
 theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FExpr}
     (hk : k ≤ G.size) :
@@ -786,7 +785,7 @@ theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FEx
   have hd := hdom hS hdt₁ hdt₂ hinv₁.1 hinv₂.1
   have ⟨_, ht₁⟩ := hinv₁.1
   have ⟨u, hcl⟩ := hinv₂.2
-  have hcod₁ : IsTypeStrong _ _ _ := ⟨u, hcl.snocConvTy hd.symm⟩
+  have hcod₁ : IsType _ _ _ := ⟨u, hcl.snocConvTy hd.symm⟩
   exact hd.forallE_congr' hS.ordered hS.wf
     (hcod (hS.snoc (hdt₁.openBVars (by omega)) ht₁) hb₁ hb₂ hinv₁.2 hcod₁)
 
@@ -800,7 +799,7 @@ theorem TypeEqTeleSpec.toDefEq {G : FCtx} {ft₁ ft₂ b₁ b₂ : FExpr} :
   have ⟨⟨_, ht₂⟩, ⟨_, hc₂⟩⟩ := he₂.forallE_inv
   have ⟨_, hpi⟩ := (h hS (.forallE hdt₁ hb₁) (.forallE hdt₂ hb₂)
     ⟨_, .forallEDF ht₁ hc₁ hc₁⟩ ⟨_, .forallEDF ht₂ hc₂ hc₂⟩).sort_uniq hS.ordered hS.wf
-  exact DefeqStrong.retype hS.ordered hS.wf hpi he₁
+  exact Defeq.retype hS.ordered hS.wf hpi he₁
 
 inductive Lazy (L : Literals) (F : FEnv) (ℓ : Nat) (G : FCtx) (fe₁ fe₂ : FExpr) where
   | eq (h : DefEqSpec L F ℓ G fe₁ fe₂)

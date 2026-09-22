@@ -9,7 +9,7 @@ public import Metalean.Semantics.Soundness.Rules.Core
 public import Metalean.Semantics.Soundness.Telescope.Beta
 public import Metalean.Semantics.Soundness.Recursor.Case
 public import Metalean.Semantics.Soundness.Structure.Fields
-import Metalean.Strong.Structure
+import Metalean.Typing.Structure
 import Metalean.Syntax.Substitution
 import Metalean.Semantics.Soundness.Context.Transport
 import Metalean.Semantics.Soundness.Rules.Function
@@ -29,12 +29,12 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 
 theorem HasEquality.structure_projection_motive_beta
     (hs : (E₂.get η).block.IsStructure s c)
-    (pps : ∀ p, E₂[Γ₁.as.ctx] ⊢ₛ ps p : (E₂.get η).block.paramType ls ps p)
+    (pps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
     (f : Fin (ι.ctors s c).nfields)
-    (pbodyI : HasIdeality (CtxCat.extension Γ₁ (hs.indTypeStrong pps))
+    (pbodyI : HasIdeality (CtxCat.extension Γ₁ (hs.indType pps))
       (hs.projType η ls (fun p => (ps p).wk) f (.var (Fin.last Γ₁.as.len))))
-    (pbodyS : HasSubstitution (CtxCat.extension Γ₁ (hs.indTypeStrong pps))
+    (pbodyS : HasSubstitution (CtxCat.extension Γ₁ (hs.indType pps))
       (hs.projType η ls (fun p => (ps p).wk) f (.var (Fin.last Γ₁.as.len)))) :
     HasEquality Γ₁
       (Inductive.motiveResult (hs.projectionMotives η ls ps f s) hs.indices maj)
@@ -44,7 +44,7 @@ theorem HasEquality.structure_projection_motive_beta
     show hs.projType η ls ps f maj = (hs.projType η ls (fun p => (ps p).wk) f
       (.var (Fin.last Γ₁.as.len))).inst maj by
       simp [Expr.inst, Expr.wk_subst_extend, Expr.subst]]
-  exact @HasEquality.beta _ _ _ _ _ _ _ _ (hs.indTypeStrong pps) pmaj.typed
+  exact @HasEquality.beta _ _ _ _ _ _ _ _ (hs.indType pps) pmaj.typed
     pmaj.type.ideal pbodyI pmaj.term.ideal pmaj.fixed pmaj.term.subst pbodyS
 
 structure StructureProjection (hs : (E₂.get η).block.IsStructure s c)
@@ -77,17 +77,17 @@ theorem structure_carrier_relevant (hs : (E₂.get η).block.IsStructure s c)
   simp only [hfield, Level.rel, decide_eq_true_eq] at hf
   exact hf rfl
 
-theorem structure_projection_body_properties (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem structure_projection_body_properties (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hs : (E₂.get η).block.IsStructure s c)
-    (hB : (E₂.get η).block.WFStrong E₂) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
+    (hB : InductiveWF E₂ (E₂.get η).block) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
     (f : Fin (ι.ctors s c).nfields) (hprev : StructureProjection.Prev hs ls f) :
-    RawTyped (Γ₁.extension (hs.indTypeStrong fun p => (pps p).typed))
+    RawTyped (Γ₁.extension (hs.indType fun p => (pps p).typed))
       (hs.projType η ls (fun p => (ps p).wk) f (.var (Fin.last Γ₁.as.len)))
       (.sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)) := by
   have hps (p : Fin ι.nparams) := (pps p).typed
-  have hA := hs.indTypeStrong hps
+  have hA := hs.indType hps
   have ppsw (p) := (SemanticHom.projection hA).typed (pps p)
   simp only [Inductive.paramType_subst, CtxCat.projectionRaw, Expr.subst_wk] at ppsw
   have pvar := (RawJudgment.var (Γ₁ := Γ₁.extension hA)
@@ -99,9 +99,9 @@ theorem structure_projection_body_properties (hsound : RawSound E₂ ℓ pre) (h
   exact structure_projection_type_properties hsound hI hblock hs hB ppsw f
     fun g => (hprevw g).toRawTyped
 
-theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hs : (E₂.get η).block.IsStructure s c)
-    (hB : (E₂.get η).block.WFStrong E₂) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
+    (hB : InductiveWF E₂ (E₂.get η).block) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (f : Fin (ι.ctors s c).nfields)
     (hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) = true)
@@ -167,16 +167,16 @@ theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI 
     congr 2
     exact funext hs.no_recursive.elim
   have hiota (g : Fin f.val) := by
-    have hi := (hs.projectionStrong hB Γ₁'.as.wf hparams hmaj' (g.castLE f.isLt.le)).iota
+    have hi := (hs.projection_spec hB Γ₁'.as.wf hparams hmaj' (g.castLE f.isLt.le)).iota
       (ι.ctors s c).caseOrdinary rfl hord
     rwa [hs.projType_eq] at hi
-  have hresult : E₂[Γ₁'.as.ctx] ⊢ₛ (E₂.get η).block.caseType η ls ps ms s c ≡
+  have hresult : E₂[Γ₁'.as.ctx] ⊢ (E₂.get η).block.caseType η ls ps ms s c ≡
       ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ((ι.ctors s c).caseParams ps)
         (ι.ctors s c).caseOrdinary f : .sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) := by
-    have hres := (hs.projectionStrong hB Γ₁'.as.wf hparams hmaj' f).result
+    have hres := (hs.projection_spec hB Γ₁'.as.wf hparams hmaj' f).result
     rw [hs.projType_eq] at hres
     rw [hmsw]
-    exact hres.trans (Inductive.IsStructure.projTypeWith_congrStrong (I := (E₂.get η).block) hB
+    exact hres.trans (Inductive.IsStructure.projTypeWith_congr (I := (E₂.get η).block) hB
       (hB.ctors s c) hparams hiota)
   have hteq : HasEquality Γ₁' ((E₂.get η).block.caseType η ls ps ms s c)
       (((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ((ι.ctors s c).caseParams ps)
@@ -187,7 +187,7 @@ theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI 
     let Src : CtxCat E₂ ℓ := ⟨Ctx.instL ls ((E₂.get η).block.params ++
       ((E₂.get η).block.ctors s c).ordinaryTeleAux f.val f.isLt.le), hctx _ _⟩
     have hprojTyped (g : Fin f.val) :=
-      hs.projTerm_hasTypeStrong hB (g.castLE f.isLt.le) Γ₁'.as.wf hparams hmaj'
+      hs.projTerm_hasType hB (g.castLE f.isLt.le) Γ₁'.as.wf hparams hmaj'
     simp only [hs.projType_eq] at hprojTyped
     let σ₁ : Γ₁'.as ⟶ Src.as := ⟨Fin.append ((ι.ctors s c).caseParams ps) fun g : Fin f.val =>
         hs.projTerm η ls ((ι.ctors s c).caseParams ps) (g.castLE f.isLt.le)
@@ -220,9 +220,9 @@ theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI 
     hsound.caseTypeProperties hI hblock hdata pps pms s c Γ₁'.as.wf,
     (pfvar f).term, (pfvar f).fixed.convert (.ofDefEq hresult.symm) hteq.symm⟩
 
-theorem structure_projection_recrArgs (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem structure_projection_recrArgs (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hs : (E₂.get η).block.IsStructure s c)
-    (hB : (E₂.get η).block.WFStrong E₂) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
+    (hB : InductiveWF E₂ (E₂.get η).block) (hR : RawTeleProperties E₂ .nil Γ₁.as.ctx)
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
     (f : Fin (ι.ctors s c).nfields)
@@ -237,7 +237,7 @@ theorem structure_projection_recrArgs (hsound : RawSound E₂ ℓ pre) (hI : I.W
           (Inductive.recrSubst ps (hs.projectionMotives η ls ps f)
             (hs.projectionCases η ls ps f (hs.projectionMotives η ls ps f)) hs.indices maj)) := by
   have hps (p : Fin ι.nparams) := (pps p).typed
-  have hA := hs.indTypeStrong (η := η) hps
+  have hA := hs.indType (η := η) hps
   have pbody := structure_projection_body_properties hsound hI hblock hs hB hR pps pmaj f hprev
   have pms (t : Fin ι.nsorts) : RawTyped Γ₁ (hs.projectionMotives η ls ps f t)
       ((E₂.get η).block.motiveType η ls ps

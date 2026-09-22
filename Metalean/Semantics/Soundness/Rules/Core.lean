@@ -30,7 +30,7 @@ theorem RawInterpretationProperties.sort (Γ : CtxCat E ℓ) (u : Level ℓ) :
     RawInterpretationProperties Γ (.sort u) :=
   ⟨HasIdeality.sort Γ u, HasSubstitution.sort Γ u⟩
 
-theorem HasEquality.beta (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E[Γ₁.as.ctx] ⊢ₛ e : t)
+theorem HasEquality.beta (ht : E[Γ₁.as.ctx] ⊢ t : .sort u) (he : E[Γ₁.as.ctx] ⊢ e : t)
     (htI : HasIdeality Γ₁ t) (heI' : HasIdeality (CtxCat.extension Γ₁ ht) e')
     (heI : HasIdeality Γ₁ e) (heF : HasFixedness Γ₁ e t) (heR : HasSubstitution Γ₁ e)
     (heS' : HasSubstitution (CtxCat.extension Γ₁ ht) e') :
@@ -39,8 +39,8 @@ theorem HasEquality.beta (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u) (he : E[Γ₁
     (RawFamily.bodyAction_isIdealValued ht htI heI' σ ρ hρ) (heI σ ρ hρ) (heF he σ ρ hρ)
     (HasSubstitution.instantiate ht he htI heI heF heR heS' σ ρ hρ)
 
-theorem HasEquality.proofIrrel (hpt : E[Γ₁.as.ctx] ⊢ₛ p : .sort .zero)
-    (he₁ : E[Γ₁.as.ctx] ⊢ₛ e₁ : p) (he₂ : E[Γ₁.as.ctx] ⊢ₛ e₂ : p)
+theorem HasEquality.proofIrrel (hpt : E[Γ₁.as.ctx] ⊢ p : .sort .zero)
+    (he₁ : E[Γ₁.as.ctx] ⊢ e₁ : p) (he₂ : E[Γ₁.as.ctx] ⊢ e₂ : p)
     (hp : HasFixedness Γ₁ p (.sort .zero)) (hf₁ : HasFixedness Γ₁ e₁ p)
     (hf₂ : HasFixedness Γ₁ e₂ p) : HasEquality Γ₁ e₁ e₂ :=
   fun _ σ ρ hρ ↦ by
@@ -60,7 +60,7 @@ theorem RawInterpretationProperties.letE (pinst : RawInterpretationProperties Γ
 namespace RawJudgment
 
 theorem of_typings :
-    E[Γ₁.as.ctx] ⊢ₛ e₁ ≡ e₂ : t →
+    E[Γ₁.as.ctx] ⊢ e₁ ≡ e₂ : t →
     RawJudgment Γ₁ e₁ e₁ t →
     RawJudgment Γ₁ e₂ e₂ t →
     HasEquality Γ₁ e₁ e₂ →
@@ -73,7 +73,7 @@ theorem leftRefl (h : RawJudgment Γ₁ e₁ e₂ t) : RawJudgment Γ₁ e₁ e�
 theorem var (pΓ : RawTeleProperties E .nil Γ₁.as.ctx) (v : Var Γ₁.as.len) :
     RawJudgment Γ₁ (.var v) (.var v) (Γ₁.as.ctx.get v) := by
   have p : RawTyped Γ₁ (.var v) (Γ₁.as.ctx.get v) := by
-    convert pΓ.var (Γ₁ := CtxCat.nil E ℓ) Γ₁.as.wf.wfTeleStrong v (Nat.zero_le _) using 1 <;>
+    convert pΓ.var (Γ₁ := CtxCat.nil E ℓ) Γ₁.as.wf.teleWF v (Nat.zero_le _) using 1 <;>
       simp [CtxCat.extendTele, CtxCat.nil]
   exact ⟨p.typed, p.type, p.term, p.term, HasEquality.refl Γ₁ _, p.fixed⟩
 
@@ -88,7 +88,7 @@ theorem zeta {l : Level ℓ} :
     RawJudgment Γ₁ (.letE t e e') (e'.inst e) r := by
   intro pt pe pinst
   have hzeta : HasEquality Γ₁ (.letE t e e') (e'.inst e) := fun _ _ _ ↦ by simp
-  have hsyn := DefeqStrong.zeta pt.syntactic pe.syntactic pinst.syntactic.regular.choose_spec
+  have hsyn := Defeq.zeta pt.syntactic pe.syntactic pinst.syntactic.regular.choose_spec
     pinst.syntactic
   exact ⟨hsyn, pinst.type, .letE pinst.left, pinst.left, hzeta,
     HasEquality.fixed_right (HasEquality.symm hzeta) hsyn.symm pinst.fixed⟩

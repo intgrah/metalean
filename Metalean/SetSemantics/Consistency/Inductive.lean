@@ -19,9 +19,9 @@ variable {ζ : Sigs}
 
 public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
     {I : Inductive ζ ι} (m : Env.Model.{u} pre) (ho : pre.Ordered)
-    (hwf : Entry.WFStrong pre (.inductive I)) :
+    (hwf : EntryWF pre (.inductive I)) :
     Env.Model.{u} (pre.snoc (.inductive I)) := by
-  have hblock : I.WFStrong pre :=
+  have hblock : InductiveWF pre I :=
     have .inductive hblock := hwf
     hblock
   let model (ls) : StrongInductiveModel pre m.atoms I ls :=

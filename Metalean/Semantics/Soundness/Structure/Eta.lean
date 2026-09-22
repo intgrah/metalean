@@ -7,7 +7,7 @@ module
 
 public import Metalean.Semantics.Soundness.Structure.Evaluation
 public import Metalean.Semantics.Soundness.Structure.Reconstruction
-import Metalean.Strong.InstLevel
+import Metalean.Typing.InstLevel
 import Metalean.Semantics.Soundness.Rules.Core
 
 @[expose] public section
@@ -21,10 +21,9 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
   {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {ls : Fin ι.nlevels → Level ℓ}
   {Γ : CtxCat E₂ ℓ} {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ.as.len} {maj : Expr ζ₂ ℓ Γ.as.len}
 
-theorem structure_projection_properties
-    (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem structure_projection_properties (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hs : (E₂.get η).block.IsStructure s c) (hB : (E₂.get η).block.WFStrong E₂)
+    (hs : (E₂.get η).block.IsStructure s c) (hB : InductiveWF E₂ (E₂.get η).block)
     (f : Fin (ι.ctors s c).nfields) (hR : RawTeleProperties E₂ .nil Γ.as.ctx)
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ maj (.ind η s ls ps hs.indices)) :
@@ -36,7 +35,7 @@ theorem structure_projection_properties
       exact ih (g.castLE f.isLt.le) g.isLt hR' pps' pmaj'
     have hps (p : Fin ι.nparams) := (pps p).typed
     have hbody := structure_projection_body_properties hsound hI hblock hs hB hR pps pmaj f hprev
-    have hresult := (hs.projectionStrong hB Γ.as.wf hps pmaj.typed f).result
+    have hresult := (hs.projection_spec hB Γ.as.wf hps pmaj.typed f).result
     have hp : RawInterpretationProperties Γ (hs.projTerm η ls ps f maj) ∧
         HasFixedness Γ (hs.projTerm η ls ps f maj)
           (Inductive.motiveResult (hs.projectionMotives η ls ps f s) hs.indices maj) := by
@@ -53,15 +52,15 @@ theorem structure_projection_properties
           hsound.recr_fixed hI hblock hrec (fun v => (hargs v).1) fun v => (hargs v).2⟩
     have pt := structure_projection_type_properties hsound hI hblock hs hB pps f
       fun g => (hprev g hR pps pmaj).toRawTyped
-    exact ⟨⟨hs.projTerm_hasTypeStrong hB f Γ.as.wf hps pmaj.typed, pt.term, hp.1,
+    exact ⟨⟨hs.projTerm_hasType hB f Γ.as.wf hps pmaj.typed, pt.term, hp.1,
       HasFixedness.convert hp.2 (.ofDefEq hresult)
         (HasEquality.structure_projection_motive_beta hs hps pmaj f hbody.term.ideal hbody.term.subst)⟩,
       fun σ ρ hρ => rawInterpret_structure_projection_of_previous hsound hI hblock hs hB hR pps
         pmaj f hprev σ ρ hρ⟩
 
-theorem RawJudgment.etaStruct (hsound : RawSound E₂ ℓ pre) (hI : I.WFStrong E₁)
+theorem RawJudgment.etaStruct (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs)
-    (hs : (E₂.get η).block.IsStructure s c) (hB : (E₂.get η).block.WFStrong E₂)
+    (hs : (E₂.get η).block.IsStructure s c) (hB : InductiveWF E₂ (E₂.get η).block)
     (hR : RawTeleProperties E₂ .nil Γ.as.ctx)
     (pps : ∀ p, RawTyped Γ (ps p) ((E₂.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ maj (.ind η s ls ps hs.indices))

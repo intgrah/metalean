@@ -29,7 +29,7 @@ theorem RawJudgment.delta (η : Head ζ (.const .def nlevels)) {ls : Fin nlevels
   have pv := hσ.props p.left
   have hf : HasFixedness Γ₁ _ _ := hσ.fixed p.syntactic.left p.type.subst p.left.subst p.fixed
   simp only [Expr.subst_closed] at pv hf
-  have hdelta : E[Γ₁.as.ctx] ⊢ₛ .const η ls ≡ ((E.get η).defValue.instL ls).wkClosed :
+  have hdelta : E[Γ₁.as.ctx] ⊢ .const η ls ≡ ((E.get η).defValue.instL ls).wkClosed :
       ((E.get η).constType.instL ls).wkClosed :=
     .delta pt.syntactic p.syntactic.left.wkClosed
   refine ⟨hdelta, pt.left, ⟨fun _ σ ρ hρ => ?_, fun _ _ σ₁ σ₂ ρ₁ ρ₂ hσ₁ hρ => ?_⟩, pv,
@@ -40,7 +40,7 @@ theorem RawJudgment.delta (η : Head ζ (.const .def nlevels)) {ls : Fin nlevels
     rw [rawInterpret_const_def, rawInterpret_const_def, ← pv.subst σ₁ σ₂ ρ₁ ρ₂ hσ₁ hρ,
       Expr.wkClosed_subst]
   · rw [rawInterpret_const_def,
-      Tm.label_eq (IsTypeStrong.isTypeEq he.regular) hdelta]
+      Tm.label_eq (IsType.isTypeEq he.regular) hdelta]
     exact hf hdelta.right σ ρ hρ
 
 theorem RawJudgment.const_bot {kind : ConstKind} (η : Head ζ (.const kind nlevels))

@@ -27,7 +27,7 @@ structure NatOpSpec (pos : Nat) (f : Nat → Nat → Nat) : Prop where
     L.NatTrust E →
     ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
     ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
-    E[Γ] ⊢ₛ Literals.natOp₂ ηOp (Literals.natLit ηNat num₁) (Literals.natLit ηNat num₂) ≡
+    E[Γ] ⊢ Literals.natOp₂ ηOp (Literals.natLit ηNat num₁) (Literals.natLit ηNat num₂) ≡
       Literals.natLit ηNat (f num₁ num₂) : Literals.natType ηNat
 
 structure BoolOpSpec (pos : Nat) (f : Nat → Nat → Bool) : Prop where
@@ -45,7 +45,7 @@ structure BoolOpSpec (pos : Nat) (f : Nat → Nat → Bool) : Prop where
     ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
     ζ.lookup L.bool = some ⟨.inductive Literals.Bool.sig, ηBool⟩ →
     ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
-    E[Γ] ⊢ₛ Literals.natOp₂ ηOp (Literals.natLit ηNat num₁) (Literals.natLit ηNat num₂) ≡
+    E[Γ] ⊢ Literals.natOp₂ ηOp (Literals.natLit ηNat num₁) (Literals.natLit ηNat num₂) ≡
       Literals.boolLit ηBool (f num₁ num₂) : Literals.boolType ηBool
 
 structure Accel (L : Literals) (F : FEnv) where
@@ -92,7 +92,7 @@ theorem RedSpec.natOp₂ {G : FCtx} {pos : Nat} {f : Nat → Nat → Nat} (num�
   intro h ζ E n Γ e₁ t hS hd he
   obtain ⟨_, _, _, hη, hηOp, rfl⟩ := hd.op₂_natLit_inv
   exact ⟨_, .natLit hη,
-    DefeqStrong.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηOp) he⟩
+    Defeq.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηOp) he⟩
 
 theorem RedSpec.boolOp {G : FCtx} {pos : Nat} {f : Nat → Nat → Bool} (num₁ num₂ : Nat) :
     BoolOpSpec L F pos f →
@@ -103,7 +103,7 @@ theorem RedSpec.boolOp {G : FCtx} {pos : Nat} {f : Nat → Nat → Bool} (num₁
   have ⟨_, hbool⟩ := h.boolSig
   have ⟨_, hηBool, _⟩ := hS.env.inductive hbool
   exact ⟨_, FExpr.Denotes.boolLit hηBool _,
-    DefeqStrong.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηBool hηOp) he⟩
+    Defeq.retype hS.ordered hS.wf (h.eq num₁ num₂ hS.env hS.ordered hS.trust hη hηBool hηOp) he⟩
 
 theorem RedSpec.zeroLit {G : FCtx} {I : FInductive}
     (hfe : F[L.nat]? = some (.inductive Literals.Nat.sig I)) :
@@ -153,12 +153,12 @@ theorem RedSpec.succArg {G : FCtx} {I : FInductive} {x y : FExpr}
         (Fin.append ![] ![]) : Expr ζ ℓ n) = Literals.natType ηNat := fun ⟨0, _⟩ => by
     simp [RecField.instantiatedType, RecField.instantiatedTelescope, Matrix.empty_eq,
       Literals.natType]
-  have hx : E[Γ] ⊢ₛ recFds' ⟨0, by decide⟩ : Literals.natType ηNat := by
+  have hx : E[Γ] ⊢ recFds' ⟨0, by decide⟩ : Literals.natType ηNat := by
     have h₀ := (hrecTy ⟨0, by decide⟩).right
     rw [hty ⟨0, by decide⟩] at h₀
     exact h₀
   have ⟨_, hy', hc'⟩ := h hS (by simpa using hrecFdsd ⟨0, by decide⟩) hx
   exact ⟨_, FExpr.Denotes.succ hη hy',
-    DefeqStrong.retype hS.ordered hS.wf (Literals.natSuccDF hc') he⟩
+    Defeq.retype hS.ordered hS.wf (Literals.natSuccDF hc') he⟩
 
 end Metalean.FastChecker

@@ -91,8 +91,8 @@ theorem rawApplication_normalizedAbstraction_eq_value
 
 variable {t e : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
 
-theorem sourceQuery_eq_of_section (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (σ : Γ₂ ⟶ Γ₁) {label : Tm_ Γ₂}
+theorem sourceQuery_eq_of_section (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
+    (he : E[Γ₁.as.ctx] ⊢ e : t) (σ : Γ₂ ⟶ Γ₁) {label : Tm_ Γ₂}
     (hlabel : label ∈ (Tm E ℓ).map σ.op '' sourceQuery Γ₁ e)
     (hs : Nonempty (Raw.ContextSection ht σ label)) :
     label = (Tm E ℓ).map σ.op (Tm.label Γ₁.as he) := by
@@ -106,8 +106,8 @@ theorem sourceQuery_eq_of_section (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
   rw [Ty.map_ofTyping] at htype
   exact Tm.label_eq (Quotient.exact htype) (he₁.substitution σ.typed)
 
-theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ₛ t : .sort u)
-    (he : E[Γ₁.as.ctx] ⊢ₛ e : t) (σ₁ : Γ₂ ⟶ Γ₁) (F X : Domain Γ₂)
+theorem rawApplication_eq_of_sections (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
+    (he : E[Γ₁.as.ctx] ⊢ e : t) (σ₁ : Γ₂ ⟶ Γ₁) (F X : Domain Γ₂)
     (hsupport : ∀ {Γ₃ : CtxCat E ℓ} (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
       {x y : CoherentShape Γ₃}, OutputAtom (F.pullback σ₂).val name x y →
         y ≤ ⊥ ∨ Nonempty (Raw.ContextSection ht (σ₂ ≫ σ₁) name)) :

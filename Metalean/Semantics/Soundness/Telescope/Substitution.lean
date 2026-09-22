@@ -17,7 +17,7 @@ open CategoryTheory Presheaf CodeAssignment
 variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Src Tgt Γ : CtxCat E ℓ}
 
 theorem SemanticSubstitution.liftTele {k : Nat} {P : Level ℓ → Prop}
-    (Δ : Ctx ζ ℓ Src.as.len (Src.as.len + k)) (hΔ : WFTeleStrong E P Src.as.ctx Δ)
+    (Δ : Ctx ζ ℓ Src.as.len (Src.as.len + k)) (hΔ : TeleWF E P Src.as.ctx Δ)
     (pΔ : RawTeleProperties E Src.as.ctx Δ) (σ₁ : Tgt.as ⟶ Src.as)
     (σ₂ : Γ ⟶ CtxCat.extendTele Tgt (Ctx.substN σ₁.subst k Δ) (hΔ.substitution σ₁.typed))
     (ρs ρt : RawValuation Γ) (args : Fin k → RawValue Γ)
@@ -37,17 +37,17 @@ theorem SemanticSubstitution.liftTele {k : Nat} {P : Level ℓ → Prop}
     exact ⟨hsub, htarget⟩
   | snoc k Δ t ih =>
     let S := CtxCat.extendTele Src Δ hΔ.init
-    let T := CtxCat.extendTele Tgt (Ctx.substN σ₁.subst k Δ) (WFTeleStrong.substitution σ₁.typed hΔ.init)
+    let T := CtxCat.extendTele Tgt (Ctx.substN σ₁.subst k Δ) (TeleWF.substitution σ₁.typed hΔ.init)
     let g : T.as ⟶ S.as := σ₁.liftTele hΔ.init
-    have ht : E[S.as.ctx] ⊢ₛ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
-    have htσ : E[T.as.ctx] ⊢ₛ t.subst g.subst : .sort hΔ.last.choose := ht.substitution g.typed
+    have ht : E[S.as.ctx] ⊢ t : .sort hΔ.last.choose := hΔ.last.choose_spec.2
+    have htσ : E[T.as.ctx] ⊢ t.subst g.subst : .sort hΔ.last.choose := ht.substitution g.typed
     let σ₃ := σ₂ ≫ CtxCat.rawProjection T htσ
     let xs : Fin k → RawValue Γ := fun i => args i.castSucc
     let υs := ρs.pushFin xs
     let υt := ρt.pushFin xs
     have hbase : σ₂ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection (hΔ.substitution σ₁.typed)) =
-        σ₃ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection (WFTeleStrong.substitution σ₁.typed hΔ.init)) := by
-      erw [RawCtx.Hom.teleProjection_snoc (WFTeleStrong.substitution σ₁.typed hΔ.init) hΔ.last.choose_spec.1 htσ]
+        σ₃ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection (TeleWF.substitution σ₁.typed hΔ.init)) := by
+      erw [RawCtx.Hom.teleProjection_snoc (TeleWF.substitution σ₁.typed hΔ.init) hΔ.last.choose_spec.1 htσ]
       exact (Category.assoc _ _ _).symm
     rw [hbase] at hsub htarget
     change SourceAdmissible (σ₂ ≫ CtxCat.extensionMap ht g) (υs.push (args (Fin.last k))) at hsource

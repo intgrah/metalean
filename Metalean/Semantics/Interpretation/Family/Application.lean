@@ -352,9 +352,9 @@ open CategoryTheory Presheaf
 variable {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
 def sourceQuery (Γ₁ : CtxCat E ℓ) (e : Expr ζ ℓ Γ₁.as.len) : Set (Tm_ Γ₁) :=
-  {label | ∃ (t : Expr ζ ℓ Γ₁.as.len) (he : E[Γ₁.as.ctx] ⊢ₛ e : t), Tm.label Γ₁.as he = label}
+  {label | ∃ (t : Expr ζ ℓ Γ₁.as.len) (he : E[Γ₁.as.ctx] ⊢ e : t), Tm.label Γ₁.as he = label}
 
-theorem label_mem_sourceQuery {t e : Expr ζ ℓ Γ₁.as.len} (he : E[Γ₁.as.ctx] ⊢ₛ e : t) :
+theorem label_mem_sourceQuery {t e : Expr ζ ℓ Γ₁.as.len} (he : E[Γ₁.as.ctx] ⊢ e : t) :
     Tm.label Γ₁.as he ∈ sourceQuery Γ₁ e :=
   ⟨t, he, rfl⟩
 

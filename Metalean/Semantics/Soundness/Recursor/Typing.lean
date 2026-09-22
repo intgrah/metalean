@@ -26,7 +26,7 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
   {mins mins₁ mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ₂ ℓ Γ.as.len}
   {is is₁ is₂ : Fin (ι.nindices s) → Expr ζ₂ ℓ Γ.as.len} {maj maj₁ maj₂ : Expr ζ₂ ℓ Γ.as.len}
 
-theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁)
+theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hd : RecDecl E₂ η l)
     (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
     RawTeleProperties E₂ .nil ((E₂.get η).block.recrTele η s ls l) := by
@@ -79,7 +79,7 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
     rw [Fin.decodeSigma_encodeSigma]
     have hΔ := hI.caseTele (s := t) (c := c) P₂.as.wf hI₂.param fun t => (pms₂ t).typed
     exact .pi _ hΔ (hsound.caseTeleProperties hB hblock t c hI₂ pP₂ pps₂ pms₂) _
-      (hI.caseType_congr (hΔ.appendCtxWFStrong P₂.as.wf)
+      (hI.caseType_congr (hΔ.appendCtxWF P₂.as.wf)
         (Inductive.caseParams_congr · hI₂.param)
         (Inductive.caseMotives_congr · fun t => (pms₂ t).typed)
         (hI.caseOrdinary_typed · hI₂.param)
@@ -100,7 +100,7 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : I.WFS
 
 section Generic
 
-variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)
+variable (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I) (hblock : (E₂.get η).block = I.map pre.sigs)
   (hd : RecDecl E₂ η l) (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts)
 
 include hsound hB hblock
@@ -247,7 +247,7 @@ theorem CoherentShape.HasSubstitution.recr (h : RecTyping Γ η s ls l ps ms min
 
 theorem CoherentShape.HasEquality.recr (h₁ : RecTyping Γ η s ls l ps₁ ms₁ mins₁ is₁ maj₁)
     (h₂ : RecTyping Γ η s ls l ps₂ ms₂ mins₂ is₂ maj₂)
-    (hargs : ∀ v, E₂[Γ.as.ctx] ⊢ₛ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ v ≡
+    (hargs : ∀ v, E₂[Γ.as.ctx] ⊢ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ v ≡
       Inductive.recrSubst ps₂ ms₂ mins₂ is₂ maj₂ v :
       (Ctx.get v ((E₂.get η).block.recrTele η s ls l)).subst (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁))
     (eargs : ∀ v, HasEquality Γ (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ v)
@@ -257,20 +257,20 @@ theorem CoherentShape.HasEquality.recr (h₁ : RecTyping Γ η s ls l ps₁ ms�
   cases hrel : l.rel with
   | false => rw [rawInterpret_recr_prop _ hrel, rawInterpret_recr_prop _ hrel]
   | true =>
-    have hσ : E₂[Γ.as.ctx] ⊢ₛ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ ≡
+    have hσ : E₂[Γ.as.ctx] ⊢ Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ ≡
         Inductive.recrSubst ps₂ ms₂ mins₂ is₂ maj₂ ⊣ (CtxCat.recr h₁.toRecDecl ls s).as.ctx :=
-      fun v => (congrArg (fun X => E₂[Γ.as.ctx] ⊢ₛ _ : (Ctx.get v X).subst _)
+      fun v => (congrArg (fun X => E₂[Γ.as.ctx] ⊢ _ : (Ctx.get v X).subst _)
         (Tele.nil_append _)).mpr (hargs v)
     rw [rawInterpret_recr _ h₁ hrel, rawInterpret_recr _ h₂ hrel, RawFamily.closedApps_value,
       RawFamily.closedApps_value]
     congr 1
     · funext v
       exact congrArg _ (Tm.label_eq (IsTypeEq.substitution_congr (CtxCat.recr h₁.toRecDecl ls s).as.wf hσ
-        (IsTypeStrong.isTypeEq ((CtxCat.recr h₁.toRecDecl ls s).as.wf.var v).regular)) (hσ v))
+        (IsType.isTypeEq ((CtxCat.recr h₁.toRecDecl ls s).as.wf.var v).regular)) (hσ v))
     · funext v
       exact eargs v σ ρ hρ
 
-variable (hsound : RawSound E₂ ℓ pre) (hB : I.WFStrong E₁) (hblock : (E₂.get η).block = I.map pre.sigs)
+variable (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I) (hblock : (E₂.get η).block = I.map pre.sigs)
 
 include hsound hB hblock
 
@@ -375,7 +375,7 @@ end RecrArgs
 
 theorem CoherentShape.RawJudgment.recrDF (h₁ : RecTyping Γ η s ls l ps₁ ms₁ mins₁ is₁ maj₁)
     (h₂ : RecTyping Γ η s ls l ps₂ ms₂ mins₂ is₂ maj₂)
-    (hrec : E₂[Γ.as.ctx] ⊢ₛ .recr η s ls l ps₁ ms₁ mins₁ is₁ maj₁ ≡ .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ :
+    (hrec : E₂[Γ.as.ctx] ⊢ .recr η s ls l ps₁ ms₁ mins₁ is₁ maj₁ ≡ .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ :
       Inductive.motiveResult (ms₁ s) is₁ maj₁)
     (pargs : ∀ v, RawJudgment Γ (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁ v)
       (Inductive.recrSubst ps₂ ms₂ mins₂ is₂ maj₂ v)

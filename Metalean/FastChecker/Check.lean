@@ -83,7 +83,7 @@ def EntryWFSpec (fe : FEntry) : Prop :=
   E.Ordered →
   L.NatTrust E →
   FEntry.Denotes L ⟨ζ, E⟩ fe entry₀ →
-  ∃ entry : Entry ζ fe.sig, FEntry.Denotes L ⟨ζ, E⟩ fe entry ∧ Entry.WFStrong E entry
+  ∃ entry : Entry ζ fe.sig, FEntry.Denotes L ⟨ζ, E⟩ fe entry ∧ Metalean.EntryWF E entry
 
 def checkAxiom (nlevels : Nat) (ft : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.axiom nlevels ft))) := do

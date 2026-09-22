@@ -6,8 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.FastChecker.Acceleration.Operations
-import Metalean.Strong.WeakenEnv
-import Metalean.Strong.Context
+import Metalean.Typing.WeakenEnv
+import Metalean.Typing.Context
 
 @[expose] public section
 

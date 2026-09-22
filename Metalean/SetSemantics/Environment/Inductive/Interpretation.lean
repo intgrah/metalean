@@ -68,13 +68,11 @@ private theorem SemDefeq.exists_domain {t : Expr ζ₁ ℓ m}
   · simpa [hγ] using mem_type_of_mem_sort hlevel (interp γ hγ).mem
   · simpa [hγ] using empty_mem_type
 
-theorem WFTeleStrong.modelExtensionAt
-    (hdecl : SemDecls E₁ ε₁ ν)
+theorem TeleWF.modelExtensionAt (hdecl : SemDecls E₁ ε₁ ν)
     (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
     {P : Level ℓ → Prop}
     (hls : ∀ {l}, P l → l.eval ν ≤ bound + 1)
-    (base : StrongTeleModel E₁ ε₁ ν Γ)
-    (hΔ : WFTeleStrong E₁ P Γ Δ) :
+    (base : StrongTeleModel E₁ ε₁ ν Γ) (hΔ : TeleWF E₁ P Γ Δ) :
     Nonempty (StrongTeleExtension E₁ ε₁ ν base Δ bound) := by
   induction hΔ with
   | nil => exact ⟨#t[], .nil, .nil⟩
@@ -85,11 +83,9 @@ theorem WFTeleStrong.modelExtensionAt
       (fun γ hγ => soundness hdecl hrule ho ht γ (model.semCtx γ hγ)) (hls hl)
     exact ⟨model.sem.snoc _, .snoc model.bounded hbounded, .snoc model.realizes htype⟩
 
-theorem WFTeleStrong.modelExtension
-    (hdecl : SemDecls E₁ ε₁ ν)
+theorem TeleWF.modelExtension (hdecl : SemDecls E₁ ε₁ ν)
     (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
-    (base : StrongTeleModel E₁ ε₁ ν Γ)
-    (hΔ : WFTeleStrong E₁ (fun _ => True) Γ Δ) :
+    (base : StrongTeleModel E₁ ε₁ ν Γ) (hΔ : TeleWF E₁ (fun _ => True) Γ Δ) :
     Nonempty (Σ bound, StrongTeleExtension E₁ ε₁ ν base Δ bound) := by
   induction hΔ with
   | nil => exact ⟨0, #t[], .nil, .nil⟩
@@ -103,10 +99,8 @@ theorem WFTeleStrong.modelExtension
         (fun γ => type_mono (Nat.le_max_right _ _) (hbounded γ)),
       .snoc model.realizes htype⟩
 
-theorem WFTeleStrong.model
-    (hdecl : SemDecls E₁ ε₁ ν)
-    (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
-    (hΓ : WFTeleStrong E₁ (fun _ => True) #t[] Γ) :
+theorem TeleWF.model (hdecl : SemDecls E₁ ε₁ ν) (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
+    (hΓ : TeleWF E₁ (fun _ => True) #t[] Γ) :
     Nonempty (StrongTeleModel E₁ ε₁ ν Γ) :=
   have ⟨_, extension⟩ := hΓ.modelExtension hdecl hrule ho ⟨#t[], ⟨0, .nil⟩, .nil⟩
   ⟨extension.sem, ⟨_, extension.bounded⟩,

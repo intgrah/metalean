@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Typing.Env
+public import Metalean.Typing.Env.Defs
 public import Metalean.Syntax.Eq
 
 /-! # Well-formedness of the equality declaration -/
@@ -26,7 +26,7 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   dsimp [Ctor.map]
   congr <;> exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WFStrong E where
+theorem wf (E : Env ζ) : InductiveWF E block where
   params := .snoc
     (.snoc .nil ⟨_, trivial, .sortDF⟩)
     ⟨_, trivial, .var .sortDF⟩

@@ -125,7 +125,7 @@ theorem mem_largeAccessRel_of_predecessor
 
 theorem recGraph_congr_key
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
     (hγ : γ ∈ Reachable Set.univ (model.recrTeleSem s l))
@@ -217,7 +217,7 @@ theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
 
 theorem recLeaf_iota
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : I.WFStrong E₁)
+    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (l : Level 0)
     (hallowed : I.RecAllowed l) (γ : RecSlots ι s)
     (hγ : γ ∈ Reachable Set.univ (model.recrTeleSem s l))

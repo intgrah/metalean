@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Defs
-import Metalean.Strong.Substitution
+public import Metalean.Typing.Defs
+import Metalean.Typing.Substitution
 import Metalean.Syntax.Substitution
 import Metalean.Meta.InductionCases
 
@@ -16,9 +16,9 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ ℓ' n : Nat} {Γ : Ctx ζ ℓ 0 n} {e e₁ e₂ t : Expr ζ ℓ n}
 
-theorem DefeqStrong.instLevel (levelSubst : Param ℓ → Level ℓ') :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ.instL levelSubst] ⊢ₛ e₁.instL levelSubst ≡ e₂.instL levelSubst : t.instL levelSubst := by
+theorem Defeq.instLevel (levelSubst : Param ℓ → Level ℓ') :
+    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ.instL levelSubst] ⊢ e₁.instL levelSubst ≡ e₂.instL levelSubst : t.instL levelSubst := by
   intro d
   -- Lol
   induction_cases d with c =>
@@ -34,9 +34,9 @@ theorem DefeqStrong.instLevel (levelSubst : Param ℓ → Level ℓ') :
     apply c <;> solve_by_elim -constructor -symm -exfalso
       [-c, Inductive.RecAllowed.instL]
 
-theorem CtxWFStrong.instLevel (levelSubst : Param ℓ → Level ℓ') :
-    E[Γ] ⊢ₛ ok →
-    E[Γ.instL levelSubst] ⊢ₛ ok := by
+theorem CtxWF.instLevel (levelSubst : Param ℓ → Level ℓ') :
+    E[Γ] ⊢ ok →
+    E[Γ.instL levelSubst] ⊢ ok := by
   intro hΓ
   induction hΓ with
   | nil => exact .nil

@@ -8,9 +8,9 @@ module
 public import Metalean.FastChecker.Reduce
 import Metalean.Checker.Eta
 public import Metalean.Metatheory.Unique
-public import Metalean.Strong.Structure
+public import Metalean.Typing.Structure
 import Metalean.Meta.IfRfl
-import Metalean.Strong.Env
+import Metalean.Typing.Env
 
 @[expose] public section
 
@@ -339,7 +339,7 @@ partial def inferCore (G : FCtx) :
           have ⟨_, η₀, hη₀, ht⟩ := FEnv.Denotes.constType (E := ⟨_, _⟩) hfe hct hS.env
           cases hη.symm.trans hη₀
           exact ⟨_, _, .const hls hη hls', ((ht.instL hls hls').wkClosed _),
-            .constDF ((hS.ordered.entryWFStrong η₀).constType _).choose_spec⟩⟩
+            .constDF ((hS.ordered.entryWF η₀).constType _).choose_spec⟩⟩
       | none => throw (.reject .shape)
     | none => throw .internal
   | .proj pos s idx e => do
@@ -366,18 +366,18 @@ partial def inferCore (G : FCtx) :
             hps₂'' his₂', hc⟩ := hred hS hted hu
           cases hη₂.symm.trans hη
           obtain rfl := (Fin.ext hs₂).symm
-          have hmaj₂ := (IsTypeEq.ofDefEq hc).convStrong hety
+          have hmaj₂ := (IsTypeEq.ofDefEq hc).conv hety
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
           have ⟨_, hindTy⟩ := hmaj₂.regular
           have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-          have hB := (hS.ordered.entryWFStrong η₀).block
-          have hind : E[Γ] ⊢ₛ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
+          have hB := (hS.ordered.entryWF η₀).block
+          have hind : E[Γ] ⊢ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
               .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
-            .ofDefEq (DefeqStrong.indDF (fun p => Inductive.paramType_conv hB p hpsw)
+            .ofDefEq (Defeq.indDF (fun p => Inductive.paramType_conv hB p hpsw)
               fun i => hstructD.no_indices.elim i)
-          have hmaj := hind.convStrong hmaj₂
-          have hty := hstructD.projTerm_hasTypeStrong hB f' hS.wf
+          have hmaj := hind.conv hmaj₂
+          have hty := hstructD.projTerm_hasType hB f' hS.wf
             (fun p => Inductive.paramType_conv hB p hpsw) hmaj
           have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
           have hc0 : c'.val = 0 := by
@@ -415,19 +415,19 @@ partial def inferCore (G : FCtx) :
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
           subst hs'
-          have hB := (hS.ordered.entryWFStrong η₀).block
+          have hB := (hS.ordered.entryWF η₀).block
           have ⟨_, hl, hleq⟩ := hI.levelInst hls hls'
           have ⟨eps, hepsD, hepsT⟩ := TypedSpec.fixArgs hS hps'
             (fts := fun p => I.paramType ls ps p.val (by omega))
             (fun e p => (E.get η₀).block.paramType (⟦ls' ·⟧) e p) hps''
             (fun e he p => hI.paramType hls hls' ⟨hps', he⟩ p)
-            (fun e p h => Inductive.paramType_isTypeStrong hB p h)
+            (fun e p h => Inductive.paramType_isType hB p h)
             (fun p => hpsT.down ⟨p.val, by omega⟩)
           have ⟨eis, heisD, heisT⟩ := TypedSpec.fixArgs hS his'
             (fts := fun i => I.indexType ls ps _ hs is i.val (by omega))
             (fun e i => (E.get η₀).block.indexType (⟦ls' ·⟧) s' eps e i) his''
             (fun e he i => hI.indexType hls hls' ⟨hps', hepsD⟩ _ ⟨his', he⟩ i)
-            (fun e i h => Inductive.indexType_isTypeStrong (hB.indices _) i hS.wf hepsT h)
+            (fun e i h => Inductive.indexType_isType (hB.indices _) i hS.wf hepsT h)
             (fun i => hisT.down ⟨i.val, by omega⟩)
           refine ⟨_, _, .ind hls hps' his' hη rfl hls' hepsD heisD, .sort hl, ?_⟩
           rw [hleq]
@@ -475,13 +475,13 @@ partial def inferCore (G : FCtx) :
         obtain rfl : _ = (⟨s, hs⟩ : Fin ι.nsorts) := Fin.ext hs'
         obtain rfl : _ = (⟨c, hc⟩ : Fin (ι.nctors ⟨s, hs⟩)) := Fin.ext hc'
         have hcd := hI.ctors ⟨s, hs⟩ ⟨c, hc⟩
-        have hB := (hS.ordered.entryWFStrong η₀).block
+        have hB := (hS.ordered.entryWF η₀).block
         have hctor := hB.ctors ⟨s, hs⟩ ⟨c, hc⟩
         have ⟨eps, hepsD, hepsT⟩ := TypedSpec.fixArgs hS hps'
           (fts := fun p => I.paramType ls ps p.val (by omega))
           (fun e p => (E.get η₀).block.paramType (⟦ls' ·⟧) e p) hps''
           (fun e he p => hI.paramType hls hls' ⟨hps', he⟩ p)
-          (fun e p h => Inductive.paramType_isTypeStrong hB p h)
+          (fun e p h => Inductive.paramType_isType hB p h)
           (fun p => hpsT.down ⟨p.val, by omega⟩)
         have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hepsD⟩
         have ⟨efds, hefdsD, hefdsT⟩ := TypedSpec.fixArgs hS hfds'
@@ -505,7 +505,7 @@ partial def inferCore (G : FCtx) :
         have hindD : FExpr.Denotes L ⟨_, _⟩ 0 (.ind pos s ls ps (ctor.instTargetIndices ls ps fds)) _ :=
           .ind hls hps' hcd.instTargetIndices_size hη rfl hls' hepsD
             (hcd.instTargetIndices hls hls' hpsA hfdsA)
-        have hind' := DefeqStrong.indDF hepsT fun i =>
+        have hind' := Defeq.indDF hepsT fun i =>
           hctor.targetIndex_congr hB.params i hepsT hefdsT
         exact ⟨_, _, .ctor hls hps' hfds' hrecFds' hη rfl rfl hls' hepsD hefdsD herecD, hindD,
           .ctorDF (fieldLevels := fun f => (hefdsT f).regular.choose)
@@ -561,12 +561,12 @@ partial def inferCore (G : FCtx) :
         have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
         cases hη.symm.trans hη₀
         obtain rfl : _ = (⟨s, hs⟩ : Fin ι.nsorts) := Fin.ext hs'
-        have hB := (hS.ordered.entryWFStrong η₀).block
+        have hB := (hS.ordered.entryWF η₀).block
         have ⟨eps, hepsD, hepsT⟩ := TypedSpec.fixArgs hS hps'
           (fts := fun p => I.paramType ls ps p.val (by omega))
           (fun e p => (E.get η₀).block.paramType (⟦ls' ·⟧) e p) hps''
           (fun e he p => hI.paramType hls hls' ⟨hps', he⟩ p)
-          (fun e p h => Inductive.paramType_isTypeStrong hB p h)
+          (fun e p h => Inductive.paramType_isType hB p h)
           (fun p => hpsT.down ⟨p.val, by omega⟩)
         have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hepsD⟩
         have ⟨ems, hemsD, hemsT⟩ := TypedSpec.fixArgs hS hms'
@@ -592,7 +592,7 @@ partial def inferCore (G : FCtx) :
           (fts := fun i => I.indexType ls ps s (by omega) is i.val (by omega))
           (fun e i => (E.get η₀).block.indexType (⟦ls' ·⟧) ⟨s, hs⟩ eps e i) his''
           (fun e he i => hI.indexType hls hls' hpsA _ ⟨his', he⟩ i)
-          (fun e i h => Inductive.indexType_isTypeStrong (hB.indices _) i hS.wf hepsT h)
+          (fun e i h => Inductive.indexType_isType (hB.indices _) i hS.wf hepsT h)
           (fun i => hisT.down ⟨i.val, by omega⟩)
         have hindD₀ : FExpr.Denotes L ⟨_, _⟩ 0 (.ind pos s ls ps is) _ :=
           .ind hls hps' his' hη rfl hls' hps'' his''
@@ -601,11 +601,11 @@ partial def inferCore (G : FCtx) :
         have ⟨_, _, hmajD, hTD, hmty⟩ := hmaj hS hmajd hindD₀
         have ⟨_, hTty⟩ := hmty.regular
         have hmaj' := (IsTypeEq.ofDefEq (FExpr.Denotes.defeq hS.ordered hS.wf hTD hindD hTty
-          (DefeqStrong.indDF hepsT heisT))).convStrong hmty
+          (Defeq.indDF hepsT heisT))).conv hmty
         have hminsD (t : Fin ι.nsorts) (c : Fin (ι.nctors t)) :=
           heminsD (Fin.encodeSigma ι.nctors ⟨t, c⟩)
         have hminsT' (t : Fin ι.nsorts) (c : Fin (ι.nctors t)) :
-            E[Γ] ⊢ₛ emins (Fin.encodeSigma ι.nctors ⟨t, c⟩) :
+            E[Γ] ⊢ emins (Fin.encodeSigma ι.nctors ⟨t, c⟩) :
               (E.get η₀).block.caseFnType η₀ (⟦ls' ·⟧) eps ems t c := by
           have := heminsT (Fin.encodeSigma ι.nctors ⟨t, c⟩)
           generalize hx : Fin.decodeSigma ι.nctors (Fin.encodeSigma ι.nctors ⟨t, c⟩) = x at this
@@ -654,7 +654,7 @@ partial def inferCore (G : FCtx) :
           ⟨_, .forallEDF hα'T (hβ'T.wk _) (hβ'T.wk _)⟩
         have ⟨_, hh'D, hh'T⟩ := hh.at hS hhd
           (FExpr.Denotes.compatType hηeq hl₂ hα'D hr'D hβ'D hf'D)
-          (Quot.compatType_isTypeStrong (hS.eqBlock _) hα'T hr'T hβ'T hf'T)
+          (Quot.compatType_isType (hS.eqBlock _) hα'T hr'T hβ'T hf'T)
         have ⟨_, ha'D, ha'T⟩ := ha.at hS had (.quot hη hl₁ hα'D hr'D) ⟨_, .quotDF hα'T hr'T⟩
         exact ⟨_, _, .quotLift hη hl₁ hl₂ hα'D hr'D hβ'D hf'D hh'D ha'D, hβ'D,
           .quotLiftDF hα'T hr'T hβ'T hf'T hh'T ha'T⟩⟩
@@ -669,9 +669,9 @@ partial def inferCore (G : FCtx) :
       have ⟨_, hα'D, hα'T⟩ := hα.at hS hαd (.sort hl) ⟨_, .sortDF⟩
       have ⟨_, hr'D, hr'T⟩ := hr.at hS hrd hα'D.relType ⟨_, Quot.relType_congr hα'T⟩
       have ⟨_, hβ'D, hβ'T⟩ := hβ.at hS hβd (FExpr.Denotes.quotMotiveType hη hl hα'D hr'D)
-        (Quot.motiveType_isTypeStrong hα'T hr'T)
+        (Quot.motiveType_isType hα'T hr'T)
       have ⟨_, hf'D, hf'T⟩ := hf.at hS hfd (FExpr.Denotes.quotMinorType hη hl hα'D hr'D hβ'D)
-        (Quot.minorType_isTypeStrong hα'T hr'T hβ'T)
+        (Quot.minorType_isType hα'T hr'T hβ'T)
       have ⟨_, ha'D, ha'T⟩ := ha.at hS had (.quot hη hl hα'D hr'D) ⟨_, .quotDF hα'T hr'T⟩
       ⟨_, _, .quotInd hη hl hα'D hr'D hβ'D hf'D ha'D, .app hβ'D ha'D,
         .quotIndDF hα'T hr'T hβ'T hf'T ha'T
@@ -737,7 +737,7 @@ partial def inferOnlyCore (G : FCtx) :
         have ⟨_, _, _, _, ht⟩ := he.ind_inv
         refine ⟨_, .sort hl, ?_⟩
         rw [hleq]
-        exact ht.convStrong he⟩
+        exact ht.conv he⟩
     | _ => throw (.reject .shape)
   | .ctor pos s c ls ps fds recFds =>
     match hfe : F[pos]? with
@@ -760,13 +760,13 @@ partial def inferOnlyCore (G : FCtx) :
         have hcd := hI.ctors ⟨s, hs⟩ ⟨c, hc⟩
         have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
         have hfdsA : ArgsDenote L ⟨_, _⟩ fds _ := ⟨hfds', hfds''⟩
-        have hB := (hS.ordered.entryWFStrong η₀).block
+        have hB := (hS.ordered.entryWF η₀).block
         have ⟨_, _, _, hpsw, hfdsw, _, _, ht⟩ := he.ctor_inv
-        have hind := DefeqStrong.indDF hpsw fun i =>
+        have hind := Defeq.indDF hpsw fun i =>
           (hB.ctors _ _).targetIndex_congr hB.params i hpsw hfdsw
         exact ⟨_, .ind hls hps' hcd.instTargetIndices_size hη rfl hls' hps''
             (hcd.instTargetIndices hls hls' hpsA hfdsA),
-          (ht.trans (.ofDefEq hind)).convStrong he⟩⟩
+          (ht.trans (.ofDefEq hind)).conv he⟩⟩
     | _ => throw (.reject .shape)
   | .recr pos s ls l ps ms mins is maj => do
     let ⟨hsLt⟩ ← guardProofOr (s < ms.size) (.reject .shape)
@@ -774,24 +774,24 @@ partial def inferOnlyCore (G : FCtx) :
       have .recr (η := η) (s' := s') hls hps' hms' hmins' his' hη hs' hls' hl hps'' hms'' hmins''
         his'' hmajd := hden
       subst hs'
-      have hB := (hS.ordered.entryWFStrong η).block
+      have hB := (hS.ordered.entryWF η).block
       have ⟨_, _, _, _, _, _, hpsw, hmsw, _, hisw, hmajw, _, ht⟩ := he.recr_inv
       have hres := hB.motiveResult_congr hS.wf hpsw hmsw hisw hmajw
       exact ⟨_, (hms'' s').motiveResult his' his'' hmajd,
-        (ht.trans (.ofDefEq hres)).convStrong he⟩⟩
+        (ht.trans (.ofDefEq hres)).conv he⟩⟩
   | .quot pos l α r =>
     pure ⟨.sort l, fun {_ _ _ _ _ _} _ (.quot _ hl _ _) he =>
-      ⟨_, .sort hl, he.quot_inv.convStrong he⟩⟩
+      ⟨_, .sort hl, he.quot_inv.conv he⟩⟩
   | .quotMk pos l α r a =>
     pure ⟨.quot pos l α r, fun {_ _ _ _ _ _} _ (.quotMk hη hl hαd hrd _) he =>
-      ⟨_, .quot hη hl hαd hrd, he.quotMk_inv.convStrong he⟩⟩
+      ⟨_, .quot hη hl hαd hrd, he.quotMk_inv.conv he⟩⟩
   | .quotLift pos l₁ l₂ α r β f h a =>
     pure ⟨β, fun {_ _ _ _ _ _} _ (.quotLift _ _ _ _ _ hβd _ _ _) he =>
-      ⟨_, hβd, he.quotLift_inv.convStrong he⟩⟩
+      ⟨_, hβd, he.quotLift_inv.conv he⟩⟩
   | .quotInd pos l α r β f a =>
     pure ⟨.app β a, fun {_ _ _ _ _ _} _ (.quotInd _ _ _ _ hβd _ had) he =>
       have ⟨_, _, _, _, _, _, _, _, _, _, hres, ht⟩ := he.quotInd_prem
-      ⟨_, .app hβd had, (ht.trans (.ofDefEq hres)).convStrong he⟩⟩
+      ⟨_, .app hβd had, (ht.trans (.ofDefEq hres)).conv he⟩⟩
   | .proj pos s idx e => do
     let ⟨te, hte⟩ ← inferOnly G e
     let ⟨t, ht⟩ ← whnf G te
@@ -818,18 +818,18 @@ partial def inferOnlyCore (G : FCtx) :
             hps₂'' his₂', hc⟩ := hred hS hted hu
           cases hη₂.symm.trans hη
           obtain rfl := (Fin.ext hs₂).symm
-          have hmaj₂ := (IsTypeEq.ofDefEq hc).convStrong hety
+          have hmaj₂ := (IsTypeEq.ofDefEq hc).conv hety
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
           have ⟨_, hindTy⟩ := hmaj₂.regular
           have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-          have hB := (hS.ordered.entryWFStrong η₀).block
-          have hind : E[Γ] ⊢ₛ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
+          have hB := (hS.ordered.entryWF η₀).block
+          have hind : E[Γ] ⊢ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
               .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
-            .ofDefEq (DefeqStrong.indDF (fun p => Inductive.paramType_conv hB p hpsw)
+            .ofDefEq (Defeq.indDF (fun p => Inductive.paramType_conv hB p hpsw)
               fun i => hstructD.no_indices.elim i)
-          have hty₂ := hstructD.projTerm_hasTypeStrong hB f' hS.wf
-            (fun p => Inductive.paramType_conv hB p hpsw) (hind.convStrong hmaj₂)
+          have hty₂ := hstructD.projTerm_hasType hB f' hS.wf
+            (fun p => Inductive.paramType_conv hB p hpsw) (hind.conv hmaj₂)
           have hP := Inductive.IsStructure.projTerm_congr_defeq hS.ordered hstructD hstructD
             f' f' rfl hS.wf he hty₂ fun ht₁ _ => ht₁
           have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
@@ -838,7 +838,7 @@ partial def inferOnlyCore (G : FCtx) :
           obtain rfl : c' = ⟨0, hn1 ▸ Nat.zero_lt_one⟩ := Fin.ext hc0
           have hd := (hI.ctors _ ⟨0, hn1 ▸ Nat.zero_lt_one⟩).projType hls₂ hls₂'' ⟨hps₂, hps₂''⟩
             hη hstructD hed f'
-          exact ⟨_, hd, (DefeqStrong.retype hS.ordered hS.wf hP.symm hty₂).right⟩⟩
+          exact ⟨_, hd, (Defeq.retype hS.ordered hS.wf hP.symm hty₂).right⟩⟩
       | _ => throw (.reject .shape)
     | _ => throw (.reject .shape)
   | .strLit str => do
@@ -926,7 +926,7 @@ partial def inferOnlyPiTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       have ⟨⟨_, ht₀⟩, ⟨_, hb₀⟩⟩ := he.forallE_inv
       have ⟨_, htt', htty⟩ := htt hS hd ht₀
       have ⟨_, hl₁', hconv₁⟩ := hl₁ hS htt' htty.regular
-      have hts := hconv₁.convStrong htty
+      have hts := hconv₁.conv htty
       have ⟨_, hs, hbs⟩ := hr (hS.snoc hd hts) hbd hb₀
       have .sort hl₂' := hs
       exact ⟨_, .sort (.imax hl₁' hl₂'), .forallEDF hts hbs hbs⟩⟩
@@ -938,7 +938,7 @@ partial def inferOnlyPiTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       subst hn
       have ⟨_, htb', hbty⟩ := htb hS (hden.openBVars (by omega)) he
       have ⟨_, hl', hconv⟩ := hl hS htb' hbty.regular
-      exact ⟨_, .sort hl', hconv.convStrong hbty⟩⟩
+      exact ⟨_, .sort hl', hconv.conv hbty⟩⟩
 
 partial def isTypeEqOpen (G : FCtx) (k : Nat) (hk : k ≤ G.size) (ft₁ ft₂ : FExpr) :
     CheckM L F ℓ (PLift (TypeEqTeleSpec L F ℓ G k ft₁ ft₂)) := do
@@ -981,14 +981,14 @@ partial def isDefEqLamTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       have ht₂ := hpi₂.forallE_inv.1
       have hd := hdom hS hdt₁ hdt₂ ht₁ ht₂
       have ⟨_, ht₁'⟩ := ht₁
-      have hb₂'' := DefeqStrong.snocConvTy hd.symm hb₂'
+      have hb₂'' := Defeq.snocConvTy hd.symm hb₂'
       have hb := hbody (hS.snoc (hdt₁.openBVars (by omega)) ht₁') hb₁ hb₂ hb₁' hb₂''
       have ⟨_, hdl⟩ := hd.sort_uniq hS.ordered hS.wf
       have ⟨_, htb⟩ := hb₁'.regular
-      have htb₂ := DefeqStrong.snocConvTy hd htb
-      have hb₂ := DefeqStrong.snocConvTy hd hb
-      have hlam := DefeqStrong.lamDF hdl htb htb₂ hb hb₂
-      exact hchain₁.symm.convStrong hlam⟩
+      have htb₂ := Defeq.snocConvTy hd htb
+      have hb₂ := Defeq.snocConvTy hd hb
+      have hlam := Defeq.lamDF hdl htb htb₂ hb hb₂
+      exact hchain₁.symm.conv hlam⟩
   | fe₁, fe₂ => do
     let ⟨h⟩ ← isDefEq G (fe₁.openBVars (G.size - k) k) (fe₂.openBVars (G.size - k) k)
     pure ⟨fun {_ _ _ _ _ _ _ _} hS hd₁ hd₂ he₁ he₂ => by
@@ -1174,10 +1174,10 @@ partial def toCtorWhenK (G : FCtx) (pos s : Nat) (maj : FExpr) :
               ⟨fun f => (hK.fields ▸ f : Fin 0).elim0⟩
             have hrE : IsEmpty (Fin (ι.ctors ⟨s₂, hK.sort⟩ ⟨0, _⟩).nrecFields) :=
               ⟨fun r => (hK.recFields ▸ r : Fin 0).elim0⟩
-            have hmajT := (IsTypeEq.ofDefEq hTc).convStrong hty
+            have hmajT := (IsTypeEq.ofDefEq hTc).conv hty
             have ⟨_, hindTy⟩ := hmajT.regular
             have ⟨_, _, hpsw, _, hsortEq⟩ := hindTy.ind_inv
-            have hB := (hS.ordered.entryWFStrong η₀).block
+            have hB := (hS.ordered.entryWF η₀).block
             have hpsT p := Inductive.paramType_conv hB p hpsw
             have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
             have hfdsA : ArgsDenote L ⟨ζ, E⟩ (#[] : Array FExpr)
@@ -1191,20 +1191,20 @@ partial def toCtorWhenK (G : FCtx) (pos s : Nat) (maj : FExpr) :
             have htyD : FExpr.Denotes L ⟨_, _⟩ 0 ctorTy _ :=
               .ind hls hps' (hcd.instTargetIndices_size) hη rfl hls' hps''
                 (hcd.instTargetIndices hls hls' hpsA hfdsA)
-            have hctorT := DefeqStrong.nullaryCtor (fds := fun f => hfE.elim f)
+            have hctorT := Defeq.nullaryCtor (fds := fun f => hfE.elim f)
               (recFds := fun r => hrE.elim r) hB hfE hrE hpsT
             have ⟨_, hctorTyT⟩ := hctorT.regular
             have hcc := hc hS (.ind hls hps' his' hη rfl hls' hps'' his'') htyD hindTy hctorTyT
-            have hctor₂ := (IsTypeEq.ofDefEq hcc).symm.convStrong hctorT
+            have hctor₂ := (IsTypeEq.ofDefEq hcc).symm.conv hctorT
             have ⟨l₀, hl₀, hl₀'⟩ := hI.level
             rw [hK.level] at hl₀
             have hzero : (E.get η₀).block.level.inst (⟦ls' ·⟧) = Level.zero := by
               rw [← hl₀', hl₀.eq_zero]
               exact Level.inst_zero _
             rw [hzero] at hsortEq
-            have hprop := hsortEq.convStrong hindTy
-            have hm := DefeqStrong.proofIrrel hprop hmajT hctor₂
-            exact ⟨_, hctorD, DefeqStrong.retype hS.ordered hS.wf hm he⟩⟩
+            have hprop := hsortEq.conv hindTy
+            have hm := Defeq.proofIrrel hprop hmajT hctor₂
+            exact ⟨_, hctorD, Defeq.retype hS.ordered hS.wf hm he⟩⟩
       else return ⟨maj, RedSpec.refl maj⟩
     | _ => return ⟨maj, RedSpec.refl maj⟩
   | _ => return ⟨maj, RedSpec.refl maj⟩
@@ -1265,13 +1265,13 @@ partial def etaStructCore (G : FCtx) (fe₁ : FExpr) :
           have hstruct' := hI.isStructure _ ⟨0, hc0⟩ hstruct
           have hcd := hI.ctors _ ⟨0, hc0⟩
           have hpsA : ArgsDenote L ⟨_, _⟩ ps _ := ⟨hps', hps''⟩
-          have hind := (IsTypeEq.ofDefEq hc).convStrong hty
+          have hind := (IsTypeEq.ofDefEq hc).conv hty
           have ⟨_, hindTy⟩ := hind.regular
           have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-          have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWFStrong η₀).block p hpsw
+          have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWF η₀).block p hpsw
           have heta := Checker.structure_eta hS.ordered hstruct' hS.wf hpsT' hind
           exact ⟨_, FCtor.Denotes.rebuildTerm hls hls' hpsA hη hstruct' hd₁ hcd,
-            DefeqStrong.retype hS.ordered hS.wf heta he₁⟩⟩
+            Defeq.retype hS.ordered hS.wf heta he₁⟩⟩
     | _ => throw (Failure.reject .notDefEq)
   | _ => throw (Failure.reject .notDefEq)
 
@@ -1284,7 +1284,7 @@ partial def isDefEqStruct (G : FCtx) (fe₁ fe₂ : FExpr) :
     pure ⟨fun {_ _ _ _ _ _ _ _} hS hd₁ hd₂ he₁ he₂ =>
       have ⟨_, hd₃, hred⟩ := hη hS hd₂ he₂
       have hc' := hc hS hd₁ hd₃ he₁ hred.right
-      hc'.trans (DefeqStrong.retype hS.ordered hS.wf hred.symm hc'.right)⟩) <|>
+      hc'.trans (Defeq.retype hS.ordered hS.wf hred.symm hc'.right)⟩) <|>
   do
     unless fe₂ matches .ctor .. do throw (.reject .notDefEq)
     let ⟨fe₃, hη⟩ ← etaStructCore G fe₁
@@ -1328,14 +1328,14 @@ partial def isDefEqUnitLike (G : FCtx) (fe₁ fe₂ : FExpr) :
           exact hfields
         have hfields' : IsEmpty (Fin (ι.ctors _ ⟨0, hc0⟩).nfields) :=
           ⟨fun f => absurd f.isLt (by omega)⟩
-        have hind₁ := (IsTypeEq.ofDefEq hc).convStrong hty₁
+        have hind₁ := (IsTypeEq.ofDefEq hc).conv hty₁
         have ⟨_, hindTy⟩ := hind₁.regular
         have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-        have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWFStrong η₀).block p hpsw
+        have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWF η₀).block p hpsw
         have hteq' := hteq hS hdt₁ hdt₂ hty₁.regular hty₂.regular
-        have hind₂ := (IsTypeEq.ofDefEq hc).convStrong (hteq'.symm.convStrong hty₂)
+        have hind₂ := (IsTypeEq.ofDefEq hc).conv (hteq'.symm.conv hty₂)
         have h := Checker.unit_like_eta hS.ordered hstruct' hfields' hS.wf hpsT' hind₁ hind₂
-        exact DefeqStrong.retype hS.ordered hS.wf h he₁⟩
+        exact Defeq.retype hS.ordered hS.wf h he₁⟩
     | _ => throw (Failure.reject .notDefEq)
   | _ => throw (Failure.reject .notDefEq)
 
@@ -1353,7 +1353,7 @@ partial def inferSortedLevel (G : FCtx) (fe : FExpr) :
   pure ⟨l, ⟨fun {_ _ _ _ _} hS hd =>
     have ⟨_, _, hd', htt, hty⟩ := ht hS hd
     have ⟨l', hl', hconv⟩ := hl hS htt hty.regular
-    ⟨_, l', hd', hl', hconv.convStrong hty⟩⟩⟩
+    ⟨_, l', hd', hl', hconv.conv hty⟩⟩⟩
 
 partial def isProp (G : FCtx) (ft : FExpr) :
     CheckM L F ℓ (Option (PLift (PropSpec L F ℓ G ft))) := do
@@ -1364,7 +1364,7 @@ partial def isProp (G : FCtx) (ft : FExpr) :
       have ⟨_, hs', hty⟩ := hs hS htd htt
       have ⟨_, hl', hr⟩ := hl hS hs' hty.regular
       rw [hl'.interp_eq_zero hz] at hr
-      exact hr.convStrong hty⟩)
+      exact hr.conv hty⟩)
   else pure none
 
 partial def tryProofIrrel (G : FCtx) (fe₁ fe₂ : FExpr) :
@@ -1380,8 +1380,8 @@ partial def tryProofIrrel (G : FCtx) (fe₁ fe₂ : FExpr) :
       have ⟨_, hp₂', he₂'⟩ := hp₂ hS hd₂ he₂
       have hp := hprop hS hp₁' he₁'.regular
       have ⟨_, hpq⟩ := (hpeq hS hp₁' hp₂' he₁'.regular he₂'.regular).sort_uniq hS.ordered hS.wf
-      have h := DefeqStrong.proofIrrel hp he₁' (.defeqDF hpq.symm he₂')
-      exact DefeqStrong.retype hS.ordered hS.wf h he₁⟩)
+      have h := Defeq.proofIrrel hp he₁' (.defeqDF hpq.symm he₂')
+      exact Defeq.retype hS.ordered hS.wf h he₁⟩)
 
 partial def isDefEqOffset (G : FCtx) (fe₁ fe₂ : FExpr) :
     CheckM L F ℓ (Option (PLift (DefEqSpec L F ℓ G fe₁ fe₂))) := do
@@ -1538,8 +1538,7 @@ partial def isDefEqInd (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (ps
       (hpsw₁ p).right (hpsw₂ p).right)
     have his i := (hisw₁ i).trans (hisD.down ⟨i.val, by omega⟩ hS (his₁'' i) (his₂'' i)
       (hisw₁ i).right (hisw₂ i).right)
-    exact DefeqStrong.retype hS.ordered hS.wf
-      ((DefeqStrong.indDF hpsw₁ hisw₁).symm.trans (.indDF hps his)) he₁⟩
+    exact Defeq.retype hS.ordered hS.wf ((Defeq.indDF hpsw₁ hisw₁).symm.trans (.indDF hps his)) he₁⟩
 
 partial def isDefEqCtor (G : FCtx) (pos₁ s₁ c₁ : Nat) (ls₁ : Array FLevel) (ps₁ fds₁ recFds₁ : FCtx) (pos₂ s₂ c₂ : Nat)
     (ls₂ : Array FLevel) (ps₂ fds₂ recFds₂ : FCtx) :
@@ -1562,7 +1561,7 @@ partial def isDefEqCtor (G : FCtx) (pos₁ s₁ c₁ : Nat) (ls₁ : Array FLeve
     obtain rfl := Fin.ext (hs₁'.trans hs₂'.symm)
     obtain rfl := Fin.ext (hc₁'.trans hc₂'.symm)
     rw [← hl hls₁ hls₂ hls₁' hls₂'] at he₂ ⊢
-    have hB := (hS.ordered.entryWFStrong η).block
+    have hB := (hS.ordered.entryWF η).block
     have ⟨_, _, _, hpsw₁, hfdsw₁, hrecFdsw₁, hindw₁, _⟩ := he₁.ctor_inv
     have ⟨_, _, _, hpsw₂, hfdsw₂, hrecFdsw₂, _, _⟩ := he₂.ctor_inv
     have hps p := (hpsw₁ p).trans (hpsD.down ⟨p.val, by omega⟩ hS (hps₁'' p) (hps₂'' p)
@@ -1575,11 +1574,11 @@ partial def isDefEqCtor (G : FCtx) (pos₁ s₁ c₁ : Nat) (ls₁ : Array FLeve
     have hleft := hindw₁.ctorDF hpsw₁ hfdsw₁ hrecFdsw₁
       (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hpsw₁ (fun g _ => hfdsw₁ g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hpsw₁ hfdsw₁).choose_spec)
-    have hright := (DefeqStrong.indDF hps fun i =>
+    have hright := (Defeq.indDF hps fun i =>
       hctor.targetIndex_congr hB.params i hps hfds).ctorDF hps hfds hrecFds
       (fun f => (hctor.ordinaryFieldExpr_congr hB.params f hps (fun g _ => hfds g)))
       (fun r => (hctor.recursiveFieldExpr_congr hB.params rfl r hps hfds).choose_spec)
-    exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
+    exact Defeq.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
 
 partial def isDefEqRecr (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (l₁ : FLevel) (ps₁ ms₁ mins₁ is₁ : FCtx)
     (maj₁ : FExpr) (pos₂ s₂ : Nat) (ls₂ : Array FLevel) (l₂ : FLevel)
@@ -1606,7 +1605,7 @@ partial def isDefEqRecr (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (l
     cases hη₁.symm.trans hη₂
     obtain rfl := Fin.ext (hs₁'.trans hs₂'.symm)
     rw [← hl hls₁ hls₂ hls₁' hls₂', ← hlv hl₁ hl₂] at he₂ ⊢
-    have hB := (hS.ordered.entryWFStrong η).block
+    have hB := (hS.ordered.entryWF η).block
     have ⟨_, _, _, _, _, hallowed, hpsw₁, hmsw₁, hminsw₁, hisw₁, hmajw₁, hresw₁, _⟩ :=
       he₁.recr_inv
     have ⟨_, _, _, _, _, _, hpsw₂, hmsw₂, hminsw₂, hisw₂, hmajw₂, _, _⟩ :=
@@ -1622,10 +1621,10 @@ partial def isDefEqRecr (G : FCtx) (pos₁ s₁ : Nat) (ls₁ : Array FLevel) (l
     have his i := (hisw₁ i).trans (hisD.down ⟨i.val, by omega⟩ hS (his₁'' i) (his₂'' i)
       (hisw₁ i).right (hisw₂ i).right)
     have hmaj := hmajw₁.trans (hmajD hS hmaj₁ hmaj₂ hmajw₁.right hmajw₂.right)
-    have hleft := DefeqStrong.recrDF hallowed hpsw₁ hmsw₁ hminsw₁ hisw₁ hmajw₁ hresw₁
-    have hright := DefeqStrong.recrDF hallowed hps hms hmins his hmaj
+    have hleft := Defeq.recrDF hallowed hpsw₁ hmsw₁ hminsw₁ hisw₁ hmajw₁ hresw₁
+    have hright := Defeq.recrDF hallowed hps hms hmins his hmaj
       (hB.motiveResult_congr hS.wf hps hms his hmaj)
-    exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
+    exact Defeq.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
 
 partial def isDefEqCore (G : FCtx) :
     (fe₁ fe₂ : FExpr) → CheckM L F ℓ (PLift (DefEqSpec L F ℓ G fe₁ fe₂))
@@ -1649,17 +1648,17 @@ partial def isDefEqCore (G : FCtx) :
     pure ⟨fun {_ _ _ _ _ _ _ _} hS hd₁ hd₂ he₁ he₂ =>
       have ⟨_, htf, hfty⟩ := hf hS hd₂ he₂
       have ⟨t₂, _, ht₂, _, hconv⟩ := hpi hS htf hfty.regular
-      have hfty' := hconv.convStrong hfty
+      have hfty' := hconv.conv hfty
       have ⟨_, hty⟩ := hfty'.regular
       have hinv := hty.forallE_inv
       have ⟨_, ht₂'⟩ := hinv.1
       have ⟨_, ht₂''⟩ := hinv.2
-      have heta := DefeqStrong.eta ht₂' ht₂'' (by simpa [Expr.wk] using ht₂'.wk t₂)
+      have heta := Defeq.eta ht₂' ht₂'' (by simpa [Expr.wk] using ht₂'.wk t₂)
         (by simpa [Expr.wk] using hfty'.wk t₂) hfty'
       have hd₃ : FExpr.Denotes L ⟨_, _⟩ 0 (.lam ft₂ (.app fe₂ (.bvar 0))) _ :=
         .lam ht₂ (.app hd₂.wkOpen (.bvar rfl (Nat.lt_succ_self 0)))
       have hlam := h hS hd₁ hd₃ he₁ heta.left
-      hlam.trans (DefeqStrong.retype hS.ordered hS.wf heta hlam.right)⟩
+      hlam.trans (Defeq.retype hS.ordered hS.wf heta hlam.right)⟩
   | fe₁, .lam ft₂ b₂ => do
     let ⟨h⟩ ← isDefEqCore G (.lam ft₂ b₂) fe₁
     pure ⟨h.symm⟩
@@ -1688,7 +1687,7 @@ partial def isDefEqCore (G : FCtx) :
       rw [← hl hl₁ hl₂] at he₂ ⊢
       have ⟨hαt₁, hrt₁⟩ := he₁.quot_formation_inv
       have ⟨hαt₂, hrt₂⟩ := he₂.quot_formation_inv
-      exact DefeqStrong.retype hS.ordered hS.wf
+      exact Defeq.retype hS.ordered hS.wf
         (.quotDF (hα hS hα₁ hα₂ hαt₁ hαt₂) (hr hS hr₁ hr₂ hrt₁ hrt₂)) he₁⟩
   | .quotMk pos₁ l₁ α₁ r₁ a₁, .quotMk pos₂ l₂ α₂ r₂ a₂ => do
     let ⟨rfl⟩ ← guardProofOr (pos₁ = pos₂) (.reject .notDefEq)
@@ -1703,12 +1702,12 @@ partial def isDefEqCore (G : FCtx) :
       rw [← hl hl₁ hl₂] at he₂ ⊢
       have ⟨_, _, _, hαw₁, hrw₁, haw₁, _⟩ := he₁.quotMk_prem
       have ⟨_, _, _, hαw₂, hrw₂, haw₂, _⟩ := he₂.quotMk_prem
-      have hleft := DefeqStrong.quotMkDF (η := η) hαw₁ hrw₁ haw₁
-      have hright := DefeqStrong.quotMkDF (η := η)
+      have hleft := Defeq.quotMkDF (η := η) hαw₁ hrw₁ haw₁
+      have hright := Defeq.quotMkDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
         (hrw₁.trans (hr hS hr₁ hr₂ hrw₁.right hrw₂.right))
         (haw₁.trans (ha hS ha₁ ha₂ haw₁.right haw₂.right))
-      exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
+      exact Defeq.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
   | .quotLift pos₁ l₁ l₂ α₁ r₁ β₁ f₁ h₁ a₁, .quotLift pos₂ l₁' l₂' α₂ r₂ β₂ f₂ h₂ a₂ => do
     let ⟨rfl⟩ ← guardProofOr (pos₁ = pos₂) (.reject .notDefEq)
     let ⟨hlv₁⟩ ← isDefEqLevel ℓ l₁ l₁'
@@ -1728,15 +1727,15 @@ partial def isDefEqCore (G : FCtx) :
         he₁.quotLift_prem
       have ⟨_, _, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, hhw₂, haw₂, _⟩ :=
         he₂.quotLift_prem
-      have hleft := DefeqStrong.quotLiftDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
-      have hright := DefeqStrong.quotLiftDF (η := η)
+      have hleft := Defeq.quotLiftDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ hhw₁ haw₁
+      have hright := Defeq.quotLiftDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
         (hrw₁.trans (hr hS hr₁ hr₂ hrw₁.right hrw₂.right))
         (hβw₁.trans (hβ hS hβ₁ hβ₂ hβw₁.right hβw₂.right))
         (hfw₁.trans (hf hS hf₁ hf₂ hfw₁.right hfw₂.right))
         (hhw₁.trans (hh hS hh₁ hh₂ hhw₁.right hhw₂.right))
         (haw₁.trans (ha hS ha₁ ha₂ haw₁.right haw₂.right))
-      exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
+      exact Defeq.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
   | .quotInd pos₁ l₁ α₁ r₁ β₁ f₁ a₁, .quotInd pos₂ l₂ α₂ r₂ β₂ f₂ a₂ => do
     let ⟨rfl⟩ ← guardProofOr (pos₁ = pos₂) (.reject .notDefEq)
     let ⟨hl⟩ ← isDefEqLevel ℓ l₁ l₂
@@ -1754,19 +1753,19 @@ partial def isDefEqCore (G : FCtx) :
         he₁.quotInd_prem
       have ⟨_, _, _, _, _, hαw₂, hrw₂, hβw₂, hfw₂, haw₂, _, _⟩ :=
         he₂.quotInd_prem
-      have hleft := DefeqStrong.quotIndDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
+      have hleft := Defeq.quotIndDF (η := η) hαw₁ hrw₁ hβw₁ hfw₁ haw₁ hresw₁
       have hβ' := hβw₁.trans (hβ hS hβ₁ hβ₂ hβw₁.right hβw₂.right)
       have ha' := haw₁.trans (ha hS ha₁ ha₂ haw₁.right haw₂.right)
       have ⟨_, hmotive⟩ := hβ'.regular
       have ⟨⟨_, hquot⟩, ⟨_, hprop⟩⟩ := hmotive.forallE_inv
-      have hright := DefeqStrong.quotIndDF (η := η)
+      have hright := Defeq.quotIndDF (η := η)
         (hαw₁.trans (hα hS hα₁ hα₂ hαw₁.right hαw₂.right))
         (hrw₁.trans (hr hS hr₁ hr₂ hrw₁.right hrw₂.right))
         hβ'
         (hfw₁.trans (hf hS hf₁ hf₂ hfw₁.right hfw₂.right))
         ha'
         (.appDF hquot hprop hβ' ha' (hprop.inst_congr ha'))
-      exact DefeqStrong.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
+      exact Defeq.retype hS.ordered hS.wf (hleft.symm.trans hright) he₁⟩
   | .strLit str, .app (.const pos ls) a => do
     let ⟨rfl⟩ ← guardProofOr (pos = L.stringOfList) (.reject .notDefEq)
     let ⟨h⟩ ← isDefEqCore G (FExpr.strLitExpand L str) (.app (.const L.stringOfList ls) a)
