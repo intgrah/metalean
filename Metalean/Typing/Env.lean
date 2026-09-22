@@ -11,7 +11,7 @@ import Metalean.Typing.InstLevel
 import Metalean.Typing.Map
 import Metalean.Typing.Substitution
 import Metalean.Typing.Telescope
-import Metalean.Typing.Builtin.Eq
+import Metalean.Syntax.Eq
 import Metalean.Syntax.Substitution
 
 @[expose] public section

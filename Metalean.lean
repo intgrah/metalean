@@ -1,13 +1,6 @@
 module
 
-public import Metalean.Builtin.Choice
 public import Metalean.Builtin.Env
-public import Metalean.Builtin.Eq
-public import Metalean.Builtin.Iff
-public import Metalean.Builtin.Nonempty
-public import Metalean.Builtin.Propext
-public import Metalean.Builtin.Quot
-public import Metalean.Builtin.QuotSound
 public import Metalean.CategoryTheory.Functor.Fold
 public import Metalean.CategoryTheory.Functor.FunctorHom
 public import Metalean.CategoryTheory.RelativeMonad
@@ -250,13 +243,6 @@ public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.TypeTheory.Syntactic.Substitution
 public import Metalean.TypeTheory.Syntactic.Telescope
 public import Metalean.TypeTheory.Syntactic.Universe
-public import Metalean.Typing.Builtin.Choice
-public import Metalean.Typing.Builtin.Env
-public import Metalean.Typing.Builtin.Eq
-public import Metalean.Typing.Builtin.Iff
-public import Metalean.Typing.Builtin.Nonempty
-public import Metalean.Typing.Builtin.Propext
-public import Metalean.Typing.Builtin.QuotSound
 public import Metalean.Typing.Context
 public import Metalean.Typing.Defs
 public import Metalean.Typing.Env

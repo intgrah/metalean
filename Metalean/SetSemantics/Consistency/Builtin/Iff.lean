@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Builtin.Iff
+public import Metalean.Builtin.Env
 public import Metalean.SetSemantics.Consistency.Environment
 
 public section

@@ -11,7 +11,7 @@ public import Metalean.Syntax.Inductive.Basic
 
 namespace Metalean.Eq
 
-variable {ζ : Sigs}
+variable {ζ ζ₁ ζ₂ : Sigs}
 
 def ctorDecl :
     Ctor ζ sig ⟨0, by decide⟩ ctorSig where
@@ -25,5 +25,15 @@ def ctorDecl :
   indices _ := #t[#0]
   level := .zero
   ctors | ⟨0, _⟩, ⟨0, _⟩ => ctorDecl
+
+@[simp] theorem block_map (pre : ζ₁ ⟶ ζ₂) :
+    (@block ζ₁).map pre = @block ζ₂ := by
+  dsimp [Inductive.map]
+  congr
+  funext s c
+  refine Fin.cases ?_ (fun i => Fin.elim0 i) s
+  refine Fin.cases ?_ (fun i => Fin.elim0 i) c
+  dsimp [Ctor.map]
+  congr <;> exact Subsingleton.elim _ _
 
 end Metalean.Eq
