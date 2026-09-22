@@ -111,26 +111,28 @@ theorem letE {v r : Expr ζ ℓ n} :
     have ⟨_, _, _, he, hres⟩ := hc.letE_inv hΓ
     (hl he).trans hres.symm
 
-theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
+theorem app {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ f !: .forallE t₁ t' →
     E[Γ] ⊢ a : t₁ →
     E[Γ] ⊢ .app f a !: t₂ := by
   subst hinst
-  intro hΓ hl ha _ hc
+  intro hE hΓ hl ha _ hc
   have ⟨_, _, hf, _, ht⟩ := hc.app_inv
-  have ⟨_, hcod⟩ := TypeEq.forallE_inj ho hΓ (hl hf)
+  have ⟨_, hcod⟩ := TypeEq.forallE_inj hE hΓ (hl hf)
   exact (TypeEq.instCongr hΓ ha hcod).trans ht.symm
 
-theorem forallE (ho : E.Ordered) :
+theorem forallE :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ t !: .sort l₁ →
     E[Γ.snoc t] ⊢ t' !: .sort l₂ →
     E[Γ] ⊢ .forallE t t' !: .sort (.imax l₁ l₂) := by
-  intro hΓ ht ht' _ hc
+  intro hE hΓ ht ht' _ hc
   have ⟨_, _, hu, hv, hres⟩ := hc.forallE_ty_inv
-  obtain rfl := TypeEq.sort_inj ho hΓ (ht hu)
-  obtain rfl := TypeEq.sort_inj ho (hΓ.snoc ⟨_, hu⟩) (ht' hv)
+  obtain rfl := TypeEq.sort_inj hE hΓ (ht hu)
+  obtain rfl := TypeEq.sort_inj hE (hΓ.snoc ⟨_, hu⟩) (ht' hv)
   exact hres.symm
 
 end
@@ -138,12 +140,13 @@ end
 end UniqTyFrom
 
 open UniqTyFrom in
-theorem Defeq.uniqTy (ho : E.Ordered) :
+theorem Defeq.uniqTy :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ e : t₁ →
     E[Γ] ⊢ e : t₂ →
     E[Γ] ⊢ t₁ ≡ t₂ typ := by
-  intro hΓ
+  intro hE hΓ
   suffices huniq : ∀ {e₁ e₂ t},
       E[Γ] ⊢ e₁ ≡ e₂ : t →
       E[Γ] ⊢ e₁ !: t ∧ E[Γ] ⊢ e₂ !: t from
@@ -161,19 +164,19 @@ theorem Defeq.uniqTy (ho : E.Ordered) :
   | recrDF _ _ _ _ _ _ hresult => exact ⟨recr, conv hresult recr⟩
   | appDF _ _ _ ha hresult _ _ ihf _ _ =>
     have ⟨hfl, hfr⟩ := ihf hΓ
-    exact ⟨app ho rfl hΓ hfl ha.left, conv hresult (app ho rfl hΓ hfr ha.right)⟩
+    exact ⟨app rfl hE hΓ hfl ha.left, conv hresult (app rfl hE hΓ hfr ha.right)⟩
   | lamDF ht ht' ht₂' _ _ _ _ _ ihe' ihbody' =>
     exact ⟨lam hΓ ht.left (ihe' (hΓ.snoc ⟨_, ht.left⟩)).1,
       conv (.forallEDF ht ht'.left ht₂'.left) (lam hΓ ht.right (ihbody' (hΓ.snoc ⟨_, ht.right⟩)).2)⟩
   | forallEDF ht _ _ iht ihe' ihbody' =>
     have ⟨htl, htr⟩ := iht hΓ
-    exact ⟨forallE ho hΓ htl (ihe' (hΓ.snoc ⟨_, ht.left⟩)).1,
-      forallE ho hΓ htr (ihbody' (hΓ.snoc ⟨_, ht.right⟩)).2⟩
+    exact ⟨forallE hE hΓ htl (ihe' (hΓ.snoc ⟨_, ht.left⟩)).1,
+      forallE hE hΓ htr (ihbody' (hΓ.snoc ⟨_, ht.right⟩)).2⟩
   | defeqDF ht _ _ ih =>
     have ⟨hl, hr⟩ := ih hΓ
     exact ⟨conv ht.symm hl, conv ht.symm hr⟩
   | beta ht _ _ ha _ _ _ _ ihe' _ _ ihbody =>
-    exact ⟨app ho rfl hΓ (lam hΓ ht (ihe' (hΓ.snoc ⟨_, ht⟩)).1) ha, (ihbody hΓ).1⟩
+    exact ⟨app rfl hE hΓ (lam hΓ ht (ihe' (hΓ.snoc ⟨_, ht⟩)).1) ha, (ihbody hΓ).1⟩
   | zeta _ _ _ _ _ _ _ ihbody =>
     have ⟨hr, _⟩ := ihbody hΓ
     exact ⟨letE hΓ hr, hr⟩
@@ -181,7 +184,7 @@ theorem Defeq.uniqTy (ho : E.Ordered) :
     have hΓt : E[Γ.snoc _] ⊢ ok := hΓ.snoc ⟨_, ht⟩
     have hvar := hΓt.var (Fin.last _)
     rw [Ctx.get_last] at hvar
-    exact ⟨lam hΓ ht (app ho (Expr.inst_wkFrom_last _) hΓt (ihfn hΓt).1 hvar), (ihe hΓ).1⟩
+    exact ⟨lam hΓ ht (app (Expr.inst_wkFrom_last _) hE hΓt (ihfn hΓt).1 hvar), (ihe hΓ).1⟩
   | proofIrrel _ _ _ _ ih₁ ih₂ => exact ⟨(ih₁ hΓ).1, (ih₂ hΓ).1⟩
   | iota _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ihlhs ihrhs => exact ⟨(ihlhs hΓ).1, (ihrhs hΓ).1⟩
   | etaStruct _ _ _ _ _ ihmaj ihrebuild => exact ⟨(ihrebuild hΓ).1, (ihmaj hΓ).1⟩
@@ -192,17 +195,18 @@ theorem Defeq.uniqTy (ho : E.Ordered) :
   | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ihlhs ihrhs => exact ⟨(ihlhs hΓ).1, (ihrhs hΓ).1⟩
   | delta _ _ _ ihvalue => exact ⟨const, (ihvalue hΓ).1⟩
 
-theorem TypeEq.sort_uniq (ho : E.Ordered) :
+theorem TypeEq.sort_uniq :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ t₁ ≡ t₂ typ →
     ∃ l, E[Γ] ⊢ t₁ ≡ t₂ : .sort l := by
-  intro hΓ h
+  intro hE hΓ h
   induction h using Relation.TransGen.trans_induction_on with
   | single h => exact h
   | trans _ _ ih₁ ih₂ =>
     have ⟨l₁, h₁⟩ := ih₁
     have ⟨l₂, h₂⟩ := ih₂
-    obtain rfl := TypeEq.sort_inj ho hΓ (Defeq.uniqTy ho hΓ h₁.right h₂.left)
+    obtain rfl := TypeEq.sort_inj hE hΓ (Defeq.uniqTy hE hΓ h₁.right h₂.left)
     exact ⟨l₁, h₁.trans h₂⟩
 
 end Metalean

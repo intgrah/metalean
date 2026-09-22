@@ -31,11 +31,11 @@ structure StrongInductiveModel
     StrongCtorModel E₁ ε₁ I ls (I.ctors s c) tele.params
 
 theorem InductiveWF.model (hdecl : SemDecls E₁ ε₁ zeroNs)
-    (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered) (hB : InductiveWF E₁ I) :
+    (hrule : SemDeclRules E₁ ε₁ zeroNs) (hE : EnvWF E₁) (hB : InductiveWF E₁ I) :
     Nonempty (StrongInductiveModel E₁ ε₁ I ls) :=
-  have ⟨tele⟩ := hB.teleModels hdecl hrule ho
+  have ⟨tele⟩ := hB.teleModels hdecl hrule hE
   ⟨⟨tele, fun s c => Classical.choice
-    ((hB.ctors s c).model hdecl hrule ho tele.params (tele.indices s))⟩⟩
+    ((hB.ctors s c).model hdecl hrule hE tele.params (tele.indices s))⟩⟩
 
 namespace StrongInductiveModel
 

@@ -14,14 +14,12 @@ import Metalean.Syntax.Substitution
 
 namespace Metalean
 
-namespace Defeq
-
 open CategoryTheory
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
   {ℓ n : Nat} {Γ : Ctx ζ₁ ℓ 0 n} {e₁ e₂ t : Expr ζ₁ ℓ n}
 
-theorem map (pre : E₁.as ⟶ E₂.as) :
+theorem Defeq.map (pre : E₁.as ⟶ E₂.as) :
     E₁[Γ] ⊢ e₁ ≡ e₂ : t →
     E₂[Γ.map pre.sigs] ⊢ e₁.map pre.sigs ≡ e₂.map pre.sigs : t.map pre.sigs := by
   intro h
@@ -110,10 +108,6 @@ theorem map (pre : E₁.as ⟶ E₂.as) :
     rw [← dsimp% (Entry.constTypeNatTrans _ _).naturality_apply,
       ← dsimp% (Entry.defValueNatTrans _).naturality_apply, ← Env.get_map pre] at ihvalue ⊢
     exact .delta ihtype ihvalue
-
-end Defeq
-
-variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ₁ ℓ 0 n}
 
 theorem CtxWF.map (pre : E₁.as ⟶ E₂.as) :
     E₁[Γ] ⊢ ok →

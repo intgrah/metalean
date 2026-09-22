@@ -830,8 +830,8 @@ partial def inferOnlyCore (G : FCtx) :
               fun i => hstructD.no_indices.elim i)
           have hty₂ := hstructD.projTerm_hasType hB f' hS.wf
             (fun p => Inductive.paramType_conv hB p hpsw) (hind.conv hmaj₂)
-          have hP := Inductive.IsStructure.projTerm_congr_defeq hS.ordered hstructD hstructD
-            f' f' rfl hS.wf he hty₂ fun ht₁ _ => ht₁
+          have hP := Inductive.IsStructure.projTerm_congr_defeq hstructD hstructD
+            f' f' rfl hS.ordered hS.wf he hty₂ fun ht₁ _ => ht₁
           have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
           have hc0 : c'.val = 0 := by
             omega
@@ -1269,7 +1269,7 @@ partial def etaStructCore (G : FCtx) (fe₁ : FExpr) :
           have ⟨_, hindTy⟩ := hind.regular
           have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
           have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWF η₀).block p hpsw
-          have heta := Checker.structure_eta hS.ordered hstruct' hS.wf hpsT' hind
+          have heta := Checker.structure_eta hstruct' hS.ordered hS.wf hpsT' hind
           exact ⟨_, FCtor.Denotes.rebuildTerm hls hls' hpsA hη hstruct' hd₁ hcd,
             Defeq.retype hS.ordered hS.wf heta he₁⟩⟩
     | _ => throw (Failure.reject .notDefEq)
@@ -1334,7 +1334,7 @@ partial def isDefEqUnitLike (G : FCtx) (fe₁ fe₂ : FExpr) :
         have hpsT' p := Inductive.paramType_conv (hS.ordered.entryWF η₀).block p hpsw
         have hteq' := hteq hS hdt₁ hdt₂ hty₁.regular hty₂.regular
         have hind₂ := (TypeEq.ofDefEq hc).conv (hteq'.symm.conv hty₂)
-        have h := Checker.unit_like_eta hS.ordered hstruct' hfields' hS.wf hpsT' hind₁ hind₂
+        have h := Checker.unit_like_eta hstruct' hfields' hS.ordered hS.wf hpsT' hind₁ hind₂
         exact Defeq.retype hS.ordered hS.wf h he₁⟩
     | _ => throw (Failure.reject .notDefEq)
   | _ => throw (Failure.reject .notDefEq)

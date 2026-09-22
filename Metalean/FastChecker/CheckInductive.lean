@@ -371,7 +371,7 @@ def checkCtorDecl (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
 def InductiveWFSpec (ι : IndSig) (fI : FInductive) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃I₀ : Inductive ζ ι⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   FInductive.Denotes L ⟨ζ, E⟩ fI I₀ →
   ∃ I : Inductive ζ ι, FInductive.Denotes L ⟨ζ, E⟩ fI I ∧ Metalean.InductiveWF E I
@@ -406,8 +406,8 @@ def checkInductive (ι : IndSig) (fI : FInductive) :
     Fin.sequenceM fun c : Fin (ι.nctors t) =>
       checkCtorDecl L F hints accel ι fI t c ((fI.ctors[t.val]'(hctorsLt t))[c.val]'(hctorLt t c))
         hindicesLt hindexLt
-  pure ⟨fun {ζ E I₀} hE ho htr hI₀ => by
-    have hSnil := Sem.nil (ℓ := ι.nlevels) hE ho htr
+  pure ⟨fun {ζ E I₀} hF hE htr hI₀ => by
+    have hSnil := Sem.nil (ℓ := ι.nlevels) hF hE htr
     have ⟨Δp, hΔp, hwfp⟩ := hparams hSnil hI₀.params
     have hSp : Sem L F fI.params E Δp := by
       simpa using hSnil.append hΔp hwfp

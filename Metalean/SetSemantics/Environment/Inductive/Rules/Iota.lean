@@ -241,7 +241,7 @@ theorem recursiveIotaLeaf
 
 theorem iotaRuleSound
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hsourceRule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hB : InductiveWF E₁ I)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hblock : (E₂.get η).block = I.map pre.sigs)
     (hsorts : ∀ s vps vis,
@@ -260,6 +260,7 @@ theorem iotaRuleSound
     {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ 0 n}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₂ 0 n}
     (hallowed : (E₂.get η).block.RecAllowed l) :
+    EnvWF E₁ →
     (∀ param, ε₂[γ] ⊨ ps param ≡ ps param :
       (E₂.get η).block.paramType ls ps param) →
     (∀ s, ε₂[γ] ⊨ ms s ≡ ms s :
@@ -276,7 +277,7 @@ theorem iotaRuleSound
     ε₂[γ] ⊨ (E₂.get η).block.iotaLhs η ls l ps ms mins s c fds recFds ≡
       (E₂.get η).block.iotaRhs η ls l ps ms mins s c fds recFds :
       (E₂.get η).block.iotaType η ls ps ms s c fds recFds := by
-  intro hps hms hmins hfields hrecFields
+  intro hE hps hms hmins hfields hrecFields
   have hmajInterp := model.ctorRuleSound pre hatoms hblock hsorts hctors hps hfields hrecFields
   rw [hblock] at hallowed hps hms hmins hfields hrecFields hmajInterp ⊢
   have hparamReach := model.paramsReachable pre hatoms hsorts hps
@@ -308,7 +309,7 @@ theorem iotaRuleSound
     (RecSlots.majorOfSlots_args ..).trans (hctors s c _ vfds vrecFds)
   have hvps : (ε₂[γ]⟦ps ·⟧) = RecSlots.paramsOf outer := (RecSlots.paramsOf_args ..).symm
   rw [hvps] at hfieldsReach hrecFieldsMem hargs htarget hmajEntry
-  have hleaf := model.recLeaf_iota hdecl hsourceRule ho hB s l
+  have hleaf := model.recLeaf_iota hdecl hsourceRule hE hB s l
     ((I.recAllowed_map pre.sigs l).mp hallowed) outer houter c hargs htarget hmajEntry
   have hlhsDen : ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ = _ :=
     (show ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ =

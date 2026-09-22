@@ -80,7 +80,7 @@ variable (L : Literals) (F : FEnv) (hints : Array Export.Hints) (accel : Accel L
 def EntryWFSpec (fe : FEntry) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃entry₀ : Entry ζ fe.sig⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   FEntry.Denotes L ⟨ζ, E⟩ fe entry₀ →
   ∃ entry : Entry ζ fe.sig, FEntry.Denotes L ⟨ζ, E⟩ fe entry ∧ Metalean.EntryWF E entry
@@ -88,8 +88,8 @@ def EntryWFSpec (fe : FEntry) : Prop :=
 def checkAxiom (nlevels : Nat) (ft : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.axiom nlevels ft))) := do
   let ⟨ht⟩ ← inferSorted L F nlevels hints accel #[] ft
-  pure ⟨fun {_ _ _} hE ho htr (.axiom ht') =>
-    have hS := Sem.nil (ℓ := nlevels) hE ho htr
+  pure ⟨fun {_ _ _} hF hE htr (.axiom ht') =>
+    have hS := Sem.nil (ℓ := nlevels) hF hE htr
     have ⟨_, l, ht'', hty⟩ := ht hS ht'
     ⟨_, .axiom ht'', .axiom ⟨l, hty⟩⟩⟩
 
@@ -97,8 +97,8 @@ def checkDef (nlevels : Nat) (ft v : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.def nlevels ft v))) := do
   let _ ← inferSorted L F nlevels hints accel #[] ft
   let ⟨hv⟩ ← checkTyped L F nlevels hints accel #[] v ft
-  pure ⟨fun {_ _ _} hE ho htr (.def ht' hv') =>
-    have hS := Sem.nil (ℓ := nlevels) hE ho htr
+  pure ⟨fun {_ _ _} hF hE htr (.def ht' hv') =>
+    have hS := Sem.nil (ℓ := nlevels) hF hE htr
     have ⟨_, _, hv'', ht'', hty⟩ := hv hS hv' ht'
     have ⟨l, hsort⟩ := hty.regular
     ⟨_, .def ht'' hv'', .def ⟨l, hsort⟩ hty⟩⟩
@@ -112,9 +112,9 @@ def checkOpaque (nlevels : Nat) (ft v : FExpr) :
   let _ ← inferSorted L F nlevels hints accel #[] ft
   let ⟨hvex⟩ ← FExpr.wf L F nlevels 0 0 v
   let ⟨hv⟩ ← checkTyped L F nlevels hints accel #[] v ft
-  pure ⟨fun {_ _ _} hE ho htr (.opaque ht') =>
-    have hS := Sem.nil (ℓ := nlevels) hE ho htr
-    have ⟨_, hv'⟩ := hvex hE
+  pure ⟨fun {_ _ _} hF hE htr (.opaque ht') =>
+    have hS := Sem.nil (ℓ := nlevels) hF hE htr
+    have ⟨_, hv'⟩ := hvex hF
     have ⟨_, _, _, ht'', hty⟩ := hv hS hv' ht'
     have ⟨l, hsort⟩ := hty.regular
     ⟨_, .opaque ht'', .opaque hty ⟨l, hsort⟩⟩⟩
@@ -125,15 +125,15 @@ def checkQuot (eqPos : Nat) :
   | some (.inductive ι I) => do
     let ⟨hι⟩ ← guardProofOr (ι = Eq.sig) (Failure.reject .eqShape)
     let ⟨hI⟩ ← guardProofOr (I = FEq.raw) (Failure.reject .eqShape)
-    let hex : EntryWF L F (.quot eqPos) := fun {_} hE => by
+    let hex : EntryWF L F (.quot eqPos) := fun {_} hF => by
       obtain rfl : ι = Eq.sig := hι
-      have ⟨η, hη, _⟩ := hE.get hfe
+      have ⟨η, hη, _⟩ := hF.get hfe
       exact ⟨.quot η, .quot hη⟩
-    pure ⟨⟨hex⟩, ⟨fun {ζ E _} hE _ _ hd => by
+    pure ⟨⟨hex⟩, ⟨fun {ζ E _} hF _ _ hd => by
       obtain rfl : ι = Eq.sig := hι
       obtain rfl : I = FEq.raw := hI
       have .quot (η := η) hη := hd
-      have ⟨η', hη', hden⟩ := hE.get hfe
+      have ⟨η', hη', hden⟩ := hF.get hfe
       have hη'' : ζ.lookup eqPos = some ⟨Sig.inductive Eq.sig, η'⟩ := hη'
       obtain rfl : η' = η := Sigs.lookup_head_eq hη'' hη
       have ⟨I', hI', hentry'⟩ := hden.inductive_inv
@@ -146,9 +146,9 @@ def checkQuot (eqPos : Nat) :
 def checkInductiveEntry (ι : IndSig) (I : FInductive) :
     CheckM L F ι.nlevels (PLift (EntryWFSpec L F (.inductive ι I))) := do
   let ⟨h⟩ ← checkInductive L F hints accel ι I
-  pure ⟨fun {_ E _} hE ho htr hd => by
+  pure ⟨fun {_ E _} hF hE htr hd => by
     obtain ⟨I', hI', rfl⟩ := hd.inductive_inv
-    have ⟨_, hI, hwf⟩ := h hE ho htr hI'
+    have ⟨_, hI, hwf⟩ := h hF hE htr hI'
     exact ⟨_, .inductive hI, .inductive hwf⟩⟩
 
 def inferOrdLevels (ι : IndSig) (pre : FPreInductive) :

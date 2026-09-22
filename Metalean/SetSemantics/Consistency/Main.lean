@@ -27,18 +27,18 @@ noncomputable def Env.Model.classical : Model.{u} classicalEnv := by
     repeat constructor
     all_goals intro h; cases h
   let m := Model.nil.extend pre hfree
-    (classicalEnv_ordered.ofPrefix (.step (.step (.step .refl))))
+    (classicalEnv_ordered.comap (.step (.step (.step .refl))))
   let m := m.addAxiom (Quot.Sound.valid m)
   let m := m.addAxiom (Propext.valid m)
   exact m.addAxiom (Choice.valid m)
 
 def Con : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ (pre : classicalEnv.as ⟶ E.as),
-    (pre.Forall fun entry => ¬ IsAxiom entry) → E.Ordered → E.Con
+    (pre.Forall fun entry => ¬ IsAxiom entry) → EnvWF E → E.Con
 
 theorem consistency : Con := by
-  intro ζ E pre hax ho
-  have m := Env.Model.classical.{0}.extend pre hax ho
-  exact con_ordered m.atoms zeroNs m.semDecls m.semDeclRules ho
+  intro ζ E pre hax hE
+  have m := Env.Model.classical.{0}.extend pre hax hE
+  exact con_ordered m.atoms zeroNs m.semDecls m.semDeclRules hE
 
 end Metalean

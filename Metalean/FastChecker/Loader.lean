@@ -21,7 +21,7 @@ structure FState (L : Literals) where
   accel : Accel L F := {}
   table : Table := ∅
   definitions : Export.Definitions := ∅
-  denotes : ∃ (ζ : Sigs) (E : Env ζ), (L.NatTrust E → E.Ordered) ∧ FEnv.Denotes L F E
+  denotes : ∃ (ζ : Sigs) (E : Env ζ), (L.NatTrust E → EnvWF E) ∧ FEnv.Denotes L F E
 
 def FState.initial (L : Literals) : FState L where
   denotes := ⟨.nil, .nil, fun _ => .nil, .nil⟩
@@ -41,14 +41,14 @@ def FState.extend (st : FState L) (bindings : List (Name × Binding))
       | some (name, d) => definitions.insert name d
       | none => definitions
     denotes :=
-      have ⟨_, E, ho, hE⟩ := denotes
-      have ⟨entry₀, hden₀⟩ := hex (E := ⟨_, E⟩) hE
+      have ⟨_, E, hE, hF⟩ := denotes
+      have ⟨entry₀, hden₀⟩ := hex (E := ⟨_, E⟩) hF
       open Classical in
       if htr₀ : L.NatTrust E then
-        have ⟨entry, hden, hwf'⟩ := hwf hE (ho htr₀) htr₀ hden₀
-        ⟨_, E.snoc entry, fun _ => (ho htr₀).snoc hwf', .snoc hE hden⟩
+        have ⟨entry, hden, hwf'⟩ := hwf hF (hE htr₀) htr₀ hden₀
+        ⟨_, E.snoc entry, fun _ => (hE htr₀).snoc hwf', .snoc hF hden⟩
       else
-        ⟨_, E.snoc entry₀, fun htr => absurd (htr.restrict (.step .refl)) htr₀, .snoc hE hden₀⟩ }
+        ⟨_, E.snoc entry₀, fun htr => absurd (htr.restrict (.step .refl)) htr₀, .snoc hF hden₀⟩ }
 
 def checkLevelParams (lps : List Name) : Except Failure Unit := do
   if lps.eraseDups.length != lps.length then

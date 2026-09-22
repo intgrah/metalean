@@ -25,10 +25,10 @@ theorem FEnv.Denotes.pushInv {F F₀ : FEnv} {fe : FEntry} {ζ : Sigs} {E : Env 
     exact ⟨ζ₁, E₁, .step .refl, hfes ▸ h₁⟩
 
 theorem FEnv.Denotes.restrict {F : FEnv} {ζ₀ : Sigs} {E₀ : Env ζ₀} {E : Env ζ}
-    (hE₀ : FEnv.Denotes L F E₀) (pre : Env.Prefix E₀ E) {pos : Nat} (hpos : pos < F.size)
+    (hF₀ : FEnv.Denotes L F E₀) (pre : Env.Prefix E₀ E) {pos : Nat} (hpos : pos < F.size)
     {sig : Sig} {η : Head ζ sig} (hη : ζ.lookup pos = some ⟨sig, η⟩) :
     ∃ η₀ : Head ζ₀ sig, ζ₀.lookup pos = some ⟨sig, η₀⟩ ∧ η₀.map pre.sigs = η := by
-  have ⟨η₀, hη₀, _⟩ := hE₀.get (getElem?_pos F pos hpos)
+  have ⟨η₀, hη₀, _⟩ := hF₀.get (getElem?_pos F pos hpos)
   cases hη.symm.trans (Sigs.lookup_map pre.sigs hη₀)
   exact ⟨η₀, hη₀, rfl⟩
 
@@ -37,11 +37,11 @@ theorem NatOpSpec.push {pos : Nat} {f : Nat → Nat → Nat} (h : NatOpSpec L F 
     NatOpSpec L (F.push fe) pos f where
   natBound := by simpa using Nat.lt_succ_of_lt h.natBound
   opBound := by simpa using Nat.lt_succ_of_lt h.opBound
-  eq := fun {_ζ _E ℓ' _n _Γ _ηNat _kind _ηOp} num₁ num₂ hE ho htr hη hηOp => by
-    have ⟨ζ₀, E₀, pre, hE₀⟩ := hE.pushInv rfl
-    have ⟨ηNat₀, hnat₀, hnat⟩ := hE₀.restrict pre h.natBound hη
-    have ⟨ηOp₀, hop₀, hop⟩ := hE₀.restrict pre h.opBound hηOp
-    have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
+  eq := fun {_ζ _E ℓ' _n _Γ _ηNat _kind _ηOp} num₁ num₂ hF hE htr hη hηOp => by
+    have ⟨ζ₀, E₀, pre, hF₀⟩ := hF.pushInv rfl
+    have ⟨ηNat₀, hnat₀, hnat⟩ := hF₀.restrict pre h.natBound hη
+    have ⟨ηOp₀, hop₀, hop⟩ := hF₀.restrict pre h.opBound hηOp
+    have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hF₀ (EnvWF.comap pre hE)
       (htr.restrict pre) hnat₀ hop₀).map pre
     simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.natType_map, hnat, hop] at hres
     have hwk := hres.wkClosed (Γ := _Γ)
@@ -56,12 +56,12 @@ theorem BoolOpSpec.push {pos : Nat} {f : Nat → Nat → Bool} (h : BoolOpSpec L
     have ⟨I, hI⟩ := h.boolSig
     ⟨I, by simp [Array.getElem?_push, Nat.ne_of_lt h.boolBound, hI]⟩
   opBound := by simpa using Nat.lt_succ_of_lt h.opBound
-  eq := fun {_ζ _E ℓ' _n _Γ _ηNat _ηBool _kind _ηOp} num₁ num₂ hE ho htr hη hηBool hηOp => by
-    have ⟨ζ₀, E₀, pre, hE₀⟩ := hE.pushInv rfl
-    have ⟨ηNat₀, hnat₀, hnat⟩ := hE₀.restrict pre h.natBound hη
-    have ⟨ηBool₀, hbool₀, hbool⟩ := hE₀.restrict pre h.boolBound hηBool
-    have ⟨ηOp₀, hop₀, hop⟩ := hE₀.restrict pre h.opBound hηOp
-    have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
+  eq := fun {_ζ _E ℓ' _n _Γ _ηNat _ηBool _kind _ηOp} num₁ num₂ hF hE htr hη hηBool hηOp => by
+    have ⟨ζ₀, E₀, pre, hF₀⟩ := hF.pushInv rfl
+    have ⟨ηNat₀, hnat₀, hnat⟩ := hF₀.restrict pre h.natBound hη
+    have ⟨ηBool₀, hbool₀, hbool⟩ := hF₀.restrict pre h.boolBound hηBool
+    have ⟨ηOp₀, hop₀, hop⟩ := hF₀.restrict pre h.opBound hηOp
+    have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hF₀ (EnvWF.comap pre hE)
       (htr.restrict pre) hnat₀ hbool₀ hop₀).map pre
     simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.boolLit_map,
       Literals.boolType_map, hnat, hbool, hop] at hres

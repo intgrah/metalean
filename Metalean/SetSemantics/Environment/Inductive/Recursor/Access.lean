@@ -101,7 +101,7 @@ theorem ordinarySemCtx
 
 theorem ordinary_eq_proof
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
     (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
@@ -111,7 +111,7 @@ theorem ordinary_eq_proof
     (hzero : (((I.ctors s c).ordinary f).level.inst ls).eval zeroNs = 0) :
     slots (Fin.natAdd ι.nparams f) = proof := by
   have hrealises := model.ordinarySemCtx s c vps hps slots hslots
-  have hsorted := (soundness hdecl hrule ho
+  have hsorted := (soundness hdecl hrule hE
     (((hB.ctors s c).ordinaryTele_get f).instLevel ls) slots hrealises).mem
   have hslot := hrealises (Fin.natAdd ι.nparams f)
   simp only [Ctx.get_instL, Expr.instL, Expr.denote] at hsorted hslot
@@ -120,7 +120,7 @@ theorem ordinary_eq_proof
 
 theorem large_argAgree
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (heligible : (I.ctors s c).Eligible I.level)
     (vps : Slots ι.nparams)
@@ -163,7 +163,7 @@ theorem large_argAgree
           simp [hzero]
         have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
             Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
-          model.ordinary_eq_proof hdecl hrule ho hB s c vps hps _ hreach f hzero
+          model.ordinary_eq_proof hdecl hrule hE hB s c vps hps _ hreach f hzero
         exact (heq leftArgs hleftReach).trans (heq rightArgs hrightReach).symm
       | inr hindex =>
         have ⟨index, hindex⟩ := hindex
@@ -187,7 +187,7 @@ theorem large_argAgree
 
 theorem large_key_accessible
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
@@ -223,7 +223,7 @@ theorem large_key_accessible
       rw [hrawCurrent, ← hcurrentEq, entry_eq, entry_eq, fst_pair, fst_pair] at hkeyRight
       exact hkeyRight.symm
     cases model.large_target_separates hlarge hlevel vps htarget
-    have hagree := model.large_argAgree hdecl hrule ho hB
+    have hagree := model.large_argAgree hdecl hrule hE hB
       (Inductive.SortLargeElim.singleton_of_eval_zero (hlarge s₁) ls hlevel c₁).2
       vps hps approximation happroximation hargs (by simpa using hedgeArgs) htarget
     have ⟨recovered, hrecovered, hrecoveredKey⟩ :=

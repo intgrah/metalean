@@ -17,7 +17,7 @@ public import Metalean.Typing.Builtin.QuotSound
 
 namespace Metalean
 
-theorem classicalEnv_ordered : classicalEnv.Ordered :=
+theorem classicalEnv_ordered : EnvWF classicalEnv :=
   .snoc
     (.snoc
       (.snoc

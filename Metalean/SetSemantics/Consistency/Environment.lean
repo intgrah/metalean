@@ -210,7 +210,7 @@ noncomputable def Env.Model.addAxiom {pre : Env ζ} {nlevels : Nat}
   exact (hvalid ls).choose_spec
 
 noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
-    {t : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
+    {t : Expr ζ ℓ 0} (m : Model.{u} pre) (hE : EnvWF pre)
     (hwf : EntryWF pre (.opaque t)) : Model.{u} (pre.snoc (.opaque t)) := by
   have hex : ∃ e, pre[.nil] ⊢ e : t :=
     have @EntryWF.opaque _ _ _ e _ heq _ := hwf
@@ -219,17 +219,17 @@ noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
   intro ε hatoms heq
   refine .opaque fun ls => ?_
   rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
-  exact (soundness m.semDecls m.semDeclRules ho (hex.choose_spec.instLevel ls) ![] .nil).mem
+  exact (soundness m.semDecls m.semDeclRules hE (hex.choose_spec.instLevel ls) ![] .nil).mem
 
 noncomputable def Env.Model.addDef {pre : Env ζ} {ℓ : Nat}
-    {t e : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
+    {t e : Expr ζ ℓ 0} (m : Model.{u} pre) (hE : EnvWF pre)
     (hwf : EntryWF pre (.def t e)) : Model.{u} (pre.snoc (.def t e)) := by
   apply m.addConst (m.atoms[![]]⟦e.instL ·⟧)
   intro ε hatoms heq
   refine .def (fun ls => ?_) fun ls => ?_
   · have .def _ htyped := hwf
     rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
-    exact (soundness m.semDecls m.semDeclRules ho (htyped.instLevel ls) ![] .nil).mem
+    exact (soundness m.semDecls m.semDeclRules hE (htyped.instLevel ls) ![] .nil).mem
   · rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
 
 end Metalean

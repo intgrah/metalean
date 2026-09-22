@@ -23,7 +23,7 @@ structure NatOpSpec (pos : Nat) (f : Nat → Nat → Nat) : Prop where
       {ηNat : Head ζ (.inductive Literals.Nat.sig)} {kind : ConstKind}
       {ηOp : Head ζ (.const kind 0)} (num₁ num₂ : Nat) :
     FEnv.Denotes L F E →
-    E.Ordered →
+    EnvWF E →
     L.NatTrust E →
     ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
     ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
@@ -40,7 +40,7 @@ structure BoolOpSpec (pos : Nat) (f : Nat → Nat → Bool) : Prop where
       {ηBool : Head ζ (.inductive Literals.Bool.sig)} {kind : ConstKind}
       {ηOp : Head ζ (.const kind 0)} (num₁ num₂ : Nat) :
     FEnv.Denotes L F E →
-    E.Ordered →
+    EnvWF E →
     L.NatTrust E →
     ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
     ζ.lookup L.bool = some ⟨.inductive Literals.Bool.sig, ηBool⟩ →

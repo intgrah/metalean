@@ -125,7 +125,7 @@ theorem mem_largeAccessRel_of_predecessor
 
 theorem recGraph_congr_key
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
     (hγ : γ ∈ Reachable Set.univ (model.recrTeleSem s l))
@@ -153,7 +153,7 @@ theorem recGraph_congr_key
   refine accSet_induction (p := fun key => ∀ left ∈ block, fst left = key →
       ∀ right ∈ block, fst right = key → app graph left = app graph right)
     (fun key hkey ih left hleft hleftKey right hright hrightKey => ?_)
-    (fst left) (model.large_key_accessible hdecl hrule ho hB hlarge hlevel vps hps left hleft)
+    (fst left) (model.large_key_accessible hdecl hrule hE hB hlarge hlevel vps hps left hleft)
     left hleft rfl right hright hkeys.symm
   have ⟨s₁, c₁, leftArgs, hleftArgs, hleftEntry⟩ := hdecompose hleft
   have ⟨s₂, c₂, rightArgs, hrightArgs, hrightEntry⟩ := hdecompose hright
@@ -170,7 +170,7 @@ theorem recGraph_congr_key
       ((model.codeOf s₂ c₂).argMap graph vps rightArgs) :=
     hrightEntry ▸ recGraph_iota hmaps hstep hrightArgs
   cases model.large_target_separates hlarge hlevel vps (hleftTarget.trans hrightTarget.symm)
-  have hagree := model.large_argAgree hdecl hrule ho hB
+  have hagree := model.large_argAgree hdecl hrule hE hB
     (Inductive.SortLargeElim.singleton_of_eval_zero (hlarge s₁) ls hzero c₁).2
     vps hps block (fun _ h => h) hleftArgs hrightArgs
     (hleftTarget.trans hrightTarget.symm)
@@ -217,7 +217,7 @@ theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
 
 theorem recLeaf_iota
     (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
-    (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (l : Level 0)
     (hallowed : I.RecAllowed l) (γ : RecSlots ι s)
     (hγ : γ ∈ Reachable Set.univ (model.recrTeleSem s l))
@@ -269,7 +269,7 @@ theorem recLeaf_iota
     exact (model.eq_proof_of_mem_fibre_motive s l γ hγ hresult hmem).symm
   rw [recLeaf, propVal_of_ne_zero hresult]
   by_cases hlevel : model.toModel.level = 0
-  · rw [model.recGraph_congr_key hdecl hrule ho hB (hallowed.largeElim hresult) hlevel s l γ hγ
+  · rw [model.recGraph_congr_key hdecl hrule hE hB (hallowed.largeElim hresult) hlevel s l γ hγ
       hstateMem hentry (by rw [recrState, fst_pair, fst_pair])]
     exact hiota
   rw [recrState, show model.recrMajorOf s γ = entryValue (tagOf s c) vargs from by

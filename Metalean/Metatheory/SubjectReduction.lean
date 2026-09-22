@@ -26,55 +26,59 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 local notation:65 E "[" Γ "]" " ⊢ " e₁:51 " : " t:51 " ⤳ " e₂:lead =>
   E[Γ] ⊢ e₁ : t → E[Γ] ⊢ e₁ ≡ e₂ : t
 
-theorem Defeq.retype (ho : E.Ordered) :
+theorem Defeq.retype :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ e₁ ≡ e₂ : t₁ →
     E[Γ] ⊢ e₁ : t₂ →
     E[Γ] ⊢ e₁ ≡ e₂ : t₂ := by
-  intro hΓ h ht₂
-  have ⟨_, ht⟩ := (Defeq.uniqTy ho hΓ h.left ht₂).sort_uniq ho hΓ
+  intro hE hΓ h ht₂
+  have ⟨_, ht⟩ := (Defeq.uniqTy hE hΓ h.left ht₂).sort_uniq hE hΓ
   exact ht.defeqDF h
 
-theorem WHRed.beta_defeq (ho : E.Ordered) {t e : Expr ζ ℓ n}
+theorem WHRed.beta_defeq {t e : Expr ζ ℓ n}
     {e' : Expr ζ ℓ (n + 1)} {t₁ : Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .app (.lam t e') e : t₁ ⤳ e'.inst e := by
-  intro hΓ hty
+  intro hE hΓ hty
   have ⟨_, _, hf, he, _⟩ := Defeq.app_inv hty
   have ⟨_, he', hπ⟩ := Defeq.lam_inv hf hΓ
   have ⟨_, hπTy⟩ := hπ.right
   have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ :=
     Defeq.forallE_inv hπTy
-  have het := (hπ.forallE_inj ho hΓ).1.conv he
-  exact Defeq.retype ho hΓ (.beta ht ht' he' het (ht'.inst_congr het) (he'.inst_congr het)) hty
+  have het := (hπ.forallE_inj hE hΓ).1.conv he
+  exact Defeq.retype hE hΓ (.beta ht ht' he' het (ht'.inst_congr het) (he'.inst_congr het)) hty
 
-theorem WHRed.zeta_defeq (ho : E.Ordered) :
+theorem WHRed.zeta_defeq :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .letE t v e' : t₁ ⤳ e'.inst v := by
-  intro hΓ hty
+  intro hE hΓ hty
   have ⟨_, ⟨_, ht⟩, hv, he', _⟩ := Defeq.letE_inv hty hΓ
   have ⟨_, ht'⟩ := he'.regular
-  exact Defeq.retype ho hΓ (.zeta ht hv ht' he') hty
+  exact Defeq.retype hE hΓ (.zeta ht hv ht' he') hty
 
-theorem WHRed.delta_defeq (ho : E.Ordered)
-    {nlevels : Nat} {η : Head ζ (.const .def nlevels)}
+theorem WHRed.delta_defeq {nlevels : Nat} {η : Head ζ (.const .def nlevels)}
     {ls : Fin nlevels → Level ℓ} {t : Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ .const η ls : t ⤳ ((E.get η).defValue.instL ls).wkClosed := by
-  intro hty
-  have ⟨u, htype⟩ := (ho.entryWF η).constType (Γ := Γ) ls
-  exact hty.const_inv.symm.conv (.delta htype ((ho.entryWF η).defValue ls))
+  intro hE hty
+  have ⟨u, htype⟩ := (hE.entryWF η).constType (Γ := Γ) ls
+  exact hty.const_inv.symm.conv (.delta htype ((hE.entryWF η).defValue ls))
 
-theorem WHRed.quotIota_defeq (ho : E.Ordered)
+theorem WHRed.quotIota_defeq
     {η : Head ζ .quot} {l₁ lq l₂ : Level ℓ}
     {α αq r rq β f h a : Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .quotLift η l₁ l₂ α r β f h (.quotMk η lq αq rq a) : t ⤳ .app f a := by
-  intro hΓ hty
+  intro hE hΓ hty
   have ⟨α', r', β', f', h', maj, hα, hr, hβ, hf, hh, hmaj, ht⟩ :=
     Defeq.quotLift_prem hty
   have ⟨_, _, a', _, _, ha, hquot⟩ :=
     hmaj.right.quotMk_prem
-  have hαeq := (hquot.quot_inj ho hΓ).2.1
+  have hαeq := (hquot.quot_inj hE hΓ).2.1
   have ha' : E[Γ] ⊢ a' ≡ a : α' := hαeq.symm.conv ha
   have haa := ha'.right
   have hαrefl := hα.left
@@ -82,9 +86,9 @@ theorem WHRed.quotIota_defeq (ho : E.Ordered)
   have hβrefl := hβ.left
   have hfrefl := hf.left
   have hhrefl := hh.left
-  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj ho hΓ
-  have ⟨_, hαq⟩ := hαq.sort_uniq ho hΓ
-  have hαq := Defeq.retype ho hΓ hαq hαrefl
+  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj hE hΓ
+  have ⟨_, hαq⟩ := hαq.sort_uniq hE hΓ
+  have hαq := Defeq.retype hE hΓ hαq hαrefl
   have hmk : E[Γ] ⊢ .quotMk η l₁ α' r' a ≡
       .quotMk η l₁ αq rq a : .quot η l₁ α' r' :=
     .quotMkDF hαq hrq haa
@@ -109,21 +113,22 @@ theorem WHRed.quotIota_defeq (ho : E.Ordered)
     simpa using Defeq.appDF hαrefl hβwk hf haa hβinst
   exact ht.symm.conv (hleft.symm.trans (htoRedex.trans (hiota.trans hright)))
 
-theorem WHRed.quotIndIota_defeq (ho : E.Ordered) {η : Head ζ .quot}
+theorem WHRed.quotIndIota_defeq {η : Head ζ .quot}
     {l lq : Level ℓ} {α αq r rq β f a : Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .quotInd η l α r β f (.quotMk η lq αq rq a) : t ⤳ .app f a := by
-  intro hΓ hty
+  intro hE hΓ hty
   have ⟨α', r', β', f', maj, hα, hr, hβ, hf, hmaj, hresult, ht⟩ :=
     Defeq.quotInd_prem hty
   have ⟨_, _, a', _, _, ha, hquot⟩ :=
     hmaj.right.quotMk_prem
   have ha' : E[Γ] ⊢ a' ≡ a : α' :=
-    (hquot.quot_inj ho hΓ).2.1.symm.conv ha
+    (hquot.quot_inj hE hΓ).2.1.symm.conv ha
   have haa := ha'.right
-  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj ho hΓ
-  have ⟨_, hαq⟩ := hαq.sort_uniq ho hΓ
-  have hαq := Defeq.retype ho hΓ hαq hα.left
+  obtain ⟨rfl, hαq, hrq⟩ := hmaj.right.quotMk_inv.quot_inj hE hΓ
+  have ⟨_, hαq⟩ := hαq.sort_uniq hE hΓ
+  have hαq := Defeq.retype hE hΓ hαq hα.left
   have hmaj' := hmaj.trans (Defeq.quotMkDF hαq hrq haa).symm
   have ⟨_, hmotive⟩ := hβ.regular
   have ⟨⟨_, hquotTy⟩, ⟨_, hprop⟩⟩ := Defeq.forallE_inv hmotive
@@ -137,7 +142,7 @@ theorem WHRed.quotIndIota_defeq (ho : E.Ordered) {η : Head ζ .quot}
     simpa using Defeq.appDF hα' hbody hfrefl haa (hbody.inst_congr haa)
   exact ht.symm.conv (.proofIrrel hresult.left hredex.right (.defeqDF hmotiveApp.symm happ))
 
-theorem WHRed.iota_defeq (ho : E.Ordered)
+theorem WHRed.iota_defeq
     {ι : IndSig} {η : Head ζ (.inductive ι)}
     {ls₁ ls₂ : Fin ι.nlevels → Level ℓ} {u : Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n} {ms : Fin ι.nsorts → Expr ζ ℓ n}
@@ -146,23 +151,24 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
     {is : Fin (ι.nindices s) → Expr ζ ℓ n}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .recr η s ls₁ u ps₁ ms mins is (.ctor η s c ls₂ ps₂ fds recFds) : t ⤳
       (E.get η).block.iotaRhs η ls₁ u ps₁ ms mins s c fds recFds := by
-  intro hΓ hty
-  have hB := (ho.entryWF η).block
+  intro hE hΓ hty
+  have hB := (hE.entryWF η).block
   have ⟨ps', ms', mins', is', maj',
     hallowed, hps, hms, hmins, his, hmaj, hresult, ht⟩ :=
     Defeq.recr_inv hty
   have ⟨psc, fdsc, recFdsc, hpsc, hfdsc, hrecFdsc, _, htc⟩ :=
     hmaj.right.ctor_inv
-  have ⟨_, htc_typed⟩ := htc.sort_uniq ho hΓ
+  have ⟨_, htc_typed⟩ := htc.sort_uniq hE hΓ
   have hindSelf := Defeq.indDF (fun p => (hps p).left) (fun i => (his i).left)
-  obtain ⟨rfl, hpsInj, hisInj⟩ := (htc_typed.retype ho hΓ hindSelf).ind_inj ho hΓ
-  have hpsc' p := (hpsInj p).choose_spec.retype ho hΓ (hps p).left
-  have hisc' i := (hisInj i).choose_spec.retype ho hΓ (his i).left
-  have hpscps p := ((hpsc' p).symm.trans (hps p)).retype ho hΓ (hpsc p).left
-  have hps₂ps₁ p := ((hpsc p).symm.trans (hpscps p)).retype ho hΓ (Inductive.paramType_conv hB p hpsc)
+  obtain ⟨rfl, hpsInj, hisInj⟩ := (htc_typed.retype hE hΓ hindSelf).ind_inj hE hΓ
+  have hpsc' p := (hpsInj p).choose_spec.retype hE hΓ (hps p).left
+  have hisc' i := (hisInj i).choose_spec.retype hE hΓ (his i).left
+  have hpscps p := ((hpsc' p).symm.trans (hps p)).retype hE hΓ (hpsc p).left
+  have hps₂ps₁ p := ((hpsc p).symm.trans (hpscps p)).retype hE hΓ (Inductive.paramType_conv hB p hpsc)
   have hfds f := ((hB.ctors s c).ordinaryFieldExpr_congr
     hB.params f hpsc (fun g _ => hfdsc g)).defeqDF (hfdsc f).right
   have hrecFds f := ((hB.ctors s c).recursiveFieldExpr_congr
@@ -172,8 +178,8 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
   have hctor := (Defeq.indDF hps₂ps₁ fun i =>
     (hB.ctors s c).targetIndex_congr hB.params i hps₂ps₁ hfds).ctorDF
       hps₂ps₁ hfds hrecFds hordFd hrecFd
-  have hmaj' := hmaj.trans (.retype ho hΓ hctor hmaj.right)
-  have his' i := (hisc' i).trans (.retype ho hΓ
+  have hmaj' := hmaj.trans (.retype hE hΓ hctor hmaj.right)
+  have his' i := (hisc' i).trans (.retype hE hΓ
     ((hB.ctors s c).targetIndex_congr hB.params i hpscps hfdsc) (hisc' i).right)
   have hresult' := hB.motiveResult_congr hΓ hps hms his' hmaj'
   have hpsu p := Inductive.paramType_conv hB p hps
@@ -199,29 +205,30 @@ theorem WHRed.iota_defeq (ho : E.Ordered)
     ((Defeq.recrDF hallowed hps hms hmins his' hmaj' hresult').trans
       (.defeqDF hresult'.symm hiota)))
 
-theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
+theorem Inductive.IsStructure.projTerm_ctor_defeq
     {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (h : (E.get η).block.IsStructure s c)
     {ls ls₂ : Fin ι.nlevels → Level ℓ} {ps ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n} (f : Fin (ι.ctors s c).nfields) :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ h.projTerm η ls ps f (.ctor η s c ls₂ ps₂ fds recFds) : t ⤳ fds f := by
-  intro hΓ hty
-  have hB := (ho.entryWF η).block
+  intro hE hΓ hty
+  have hB := (hE.entryWF η).block
   have hty' := hty
   rw [Inductive.IsStructure.projTerm_eq_recr] at hty'
   have ⟨ps', _, _, is', maj', _, hps, _, _, his, hmaj, _, _⟩ :=
     Defeq.recr_inv hty'
   have ⟨psc, fdsc, recFdsc, hpsc, hfdsc, hrecFdsc, _, htc⟩ :=
     hmaj.right.ctor_inv
-  have ⟨_, htc_typed⟩ := htc.sort_uniq ho hΓ
+  have ⟨_, htc_typed⟩ := htc.sort_uniq hE hΓ
   have hindSelf := Defeq.indDF (fun p => (hps p).left) (fun i => (his i).left)
-  obtain ⟨rfl, hpsInj, _⟩ := (htc_typed.retype ho hΓ hindSelf).ind_inj ho hΓ
-  have hpsc' p := (hpsInj p).choose_spec.retype ho hΓ (hps p).left
-  have hpscps p := ((hpsc' p).symm.trans (hps p)).retype ho hΓ (hpsc p).left
+  obtain ⟨rfl, hpsInj, _⟩ := (htc_typed.retype hE hΓ hindSelf).ind_inj hE hΓ
+  have hpsc' p := (hpsInj p).choose_spec.retype hE hΓ (hps p).left
+  have hpscps p := ((hpsc' p).symm.trans (hps p)).retype hE hΓ (hpsc p).left
   have hps₂ps p :=
-    ((hpsc p).symm.trans (hpscps p)).retype ho hΓ (Inductive.paramType_conv hB p hpsc)
+    ((hpsc p).symm.trans (hpscps p)).retype hE hΓ (Inductive.paramType_conv hB p hpsc)
   have hfds f := ((hB.ctors s c).ordinaryFieldExpr_congr
     hB.params f hpsc (fun g _ => hfdsc g)).defeqDF (hfdsc f).right
   have hrecFds f := ((hB.ctors s c).recursiveFieldExpr_congr
@@ -236,7 +243,7 @@ theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
   have hind : E[Γ] ⊢ .ind η s ls ps' is' ≡ .ind η s ls ps h.indices typ :=
     .ofDefEq (Defeq.indDF hps fun i => h.no_indices.elim i)
   have hmaj₂ := hind.conv hmaj.right
-  have hctor' := Defeq.retype ho hΓ hctor hmaj₂
+  have hctor' := Defeq.retype hE hΓ hctor hmaj₂
   obtain rfl : recFds = h.recursive := funext h.no_recursive.elim
   have hfields cur : E[Γ] ⊢ fds cur :
       Inductive.IsStructure.projTypeWith (E.get η).block ls ps cur fun previous =>
@@ -245,24 +252,25 @@ theorem Inductive.IsStructure.projTerm_ctor_defeq (ho : E.Ordered)
       using (hordFd cur).defeqDF (hfds cur)
   have hiota := h.projTerm_ctor hB f fds hΓ hpsu hctor'.right hfields
   have hcongr := h.projTerm_congr hB f hpsu hctor'
-  exact Defeq.retype ho hΓ (hcongr.trans (Defeq.retype ho hΓ hiota hcongr.right)) hty
+  exact Defeq.retype hE hΓ (hcongr.trans (Defeq.retype hE hΓ hiota hcongr.right)) hty
 
-theorem Inductive.IsStructure.projTerm_congr_defeq (ho : E.Ordered)
+theorem Inductive.IsStructure.projTerm_congr_defeq
     {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {c₁ c₂ : Fin (ι.nctors s)}
     (h₁ : (E.get η).block.IsStructure s c₁) (h₂ : (E.get η).block.IsStructure s c₂)
     {ls₁ ls₂ : Fin ι.nlevels → Level ℓ} {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {maj₁ maj₂ : Expr ζ ℓ n} (f₁ : Fin (ι.ctors s c₁).nfields)
     (f₂ : Fin (ι.ctors s c₂).nfields) (hf : f₁.val = f₂.val) :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ h₁.projTerm η ls₁ ps₁ f₁ maj₁ : t₁ →
     E[Γ] ⊢ h₂.projTerm η ls₂ ps₂ f₂ maj₂ : t₂ →
     (∀ {T₁ T₂ : Expr ζ ℓ n}, E[Γ] ⊢ maj₁ : T₁ → E[Γ] ⊢ maj₂ : T₂ →
       E[Γ] ⊢ maj₁ ≡ maj₂ : T₁) →
     E[Γ] ⊢ h₁.projTerm η ls₁ ps₁ f₁ maj₁ ≡ h₂.projTerm η ls₂ ps₂ f₂ maj₂ : t₁ := by
-  intro hΓ hty₁ hty₂ hmajD
+  intro hE hΓ hty₁ hty₂ hmajD
   obtain rfl := h₁.ctor_unique c₂
   obtain rfl := Fin.ext hf
-  have hB := (ho.entryWF η).block
+  have hB := (hE.entryWF η).block
   have hty₁' := hty₁
   have hty₂' := hty₂
   rw [Inductive.IsStructure.projTerm_eq_recr] at hty₁' hty₂'
@@ -277,18 +285,19 @@ theorem Inductive.IsStructure.projTerm_congr_defeq (ho : E.Ordered)
   have hind₂ : E[Γ] ⊢ .ind η s ls₂ ps₂' is₂' ≡ .ind η s ls₂ ps₂ h₁.indices typ :=
     .ofDefEq (Defeq.indDF hps₂ fun i => h₁.no_indices.elim i)
   have hm := hmajD (hind₁.conv hmaj₁.right) (hind₂.conv hmaj₂.right)
-  have ⟨_, hindEq⟩ := (Defeq.uniqTy ho hΓ hm.right (hind₂.conv hmaj₂.right)).sort_uniq ho hΓ
+  have ⟨_, hindEq⟩ := (Defeq.uniqTy hE hΓ hm.right (hind₂.conv hmaj₂.right)).sort_uniq hE hΓ
   obtain ⟨rfl, hpsInj, _⟩ :=
-    (hindEq.retype ho hΓ (h₁.indType hpsu₁)).ind_inj ho hΓ
-  have hps p := (hpsInj p).choose_spec.retype ho hΓ (hpsu₁ p)
+    (hindEq.retype hE hΓ (h₁.indType hpsu₁)).ind_inj hE hΓ
+  have hps p := (hpsInj p).choose_spec.retype hE hΓ (hpsu₁ p)
   have hcongr := h₁.projTerm_congr hB f₁ hps hm
-  exact Defeq.retype ho hΓ hcongr hty₁
+  exact Defeq.retype hE hΓ hcongr hty₁
 
-theorem Frame.plug_defeq (ho : E.Ordered) (K : Frame ζ ℓ n) :
+theorem Frame.plug_defeq (K : Frame ζ ℓ n) :
+    EnvWF E →
     E[Γ] ⊢ ok →
     (∀ {t₁}, E[Γ] ⊢ e₁ : t₁ ⤳ e₂) →
     E[Γ] ⊢ K.plug e₁ : t ⤳ K.plug e₂ := by
-  intro hΓ hred hty
+  intro hE hΓ hred hty
   cases K with
   | app a =>
     have ⟨t₁, t₂, hf, he, ht⟩ := hty.app_inv
@@ -302,7 +311,7 @@ theorem Frame.plug_defeq (ho : E.Ordered) (K : Frame ζ ℓ n) :
     exact ht.symm.conv
       ((Defeq.recrDF hallowed hps hms hmins his hmaj hresult).symm.trans
         (.recrDF hallowed hps hms hmins his hmaj₂
-          ((ho.entryWF η).block.motiveResult_congr hΓ hps hms his hmaj₂)))
+          ((hE.entryWF η).block.motiveResult_congr hΓ hps hms his hmaj₂)))
   | quotLift η l₁ l₂ α r β f h =>
     have ⟨_, _, _, _, _, _, hα, hr, hβ, hf, hh, ha, ht⟩ := hty.quotLift_prem
     exact ht.symm.conv
@@ -317,33 +326,35 @@ theorem Frame.plug_defeq (ho : E.Ordered) (K : Frame ζ ℓ n) :
       ((Defeq.quotIndDF hα hr hβ hf ha hresult).symm.trans
         (.quotIndDF hα hr hβ hf ha₂ (.appDF hquot hprop hβ ha₂ (hprop.inst_congr ha₂))))
 
-theorem WHRed.defeq (ho : E.Ordered) :
+theorem WHRed.defeq :
+    EnvWF E →
     E ⊢ e₁ ⤳ e₂ →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ e₁ : t ⤳ e₂ := by
-  intro hred hΔ h
+  intro hE hred hΔ h
   induction hred generalizing Γ t with
-  | @frame _ _ K _ ih => exact K.plug_defeq ho hΔ (ih hΔ) h
-  | beta => exact WHRed.beta_defeq ho hΔ h
-  | zeta => exact WHRed.zeta_defeq ho hΔ h
-  | delta => exact WHRed.delta_defeq ho h
-  | recrMajor _ ih => exact (Frame.recr ..).plug_defeq ho hΔ (ih hΔ) h
-  | iota => exact WHRed.iota_defeq ho hΔ h
-  | quotIota => exact WHRed.quotIota_defeq ho hΔ h
-  | quotIndIota => exact WHRed.quotIndIota_defeq ho hΔ h
+  | @frame _ _ K _ ih => exact K.plug_defeq hE hΔ (ih hΔ) h
+  | beta => exact WHRed.beta_defeq hE hΔ h
+  | zeta => exact WHRed.zeta_defeq hE hΔ h
+  | delta => exact WHRed.delta_defeq hE h
+  | recrMajor _ ih => exact (Frame.recr ..).plug_defeq hE hΔ (ih hΔ) h
+  | iota => exact WHRed.iota_defeq hE hΔ h
+  | quotIota => exact WHRed.quotIota_defeq hE hΔ h
+  | quotIndIota => exact WHRed.quotIndIota_defeq hE hΔ h
 
-theorem WHRedS.defeq (ho : E.Ordered) :
+theorem WHRedS.defeq :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E ⊢ e₁ ⤳* e₂ →
     E[Γ] ⊢ e₁ : t ⤳ e₂ := by
-  intro hΓ hred hty
+  intro hE hΓ hred hty
   induction hred generalizing t with
   | refl => exact hty
   | tail _ hstep ih =>
     have h := ih hty
-    exact h.trans (hstep.defeq ho hΓ h.right)
+    exact h.trans (hstep.defeq hE hΓ h.right)
 
-theorem WHRed.klike_defeq (ho : E.Ordered)
+theorem WHRed.klike_defeq
     {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
     {c : Fin (ι.nctors s)} {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
     {ps : Fin ι.nparams → Expr ζ ℓ n} {ms : Fin ι.nsorts → Expr ζ ℓ n}
@@ -351,15 +362,16 @@ theorem WHRed.klike_defeq (ho : E.Ordered)
     {is : Fin (ι.nindices s) → Expr ζ ℓ n} {maj t : Expr ζ ℓ n}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .ind η s ls ps is : .prop →
     E[Γ] ⊢ maj : .ind η s ls ps is →
     E[Γ] ⊢ .ctor η s c ls ps fds recFds : .ind η s ls ps is →
     E[Γ] ⊢ .recr η s ls l ps ms mins is maj : t ⤳
       (E.get η).block.iotaRhs η ls l ps ms mins s c fds recFds := by
-  intro hΓ hprop hmaj hctor hrec
+  intro hE hΓ hprop hmaj hctor hrec
   have hm := Defeq.proofIrrel hprop hmaj hctor
-  have hr := (Frame.recr η s ls l ps ms mins is).plug_defeq ho hΓ (hm.retype ho hΓ) hrec
-  exact hr.trans (WHRed.iota_defeq ho hΓ hr.right)
+  have hr := (Frame.recr η s ls l ps ms mins is).plug_defeq hE hΓ (hm.retype hE hΓ) hrec
+  exact hr.trans (WHRed.iota_defeq hE hΓ hr.right)
 
 end Metalean

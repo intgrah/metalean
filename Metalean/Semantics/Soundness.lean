@@ -28,7 +28,7 @@ open CategoryTheory CoherentShape CodeAssignment Presheaf
 
 variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Δ : Ctx ζ₂ ℓ 0 n}
 
-theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
+theorem EnvWF.rawSound (hE : EnvWF E₂) (pre : E₁.as ⟶ E₂.as) :
     RawSound E₂ ℓ pre := by
   induction hk : ζ₁.length using Nat.strong_induction_on generalizing ζ₁ with
   | _ k ih =>
@@ -42,13 +42,13 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
   have hblock {ι : IndSig} (η : Head ζ₁ (.inductive ι)) :
       ∃ (ζ₃ : Sigs) (E₃ : Env ζ₃) (incl : E₃.as ⟶ E₂.as) (I : Inductive ζ₃ ι),
         RawSound E₂ ℓ incl ∧ InductiveWF E₃ I ∧ (E₂.get (η.map pre.sigs)).block = I.map incl.sigs :=
-    have ⟨_, _, incl, I, hlen, hI, hb⟩ := (ho.ofPrefix pre).block_spec pre η
+    have ⟨_, _, incl, I, hlen, hI, hb⟩ := (hE.comap pre).block_spec pre η
     ⟨_, _, incl ≫ pre, I, ih _ (hlen.trans_eq hk) _ rfl, hI, hb⟩
   have hdef {m : Nat} (η : Head ζ₁ (.const .def m)) (ls : Fin m → Level ℓ) :
       RawJudgment (CtxCat.nil E₂ ℓ) ((E₂.get (η.map pre.sigs)).defValue.instL ls)
         ((E₂.get (η.map pre.sigs)).defValue.instL ls)
         ((E₂.get (η.map pre.sigs)).constType.instL ls) := by
-    have ⟨_, _, incl, _, _, hlen, he, hη⟩ := (ho.ofPrefix pre).def_spec pre η
+    have ⟨_, _, incl, _, _, hlen, he, hη⟩ := (hE.comap pre).def_spec pre η
     have p := ih _ (hlen.trans_eq hk) (incl ≫ pre) rfl (he.instLevel ls) .nil .nil
     simp only [Expr.map_instL] at p
     rw [hη]
@@ -77,7 +77,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     simp only [Inductive.paramType_map, Inductive.indexType_map, ← hlookup η] at pps pis
     rw [show (E₁.get η).block.level = (E₂.get (η.map pre.sigs)).block.level by
       simp [hlookup η, Inductive.map]]
-    exact RawJudgment.indDF (ho.entryWF _).block
+    exact RawJudgment.indDF (hE.entryWF _).block
       (fun c => hsound.ctorTypeFnProperties _ hI hb s c _) pps pis
   | @ctorDF _ _ ι η s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂ fieldLevels recFieldLevels
       _ _ _ hfieldTypes hrecFieldTypes _ ihps ihfields ihrecFields _ _ ihtype =>
@@ -99,7 +99,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
       at pps pf pr hft hrft pT ⊢
     rw [show (E₁.get η).block.level = (E₂.get (η.map pre.sigs)).block.level by
       simp [hlookup η, Inductive.map]] at pT
-    exact RawJudgment.ctorDF hsound hI hb (ho.entryWF _).block pps pf pr hft hrft pT
+    exact RawJudgment.ctorDF hsound hI hb (hE.entryWF _).block pps pf pr hft hrft pT
   | @recrDF _ _ ι η s ls l ps₁ ps₂ ms₁ ms₂ mins₁ mins₂ is₁ is₂ maj₁ maj₂ hallowed hps hms hmins
       his hmaj hresult ihps ihms ihmins ihis ihmaj ihresult =>
     have ptype := ihresult hΔ hR
@@ -113,7 +113,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have pmaj := ihmaj hΔ hR
     simp only [Inductive.paramType_map, Inductive.indexType_map, Inductive.motiveType_map,
       Inductive.caseFnType_map, ← hlookup η] at pps pms pmins pis pmaj
-    have hB := (ho.entryWF (η.map pre.sigs)).block
+    have hB := (hE.entryWF (η.map pre.sigs)).block
     have ha : (E₂.get (η.map pre.sigs)).block.RecAllowed l := by simpa [hlookup η] using hallowed
     exact RawJudgment.recrDF hsound hI hb
       (RecTyping.left hB ha (fun p => (pps p).syntactic) (fun s => (pms s).syntactic)
@@ -165,7 +165,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     simp only [Expr.map] at pmaj prebuild ⊢
     rw [hidx] at pmaj prebuild ⊢
     simp only [Inductive.paramType_map, ← hlookup η] at pps
-    have he := RawJudgment.etaStruct hsound hI hb hs (ho.entryWF _).block hR
+    have he := RawJudgment.etaStruct hsound hI hb hs (hE.entryWF _).block hR
       (fun p => (pps p).toRawTyped) pmaj.toRawTyped
     simpa [← hlookup η] using he (by simpa [← hlookup η] using prebuild.toRawTyped)
   | proofIrrel _ _ _ ihp ih₁ ih₂ =>
@@ -201,7 +201,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have h : RecData (⟨_, hΔ⟩ : CtxCat E₂ ℓ) (η.map pre.sigs) ls u
         (fun p => (ps p).map pre.sigs) (fun s => (ms s).map pre.sigs)
         (fun s c => (mins s c).map pre.sigs) :=
-      { block := (ho.entryWF _).block, allowed := by simpa [hlookup η] using hallowed,
+      { block := (hE.entryWF _).block, allowed := by simpa [hlookup η] using hallowed,
         param := fun p => (pps p).syntactic, motive := fun s => (pms s).syntactic,
         case := fun s c => (pmins s c).syntactic }
     simp only [Inductive.iotaLhs_map, Inductive.iotaRhs_map, Inductive.iotaType_map,
@@ -250,21 +250,21 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
       ← dsimp% (Env.lookup _).naturality_apply pre] at pT ⊢
     exact RawJudgment.delta _ (hdef η ls) pT
 
-theorem Defeq.rawSoundness (ho : E₂.Ordered) {e₁ e₂ t : Expr ζ₂ ℓ n}
+theorem Defeq.rawSoundness (hE : EnvWF E₂) {e₁ e₂ t : Expr ζ₂ ℓ n}
     (hΔ : E₂[Δ] ⊢ ok) (d : E₂[Δ] ⊢ e₁ ≡ e₂ : t) :
     RawJudgment ⟨Δ, hΔ⟩ e₁ e₂ t := by
-  convert RawSound.properties (ho.rawSound .refl) hΔ d using 1 <;>
+  convert RawSound.properties (hE.rawSound .refl) hΔ d using 1 <;>
     simp! [dsimp% [CategoryStruct.id] (Expr.functor ℓ n).map_id_apply ζ₂,
       dsimp% [CategoryStruct.id] (Ctx.functor ℓ 0 n).map_id_apply ζ₂]
 
-theorem CtxWF.bottom_admissible (ho : E₂.Ordered) (hΔ : E₂[Δ] ⊢ ok) {Γ : CtxCat E₂ ℓ}
+theorem CtxWF.bottom_admissible (hE : EnvWF E₂) (hΔ : E₂[Δ] ⊢ ok) {Γ : CtxCat E₂ ℓ}
     (σ : Γ ⟶ (⟨Δ, hΔ⟩ : CtxCat E₂ ℓ)) : SourceAdmissible σ fun _ ↦ ⊥ := by
   induction hΔ with
   | nil => exact .nil σ _
   | @snoc _ Δ t hΔ ht ih =>
     have ⟨u, ht⟩ := ht
     have htail := ih (σ ≫ CtxCat.rawProjection ⟨Δ, hΔ⟩ ht)
-    exact SourceAdmissible.cons ht σ (fun _ ↦ ⊥) htail ((ht.rawSoundness ho hΔ).left.ideal _ _ htail)
+    exact SourceAdmissible.cons ht σ (fun _ ↦ ⊥) htail ((ht.rawSoundness hE hΔ).left.ideal _ _ htail)
       ΩLower.isDirected_bot (rawExtend_bottom_payload piLimit_isPayloadStrict _ _)
 
 end Metalean

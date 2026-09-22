@@ -18,14 +18,14 @@ open CategoryTheory ZFSet
 variable {ζ : Sigs}
 
 public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
-    {I : Inductive ζ ι} (m : Env.Model.{u} pre) (ho : pre.Ordered)
+    {I : Inductive ζ ι} (m : Env.Model.{u} pre) (hE : EnvWF pre)
     (hwf : EntryWF pre (.inductive I)) :
     Env.Model.{u} (pre.snoc (.inductive I)) := by
   have hblock : InductiveWF pre I :=
     have .inductive hblock := hwf
     hblock
   let model (ls) : StrongInductiveModel pre m.atoms I ls :=
-    Classical.choice (hblock.model m.semDecls m.semDeclRules ho)
+    Classical.choice (hblock.model m.semDecls m.semDeclRules hE)
   let fresh : Atom (.snoc ζ (.inductive ι)) 0 → ZFSet.{u}
     | .ind .here s ls vps vis => (model ls).toModel.sortValue s vps vis
     | .ctor .here s c ls vps vfds vrecFds => (model ls).ctorResult s c vps vfds vrecFds
@@ -95,18 +95,18 @@ public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
             (current.recLeaf_mem s u) (hrecrAt suffix hatoms₁ s u) hps hms hmins his hmaj
         iota := fun {ζ₂ E₂ ε₂} suffix hatoms₁ {n ρ u ps ms mins s c fds recFds}
             hallowed hps hms hmins hfields hrecFields =>
-          current.iotaRuleSound m.semDecls m.semDeclRules ho hblock
+          current.iotaRuleSound m.semDecls m.semDeclRules hblock
             (step ≫ suffix) (hatomsAt suffix hatoms₁) (hblockAt suffix)
             (hsortsAt suffix hatoms₁)
             (hctorsAt suffix hatoms₁)
             (hrecrAt suffix hatoms₁)
-            hallowed hps hms hmins hfields hrecFields
+            hallowed hE hps hms hmins hfields hrecFields
         etaStruct := fun {ζ₂ E₂ ε₂} suffix hatoms₁ {n γ s c ps is maj} hstruct =>
-          current.etaStructRuleSound m.semDecls m.semDeclRules ho hblock
+          current.etaStructRuleSound m.semDecls m.semDeclRules hblock
             (step ≫ suffix) (hatomsAt suffix hatoms₁) (hblockAt suffix)
             (hsortsAt suffix hatoms₁)
             (hctorsAt suffix hatoms₁)
             (hrecrAt suffix hatoms₁)
-            hstruct } }⟩
+            hstruct hE } }⟩
 
 end Metalean

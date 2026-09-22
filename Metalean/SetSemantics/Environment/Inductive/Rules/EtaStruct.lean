@@ -140,8 +140,8 @@ theorem ctorResult_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
 section
 
 variable (hdecl : SemDecls E₁ ε₁ zeroNs)
-  (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered) (hB : InductiveWF E₁ I)
-include hdecl hrule ho hB
+  (hrule : SemDeclRules E₁ ε₁ zeroNs) (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
+include hdecl hrule hE hB
 
 section
 
@@ -180,7 +180,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     rfl
   have hsorted : domain ∈ S_ ((((I.ctors s c).ordinary f).level.inst ls).eval zeroNs) := by
     simpa [domain, Ctx.get_instL, Expr.denote, Level.eval_inst] using
-      (soundness hdecl hrule ho (((hB.ctors s c).ordinaryTele_get f).instLevel ls) w
+      (soundness hdecl hrule hE (((hB.ctors s c).ordinaryTele_get f).instLevel ls) w
         (model.ordinarySemCtx s c vps hps w hw)).mem
   suffices htype : ε₂[γ]⟦Inductive.IsStructure.projTypeWith
       (I.map total.sigs) ls ps₁ f previous⟧ = domain by
@@ -251,7 +251,7 @@ theorem projTerm_denotes_field
         model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧ f ∈ ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∧
           ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∈
             S_ ((((I.ctors s c).ordinary f).level.inst ls).eval zeroNs) := by
-      have ⟨hmem, hsorted⟩ := model.projTypeWith_denotes hdecl hrule ho hB total hatoms vps hvps
+      have ⟨hmem, hsorted⟩ := model.projTypeWith_denotes hdecl hrule hE hB total hatoms vps hvps
         (Fin.append vps (model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧)) (hdecomp hmajMem₂).1 f ps₂
         (fun prior => hstruct.projTerm η ls ps₂ (prior.castLT (prior.isLt.trans f.isLt)) maj₂)
         (γ := γ₂) fun param => by simpa using congrFun hpsDen₂ param
@@ -384,7 +384,7 @@ theorem projTerm_denotes_field
       rw [model.codeOf_targetIndex]
       exact congrArg (sortKey s.val)
         (congrArg encode (funext hstruct.no_indices.elim))
-    have hiota := model.recLeaf_iota hdecl hrule ho hB s u
+    have hiota := model.recLeaf_iota hdecl hrule hE hB s u
       ((I.recAllowed_map total.sigs u).mp (hstruct.recAllowed u))
       (RecSlots.args vps vms vminsVal vis ε₂[γ₁]⟦maj₁⟧) hreach c
       (by simpa using hargs)
@@ -410,6 +410,7 @@ theorem projTerm_denotes_field
 
 end
 
+omit hE in
 theorem etaStructRuleSound
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hblock : (E₂.get η).block = I.map pre.sigs)
@@ -424,11 +425,12 @@ theorem etaStructRuleSound
     {c : Fin (ι.nctors s)} {ps : Fin ι.nparams → Expr ζ₂ 0 n}
     {is : Fin (ι.nindices s) → Expr ζ₂ 0 n} {maj : Expr ζ₂ 0 n}
     (hstruct : (E₂.get η).block.IsStructure s c) :
+    EnvWF E₁ →
     (∀ param, ε₂[γ] ⊨ ps param ≡ ps param : (E₂.get η).block.paramType ls ps param) →
     ε₂[γ] ⊨ maj ≡ maj : .ind η s ls ps is →
     ε₂[γ] ⊨ hstruct.rebuildTerm η ls ps maj ≡ maj :
       .ind η s ls ps is := by
-  intro hps hmaj
+  intro hE hps hmaj
   revert hstruct hps
   rw [hblock]
   intro hstruct hps
@@ -448,7 +450,7 @@ theorem etaStructRuleSound
       rw [ctorResult, hlevel, propVal_zero, hproof]
     have hfields (f) : ε₂[γ]⟦hstruct.projTerm η ls ps f maj⟧ =
         model.fieldsOf s c vps vis ε₂[γ]⟦maj⟧ f :=
-      model.projTerm_denotes_field hdecl hrule ho hB pre hatoms hsorts hctors hrecr hlevel
+      model.projTerm_denotes_field hdecl hrule hE hB pre hatoms hsorts hctors hrecr hlevel
         hstruct vis f (model.paramsReachable pre hatoms hsorts hps)
         (fun param => (hps param).mem) hmajMem
     simpa [hfields] using (model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique

@@ -17,23 +17,25 @@ open Relation
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
-theorem TypeEq.sort_inj (ho : E.Ordered) (hΓ : E[Γ] ⊢ ok) {l₁ l₂ : Level ℓ}
+theorem TypeEq.sort_inj (hE : EnvWF E) (hΓ : E[Γ] ⊢ ok) {l₁ l₂ : Level ℓ}
     (h : E[Γ] ⊢ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ :=
-  TypeEq.sort_model_inj ho hΓ h
+  TypeEq.sort_model_inj hE hΓ h
 
-theorem TypeEq.forallE_inj (ho : E.Ordered)
+theorem TypeEq.forallE_inj
     {t₁ t₂ : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ →
     E[Γ] ⊢ t₁ ≡ t₂ typ ∧ E[Γ.snoc t₁] ⊢ t₁' ≡ t₂' typ :=
-  fun hΓ h =>
-    have ⟨h₁, h₂, _⟩ := TypeEq.forallE_model_inj ho hΓ h
+  fun hE hΓ h =>
+    have ⟨h₁, h₂, _⟩ := TypeEq.forallE_model_inj hE hΓ h
     ⟨h₁, h₂⟩
 
-theorem Defeq.ind_inj (ho : E.Ordered) {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
+theorem Defeq.ind_inj {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
     {ls₁ ls₂ : Fin ι.nlevels → Level ℓ}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ ℓ n}
     {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .ind η s ls₁ ps₁ is₁ ≡
       .ind η s ls₂ ps₂ is₂ :
@@ -42,15 +44,16 @@ theorem Defeq.ind_inj (ho : E.Ordered) {ι : IndSig} {η : Head ζ (.inductive �
       (∀ p, ∃ t : Expr ζ ℓ n, E[Γ] ⊢ ps₁ p ≡ ps₂ p : t) ∧
       ∀ index, ∃ t : Expr ζ ℓ n,
         E[Γ] ⊢ is₁ index ≡ is₂ index : t :=
-  ind_model_inv ho
+  fun hE => ind_model_inv hE
 
-theorem TypeEq.quot_inj (ho : E.Ordered)
+theorem TypeEq.quot_inj
     {η : Head ζ .quot} {l₁ l₂ : Level ℓ} {α α' r r' : Expr ζ ℓ n} :
+    EnvWF E →
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .quot η l₁ α r ≡ .quot η l₂ α' r' typ →
     l₁ = l₂ ∧ E[Γ] ⊢ α ≡ α' typ ∧ E[Γ] ⊢ r ≡ r' : Quot.relType α :=
-  fun hΓ h =>
-    have ⟨hl, hα, hr⟩ := h.quot_model_inj ho hΓ
+  fun hE hΓ h =>
+    have ⟨hl, hα, hr⟩ := h.quot_model_inj hE hΓ
     ⟨hl, .ofDefEq hα, hr⟩
 
 theorem TypeEq.forallE_congr {t : Expr ζ ℓ n} {l : Level ℓ}

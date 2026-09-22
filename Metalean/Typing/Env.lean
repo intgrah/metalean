@@ -51,24 +51,18 @@ theorem map (pre : E.as ⟶ E₂.as) :
 
 theorem block {ι : IndSig} {entry : Entry ζ (.inductive ι)} :
     EntryWF E entry →
-    InductiveWF E entry.block := by
-  intro h
-  cases h with
-  | «inductive» hi => exact hi
+    InductiveWF E entry.block
+  | «inductive» hi => hi
 
 theorem value {entry : Entry ζ (.const .def ℓ)} :
     EntryWF E entry →
-    E[.nil] ⊢ entry.defValue : entry.constType := by
-  intro h
-  cases h with
-  | «def» _ he => exact he
+    E[.nil] ⊢ entry.defValue : entry.constType
+  | «def» _ he => he
 
 theorem type {kind : ConstKind} {entry : Entry ζ (.const kind ℓ)} :
     EntryWF E entry →
-    E[.nil] ⊢ entry.constType typ := by
-  intro h
-  cases h with
-  | «axiom» ht | «opaque» _ ht | «def» ht _ => exact ht
+    E[.nil] ⊢ entry.constType typ
+  | «axiom» ht | «opaque» _ ht | «def» ht _ => ht
 
 theorem constType {kind : ConstKind} {ℓ' : Nat}
     {η : Head ζ (.const kind ℓ')} (h : EntryWF E (E.get η)) (ls : Fin ℓ' → Level ℓ) :
@@ -102,23 +96,25 @@ theorem ctorType {ι : IndSig} {η : Head ζ (.inductive ι)} (h : EntryWF E (E.
 
 end EntryWF
 
-theorem Env.Ordered.entryWF (ho : E.Ordered) {sig : Sig} (η : Head ζ sig) :
+theorem EnvWF.entryWF {sig : Sig} (η : Head ζ sig) :
+    EnvWF E →
     EntryWF E (E.get η) := by
-  induction ho generalizing sig with
+  intro hE
+  induction hE generalizing sig with
   | nil => exact nomatch η
   | snoc _ hentry ih =>
     cases η with
     | here => exact hentry.map (.step .refl)
     | there η => exact (ih η).map (.step .refl)
 
-theorem Env.Ordered.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (ho : E₀.Ordered)
+theorem EnvWF.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (hE : EnvWF E₀)
     (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.inductive ι)) :
     ∃ (ζ₂ : Sigs) (E₂ : Env ζ₂) (pre₂ : E₂.as ⟶ E₀.as) (I : Inductive ζ₂ ι),
       ζ₂.length < ζ₀.length ∧ InductiveWF E₂ I ∧
         (E.get (η.map pre.sigs)).block = I.map (pre₂ ≫ pre).sigs := by
-  induction ho with
+  induction hE with
   | nil => cases η
-  | @snoc ζ₁ sig E₀ entry ho hentry ih =>
+  | @snoc ζ₁ sig E₀ entry hE hentry ih =>
     cases η with
     | here =>
       cases entry with
@@ -140,14 +136,14 @@ theorem Env.Ordered.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (
       exact congrArg (fun η => (E.get η).block) hη.symm
 
 open CategoryTheory in
-theorem Env.Ordered.def_spec {ℓ' : Nat} {ζ₀ : Sigs} {E₀ : Env ζ₀} (ho : E₀.Ordered)
+theorem EnvWF.def_spec {ℓ' : Nat} {ζ₀ : Sigs} {E₀ : Env ζ₀} (hE : EnvWF E₀)
     (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.const .def ℓ')) :
     ∃ (ζ₂ : Sigs) (E₂ : Env ζ₂) (pre₂ : E₂.as ⟶ E₀.as) (t e : Expr ζ₂ ℓ' 0),
       ζ₂.length < ζ₀.length ∧ E₂[.nil] ⊢ e : t ∧
         E.get (η.map pre.sigs) = (Entry.def t e).map (pre₂ ≫ pre).sigs := by
-  induction ho with
+  induction hE with
   | nil => cases η
-  | @snoc ζ₁ sig E₀ entry ho hentry ih =>
+  | @snoc ζ₁ sig E₀ entry hE hentry ih =>
     cases η with
     | here =>
       cases entry with

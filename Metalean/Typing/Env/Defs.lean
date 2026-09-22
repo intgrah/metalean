@@ -42,22 +42,22 @@ judgement EntryWF (E : Env ζ) : {sig : Sig} → Entry ζ sig → Prop where
 theorem Expr.falseTy_isType (E : Env ζ) : E[.nil] ⊢ (.falseTy : Expr ζ 0 0) typ :=
   ⟨_, .forallEDF .sortDF (.var .sortDF) (.var .sortDF)⟩
 
-namespace Env
-
--- TODO rename to WF
--- TODO do the TODO
-inductive Ordered : {ζ : Sigs} → Env ζ → Prop
-  | nil : Ordered .nil
+inductive EnvWF : {ζ : Sigs} → Env ζ → Prop
+  | nil :
+    EnvWF .nil
   | snoc {ζ : Sigs} {sig : Sig} {E : Env ζ} {entry : Entry ζ sig} :
-      Ordered E → EntryWF E entry → Ordered (.snoc E entry)
+    EnvWF E →
+    EntryWF E entry →
+    EnvWF (.snoc E entry)
 
-theorem Ordered.ofPrefix {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
-    (pre : Prefix E₁ E₂) (ho : E₂.Ordered) : E₁.Ordered := by
+theorem EnvWF.comap {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
+    (pre : E₁.Prefix E₂) :
+    EnvWF E₂ →
+    EnvWF E₁ := by
+  intro hE
   induction pre with
-  | refl => exact ho
-  | step _ ih =>
-    have .snoc ho _ := ho
-    exact ih ho
+  | refl => exact hE
+  | step _ ih => have .snoc hE _ := hE; exact ih hE
 
 /--
 It is not the case that every closed type has a closed inhabitant
@@ -66,9 +66,7 @@ This effectively means you cannot enter new things into the environment like
 inductive types, or axioms or definitions.
 However definitions are admissible because of let bindings/inlining.
 -/
-def Con (E : Env ζ) : Prop :=
+def Env.Con (E : Env ζ) : Prop :=
   ¬∀ t : Expr ζ 0 0, E[.nil] ⊢ t typ → ∃ e, E[.nil] ⊢ e : t
-
-end Env
 
 end Metalean

@@ -19,7 +19,7 @@ open Frontend
 structure State where
   {ζ : Sigs}
   env : Env ζ
-  ordered : env.Ordered
+  ordered : EnvWF env
   table : Table := ∅
   definitions : Export.Definitions := ∅
 

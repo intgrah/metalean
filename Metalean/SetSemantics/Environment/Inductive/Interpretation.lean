@@ -69,7 +69,7 @@ private theorem SemDefeq.exists_domain {t : Expr ζ₁ ℓ m}
   · simpa [hγ] using empty_mem_type
 
 theorem TeleWF.modelExtensionAt (hdecl : SemDecls E₁ ε₁ ν)
-    (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
+    (hrule : SemDeclRules E₁ ε₁ ν) (hE : EnvWF E₁)
     {P : Level ℓ → Prop}
     (hls : ∀ {l}, P l → l.eval ν ≤ bound + 1)
     (base : StrongTeleModel E₁ ε₁ ν Γ) (hΔ : TeleWF E₁ P Γ Δ) :
@@ -80,11 +80,11 @@ theorem TeleWF.modelExtensionAt (hdecl : SemDecls E₁ ε₁ ν)
     have ⟨model⟩ := ih
     have ⟨l, hl, ht⟩ := hA
     have ⟨_, hbounded, htype⟩ := SemDefeq.exists_domain
-      (fun γ hγ => soundness hdecl hrule ho ht γ (model.semCtx γ hγ)) (hls hl)
+      (fun γ hγ => soundness hdecl hrule hE ht γ (model.semCtx γ hγ)) (hls hl)
     exact ⟨model.sem.snoc _, .snoc model.bounded hbounded, .snoc model.realizes htype⟩
 
 theorem TeleWF.modelExtension (hdecl : SemDecls E₁ ε₁ ν)
-    (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
+    (hrule : SemDeclRules E₁ ε₁ ν) (hE : EnvWF E₁)
     (base : StrongTeleModel E₁ ε₁ ν Γ) (hΔ : TeleWF E₁ (fun _ => True) Γ Δ) :
     Nonempty (Σ bound, StrongTeleExtension E₁ ε₁ ν base Δ bound) := by
   induction hΔ with
@@ -93,16 +93,16 @@ theorem TeleWF.modelExtension (hdecl : SemDecls E₁ ε₁ ν)
     have ⟨level, model⟩ := ih
     have ⟨l, _, ht⟩ := hA
     have ⟨_, hbounded, htype⟩ := SemDefeq.exists_domain
-      (fun γ hγ => soundness hdecl hrule ho ht γ (model.semCtx γ hγ)) (Nat.le_succ (l.eval ν))
+      (fun γ hγ => soundness hdecl hrule hE ht γ (model.semCtx γ hγ)) (Nat.le_succ (l.eval ν))
     exact ⟨max level (l.eval ν), model.sem.snoc _,
       .snoc (model.bounded.mono (Nat.le_max_left _ _))
         (fun γ => type_mono (Nat.le_max_right _ _) (hbounded γ)),
       .snoc model.realizes htype⟩
 
-theorem TeleWF.model (hdecl : SemDecls E₁ ε₁ ν) (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
+theorem TeleWF.model (hdecl : SemDecls E₁ ε₁ ν) (hrule : SemDeclRules E₁ ε₁ ν) (hE : EnvWF E₁)
     (hΓ : TeleWF E₁ (fun _ => True) #t[] Γ) :
     Nonempty (StrongTeleModel E₁ ε₁ ν Γ) :=
-  have ⟨_, extension⟩ := hΓ.modelExtension hdecl hrule ho ⟨#t[], ⟨0, .nil⟩, .nil⟩
+  have ⟨_, extension⟩ := hΓ.modelExtension hdecl hrule hE ⟨#t[], ⟨0, .nil⟩, .nil⟩
   ⟨extension.sem, ⟨_, extension.bounded⟩,
     extension.realizes.monoReach fun _ _ => .nil trivial⟩
 

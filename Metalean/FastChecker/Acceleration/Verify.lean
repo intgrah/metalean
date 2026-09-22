@@ -26,7 +26,7 @@ def ConstHeadSpec (pos : Nat) : Prop :=
 
 def constHead (pos : Nat) : Except Failure (PLift (ConstHeadSpec L F pos)) :=
   match hfe : F[pos]? with
-  | some (.def 0 _ _) => pure ⟨fun {_ _} hE => FEnv.Denotes.lookup (E := ⟨_, _⟩) hE hfe rfl⟩
+  | some (.def 0 _ _) => pure ⟨fun {_ _} hF => FEnv.Denotes.lookup (E := ⟨_, _⟩) hF hfe rfl⟩
   | _ => throw .internal
 
 def bound (pos : Nat) : Except Failure (PLift (pos < F.size)) :=
@@ -52,7 +52,7 @@ def UnaryTypeSpec (pos : Nat) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃ηNat : Head ζ (.inductive Literals.Nat.sig)⦄ ⦃kind : ConstKind⦄
     ⦃ηOp : Head ζ (.const kind 0)⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
   ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
@@ -62,7 +62,7 @@ def BinaryTypeSpec (pos : Nat) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃ηNat : Head ζ (.inductive Literals.Nat.sig)⦄ ⦃kind : ConstKind⦄
     ⦃ηOp : Head ζ (.const kind 0)⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
   ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
@@ -72,7 +72,7 @@ def PredEqsSpec (pos : Nat) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃ηNat : Head ζ (.inductive Literals.Nat.sig)⦄ ⦃kind : ConstKind⦄
     ⦃ηOp : Head ζ (.const kind 0)⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
   ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
@@ -82,7 +82,7 @@ def AddEqsSpec (pos : Nat) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃ηNat : Head ζ (.inductive Literals.Nat.sig)⦄ ⦃kind : ConstKind⦄
     ⦃ηOp : Head ζ (.const kind 0)⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
   ζ.lookup pos = some ⟨.const kind 0, ηOp⟩ →
@@ -93,7 +93,7 @@ def MulEqsSpec (pos : Nat) : Prop :=
     ⦃kindAdd : ConstKind⦄ ⦃ηAdd : Head ζ (.const kindAdd 0)⦄ ⦃kind : ConstKind⦄
     ⦃ηOp : Head ζ (.const kind 0)⦄,
   FEnv.Denotes L F E →
-  E.Ordered →
+  EnvWF E →
   L.NatTrust E →
   ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩ →
   ζ.lookup L.add = some ⟨.const kindAdd 0, ηAdd⟩ →
@@ -102,14 +102,14 @@ def MulEqsSpec (pos : Nat) : Prop :=
 
 def checkUnaryType (pos : Nat) : Except Failure (PLift (UnaryTypeSpec L F pos)) := do
   let ⟨h⟩ ← natDefEq L F hints (.natArrow L) (.const pos #[]) (.const pos #[])
-  pure ⟨fun {_ _ _ _ _} hE ho htr hη hηOp =>
-    (NatAt.mk hE ho htr hη Literals.natZeroTyped Literals.natZeroTyped).eq h
+  pure ⟨fun {_ _ _ _ _} hF hE htr hη hηOp =>
+    (NatAt.mk hF hE htr hη Literals.natZeroTyped Literals.natZeroTyped).eq h
       (.natArrow hη) (.const hηOp) (.const hηOp)⟩
 
 def checkBinaryType (pos : Nat) : Except Failure (PLift (BinaryTypeSpec L F pos)) := do
   let ⟨h⟩ ← natDefEq L F hints (.natArrow₂ L) (.const pos #[]) (.const pos #[])
-  pure ⟨fun {_ _ _ _ _} hE ho htr hη hηOp =>
-    (NatAt.mk hE ho htr hη Literals.natZeroTyped Literals.natZeroTyped).eq h
+  pure ⟨fun {_ _ _ _ _} hF hE htr hη hηOp =>
+    (NatAt.mk hF hE htr hη Literals.natZeroTyped Literals.natZeroTyped).eq h
       (.natArrow₂ hη) (.const hηOp) (.const hηOp)⟩
 
 def checkPredEqs (pos : Nat) : Except Failure (PLift (PredEqsSpec L F pos)) := do
@@ -117,12 +117,12 @@ def checkPredEqs (pos : Nat) : Except Failure (PLift (PredEqsSpec L F pos)) := d
     (.op₁ pos (.zero L)) (.zero L)
   let ⟨hsucc⟩ ← natDefEq L F hints (.nat L)
     (.op₁ pos (.succ L (.fvar 1))) (.fvar 1)
-  pure ⟨fun {_ _ _ _ _} hE ho htr hη hηOp =>
+  pure ⟨fun {_ _ _ _ _} hF hE htr hη hηOp =>
     { zero :=
-        (NatAt.mk hE ho htr hη Literals.natZeroTyped Literals.natZeroTyped).eq hzero
+        (NatAt.mk hF hE htr hη Literals.natZeroTyped Literals.natZeroTyped).eq hzero
           (.natType hη) (.op1 hηOp (.zero hη)) (.zero hη)
       succ := fun _y hy =>
-        (NatAt.mk hE ho htr hη Literals.natZeroTyped hy).eq hsucc
+        (NatAt.mk hF hE htr hη Literals.natZeroTyped hy).eq hsucc
           (.natType hη) (.op1 hηOp (.succ hη .varY)) .varY }⟩
 
 def checkAddEqs (pos : Nat) : Except Failure (PLift (AddEqsSpec L F pos)) := do
@@ -131,12 +131,12 @@ def checkAddEqs (pos : Nat) : Except Failure (PLift (AddEqsSpec L F pos)) := do
   let ⟨hsucc⟩ ← natDefEq L F hints (.nat L)
     (.op₂ pos (.fvar 0) (.succ L (.fvar 1)))
     (.succ L (.op₂ pos (.fvar 0) (.fvar 1)))
-  pure ⟨fun {_ _ _ _ _} hE ho htr hη hηOp =>
+  pure ⟨fun {_ _ _ _ _} hF hE htr hη hηOp =>
     { zero := fun _x hx =>
-        (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+        (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
           (.natType hη) (.op hηOp .varX (.zero hη)) .varX
       succ := fun _x _y hx hy =>
-        (NatAt.mk hE ho htr hη hx hy).eq hsucc
+        (NatAt.mk hF hE htr hη hx hy).eq hsucc
           (.natType hη) (.op hηOp .varX (.succ hη .varY))
           (.succ hη (.op hηOp .varX .varY)) }⟩
 
@@ -146,12 +146,12 @@ def checkMulEqs (pos : Nat) : Except Failure (PLift (MulEqsSpec L F pos)) := do
   let ⟨hsucc⟩ ← natDefEq L F hints (.nat L)
     (.op₂ pos (.fvar 0) (.succ L (.fvar 1)))
     (.op₂ L.add (.op₂ pos (.fvar 0) (.fvar 1)) (.fvar 0))
-  pure ⟨fun {_ _ _ _ _ _ _} hE ho htr hη hηAdd hηOp =>
+  pure ⟨fun {_ _ _ _ _ _ _} hF hE htr hη hηAdd hηOp =>
     { zero := fun _x hx =>
-        (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+        (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
           (.natType hη) (.op hηOp .varX (.zero hη)) (.zero hη)
       succ := fun _x _y hx hy =>
-        (NatAt.mk hE ho htr hη hx hy).eq hsucc
+        (NatAt.mk hF hE htr hη hx hy).eq hsucc
           (.natType hη) (.op hηOp .varX (.succ hη .varY))
           (.op hηAdd (.op hηOp .varX .varY) .varX) }⟩
 
@@ -160,8 +160,8 @@ def verifyAdd : Except Failure (PLift (NatOpSpec L F L.add (· + ·))) := do
   let ⟨hop⟩ ← bound F L.add
   let ⟨hadd⟩ ← checkAddEqs L F hints L.add
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            Literals.add_natLit num₁ num₂ (hadd hE ho htr hη hηOp) }⟩
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            Literals.add_natLit num₁ num₂ (hadd hF hE htr hη hηOp) }⟩
 
 def verifySub : Except Failure (PLift (NatOpSpec L F L.sub (· - ·))) := do
   let ⟨hnat⟩ ← bound F L.nat
@@ -175,16 +175,16 @@ def verifySub : Except Failure (PLift (NatOpSpec L F L.sub (· - ·))) := do
     (.op₂ L.sub (.fvar 0) (.succ L (.fvar 1)))
     (.op₁ L.pred (.op₂ L.sub (.fvar 0) (.fvar 1)))
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            have ⟨_, hηPred⟩ := hhead hE
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            have ⟨_, hηPred⟩ := hhead hF
             Literals.sub_natLit num₁ num₂
-              (htype hE ho htr hη hηPred)
-              (hpred hE ho htr hη hηPred)
+              (htype hF hE htr hη hηPred)
+              (hpred hF hE htr hη hηPred)
               { zero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
                     (.natType hη) (.op hηOp .varX (.zero hη)) .varX
                 succ := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsucc
                     (.natType hη) (.op hηOp .varX (.succ hη .varY))
                     (.op1 hηPred (.op hηOp .varX .varY)) } }⟩
 
@@ -196,12 +196,12 @@ def verifyMul : Except Failure (PLift (NatOpSpec L F L.mul (· * ·))) := do
   let ⟨hadd⟩ ← checkAddEqs L F hints L.add
   let ⟨hmul⟩ ← checkMulEqs L F hints L.mul
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            have ⟨_, hηAdd⟩ := hhead hE
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            have ⟨_, hηAdd⟩ := hhead hF
             Literals.mul_natLit num₁ num₂
-              (htype hE ho htr hη hηAdd)
-              (hadd hE ho htr hη hηAdd)
-              (hmul hE ho htr hη hηAdd hηOp) }⟩
+              (htype hF hE htr hη hηAdd)
+              (hadd hF hE htr hη hηAdd)
+              (hmul hF hE htr hη hηAdd hηOp) }⟩
 
 def verifyPow : Except Failure (PLift (NatOpSpec L F L.pow (· ^ ·))) := do
   let ⟨hnat⟩ ← bound F L.nat
@@ -218,19 +218,19 @@ def verifyPow : Except Failure (PLift (NatOpSpec L F L.pow (· ^ ·))) := do
     (.op₂ L.pow (.fvar 0) (.succ L (.fvar 1)))
     (.op₂ L.mul (.op₂ L.pow (.fvar 0) (.fvar 1)) (.fvar 0))
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            have ⟨_, hηAdd⟩ := haddHead hE
-            have ⟨_, hηMul⟩ := hmulHead hE
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            have ⟨_, hηAdd⟩ := haddHead hF
+            have ⟨_, hηMul⟩ := hmulHead hF
             Literals.pow_natLit num₁ num₂
-              (hmulType hE ho htr hη hηMul)
-              (haddType hE ho htr hη hηAdd)
-              (hadd hE ho htr hη hηAdd)
-              (hmul hE ho htr hη hηAdd hηMul)
+              (hmulType hF hE htr hη hηMul)
+              (haddType hF hE htr hη hηAdd)
+              (hadd hF hE htr hη hηAdd)
+              (hmul hF hE htr hη hηAdd hηMul)
               { zero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
                     (.natType hη) (.op hηOp .varX (.zero hη)) (.succ hη (.zero hη))
                 succ := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsucc
                     (.natType hη) (.op hηOp .varX (.succ hη .varY))
                     (.op hηMul (.op hηOp .varX .varY) .varX) } }⟩
 
@@ -249,21 +249,21 @@ def verifyBeq : Except Failure (PLift (BoolOpSpec L F L.beq Nat.beq)) := do
     (.op₂ L.beq (.succ L (.fvar 0)) (.succ L (.fvar 1)))
     (.op₂ L.beq (.fvar 0) (.fvar 1))
   pure ⟨{ natBound := hnat, boolBound := hbool, boolSig := hsig, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηBool hηOp =>
+          eq := fun num₁ num₂ hF hE htr hη hηBool hηOp =>
             Literals.beq_natLit
               { zeroZero :=
-                  (NatAt.mk hE ho htr hη Literals.natZeroTyped Literals.natZeroTyped).eq hzeroZero
+                  (NatAt.mk hF hE htr hη Literals.natZeroTyped Literals.natZeroTyped).eq hzeroZero
                     (.boolType hηBool) (.op hηOp (.zero hη) (.zero hη)) (.boolLit hηBool true)
                 zeroSucc := fun _y hy =>
-                  (NatAt.mk hE ho htr hη Literals.natZeroTyped hy).eq hzeroSucc
+                  (NatAt.mk hF hE htr hη Literals.natZeroTyped hy).eq hzeroSucc
                     (.boolType hηBool) (.op hηOp (.zero hη) (.succ hη .varY))
                     (.boolLit hηBool false)
                 succZero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hsuccZero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hsuccZero
                     (.boolType hηBool) (.op hηOp (.succ hη .varX) (.zero hη))
                     (.boolLit hηBool false)
                 succSucc := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsuccSucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsuccSucc
                     (.boolType hηBool) (.op hηOp (.succ hη .varX) (.succ hη .varY))
                     (.op hηOp .varX .varY) }
               num₁ num₂ }⟩
@@ -281,17 +281,17 @@ def verifyBle : Except Failure (PLift (BoolOpSpec L F L.ble Nat.ble)) := do
     (.op₂ L.ble (.succ L (.fvar 0)) (.succ L (.fvar 1)))
     (.op₂ L.ble (.fvar 0) (.fvar 1))
   pure ⟨{ natBound := hnat, boolBound := hbool, boolSig := hsig, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηBool hηOp =>
+          eq := fun num₁ num₂ hF hE htr hη hηBool hηOp =>
             Literals.ble_natLit
               { zero := fun _y hy =>
-                  (NatAt.mk hE ho htr hη Literals.natZeroTyped hy).eq hzero
+                  (NatAt.mk hF hE htr hη Literals.natZeroTyped hy).eq hzero
                     (.boolType hηBool) (.op hηOp (.zero hη) .varY) (.boolLit hηBool true)
                 succZero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hsuccZero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hsuccZero
                     (.boolType hηBool) (.op hηOp (.succ hη .varX) (.zero hη))
                     (.boolLit hηBool false)
                 succSucc := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsuccSucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsuccSucc
                     (.boolType hηBool) (.op hηOp (.succ hη .varX) (.succ hη .varY))
                     (.op hηOp .varX .varY) }
               num₁ num₂ }⟩
@@ -311,19 +311,19 @@ def verifyShiftLeft : Except Failure (PLift (NatOpSpec L F L.shiftLeft (· <<< �
     (.op₂ L.shiftLeft (.fvar 0) (.succ L (.fvar 1)))
     (.op₂ L.shiftLeft (.op₂ L.mul (.natLit 2) (.fvar 0)) (.fvar 1))
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            have ⟨_, hηAdd⟩ := haddHead hE
-            have ⟨_, hηMul⟩ := hmulHead hE
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            have ⟨_, hηAdd⟩ := haddHead hF
+            have ⟨_, hηMul⟩ := hmulHead hF
             Literals.shiftLeft_natLit num₁ num₂
-              (htype hE ho htr hη hηOp)
-              (haddType hE ho htr hη hηAdd)
-              (hadd hE ho htr hη hηAdd)
-              (hmul hE ho htr hη hηAdd hηMul)
+              (htype hF hE htr hη hηOp)
+              (haddType hF hE htr hη hηAdd)
+              (hadd hF hE htr hη hηAdd)
+              (hmul hF hE htr hη hηAdd hηMul)
               { zero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
                     (.natType hη) (.op hηOp .varX (.zero hη)) .varX
                 succ := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsucc
                     (.natType hη) (.op hηOp .varX (.succ hη .varY))
                     (.op hηOp (.op hηMul (.natLit hη 2) .varX) .varY) } }⟩
 
@@ -339,16 +339,16 @@ def verifyShiftRight (hdiv : NatOpSpec L F L.div (· / ·)) :
     (.op₂ L.shiftRight (.fvar 0) (.succ L (.fvar 1)))
     (.op₂ L.div (.op₂ L.shiftRight (.fvar 0) (.fvar 1)) (.natLit 2))
   pure ⟨{ natBound := hnat, opBound := hop
-          eq := fun num₁ num₂ hE ho htr hη hηOp =>
-            have ⟨_, hηDiv⟩ := hdivHead hE
+          eq := fun num₁ num₂ hF hE htr hη hηOp =>
+            have ⟨_, hηDiv⟩ := hdivHead hF
             Literals.shiftRight_natLit num₁ num₂
-              (hdivType hE ho htr hη hηDiv)
-              (fun num₃ num₄ => hdiv.eq num₃ num₄ hE ho htr hη hηDiv)
+              (hdivType hF hE htr hη hηDiv)
+              (fun num₃ num₄ => hdiv.eq num₃ num₄ hF hE htr hη hηDiv)
               { zero := fun _x hx =>
-                  (NatAt.mk hE ho htr hη hx Literals.natZeroTyped).eq hzero
+                  (NatAt.mk hF hE htr hη hx Literals.natZeroTyped).eq hzero
                     (.natType hη) (.op hηOp .varX (.zero hη)) .varX
                 succ := fun _x _y hx hy =>
-                  (NatAt.mk hE ho htr hη hx hy).eq hsucc
+                  (NatAt.mk hF hE htr hη hx hy).eq hsucc
                     (.natType hη) (.op hηOp .varX (.succ hη .varY))
                     (.op hηDiv (.op hηOp .varX .varY) (.natLit hη 2)) } }⟩
 

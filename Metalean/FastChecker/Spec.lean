@@ -34,7 +34,7 @@ variable {ζ : Sigs} (L : Literals) (F : FEnv) (ℓ : Nat)
 structure Sem (G : FCtx) {ζ : Sigs} {ℓ : Nat} (E : Env ζ) {n : Nat} (Γ : Ctx ζ ℓ 0 n) :
     Prop where
   env : FEnv.Denotes L F E
-  ordered : E.Ordered
+  ordered : EnvWF E
   trust : L.NatTrust E
   ctx : FCtx.Denotes L ⟨ζ, E⟩ G Γ
   wf : E[Γ] ⊢ ok
@@ -279,9 +279,9 @@ instance {α : Type} : Inhabited (CheckM L F ℓ α) := ⟨throw .internal⟩
 
 variable {L F ℓ}
 
-theorem Sem.nil {E : Env ζ} (hE : FEnv.Denotes L F E) (ho : E.Ordered) (ht : L.NatTrust E) :
+theorem Sem.nil {E : Env ζ} (hF : FEnv.Denotes L F E) (hE : EnvWF E) (ht : L.NatTrust E) :
     Sem L F #[] E (.nil (ℓ := ℓ)) :=
-  ⟨hE, ho, ht, .nil, Tele.Forall.nil⟩
+  ⟨hF, hE, ht, .nil, Tele.Forall.nil⟩
 
 theorem Sem.size {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (hS : Sem L F G E Γ) :
@@ -703,8 +703,8 @@ theorem DefEqSpec.proj {G : FCtx} {pos s idx : Nat} {e₁ e₂ : FExpr} :
   have .proj (f' := f₂) hstruct₂ hη₂ hs₂ hidx₂ hed₂ := hd₂
   cases hη₂.symm.trans hη₁
   obtain rfl := Fin.ext (hs₂.trans hs₁.symm)
-  exact Inductive.IsStructure.projTerm_congr_defeq hS.ordered hstruct₁ hstruct₂ f₁ f₂
-    (hidx₁.trans hidx₂.symm) hS.wf he₁ he₂ fun ht₁ ht₂ => h hS hed₁ hed₂ ht₁ ht₂
+  exact Inductive.IsStructure.projTerm_congr_defeq hstruct₁ hstruct₂ f₁ f₂
+    (hidx₁.trans hidx₂.symm) hS.ordered hS.wf he₁ he₂ fun ht₁ ht₂ => h hS hed₁ hed₂ ht₁ ht₂
 
 theorem RedSpec.arg {G : FCtx} {ff a₁ a₂ : FExpr} :
     RedSpec L F ℓ G a₁ a₂ →
@@ -733,7 +733,7 @@ theorem RedSpec.projCtor {G : FCtx} {pos pos₂ s s₂ idx c : Nat} {ls₂ : Arr
   obtain rfl := Fin.ext (hs₂.trans hs.symm)
   obtain rfl := hstruct.ctor_unique c₂
   subst hidx'
-  exact ⟨_, hfds f', hstruct.projTerm_ctor_defeq hS.ordered f' hS.wf he⟩
+  exact ⟨_, hfds f', hstruct.projTerm_ctor_defeq f' hS.ordered hS.wf he⟩
 
 theorem DefEqSpec.refl {G : FCtx} (fe : FExpr) : DefEqSpec L F ℓ G fe fe :=
   fun {_ _ _ _ _ _ _ _} hS hd₁ hd₂ he₁ he₂ =>

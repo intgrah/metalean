@@ -28,11 +28,11 @@ def natCtx' (ηNat : Head ζ (.inductive Literals.Nat.sig)) : Ctx ζ ℓ 0 2 :=
   (Ctx.nil.snoc (Literals.natType ηNat)).snoc (Literals.natType ηNat)
 
 theorem natCtxSem (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩) :
+    EnvWF E →
     FEnv.Denotes L F E →
-    E.Ordered →
     L.NatTrust E →
-    Sem L F (natCtx L) E (natCtx' (ℓ := 0) ηNat) := fun hE ho htr =>
-  ((Sem.nil hE ho htr).snoc (.nat hη) Literals.natTypeDF).snoc (.nat hη) Literals.natTypeDF
+    Sem L F (natCtx L) E (natCtx' (ℓ := 0) ηNat) := fun hE hF htr =>
+  ((Sem.nil hF hE htr).snoc (.nat hη) Literals.natTypeDF).snoc (.nat hη) Literals.natTypeDF
 
 def natSubst {ℓ n : Nat} (x y : Expr ζ ℓ n) : Subst ζ ℓ 2 n :=
   (Subst.extend (fun v => v.elim0) x).extend y
@@ -125,7 +125,7 @@ structure NatAt (L : Literals) (F : FEnv) {ζ : Sigs} (E : Env ζ)
     (ηNat : Head ζ (.inductive Literals.Nat.sig)) {ℓ n : Nat} (Γ : Ctx ζ ℓ 0 n)
     (x y : Expr ζ ℓ n) : Prop where
   env : FEnv.Denotes L F E
-  ordered : E.Ordered
+  ordered : EnvWF E
   trust : L.NatTrust E
   nat : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩
   varX : E[Γ] ⊢ x : Literals.natType ηNat
@@ -139,7 +139,7 @@ theorem NatAt.eq {Γ : Ctx ζ ℓ 0 n} {ft fe₁ fe₂ : FExpr} {t e₁ e₂ : E
     Instantiated L E x y fe₂ e₂ →
     E[Γ] ⊢ e₁ ≡ e₂ : t := by
   intro ha h ht h₁ h₂
-  have hlev := (h (natCtxSem ha.nat ha.env ha.ordered ha.trust) ht.denotes h₁.denotes h₂.denotes).instLevel
+  have hlev := (h (natCtxSem ha.nat ha.ordered ha.env ha.trust) ht.denotes h₁.denotes h₂.denotes).instLevel
     (fun p : Param 0 => (p.elim0 : Level ℓ))
   rw [natCtx'_instL] at hlev
   have hres := hlev.substitution (natSubstWF ha.varX ha.varY)

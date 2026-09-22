@@ -18,28 +18,30 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
   {ps : Fin ι.nparams → Expr ζ ℓ n} {is : Fin (ι.nindices s) → Expr ζ ℓ n}
   {e e₁ e₂ : Expr ζ ℓ n}
 
-variable (ho : E.Ordered) (h : (E.get η).block.IsStructure s c)
-include ho h
+variable (h : (E.get η).block.IsStructure s c)
+include h
 
 theorem structure_eta :
+    EnvWF E →
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ] ⊢ e : .ind η s ls ps is →
     E[Γ] ⊢ e ≡ h.rebuildTerm η ls ps e : .ind η s ls ps is := by
-  intro hΓ hps he
+  intro hE hΓ hps he
   obtain rfl : is = h.indices := funext h.no_indices.elim
   exact (Defeq.etaStruct h hps he
-    (h.rebuildTerm_hasType (ho.entryWF η).block h.indices hΓ hps he)).symm
+    (h.rebuildTerm_hasType (hE.entryWF η).block h.indices hΓ hps he)).symm
 
 theorem unit_like_eta (hf : IsEmpty (Fin (ι.ctors s c).nfields)) :
+    EnvWF E →
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ] ⊢ e₁ : .ind η s ls ps is →
     E[Γ] ⊢ e₂ : .ind η s ls ps is →
     E[Γ] ⊢ e₁ ≡ e₂ : .ind η s ls ps is := by
-  intro hΓ hps he₁ he₂
+  intro hE hΓ hps he₁ he₂
   obtain rfl : is = h.indices := funext h.no_indices.elim
-  have hb := h.rebuildTerm_hasType (ho.entryWF η).block h.indices hΓ hps he₁
+  have hb := h.rebuildTerm_hasType (hE.entryWF η).block h.indices hΓ hps he₁
   have hr : h.rebuildTerm η ls ps e₁ = h.rebuildTerm η ls ps e₂ := by
     unfold Inductive.IsStructure.rebuildTerm
     congr 1
