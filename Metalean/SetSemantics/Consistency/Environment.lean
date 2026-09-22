@@ -90,8 +90,8 @@ theorem Env.Sound.constMem {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.
       let step : pre.as ⟶ (pre.snoc entry).as := .step .refl
       have hatoms : AtomsMap step.sigs ε (atomBelow ε fresh) := atomBelow.map ε fresh
       change ε (.const η ls) ∈
-        (atomBelow ε fresh)[![]]⟦(pre.get η).weakenEnv.constType.instL ls⟧
-      rw [show (pre.get η).weakenEnv.constType = (pre.get η).constType.map step.sigs from
+        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).constType.instL ls⟧
+      rw [show ((pre.get η).map step.sigs).constType = (pre.get η).constType.map step.sigs from
         (Entry.constTypeNatTrans _ _).naturality_apply step.sigs (pre.get η),
         ← Expr.map_instL, Expr.denote_map _ hatoms]
       exact ih η
@@ -110,8 +110,8 @@ theorem Env.Sound.defEq {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.Sou
       let step : pre.as ⟶ (pre.snoc entry).as := .step .refl
       have hatoms : AtomsMap step.sigs ε (atomBelow ε fresh) := atomBelow.map ε fresh
       change ε (.const η ls) =
-        (atomBelow ε fresh)[![]]⟦(pre.get η).weakenEnv.defValue.instL ls⟧
-      rw [show (pre.get η).weakenEnv.defValue = (pre.get η).defValue.map step.sigs from
+        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).defValue.instL ls⟧
+      rw [show ((pre.get η).map step.sigs).defValue = (pre.get η).defValue.map step.sigs from
         (Entry.defValueNatTrans _).naturality_apply step.sigs (pre.get η),
         ← Expr.map_instL, Expr.denote_map _ hatoms]
       exact ih η
@@ -142,10 +142,8 @@ theorem Env.Sound.inductiveModel {E : Env ζ} {ι : IndSig} {ε : Atom ζ 0 → 
       exact hsound ls
     | there η =>
       have ⟨w, hmodel⟩ := ih η
-      let step : pre.as ⟶ (pre.snoc entry).as := .step .refl
-      rw [Env.get, show (pre.get η).weakenEnv.block = (pre.get η).block.map step.sigs from
-        (Entry.blockNatTrans _).naturality_apply step.sigs (pre.get η)]
-      exact ⟨w, hmodel.map step (atomBelow.map ε fresh)⟩
+      rw [Env.get, Entry.block_map]
+      exact ⟨w, hmodel.map (.step .refl) (atomBelow.map ε fresh)⟩
 
 theorem Env.Sound.inductiveRules {E : Env ζ} {ι : IndSig} {ε : Atom ζ 0 → ZFSet.{u}}
     (h : Env.Sound E ε) (η : Head ζ (.inductive ι))

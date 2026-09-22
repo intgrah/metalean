@@ -8,7 +8,7 @@ module
 public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Semantics.Soundness.Context.Substitution
 import Metalean.Semantics.Interpretation.Binder.Ideality
-public import Metalean.Typing.WeakenEnv
+public import Metalean.Typing.Map
 import Metalean.Typing.Substitution
 
 @[expose] public section
@@ -190,7 +190,7 @@ def RawSound (E₂ : Env ζ₂) (ℓ : Nat) (pre : E₁.as ⟶ E₂.as) : Prop :
 theorem RawSound.properties (hsound : RawSound E₂ ℓ pre)
     {Δ₁ : Ctx ζ₁ ℓ 0 n} (hΔ₁ : E₁[Δ₁] ⊢ ok)
     {e₁ e₂ t : Expr ζ₁ ℓ n} (d : E₁[Δ₁] ⊢ e₁ ≡ e₂ : t) :
-    RawJudgment ⟨Δ₁.map pre.sigs, CtxWF.envMono pre hΔ₁⟩
+    RawJudgment ⟨Δ₁.map pre.sigs, CtxWF.map pre hΔ₁⟩
       (e₁.map pre.sigs) (e₂.map pre.sigs) (t.map pre.sigs) := by
   refine hsound d _ ?_
   clear d e₁ e₂ t

@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.FastChecker.Acceleration.Operations
-import Metalean.Typing.WeakenEnv
+import Metalean.Typing.Map
 import Metalean.Typing.Context
 
 @[expose] public section
@@ -42,7 +42,7 @@ theorem NatOpSpec.push {pos : Nat} {f : Nat → Nat → Nat} (h : NatOpSpec L F 
     have ⟨ηNat₀, hnat₀, hnat⟩ := hE₀.restrict pre h.natBound hη
     have ⟨ηOp₀, hop₀, hop⟩ := hE₀.restrict pre h.opBound hηOp
     have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
-      (htr.restrict pre) hnat₀ hop₀).envMono pre
+      (htr.restrict pre) hnat₀ hop₀).map pre
     simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.natType_map, hnat, hop] at hres
     have hwk := hres.wkClosed (Γ := _Γ)
     simpa [Literals.natOp₂_wkClosed, Literals.natLit_wkClosed, Literals.natType_wkClosed] using hwk
@@ -62,7 +62,7 @@ theorem BoolOpSpec.push {pos : Nat} {f : Nat → Nat → Bool} (h : BoolOpSpec L
     have ⟨ηBool₀, hbool₀, hbool⟩ := hE₀.restrict pre h.boolBound hηBool
     have ⟨ηOp₀, hop₀, hop⟩ := hE₀.restrict pre h.opBound hηOp
     have hres := (h.eq (ℓ' := ℓ') (Γ := Ctx.nil) num₁ num₂ hE₀ (Env.Ordered.ofPrefix pre ho)
-      (htr.restrict pre) hnat₀ hbool₀ hop₀).envMono pre
+      (htr.restrict pre) hnat₀ hbool₀ hop₀).map pre
     simp only [Literals.natOp₂_map, Literals.map_natLit, Literals.boolLit_map,
       Literals.boolType_map, hnat, hbool, hop] at hres
     have hwk := hres.wkClosed (Γ := _Γ)

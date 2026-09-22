@@ -8,9 +8,9 @@ module
 public import Metalean.Typing.Inductive
 public import Metalean.Typing.Env.Defs
 import Metalean.Typing.InstLevel
+import Metalean.Typing.Map
 import Metalean.Typing.Substitution
 import Metalean.Typing.Telescope
-import Metalean.Typing.WeakenEnv
 import Metalean.Typing.Builtin.Eq
 import Metalean.Syntax.Substitution
 
@@ -20,35 +20,34 @@ namespace Metalean
 
 open CategoryTheory
 
-variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
+variable {ζ ζ₂ : Sigs} {E : Env ζ} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
 namespace EntryWF
 
-variable {sig sig₁ : Sig} {entry : Entry ζ sig}
+variable {sig : Sig} {entry : Entry ζ sig}
 
-theorem weakenEnv {entry' : Entry ζ sig₁} :
+theorem map (pre : E.as ⟶ E₂.as) :
     EntryWF E entry →
-    EntryWF (E.snoc entry') entry.weakenEnv := by
+    EntryWF E₂ (entry.map pre.sigs) := by
   intro h
   induction h with
   | «axiom» ht =>
     obtain ⟨l, ht⟩ := ht
-    exact .axiom ⟨l, by
-      simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
+    exact .axiom ⟨l, by simpa [Expr.map] using ht.map pre⟩
   | «opaque» he ht =>
     obtain ⟨l, ht⟩ := ht
     exact .opaque
-      (by simpa [Ctx.weakenEnv, Expr.weakenEnv] using he.weakenEnv entry')
-      ⟨l, by simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
+      (by simpa [Expr.map] using he.map pre)
+      ⟨l, by simpa [Expr.map] using ht.map pre⟩
   | «def» ht he =>
     obtain ⟨l, ht⟩ := ht
     exact .def
-      ⟨l, by simpa [Ctx.weakenEnv, Expr.weakenEnv, Expr.map] using ht.weakenEnv entry'⟩
-      (by simpa [Ctx.weakenEnv, Expr.weakenEnv] using he.weakenEnv entry')
+      ⟨l, by simpa [Expr.map] using ht.map pre⟩
+      (by simpa [Expr.map] using he.map pre)
   | quot heq =>
     exact .quot <| by
-      simpa using congrArg (Inductive.map (.step .refl : ζ ⟶ ζ.snoc sig₁)) heq
-  | «inductive» hi => exact .inductive hi.weakenEnv
+      simpa [Env.get_map] using congrArg (Inductive.map pre.sigs) heq
+  | «inductive» hi => exact .inductive (hi.map pre)
 
 theorem block {ι : IndSig} {entry : Entry ζ (.inductive ι)} :
     EntryWF E entry →
@@ -109,10 +108,8 @@ theorem Env.Ordered.entryWF (ho : E.Ordered) {sig : Sig} (η : Head ζ sig) :
   | nil => exact nomatch η
   | snoc _ hentry ih =>
     cases η with
-    | here =>
-      simpa [Env.get] using hentry.weakenEnv
-    | there η =>
-      simpa [Env.get] using (ih η).weakenEnv
+    | here => exact hentry.map (.step .refl)
+    | there η => exact (ih η).map (.step .refl)
 
 theorem Env.Ordered.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (ho : E₀.Ordered)
     (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.inductive ι)) :

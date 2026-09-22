@@ -14,7 +14,7 @@ public import Metalean.Semantics.Soundness.Rules.Quotient
 public import Metalean.Semantics.Soundness.Structure.Eta
 import Metalean.Typing.Env
 import Metalean.Typing.InstLevel
-import Metalean.Typing.WeakenEnv
+import Metalean.Typing.Map
 import Metalean.Typing.Substitution
 import Metalean.Semantics.Domain.Decoder.FixedPoint
 import Metalean.Semantics.Soundness.Recursor.Iota
@@ -91,8 +91,8 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
       show RawJudgment ⟨_, hΔ⟩ _ _
           ((((E₁.get η).block.ctors s c).recursiveFieldExpr η ls ps₁ fds₁ f).map pre.sigs) from
         ihrecFields f hΔ hR
-    have hft := fun f => (hfieldTypes f).envMono pre
-    have hrft := fun f => (hrecFieldTypes f).envMono pre
+    have hft := fun f => (hfieldTypes f).map pre
+    have hrft := fun f => (hrecFieldTypes f).map pre
     have pT := ihtype hΔ hR
     simp only [Expr.map, Inductive.paramType_map, Ctor.ordinaryFieldExpr_map,
       Ctor.recursiveFieldExpr_map, Ctor.targetIndex_map, ← hctors, ← hlookup η]
@@ -103,7 +103,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
   | @recrDF _ _ ι η s ls l ps₁ ps₂ ms₁ ms₂ mins₁ mins₂ is₁ is₂ maj₁ maj₂ hallowed hps hms hmins
       his hmaj hresult ihps ihms ihmins ihis ihmaj ihresult =>
     have ptype := ihresult hΔ hR
-    have hrec := (Defeq.recrDF hallowed hps hms hmins his hmaj hresult).envMono pre
+    have hrec := (Defeq.recrDF hallowed hps hms hmins his hmaj hresult).map pre
     simp only [Inductive.motiveResult_map] at ptype hrec ⊢
     have ⟨_, _, _, _, hsound, hI, hb⟩ := hblock η
     have pps := fun p => ihps p hΔ hR
@@ -177,7 +177,7 @@ theorem Env.Ordered.rawSound (ho : E₂.Ordered) (pre : E₁.as ⟶ E₂.as) :
     have plhs := ihlhs hΔ hR
     have prhs := ihrhs hΔ hR
     have hIota :=
-      (Defeq.iota hallowed hps hms hmins hfields hrecFields htype hlhs hrhs).envMono pre
+      (Defeq.iota hallowed hps hms hmins hfields hrecFields htype hlhs hrhs).map pre
     by_cases hu : u = .zero
     · subst hu
       exact RawJudgment.of_typings hIota plhs prhs

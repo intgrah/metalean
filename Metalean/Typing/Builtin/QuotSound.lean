@@ -38,7 +38,7 @@ theorem isType : Nonempty.env[.nil] ⊢ type typ := by
   have hb₂ : Nonempty.env[Γ₂] ⊢ #3 : #0 := .var hα₂
   have heq := Quot.eqApp_typed (ηeq := eqHead) (by
     simp [eqHead, Nonempty.env, Iff.env, Quot.env, Eq.env, Env.get,
-      Entry.weakenEnv, Entry.map, Entry.block])
+      Entry.map, Entry.block])
     (Defeq.quotDF (η := quotHead) hα₂ hr₂)
     (.quotMkDF hα₂ hr₂ ha₂) (.quotMkDF hα₂ hr₂ hb₂)
   have h₄ := Defeq.forallEDF hrel heq heq

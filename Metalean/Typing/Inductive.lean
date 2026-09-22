@@ -7,16 +7,18 @@ module
 
 public import Metalean.Typing.Context
 import Metalean.Typing.InstLevel
+import Metalean.Typing.Map
 import Metalean.Typing.Substitution
 import Metalean.Typing.Telescope
-import Metalean.Typing.WeakenEnv
 import Metalean.Syntax.Substitution
 
 @[expose] public section
 
 namespace Metalean
 
-variable {ζ : Sigs} {sig : Sig} {E : Env ζ} {ℓ n m : Nat}
+open CategoryTheory
+
+variable {ζ ζ₂ : Sigs} {E : Env ζ} {E₂ : Env ζ₂} {ℓ n m : Nat}
   {Γ : Ctx ζ ℓ 0 n} {Δ : Ctx ζ ℓ n m}
   {ι : IndSig} {I : Inductive ζ ι} {η : Head ζ (.inductive ι)}
   {nfields arity : Nat} {s target : Fin ι.nsorts} {c : Fin (ι.nctors s)}
@@ -100,16 +102,14 @@ theorem TeleWF.pi_instL_substN_congr {ℓ' a k : Nat} {P : Level ℓ' → Prop}
       simpa [Ctx.instL, Ctx.substN] using he
     exact ih hΘ (.forallEDF htype hbody (htype.snocConv hbody))
 
-theorem TeleWF.weakenEnv {P : Level ℓ → Prop} {entry : Entry ζ sig} {T : Ctx ζ ℓ n m}
+theorem TeleWF.map (pre : E.as ⟶ E₂.as) {P : Level ℓ → Prop} {T : Ctx ζ ℓ n m}
     (h : TeleWF E P Γ T) :
-    TeleWF (E.snoc entry) P Γ.weakenEnv T.weakenEnv := by
+    TeleWF E₂ P (Γ.map pre.sigs) (T.map pre.sigs) := by
   induction h with
   | nil => exact .nil
   | snoc hT ht ih =>
     have ⟨u, hu, ht⟩ := ht
-    have ht := ht.weakenEnv entry
-    exact .snoc ih ⟨u, hu,
-      congr(_[$(Ctx.map_append (.step .refl) Γ _)] ⊢ _ : _).mp ht⟩
+    exact .snoc ih ⟨u, hu, by simpa [Expr.map] using ht.map pre⟩
 
 section
 
@@ -129,13 +129,11 @@ theorem Inductive.IdxWF.instLevel {ℓ' : Nat} (h : I.IdxWF E Γ s ls ps is)
   intro i
   simpa using (h i).instLevel levelSubst
 
-theorem Inductive.IdxWF.weakenEnv {entry : Entry ζ sig} (h : I.IdxWF E Γ s ls ps is) :
-    (I.map (.step .refl)).IdxWF (E.snoc entry) Γ.weakenEnv s ls
-      (fun p => (ps p).weakenEnv)
-      fun i => (is i).weakenEnv := by
+theorem Inductive.IdxWF.map (pre : E.as ⟶ E₂.as) (h : I.IdxWF E Γ s ls ps is) :
+    (I.map pre.sigs).IdxWF E₂ (Γ.map pre.sigs) s ls
+      (fun p => (ps p).map pre.sigs) fun i => (is i).map pre.sigs := by
   intro i
-  simpa [Expr.weakenEnv] using
-    (h i).weakenEnv entry
+  simpa using (h i).map pre
 
 end
 
@@ -150,11 +148,11 @@ theorem FieldWF.type :
     E[Γ] ⊢ fd.type typ
   | ⟨htype, _⟩ => ⟨_, htype⟩
 
-theorem FieldWF.weakenEnv {entry : Entry ζ sig} :
+theorem FieldWF.map (pre : E.as ⟶ E₂.as) :
     FieldWF E I Γ fd →
-    FieldWF (E.snoc entry) (I.map (.step .refl)) Γ.weakenEnv (fd.map (.step .refl))
-  | ⟨htype, hlevel⟩ =>
-    ⟨by simpa [Expr.weakenEnv, Expr.map, map] using htype.weakenEnv entry, hlevel⟩
+    FieldWF E₂ (I.map pre.sigs) (Γ.map pre.sigs) (fd.map pre.sigs) := by
+  intro ⟨htype, hlevel⟩
+  exact ⟨by simpa [Expr.map, Field.map] using htype.map pre, hlevel⟩
 
 end
 
@@ -164,12 +162,11 @@ open RecField
 
 variable {Γ Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
 
-theorem RecFieldWF.weakenEnv {entry : Entry ζ sig} :
+theorem RecFieldWF.map (pre : E.as ⟶ E₂.as) :
     RecFieldWF E I Γ fd →
-    RecFieldWF (E.snoc entry) (I.map (.step .refl)) Γ.weakenEnv (fd.map (.step .refl))
-  | ⟨htele, his⟩ =>
-    ⟨htele.weakenEnv,
-      congr(Inductive.IdxWF _ _ $(Ctx.map_append (.step .refl) Γ _) _ _ _ _).mp his.weakenEnv⟩
+    RecFieldWF E₂ (I.map pre.sigs) (Γ.map pre.sigs) (fd.map pre.sigs) := by
+  intro ⟨htele, his⟩
+  exact ⟨htele.map pre, by simpa [RecField.map, Expr.map] using his.map pre⟩
 
 section
 
@@ -257,20 +254,12 @@ section
 
 open Ctor
 
-theorem CtorWF.weakenEnv {entry : Entry ζ sig} (h : CtorWF E I ctor) :
-    CtorWF (E.snoc entry) (I.map (.step .refl)) (ctor.map (.step .refl)) where
-  ordinary f :=
-    congr(FieldWF _ _ $((Ctx.map_append (.step .refl) I.params _).trans
-      congr(_ ++ $(Ctor.ordinaryTeleAux_map (.step .refl) ctor f.val _))) _).mp
-      (h.ordinary f).weakenEnv
-  recursive f :=
-    congr(RecFieldWF _ _ $((Ctx.map_append (.step .refl) I.params _).trans
-      congr(_ ++ $(Ctor.ordinaryTeleAux_map (.step .refl) ctor _ _))) _).mp
-      (h.recursive f).weakenEnv
-  targetIndices :=
-    congr(Inductive.IdxWF _ _ $((Ctx.map_append (.step .refl) I.params _).trans
-      congr(_ ++ $(Ctor.ordinaryTeleAux_map (.step .refl) ctor _ _))) _ _ _ _).mp
-      h.targetIndices.weakenEnv
+theorem CtorWF.map (pre : E.as ⟶ E₂.as) (h : CtorWF E I ctor) :
+    CtorWF E₂ (I.map pre.sigs) (ctor.map pre.sigs) where
+  ordinary f := by simpa [Inductive.map, Ctor.map] using (h.ordinary f).map pre
+  recursive f := by simpa [Inductive.map, Ctor.map] using (h.recursive f).map pre
+  targetIndices := by
+    simpa [Inductive.map, Ctor.map, Expr.map] using h.targetIndices.map pre
 
 theorem CtorWF.ordinaryFieldExpr (hctor : CtorWF E I ctor) (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ ps p : I.paramType ls ps p) →
@@ -1349,11 +1338,11 @@ theorem InductiveWF.recrTele {s : Fin ι.nsorts} (hB : InductiveWF E (E.get η).
     ⟨(E.get η).block.level.inst ls, trivial, by
       simpa [casesEnd, ps] using hmaj⟩
 
-theorem InductiveWF.weakenEnv {entry : Entry ζ sig} (h : InductiveWF E I) :
-    InductiveWF (E.snoc entry) (I.map (.step .refl)) where
-  params := by simpa [map, Ctx.weakenEnv] using h.params.weakenEnv
-  indices s := by simpa [map, Ctx.weakenEnv] using (h.indices s).weakenEnv
-  ctors s c := by simpa [map] using (h.ctors s c).weakenEnv
+theorem InductiveWF.map (pre : E.as ⟶ E₂.as) (h : InductiveWF E I) :
+    InductiveWF E₂ (I.map pre.sigs) where
+  params := by simpa [Inductive.map] using h.params.map pre
+  indices s := by simpa [Inductive.map] using (h.indices s).map pre
+  ctors s c := by simpa [Inductive.map] using (h.ctors s c).map pre
 
 theorem Inductive.iotaLhs_hasType
     {η : Head ζ (.inductive ι)} {ls : Fin ι.nlevels → Level ℓ}

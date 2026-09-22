@@ -300,27 +300,35 @@ theorem ordinaryLevel_eq_zero_of_eval_zero
   · exact hu
   · exact h.no_indices.elim i
 
-@[transport] theorem mapEnv {E₁ E₂ : Σ ζ, Env ζ} (pre : E₁ ⟶ E₂) {η : Head E₁.1 (.inductive ι)} :
+end IsStructure
+
+end Metalean.Inductive
+
+namespace Metalean.Env.IsStructure
+
+open CategoryTheory
+
+variable {ℓ n : Nat} {ι : IndSig} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
+
+@[transport] theorem map {E₁ E₂ : Σ ζ, Env ζ} (pre : E₁ ⟶ E₂) {η : Head E₁.1 (.inductive ι)} :
     (E₁.2.get η).block.IsStructure s c →
-    (E₂.2.get (η.map (Env.Prefix.sigs pre))).block.IsStructure s c := by
+    (E₂.2.get (η.map pre.sigs)).block.IsStructure s c := by
   intro h
   rw [Env.get_map, Entry.block_map]
   exact h.map _
 
-@[simp high] theorem projTerm_mapEnv {E₁ E₂ : Σ ζ, Env ζ} (pre : E₁ ⟶ E₂)
+@[simp high] theorem projTerm_map {E₁ E₂ : Σ ζ, Env ζ} (pre : E₁ ⟶ E₂)
     {η : Head E₁.1 (.inductive ι)} (h : (E₁.2.get η).block.IsStructure s c)
     (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr E₁.1 ℓ n)
     (f : Fin (ι.ctors s c).nfields) (maj : Expr E₁.1 ℓ n) :
-    (h.projTerm η ls ps f maj).map (Env.Prefix.sigs pre) =
-      (mapEnv pre h).projTerm (η.map (Env.Prefix.sigs pre)) ls
-        (fun param => (ps param).map (Env.Prefix.sigs pre)) f (maj.map (Env.Prefix.sigs pre)) := by
-  rw [projTerm_map]
-  generalize mapEnv pre h = h'
+    (h.projTerm η ls ps f maj).map pre.sigs =
+      (map pre h).projTerm (η.map pre.sigs) ls
+        (fun param => (ps param).map pre.sigs) f (maj.map pre.sigs) := by
+  rw [Inductive.IsStructure.projTerm_map]
+  generalize map pre h = h'
   revert h'
   rw [Env.get_map, Entry.block_map]
   intro h'
   rfl
 
-end IsStructure
-
-end Metalean.Inductive
+end Metalean.Env.IsStructure

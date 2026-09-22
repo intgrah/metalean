@@ -28,9 +28,6 @@ variable {sig sig₁ sig₂ : Sig} {ζ ζ₁ ζ₂ ζ₃ : Sigs}
 
 namespace Entry
 
-def weakenEnv (entry : Entry ζ sig) : Entry (.snoc ζ sig₁) sig :=
-  entry.map (.step .refl)
-
 def constType : Entry ζ (.const kind nlevels) → Expr ζ nlevels 0
   | .axiom t | .opaque t | .def t _ => t
 
@@ -133,13 +130,8 @@ variable {E : Env ζ} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {E₃ : Env ζ₃}
 
 /-- TOTAL environment lookup -/
 def get {ζ : Sigs} {sig : Sig} : Env ζ → Head ζ sig → Entry ζ sig
-  | .snoc _ entry, .here => entry.weakenEnv
-  | .snoc pre _, .there η => (pre.get η).weakenEnv
-
-@[simp] theorem get_map_step (E : Env ζ) (entry : Entry ζ sig)
-    (η : Head ζ sig₂) :
-    (E.snoc entry).get (η.map (.step .refl)) =
-      (E.get η).map (.step .refl) := rfl
+  | .snoc _ entry, .here => entry.map (.step .refl)
+  | .snoc pre _, .there η => (pre.get η).map (.step .refl)
 
 theorem get_map (pre : Prefix E₁ E₂) (η : Head ζ₁ sig) :
     E₂.get (η.map pre.sigs) = (E₁.get η).map pre.sigs := by

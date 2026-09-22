@@ -109,14 +109,6 @@ abbrev snoc : Ctx ζ ℓ a b → Expr ζ ℓ b → Ctx ζ ℓ a (b + 1) :=
       · simp
       · exact (congrArg Expr.wk (ih _)).trans (Expr.map_wk pre _).symm
 
-def weakenEnv {sig : Sig} (Γ : Ctx ζ ℓ a b) : Ctx (.snoc ζ sig) ℓ a b :=
-  Γ.map (.step .refl)
-
-@[simp] theorem map_step {sig : Sig} (pre : ζ₁ ⟶ ζ₂)
-    (Γ : Ctx ζ₁ ℓ a b) :
-    (Γ.map pre).weakenEnv (sig := sig) = Γ.map (.step pre) :=
-  ((functor ℓ a b).map_comp_apply pre (.step (𝟙 ζ₂)) Γ).symm
-
 @[reducible] def levelFunctor (ζ : Sigs) (a b : Nat) : @Functor Nat Level.category Type _ :=
   Functor.pi' (fun n => (Expr.family n).obj ζ) ⋙ Tele.functor a b
 

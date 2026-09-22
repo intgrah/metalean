@@ -429,7 +429,7 @@ theorem Env.get_block_headRank_lt (E : Env ζ) (η : Head ζ (.inductive ι)) :
         rw [Inductive.headRank_map]
         exact Nat.lt_succ_of_le I.headRank_le_length
     | there η =>
-      simpa [Env.get, Entry.weakenEnv, Head.rank] using ih η
+      simpa [Env.get, Head.rank] using ih η
 
 theorem Env.get_defValue_headRank_lt {nlevels : Nat} (E : Env ζ)
     (η : Head ζ (.const .def nlevels)) : (E.get η).defValue.headRank < η.rank := by
@@ -444,7 +444,7 @@ theorem Env.get_defValue_headRank_lt {nlevels : Nat} (E : Env ζ)
         rw [Expr.headRank_map]
         exact lt_of_le_of_lt e.headRank_le_length (by omega)
     | there η =>
-      simpa [Env.get, Entry.weakenEnv, Head.rank, dsimp% (Entry.defValueNatTrans _).naturality_apply] using ih η
+      simpa [Env.get, Head.rank, dsimp% (Entry.defValueNatTrans _).naturality_apply] using ih η
 
 theorem Expr.measure_const_def {nlevels : Nat} {E : Env ζ} (η : Head ζ (.const .def nlevels))
     (ls : Fin nlevels → Level ℓ) :

@@ -128,9 +128,6 @@ def falseTy : Expr ζ ℓ 0 := .forallE .prop (.var (Fin.last 0))
 
 instance : Inhabited (Expr ζ ℓ n) := ⟨.prop⟩
 
-def weakenEnv {sig : Sig} (e : Expr ζ ℓ n) : Expr (.snoc ζ sig) ℓ n :=
-  e.map (.step .refl)
-
 attribute [local instance] Ren.category in
 @[simp] theorem rename_id (e : Expr ζ ℓ n) : e.rename Ren.id = e :=
   (renFunctor ζ ℓ).map_id_apply n e
@@ -194,11 +191,6 @@ def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
     (e : Expr ζ₁ ℓ m) :
     (e.rename ρ).map pre = (e.map pre).rename ρ := by
   induction e generalizing n <;> simp [rename, map, *]
-
-@[simp] theorem map_step {sig : Sig} (pre : ζ₁ ⟶ ζ₂)
-    (e : Expr ζ₁ ℓ n) :
-    (e.map pre).weakenEnv (sig := sig) = e.map (.step pre) :=
-  ((functor ℓ n).map_comp_apply pre (.step (𝟙 ζ₂)) e).symm
 
 @[simp] theorem map_wkFrom (pre : ζ₁ ⟶ ζ₂) (cut : Nat)
     (e : Expr ζ₁ ℓ n) :

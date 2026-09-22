@@ -54,7 +54,7 @@ theorem valid (m : Env.Model.{u} Propext.env) (ls : Fin 1 → Level 0) :
   ⟨value m.atoms (ls 0),
     value_mem (.of_model m (by
       simp! [Choice.nonemptyHead, Propext.env, Quot.Sound.env, Nonempty.env,
-        Env.get, Entry.weakenEnv, Entry.block])) ls⟩
+        Env.get, Entry.block])) ls⟩
 
 end Choice
 
@@ -93,7 +93,7 @@ theorem valid (m : Env.Model.{u} Nonempty.env) (ls : Fin 1 → Level 0) :
   ⟨value (ls 0),
     value_mem (m.sound.quotientRules Quot.Sound.quotHead)
       (.of_model m (by
-        simp [Nonempty.env, Iff.env, Quot.env, Eq.env, Env.get, Entry.weakenEnv, Entry.map,
+        simp [Nonempty.env, Iff.env, Quot.env, Eq.env, Env.get, Entry.map,
           Entry.block])) ls⟩
 
 end Quot.Sound
@@ -127,11 +127,11 @@ theorem valid (m : Env.Model.{u} Quot.Sound.env) (ls : Fin 0 → Level 0) :
   ⟨value m.atoms,
     value_mem
       (.of_model m (by
-        simp [Quot.Sound.env, Nonempty.env, Iff.env, Env.get, Entry.weakenEnv, Entry.map,
+        simp [Quot.Sound.env, Nonempty.env, Iff.env, Env.get, Entry.map,
           Entry.block]))
       (.of_model m (by
         simp [Quot.Sound.env, Nonempty.env, Iff.env, Quot.env, Eq.env,
-          Env.get, Entry.weakenEnv, Entry.map, Entry.block])) ls⟩
+          Env.get, Entry.map, Entry.block])) ls⟩
 
 end Propext
 

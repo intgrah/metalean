@@ -264,10 +264,10 @@ public import Metalean.Typing.Env.Defs
 public import Metalean.Typing.Inductive
 public import Metalean.Typing.InstLevel
 public import Metalean.Typing.Inversion
+public import Metalean.Typing.Map
 public import Metalean.Typing.ProofFields
 public import Metalean.Typing.Quot
 public import Metalean.Typing.Structure
 public import Metalean.Typing.Substitution
 public import Metalean.Typing.Telescope
 public import Metalean.Typing.TypeEq
-public import Metalean.Typing.WeakenEnv
