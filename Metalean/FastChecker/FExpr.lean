@@ -993,17 +993,17 @@ variable {ζ : Sigs} {E : Env ζ} {L : Literals} {ℓ n k num : Nat}
 
 theorem Denotes.nat (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩) :
     Denotes L E.as k (FExpr.nat L) (Literals.natType ηNat : Expr ζ ℓ n) := by
-  rw [Literals.natType, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Literals.natType, Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.ind rfl rfl rfl hη rfl nofun nofun nofun
 
 theorem Denotes.boolType (hη : ζ.lookup L.bool = some ⟨.inductive Literals.Bool.sig, ηBool⟩) :
     Denotes L E.as k (FExpr.bool L) (Literals.boolType ηBool : Expr ζ ℓ n) := by
-  rw [Literals.boolType, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Literals.boolType, Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.ind rfl rfl rfl hη rfl nofun nofun nofun
 
 theorem Denotes.zero (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩) :
     Denotes L E.as k (FExpr.zero L) (Literals.natZero ηNat : Expr ζ ℓ n) := by
-  rw [Literals.natZero, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Literals.natZero, Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.ctor rfl rfl rfl rfl hη rfl rfl nofun nofun nofun nofun
 
 theorem Denotes.succ (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩)
@@ -1011,7 +1011,7 @@ theorem Denotes.succ (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.si
     Denotes L E.as k fe e →
     Denotes L E.as k (FExpr.succ L fe) (Literals.natSucc ηNat e) := by
   intro h
-  rw [Literals.natSucc, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Literals.natSucc, Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.ctor rfl rfl rfl rfl hη rfl rfl nofun nofun nofun fun ⟨0, _⟩ => h
 
 theorem Denotes.succLit (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩) :
@@ -1022,15 +1022,15 @@ theorem Denotes.boolLit (hη : ζ.lookup L.bool = some ⟨.inductive Literals.Bo
     (b : Bool) →
     Denotes L E.as k (FExpr.boolLit L b) (Literals.boolLit ηBool b : Expr ζ ℓ n)
   | false => by
-    rw [Literals.boolLit, Literals.boolFalse, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+    rw [Literals.boolLit, Literals.boolFalse, Fin.emptyFun ![] (⟦![] ·⟧)]
     exact Denotes.ctor rfl rfl rfl rfl hη rfl rfl nofun nofun nofun nofun
   | true => by
-    rw [Literals.boolLit, Literals.boolTrue, Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+    rw [Literals.boolLit, Literals.boolTrue, Fin.emptyFun ![] (⟦![] ·⟧)]
     exact Denotes.ctor rfl rfl rfl rfl hη rfl rfl nofun nofun nofun nofun
 
 theorem Denotes.const₀ (hη : ζ.lookup pos = some ⟨.const kind 0, ηOp⟩) :
     Denotes L E.as k (.const pos #[]) (.const ηOp ![] : Expr ζ ℓ n) := by
-  rw [Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.const rfl hη nofun
 
 theorem Denotes.op₁ (hη : ζ.lookup pos = some ⟨.const kind 0, ηOp⟩)
@@ -1048,7 +1048,7 @@ theorem Denotes.op₂ (hη : ζ.lookup pos = some ⟨.const kind 0, ηOp⟩)
 
 theorem Denotes.charType (hη : ζ.lookup L.char = some ⟨.inductive Literals.Char.sig, ηChar⟩) :
     Denotes L E.as k (FExpr.char L) (.ind ηChar 0 ![] ![] ![] : Expr ζ ℓ n) := by
-  rw [Fin.emptyFun ![] (⟦(![] : Fin 0 → RawLevel ℓ) ·⟧)]
+  rw [Fin.emptyFun ![] (⟦![] ·⟧)]
   exact Denotes.ind rfl rfl rfl hη rfl nofun nofun nofun
 
 theorem Denotes.charList (hNat : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, ηNat⟩)

@@ -136,9 +136,9 @@ theorem RedSpec.succArg {G : FCtx} {I : FInductive} {x y : FExpr}
   cases hη.symm.trans hη₂
   obtain rfl : s' = 0 := Fin.ext hs
   obtain rfl : c' = 1 := Fin.ext (by simpa using hc)
-  have hls0 : (fun i => (⟦ls' i⟧ : Level ℓ)) = ![] := Fin.emptyFun _ _
-  have hps0 : ps' = ![] := Fin.emptyFun _ _
-  have hfds0 : fds' = ![] := Fin.emptyFun _ _
+  have hls0 : (fun i => (⟦ls' i⟧ : Level ℓ)) = ![] := funext nofun
+  have hps0 : ps' = ![] := funext nofun
+  have hfds0 : fds' = ![] := funext nofun
   have hrec0 : recFds' = ![recFds' ⟨0, by decide⟩] := funext fun ⟨0, _⟩ => rfl
   have heq : (Expr.ctor ηNat 0 1 (⟦ls' ·⟧) ps' fds' recFds' : Expr ζ ℓ n) =
       Literals.natSucc ηNat (recFds' ⟨0, by decide⟩) := by
@@ -146,8 +146,8 @@ theorem RedSpec.succArg {G : FCtx} {I : FInductive} {x y : FExpr}
     exact congr(Expr.ctor ηNat 0 1 ![] ![] ![] $hrec0)
   rw [heq] at he ⊢
   have ⟨ps₁, fds₁, _, _, _, hrecTy, _⟩ := he.ctor_inv
-  obtain rfl : ps₁ = ![] := Fin.emptyFun _ _
-  obtain rfl : fds₁ = ![] := Fin.emptyFun _ _
+  obtain rfl : ps₁ = ![] := funext nofun
+  obtain rfl : fds₁ = ![] := funext nofun
   have hty : ∀ f : Fin (Literals.Nat.sig.ctors 0 1).nrecFields,
       ((((E.get ηNat).block.ctors 0 1).recursive f).instantiatedType ηNat ![] ![]
         (Fin.append ![] ![]) : Expr ζ ℓ n) = Literals.natType ηNat := fun ⟨0, _⟩ => by

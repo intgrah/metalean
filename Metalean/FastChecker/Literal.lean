@@ -166,12 +166,12 @@ variable {ηNat : Head ζ (.inductive Nat.sig)} {ηBool : Head ζ (.inductive Bo
 theorem natType_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (natType ηNat : Expr ζ ℓ m).subst σ = natType ηNat := by
   simp only [natType, Expr.subst]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natZero_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (natZero ηNat : Expr ζ ℓ m).subst σ = natZero ηNat := by
   simp only [natZero, Expr.subst]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natSucc_subst {m : Nat} (σ : Subst ζ ℓ m n) (e : Expr ζ ℓ m) :
     (natSucc ηNat e).subst σ = natSucc ηNat (e.subst σ) := by
@@ -179,7 +179,7 @@ theorem natSucc_subst {m : Nat} (σ : Subst ζ ℓ m n) (e : Expr ζ ℓ m) :
       ![e.subst σ] :=
     funext fun ⟨0, _⟩ => rfl
   simp only [natSucc, Expr.subst]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natOp₂_subst {m : Nat} (σ : Subst ζ ℓ m n) (x y : Expr ζ ℓ m) :
     (natOp₂ ηOp x y).subst σ = natOp₂ ηOp (x.subst σ) (y.subst σ) := by
@@ -192,12 +192,12 @@ theorem natOp₁_subst {m : Nat} (σ : Subst ζ ℓ m n) (x : Expr ζ ℓ m) :
 theorem natType_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (natType ηNat : Expr ζ ℓ n).instL σ = natType ηNat := by
   simp only [natType, Expr.instL]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natZero_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (natZero ηNat : Expr ζ ℓ n).instL σ = natZero ηNat := by
   simp only [natZero, Expr.instL]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natSucc_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) :
     (natSucc ηNat e).instL σ = natSucc ηNat (e.instL σ) := by
@@ -205,11 +205,11 @@ theorem natSucc_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (e : Expr ζ 
       ![e.instL σ] :=
     funext fun ⟨0, _⟩ => rfl
   simp! only [natSucc]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem natConst_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (Expr.const ηOp fun a => Level.inst σ (![] a) : Expr ζ ℓ' n) = .const ηOp ![] :=
-  congrArg (Expr.const ηOp) (Fin.emptyFun _ _)
+  congrArg (Expr.const ηOp) (funext nofun)
 
 theorem natOp₂_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (x y : Expr ζ ℓ n) :
     (natOp₂ ηOp x y).instL σ = natOp₂ ηOp (x.instL σ) (y.instL σ) := by
@@ -222,32 +222,32 @@ theorem natOp₁_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (x : Expr ζ
 theorem boolType_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (boolType ηBool : Expr ζ ℓ m).subst σ = boolType ηBool := by
   simp only [boolType, Expr.subst]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem boolType_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (boolType ηBool : Expr ζ ℓ n).instL σ = boolType ηBool := by
   simp only [boolType, Expr.instL]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem boolLit_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (b : Bool) →
     (boolLit ηBool b : Expr ζ ℓ m).subst σ = boolLit ηBool b
   | false => by
     simp only [boolLit, boolFalse, Expr.subst]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
   | true => by
     simp only [boolLit, boolTrue, Expr.subst]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
 
 theorem boolLit_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (b : Bool) →
     (boolLit ηBool b : Expr ζ ℓ n).instL σ = boolLit ηBool b
   | false => by
     simp only [boolLit, boolFalse, Expr.instL]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
   | true => by
     simp only [boolLit, boolTrue, Expr.instL]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
 
 theorem natArrow_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (natArrow ηNat : Expr ζ ℓ m).subst σ = natArrow ηNat := by
@@ -270,22 +270,22 @@ variable {ζ₂ : Sigs}
 theorem natType_map (pre : ζ ⟶ ζ₂) :
     (natType ηNat : Expr ζ ℓ n).map pre = natType (ηNat.map pre) := by
   simp only [natType, Expr.map]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem boolType_map (pre : ζ ⟶ ζ₂) :
     (boolType ηBool : Expr ζ ℓ n).map pre = boolType (ηBool.map pre) := by
   simp only [boolType, Expr.map]
-  congr 1 <;> exact Fin.emptyFun _ _
+  congr 1 <;> exact funext nofun
 
 theorem boolLit_map (pre : ζ ⟶ ζ₂) :
     (b : Bool) →
     (boolLit ηBool b : Expr ζ ℓ n).map pre = boolLit (ηBool.map pre) b
   | false => by
     simp only [boolLit, boolFalse, Expr.map]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
   | true => by
     simp only [boolLit, boolTrue, Expr.map]
-    congr 1 <;> exact Fin.emptyFun _ _
+    congr 1 <;> exact funext nofun
 
 theorem natOp₂_map (pre : ζ ⟶ ζ₂) (x y : Expr ζ ℓ n) :
     (natOp₂ ηOp x y).map pre = natOp₂ (ηOp.map pre) (x.map pre) (y.map pre) := by
