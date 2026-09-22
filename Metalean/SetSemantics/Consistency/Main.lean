@@ -21,16 +21,16 @@ universe u
 
 namespace Metalean
 
-noncomputable def Env.Model.classical : Model.{u} classicalEnv := by
+noncomputable def Env.Model.classical : Model.{u} classicalEnv :=
   let pre : Env.nil.as ⟶ Nonempty.env.as := .step (.step (.step (.step .refl)))
   have hfree : pre.Forall fun entry => ¬ IsAxiom entry := by
-    repeat constructor
-    all_goals intro h; cases h
-  let m := Model.nil.extend pre hfree
-    (classicalEnv_ordered.comap (.step (.step (.step .refl))))
+    (repeat constructor) <;> nofun
+  let m := Model.nil
+  let m := m.extend pre hfree (classicalEnv_ordered.comap (.step (.step (.step .refl))))
   let m := m.addAxiom (Quot.Sound.valid m)
   let m := m.addAxiom (Propext.valid m)
-  exact m.addAxiom (Choice.valid m)
+  let m := m.addAxiom (Choice.valid m)
+  m
 
 def Con : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ (pre : classicalEnv.as ⟶ E.as),
