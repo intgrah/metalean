@@ -177,9 +177,9 @@ variable {arity : Nat} {s : Fin ι.nsorts}
 
 theorem RecFieldWF.teleAt (h : RecFieldWF E I Γ ⟨Θ, is⟩)
     {ls : Fin ι.nlevels → Level 0} {bound : Nat}
-    (hblock : (I.level.inst ls).eval zeroNs = bound + 1) :
-    TeleWF E (fun l => l.eval zeroNs ≤ bound + 1) (Ctx.instL ls Γ) (Ctx.instL ls Θ) := by
-  have hnz : I.level.eval (Level.eval zeroNs ∘ ls) ≠ 0 := by
+    (hblock : (I.level.inst ls).eval ![] = bound + 1) :
+    TeleWF E (fun l => l.eval ![] ≤ bound + 1) (Ctx.instL ls Γ) (Ctx.instL ls Θ) := by
+  have hnz : I.level.eval (Level.eval ![] ∘ ls) ≠ 0 := by
     rw [← Level.eval_inst]
     omega
   apply h.tele.instLevel ls

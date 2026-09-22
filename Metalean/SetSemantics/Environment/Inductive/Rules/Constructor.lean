@@ -69,11 +69,11 @@ theorem fieldSlotsReachable
           fds (previous.castLE f.isLt.le))) :
     Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
       Reachable {(ε₂[γ]⟦ps ·⟧)} (model.ctors s c).source.ordinary.sem := by
-  have hsourceMap : Realizes ε₂ zeroNs
+  have hsourceMap : Realizes ε₂ ![]
       {(ε₂[γ]⟦ps ·⟧)}
       (Ctx.instL ls ((I.ctors s c).map pre.sigs).ordinaryTele)
       (model.ctors s c).source.ordinary.sem :=
-    (congrArg (fun Δ => Realizes ε₂ zeroNs _ Δ _)
+    (congrArg (fun Δ => Realizes ε₂ ![] _ Δ _)
       ((Ctx.map_instL pre.sigs ls (I.ctors s c).ordinaryTele).trans
         (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) _ _)))).mp
           (((model.ctors s c).source.ordinary.realizes.monoReach
@@ -196,7 +196,7 @@ theorem indRuleSound
   refine ⟨?_, ?_⟩
   · simp only [Expr.denote]
     rw [funext fun p => (hps p).eq, funext fun i => (his i).eq]
-  · change ε₂ (.ind η s ls _ _) ∈ S_ (((E₂.get η).block.level.inst ls).eval zeroNs)
+  · change ε₂ (.ind η s ls _ _) ∈ S_ (((E₂.get η).block.level.inst ls).eval ![])
     rw [hsorts, hblock]
     exact propSet_mem_sort fun k hk =>
       fibreOp_indSet_mem_type (fun s c => model.codeOf_localDoms s c hk) (model.mapsTo _) _

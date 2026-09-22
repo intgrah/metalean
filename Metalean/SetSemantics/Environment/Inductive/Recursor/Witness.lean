@@ -189,7 +189,7 @@ theorem SemDefeq.recr
     {l : Level 0}
     {tele : SemTele.{u} 0 (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1)}
     {leaf : RecSlots.{u} ι s → ZFSet.{u}}
-    (hrealizes : Realizes ε zeroNs Set.univ ((E.get η).block.recrTele η s ls l) tele)
+    (hrealizes : Realizes ε ![] Set.univ ((E.get η).block.recrTele η s ls l) tele)
     (hleaf : ∀ γ ∈ Reachable Set.univ tele, leaf γ ∈ ε[γ]⟦ι.recrBody s⟧)
     (hatom : ∀ vps vms vmins vis vmaj,
       ε (.recr η s ls l vps vms vmins vis vmaj) = leaf (RecSlots.args vps vms vmins vis vmaj))
@@ -210,7 +210,7 @@ theorem SemDefeq.recr
   have hreachable := SemDefeq.reachable hrealizes
     (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => ε[γ] ⊨ e₁ ≡ e₂ : t)
       hps hms hmins his hmaj)
-  have hbody := Expr.denote_subst (ε := ε) (ν := zeroNs) γ
+  have hbody := Expr.denote_subst (ε := ε) (ν := ![]) γ
     (Inductive.recrSubst ps₁ ms₁ mins₁ is₁ maj₁) (ι.recrBody s)
   rw [IndSig.recrBody_subst] at hbody
   refine ⟨?_, ?_⟩

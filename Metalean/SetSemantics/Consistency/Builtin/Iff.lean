@@ -33,7 +33,7 @@ private theorem reachable (h : InductiveModel.Sound E ε Iff.block η ![] w)
   h.realizes.params.reachable_of_semCtx ![a, b]
     (by
       simpa [Ctx.instL] using
-        ((.nil : ε[zeroNs] ⊨ ![] : #t[]).snoc ha).snoc
+        ((.nil : ε[![]] ⊨ ![] : #t[]).snoc ha).snoc
           hb)
     trivial
 

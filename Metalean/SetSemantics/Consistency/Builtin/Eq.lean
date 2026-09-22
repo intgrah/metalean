@@ -24,20 +24,20 @@ variable {ζ : Sigs} {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}}
 structure Sem (ε : Atom ζ 0 → ZFSet.{u})
     (η : Head ζ (.inductive sig)) : Prop where
   separates (l : Level 0) :
-    EqualitySeparates (l.eval zeroNs) fun α x y =>
+    EqualitySeparates (l.eval ![]) fun α x y =>
       ε (.ind η ⟨0, by decide⟩ (fun _ => l) ![α, x] ![y])
-  refl {l : Level 0} {α x : ZFSet.{u}} (hα : α ∈ S_ (l.eval zeroNs)) (hx : x ∈ α) :
+  refl {l : Level 0} {α x : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![])) (hx : x ∈ α) :
     proof ∈ ε (.ind η ⟨0, by decide⟩ (fun _ => l) ![α, x] ![x])
 
 namespace Sem
 
 private theorem reachable (h : InductiveModel.Sound E ε Eq.block η (fun _ => l) w)
-    {α x : ZFSet.{u}} (hα : α ∈ S_ (l.eval zeroNs)) (hx : x ∈ α) :
+    {α x : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![])) (hx : x ∈ α) :
     ![α, x] ∈ Reachable Set.univ w.paramsSem :=
   h.realizes.params.reachable_of_semCtx ![α, x]
     (by
       simpa [Ctx.instL] using
-        ((.nil : ε[zeroNs] ⊨ ![] : #t[]).snoc hα).snoc
+        ((.nil : ε[![]] ⊨ ![] : #t[]).snoc hα).snoc
           hx)
     trivial
 

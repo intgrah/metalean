@@ -27,14 +27,14 @@ noncomputable def Env.Model.addQuotient {pre : Env ζ}
   let equality : Level 0 → ZFSet → ZFSet → ZFSet → ZFSet :=
     fun l α x y => m.atoms (.ind ηeq ⟨0, by decide⟩ (fun _ => l) ![α, x] ![y])
   let fresh : Atom (.snoc ζ .quot) 0 → ZFSet.{u}
-    | .quot .here l a r => quotientCarrier (l.eval zeroNs) a r
-    | .quotMk .here l a r x => quotientMk (l.eval zeroNs) a r x
+    | .quot .here l a r => quotientCarrier (l.eval ![]) a r
+    | .quotMk .here l a r x => quotientMk (l.eval ![]) a r x
     | .quotLift .here l₁ l₂ _ _ _ fn _ c =>
-      quotientLiftResult (l₁.eval zeroNs) (l₂.eval zeroNs) fn c
+      quotientLiftResult (l₁.eval ![]) (l₂.eval ![]) fn c
     | .quotInd .here _ _ _ _ _ _ => proof
     | _ => ∅
   have hatoms := atomBelow.map m.atoms fresh
-  have hseparates (l) : EqualitySeparates (l.eval zeroNs) (equality l) := by
+  have hseparates (l) : EqualitySeparates (l.eval ![]) (equality l) := by
     simpa [equality] using heq.separates l
   have hequality (u b x y) : atomBelow m.atoms fresh
         (.ind (pre.snoc (.quot ηeq) |>.get .here).eqHead

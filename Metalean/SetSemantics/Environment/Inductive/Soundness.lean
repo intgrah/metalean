@@ -167,7 +167,7 @@ structure InductiveModel.Sound (E₁ : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{
     (I : Inductive ζ₁ ι) (η : Head ζ₁ (.inductive ι))
     (ls : Fin ι.nlevels → Level 0) (witness : InductiveModel.{u} ι) : Prop where
   block_eq : (E₁.get η).block = I
-  realizes : witness.Interprets ε zeroNs I η ls
+  realizes : witness.Interprets ε ![] I η ls
   sortAtom (s : Fin ι.nsorts) (vps : Slots ι.nparams) (vis : Slots (ι.nindices s)) :
     ε (.ind η s ls vps vis) = witness.sortValue s vps vis
   rules : Inductive.RulesSound E₁ ε η ls

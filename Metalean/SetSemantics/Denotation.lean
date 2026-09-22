@@ -128,7 +128,7 @@ meta def denote_unexpand : Lean.PrettyPrinter.Unexpander
   | `($_ $ε $ν $γ $e) => `($ε[$ν; $γ]⟦$e⟧)
   | _ => throw ()
 
-notation:max ε:max "[" γ "]⟦" e "⟧" => denote ε zeroNs γ e
+notation:max ε:max "[" γ "]⟦" e "⟧" => denote ε ![] γ e
 
 @[simp] theorem denote_map {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet}
     (pre : ζ₁ ⟶ ζ₂) (hatoms : AtomsMap pre ε₁ ε₂)

@@ -139,8 +139,8 @@ theorem ctorResult_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
 
 section
 
-variable (hdecl : SemDecls E₁ ε₁ zeroNs)
-  (hrule : SemDeclRules E₁ ε₁ zeroNs) (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
+variable (hdecl : SemDecls E₁ ε₁ ![])
+  (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
 include hdecl hrule hE hB
 
 section
@@ -160,7 +160,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     w (Fin.natAdd ι.nparams f) ∈
         ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∧
       ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∈
-        S_ ((((I.ctors s c).ordinary f).level.inst ls).eval zeroNs) := by
+        S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
   have hentry : Ctx.get (Fin.natAdd ι.nparams f)
       (Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)) =
       (Ctx.entry (Ctx.instL ls (I.ctors s c).ordinaryTele)
@@ -178,7 +178,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     dsimp only [domain]
     rw [hentry, Expr.denote_rename]
     rfl
-  have hsorted : domain ∈ S_ ((((I.ctors s c).ordinary f).level.inst ls).eval zeroNs) := by
+  have hsorted : domain ∈ S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
     simpa [domain, Ctx.get_instL, Expr.denote, Level.eval_inst] using
       (soundness hdecl hrule hE (((hB.ctors s c).ordinaryTele_get f).instLevel ls) w
         (model.ordinarySemCtx s c vps hps w hw)).mem
@@ -250,7 +250,7 @@ theorem projTerm_denotes_field
         (hmajMem₂ : ε₂[γ₂]⟦maj₂⟧ ∈ model.toModel.sortValue s vps vis) :
         model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧ f ∈ ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∧
           ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∈
-            S_ ((((I.ctors s c).ordinary f).level.inst ls).eval zeroNs) := by
+            S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
       have ⟨hmem, hsorted⟩ := model.projTypeWith_denotes hdecl hrule hE hB total hatoms vps hvps
         (Fin.append vps (model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧)) (hdecomp hmajMem₂).1 f ps₂
         (fun prior => hstruct.projTerm η ls ps₂ (prior.castLT (prior.isLt.trans f.isLt)) maj₂)
@@ -304,20 +304,20 @@ theorem projTerm_denotes_field
             exact congrArg (ε₂[·]⟦ps₁ param⟧) hprefix) ▸ Reachable.last hslots
       exact (hbody (maj₂ := .var (Fin.last (m₁ + ι.nindices s))) hpsSlots hpsTySlots
         hlastMem).2
-    have hord₂ := ((congrArg (Realizes ε₂ zeroNs _ · _)
+    have hord₂ := ((congrArg (Realizes ε₂ ![] _ · _)
       (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
       ((model.ctors s c).source.ordinary.realizes_mapInst total hatoms)).pull
       (reach₁ := {γ₁}) ps₁ (fun _ => vps)
       (fun δ hδ => by subst hδ; exact hvps) fun δ hδ v => by subst hδ; rfl
     have hnr : (ι.ctors s c).nrecFields = 0 := Fin.eq_zero_of_isEmpty hstruct.no_recursive
-    have ⟨Δrec, hrecRealizes⟩ := Realizes.of_le (ε := ε₂) (ν := zeroNs)
+    have ⟨Δrec, hrecRealizes⟩ := Realizes.of_le (ε := ε₂) (ν := ![])
       (reach := Reachable {γ₁} ((model.ctors s c).source.ordinary.sem.pull
         (fun _ : Slots m₁ => vps) (ι.ctors s c).nfields)) (by omega)
       (((I.ctors s c).map total.sigs).recursiveFieldTele η ls
         (fun param => (ps₁ param).wkN (ι.ctors s c).nfields)
         (Expr.boundVars m₁ (ι.ctors s c).nfields 0))
     have hcaseRealizes := (hord₂.append hrecRealizes).append
-      (Realizes.of_le (ε := ε₂) (ν := zeroNs) (by omega)
+      (Realizes.of_le (ε := ε₂) (ν := ![]) (by omega)
         (((I.ctors s c).map total.sigs).ihTele ls ps₁ mot)).choose_spec
     have hcaseValue : ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot s c⟧ =
         ((model.ctors s c).source.ordinary.sem.pull

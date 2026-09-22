@@ -21,9 +21,9 @@ variable {ζ₁ ζ₂ ζ₃ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {E₃ 
 
 structure Quot.RulesSound (E₁ : Env ζ₁)
     (ε₁ : Atom ζ₁ 0 → ZFSet.{v}) (η : Head ζ₁ .quot) : Prop where
-  quotAtom (l : Level 0) (a r : ZFSet) : ε₁ (.quot η l a r) = quotientCarrier (l.eval zeroNs) a r
+  quotAtom (l : Level 0) (a r : ZFSet) : ε₁ (.quot η l a r) = quotientCarrier (l.eval ![]) a r
   quotMkAtom (l : Level 0) (a r x : ZFSet) :
-    ε₁ (.quotMk η l a r x) = quotientMk (l.eval zeroNs) a r x
+    ε₁ (.quotMk η l a r x) = quotientMk (l.eval ![]) a r x
   quot {ζ₂ : Sigs} {E₂ : Env ζ₂} {ε₂ : Atom ζ₂ 0 → ZFSet.{v}}
       (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
       {n : Nat} {γ : Slots n}
@@ -118,13 +118,13 @@ namespace Quot.RulesSound
 
 theorem ofValues (η : Head ζ₁ .quot)
     (equality : Level 0 → ZFSet → ZFSet → ZFSet → ZFSet)
-    (hseparates : ∀ l, EqualitySeparates (l.eval zeroNs) (equality l))
+    (hseparates : ∀ l, EqualitySeparates (l.eval ![]) (equality l))
     (hequality : ∀ l b xv yv, ε₁ (.ind (E₁.get η).eqHead ⟨0, by decide⟩ (fun _ => l)
         ![b, xv] ![yv]) = equality l b xv yv)
-    (hquot : ∀ l a r, ε₁ (.quot η l a r) = quotientCarrier (l.eval zeroNs) a r)
-    (hquotMk : ∀ l a r x, ε₁ (.quotMk η l a r x) = quotientMk (l.eval zeroNs) a r x)
+    (hquot : ∀ l a r, ε₁ (.quot η l a r) = quotientCarrier (l.eval ![]) a r)
+    (hquotMk : ∀ l a r x, ε₁ (.quotMk η l a r x) = quotientMk (l.eval ![]) a r x)
     (hquotLift : ∀ l₁ l₂ a r b fn h c, ε₁ (.quotLift η l₁ l₂ a r b fn h c) =
-      quotientLiftResult (l₁.eval zeroNs) (l₂.eval zeroNs) fn c)
+      quotientLiftResult (l₁.eval ![]) (l₂.eval ![]) fn c)
     (hquotInd : ∀ l a r motive minor c, ε₁ (.quotInd η l a r motive minor c) = proof) :
     Quot.RulesSound E₁ ε₁ η where
   quotAtom := hquot
@@ -160,9 +160,9 @@ theorem ofValues (η : Head ζ₁ .quot)
     refine ⟨?_, ?_⟩
     · simp [Expr.denote, hα.eq, hr.eq, hβ.eq, hf.eq, ha.eq]
     · have hq a r : ε₂ (.quot (η.map pre.sigs) l a r) =
-          quotientCarrier (l.eval zeroNs) a r := (congrFun hatoms _).trans (hquot l a r)
+          quotientCarrier (l.eval ![]) a r := (congrFun hatoms _).trans (hquot l a r)
       have hmk a r x : ε₂ (.quotMk (η.map pre.sigs) l a r x) =
-          quotientMk (l.eval zeroNs) a r x := (congrFun hatoms _).trans (hquotMk l a r x)
+          quotientMk (l.eval ![]) a r x := (congrFun hatoms _).trans (hquotMk l a r x)
       change (ε₂ ∘ Atom.map pre.sigs) (.quotInd η l _ _ _ _ _) ∈ _
       rw [hatoms, hquotInd]
       apply quotientIndResult_mem hα.mem

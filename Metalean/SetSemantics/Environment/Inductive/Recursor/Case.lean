@@ -22,7 +22,7 @@ variable {bound : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)}
   {ls : Fin ι.nlevels → Level 0}
   {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts} {ctor : Ctor ζ₁ ι s csig}
-  {params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params)}
+  {params : StrongTeleModel E₁ ε₁ ![] (Ctx.instL ls I.params)}
   (model : StrongInductiveModel E₁ ε₁ I ls)
   (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
   (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
@@ -37,7 +37,7 @@ noncomputable def recrMotiveTele (s : Fin ι.nsorts) :
       γ (Fin.natAdd ι.nparams index)
 
 noncomputable def recrMotiveValue (s : Fin ι.nsorts) (l : Level 0) : Dom ι.nparams :=
-  (model.recrMotiveTele s).pi fun _ => S_ (l.eval zeroNs)
+  (model.recrMotiveTele s).pi fun _ => S_ (l.eval ![])
 
 include hatoms hsorts in
 theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots ι.nparams)
@@ -45,7 +45,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
     ε₂[vps]⟦(I.map pre.sigs).motiveType η ls (fun param => Expr.var param) l s⟧ =
       model.recrMotiveValue s l vps := by
   let := Subst.category ζ₂ 0
-  have htele : Realizes ε₂ zeroNs (Reachable Set.univ model.paramsSem)
+  have htele : Realizes ε₂ ![] (Reachable Set.univ model.paramsSem)
       ((I.map pre.sigs).motiveTele η ls (fun param => Expr.var param) s)
       (model.recrMotiveTele s) := by
     have hlast (γ : Slots (ι.nparams + ι.nindices s))
@@ -72,7 +72,7 @@ noncomputable def recrMotivesSem (l : Level 0) :
 
 include hatoms hsorts in
 theorem recrMotivesRealizes (l : Level 0) :
-    Realizes ε₂ zeroNs (Reachable Set.univ model.paramsSem)
+    Realizes ε₂ ![] (Reachable Set.univ model.paramsSem)
       ((I.map pre.sigs).motiveBinders η ls l) (model.recrMotivesSem l) :=
   Realizes.ofTypes fun s => model.recrMotiveValue_denotes pre hatoms hsorts s l
 
@@ -104,7 +104,7 @@ theorem _root_.Metalean.StrongCtorSource.recursiveSem_realizes
             γ (current.castLE (StrongRecursiveFieldSource.code (ctor.recursive f)
               (source.recursive f)).tele.le))
           ((StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).index γ))) :
-    Realizes ε₂ zeroNs reach
+    Realizes ε₂ ![] reach
       ((ctor.map pre.sigs).recursiveFieldTele η ls
         (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
           Expr ζ₂ 0 (ι.nparams + csig.nfields)))
@@ -194,7 +194,7 @@ end
 
 include hatoms hsorts in
 theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    Realizes ε₂ zeroNs (Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l))
+    Realizes ε₂ ![] (Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l))
       (((I.ctors s c).map pre.sigs).fieldTele η ls fun param => Expr.var (param.castLE (by omega)))
       (model.recrCaseFieldsSem s c) := by
   let := Subst.category ζ₂ 0
@@ -314,7 +314,7 @@ end
 
 include hatoms in
 theorem recrCaseIhSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    Realizes ε₂ zeroNs
+    Realizes ε₂ ![]
       (Reachable (Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l))
         (model.recrCaseFieldsSem s c))
       (((I.ctors s c).map pre.sigs).ihTele ls (fun param => Expr.var (param.castLE (by omega)))

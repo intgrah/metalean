@@ -31,7 +31,7 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
 private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
     {nfields arity n : Nat}
     {Γ : Ctx ζ₁ 0 0 (ι.nparams + nfields)}
-    {base : StrongTeleModel E₁ ε₁ zeroNs Γ}
+    {base : StrongTeleModel E₁ ε₁ ![] Γ}
     {bound : Nat} {s : Fin ι.nsorts}
     (recFd : RecField ζ₁ ι nfields arity s)
     (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd)
@@ -62,7 +62,7 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         (recoverRecField (code recFd source).tele (code recFd source).index block level
           δ ε₂[γ]⟦r⟧) := by
   let project : Slots n → Slots (ι.nparams + nfields) := fun _ => δ
-  have hrealizes := ((congrArg (fun Δ => Realizes ε₂ zeroNs _ Δ _)
+  have hrealizes := ((congrArg (fun Δ => Realizes ε₂ ![] _ Δ _)
     (Ctx.map_instL pre.sigs ls recFd.tele)).mp
       (source.extension.realizes.map pre hatoms)).pull σ project (reach₁ := {γ})
     (fun _ _ => hδ) fun current hcurrent v => by subst current; exact congrFun hσ v
@@ -240,7 +240,7 @@ theorem recursiveIotaLeaf
       (show leaf final vmaj = raw by simpa [recoverRecField, raw] using happ)
 
 theorem iotaRuleSound
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hsourceRule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hsourceRule : SemDeclRules E₁ ε₁ ![])
     (hB : InductiveWF E₁ I)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hblock : (E₂.get η).block = I.map pre.sigs)
@@ -358,7 +358,7 @@ theorem iotaRuleSound
     simp [Inductive.iotaRhs, hmins', hih]
     rfl
   refine ⟨hlhsDen.trans hrhsDen.symm, ?_⟩
-  have htype := Expr.denote_subst (ε := ε₂) (ν := zeroNs) γ (Inductive.recrSubst ps ms mins
+  have htype := Expr.denote_subst (ε := ε₂) (ν := ![]) γ (Inductive.recrSubst ps ms mins
     (fun i => ((I.map pre.sigs).ctors s c).targetIndex ls ps fds i) (.ctor
       η s c ls ps fds recFds)) (ι.recrBody s)
   rw [RecSlots.denote_recrSubst] at htype

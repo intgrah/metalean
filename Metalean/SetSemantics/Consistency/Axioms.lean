@@ -33,14 +33,14 @@ variable {η : Head ζ (.inductive Nonempty.sig)}
 
 noncomputable def classicalChoiceValue (ε : Atom ζ 0 → ZFSet.{u})
     (η : Head ζ (.inductive Nonempty.sig)) (l : Level 0) : ZFSet.{u} :=
-  [zf|fun (α : $(S_ (l.eval zeroNs))) (_h : $(ε (.ind η 0 (fun _ => l) ![α] ![]))) =>
+  [zf|fun (α : $(S_ (l.eval ![]))) (_h : $(ε (.ind η 0 (fun _ => l) ![α] ![]))) =>
     $(Classical.epsilon (· ∈ α))]
 
 theorem classicalChoiceValue_mem {ε : Atom ζ 0 → ZFSet.{u}}
     (h : Nonempty.Sem ε η) (ls : Fin 1 → Level 0) :
     classicalChoiceValue ε η (ls 0) ∈ ε[![]]⟦(classicalChoiceType η).instL ls⟧ := by
   have htype : ε[![]]⟦(classicalChoiceType η).instL ls⟧ =
-      [zf|(α : $(S_ ((ls 0).eval zeroNs))) →
+      [zf|(α : $(S_ ((ls 0).eval ![]))) →
         $(ε (.ind η 0 (fun _ => ls 0) ![α] ![])) → α] := by
     simp only [classicalChoiceType, Expr.instL, Expr.denote]
     refine Aczel.pi_congr fun α hα => ?_
@@ -63,18 +63,18 @@ section
 variable {ηeq : Head ζ (.inductive Eq.sig)} {ηquot : Head ζ .quot}
 
 noncomputable def quotSoundValue (l : Level 0) : ZFSet.{u} :=
-  [zf|fun (α : $(S_ (l.eval zeroNs))) (r : $(quotientRel α)) (a₁ a₂ : α) (_h : r a₁ a₂) => proof]
+  [zf|fun (α : $(S_ (l.eval ![]))) (r : $(quotientRel α)) (a₁ a₂ : α) (_h : r a₁ a₂) => proof]
 
 theorem quotSoundValue_mem {ε : Atom ζ 0 → ZFSet.{u}}
     (hquot : Quot.RulesSound E ε ηquot)
     (heq : Eq.Sem ε ηeq) (ls : Fin 1 → Level 0) :
     quotSoundValue (ls 0) ∈ ε[![]]⟦(quotSoundType ηeq ηquot).instL ls⟧ := by
   have htype : ε[![]]⟦(quotSoundType ηeq ηquot).instL ls⟧ =
-      [zf|(α : $(S_ ((ls 0).eval zeroNs))) → (r : $(quotientRel α)) →
+      [zf|(α : $(S_ ((ls 0).eval ![]))) → (r : $(quotientRel α)) →
         (a₁ a₂ : α) → r a₁ a₂ →
         $(ε <| .ind ηeq 0 (fun _ => ls 0)
-          ![quotientCarrier ((ls 0).eval zeroNs) α r, quotientMk ((ls 0).eval zeroNs) α r a₁]
-          ![quotientMk ((ls 0).eval zeroNs) α r a₂])] := by
+          ![quotientCarrier ((ls 0).eval ![]) α r, quotientMk ((ls 0).eval ![]) α r a₁]
+          ![quotientMk ((ls 0).eval ![]) α r a₂])] := by
     simp only [quotSoundType, Quot.eqApp, Expr.instL, Expr.denote]
     refine Aczel.pi_congr fun α hα => Aczel.pi_congr fun r hr => Aczel.pi_congr fun a₁ ha₁ =>
       Aczel.pi_congr fun a₂ ha₂ => Aczel.pi_congr fun witness hwitness => ?_

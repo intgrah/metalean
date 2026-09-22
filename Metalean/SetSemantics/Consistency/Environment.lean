@@ -167,11 +167,11 @@ theorem InductiveModel.Sound.uniqueCtor_of_mem_sort {ι : IndSig} {E : Env ζ}
   exact h.uniqueCtor_of_mem_fibre s c hs hc vps hvalue
 
 theorem Env.Model.semDecls {E : Env ζ} (m : Env.Model.{u} E) :
-    SemDecls E m.atoms zeroNs :=
+    SemDecls E m.atoms ![] :=
   fun η ls => m.sound.constMem η ls
 
 theorem Env.Model.semDeclRules {E : Env ζ} (m : Env.Model.{u} E) :
-    SemDeclRules E m.atoms zeroNs :=
+    SemDeclRules E m.atoms ![] :=
   have hatoms : AtomsMap (𝟙 ζ) m.atoms m.atoms :=
     funext fun a => congrArg m.atoms ((Atom.functor _).map_id_apply _ a)
   { ind _ := (m.sound.inductiveRules _ _).ind .refl hatoms

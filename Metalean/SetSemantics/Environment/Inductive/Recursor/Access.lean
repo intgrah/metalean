@@ -95,12 +95,12 @@ theorem ordinarySemCtx
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
     (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
     (hslots : slots ∈ Reachable {vps} (model.ctors s c).source.ordinary.sem) :
-    ε₁[zeroNs] ⊨ slots : Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele) :=
+    ε₁[![]] ⊨ slots : Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele) :=
   Ctx.instL_append .. ▸ (model.ctors s c).source.ordinary.semCtx slots
     (Reachable.mono hslots (Set.singleton_subset_iff.mpr hps))
 
 theorem ordinary_eq_proof
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
@@ -108,7 +108,7 @@ theorem ordinary_eq_proof
     (hslots : slots ∈ Reachable {vps}
       (model.ctors s c).source.ordinary.sem)
     (f : Fin (ι.ctors s c).nfields)
-    (hzero : (((I.ctors s c).ordinary f).level.inst ls).eval zeroNs = 0) :
+    (hzero : (((I.ctors s c).ordinary f).level.inst ls).eval ![] = 0) :
     slots (Fin.natAdd ι.nparams f) = proof := by
   have hrealises := model.ordinarySemCtx s c vps hps slots hslots
   have hsorted := (soundness hdecl hrule hE
@@ -119,7 +119,7 @@ theorem ordinary_eq_proof
   exact mem_verum.mp (eq_verum_of_mem hsorted hslot ▸ hslot)
 
 theorem large_argAgree
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (heligible : (I.ctors s c).Eligible I.level)
@@ -159,7 +159,7 @@ theorem large_argAgree
     | right f =>
       cases heligible.ordinary f with
       | inl hzero =>
-        have hzero : (((I.ctors s c).ordinary f).level.inst ls).eval zeroNs = 0 := by
+        have hzero : (((I.ctors s c).ordinary f).level.inst ls).eval ![] = 0 := by
           simp [hzero]
         have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
             Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
@@ -186,7 +186,7 @@ theorem large_argAgree
     hfields
 
 theorem large_key_accessible
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (vps : Slots ι.nparams)

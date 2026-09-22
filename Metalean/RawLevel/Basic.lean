@@ -14,8 +14,6 @@ namespace Metalean
 
 abbrev Param ℓ := Fin ℓ
 
-def zeroNs : Param 0 → Nat := ![]
-
 inductive RawLevel (ℓ : Nat) where
   | zero
   | succ (l : RawLevel ℓ)
@@ -57,7 +55,7 @@ def eval : RawLevel ℓ → Nat
 
 @[simp] theorem eval_one (ν : Param ℓ → Nat) : eval ν (one : RawLevel ℓ) = 1 := rfl
 
-@[simp] theorem eval_ofNat : ∀ n : Nat, (ofNat n).eval zeroNs = n
+@[simp] theorem eval_ofNat : ∀ n : Nat, (ofNat n).eval ![] = n
   | 0 => rfl
   | n + 1 => congrArg (· + 1) (eval_ofNat n)
 

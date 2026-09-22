@@ -55,7 +55,7 @@ noncomputable def recrTeleSem :
 
 include hatoms hsorts hctors in
 theorem recrPrefixRealizes :
-    Realizes ε₂ zeroNs Set.univ
+    Realizes ε₂ ![] Set.univ
       (Ctx.instL ls (I.map pre.sigs).params ++ (I.map pre.sigs).motiveBinders η ls l ++
         (I.map pre.sigs).caseBinders η ls)
       (model.recrPrefixSem l) :=
@@ -66,7 +66,7 @@ theorem recrPrefixRealizes :
 
 include hatoms in
 theorem recrIndicesRealizes :
-    Realizes ε₂ zeroNs (Reachable Set.univ (model.recrPrefixSem l))
+    Realizes ε₂ ![] (Reachable Set.univ (model.recrPrefixSem l))
       ((I.map pre.sigs).indexTele ls s fun param => .var (param.castLE (by omega)))
       (model.recrIndicesSem s) := by
   have his := ((model.tele.indices s).realizes_mapInst pre hatoms).pull
@@ -79,7 +79,7 @@ theorem recrIndicesRealizes :
 
 include hatoms hsorts hctors in
 theorem recrTeleRealizes :
-    Realizes ε₂ zeroNs Set.univ ((I.map pre.sigs).recrTele η s ls l)
+    Realizes ε₂ ![] Set.univ ((I.map pre.sigs).recrTele η s ls l)
       (model.recrTeleSem s l) := by
   refine .snoc ((model.recrPrefixRealizes pre hatoms hsorts hctors l).append
     (model.recrIndicesRealizes pre hatoms s l)) fun γ _ => ?_
@@ -99,7 +99,7 @@ theorem recrArgs_reachable {n : Nat} {γ : Slots n} {s : Fin ι.nsorts}
     (hmaj : ε₂[γ]⟦maj⟧ ∈ ε₂[γ]⟦.ind η s ls ps is⟧) :
     RecSlots.args (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧) (ε₂[γ]⟦is ·⟧) ε₂[γ]⟦maj⟧ ∈
       Reachable Set.univ (model.recrTeleSem s l) :=
-  RecSlots.denote_recrSubst ε₂ zeroNs γ ps ms mins is maj ▸
+  RecSlots.denote_recrSubst ε₂ ![] γ ps ms mins is maj ▸
     SemDefeq.reachable (model.recrTeleRealizes pre hatoms hsorts hctors s l)
       (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => ε₂[γ] ⊨ e₁ ≡ e₂ : t)
         (fun param => ⟨rfl, hps param⟩) (fun target => ⟨rfl, hms target⟩)
@@ -160,7 +160,7 @@ theorem fibre_motive_recrState :
 
 theorem recrMotiveResult_mem_sort :
     [zf|$(RecSlots.motivesOf γ s) $(RecSlots.indexValuesOf γ)... $(RecSlots.majorOfSlots γ)] ∈
-      S_ (l.eval zeroNs) := by
+      S_ (l.eval ![]) := by
   have hprefix := Reachable.base (Reachable.of_append (Reachable.init hγ))
   rw [recrPrefixSem] at hprefix
   let final : Slots (ι.nparams + ι.nindices s + 1) :=
@@ -183,7 +183,7 @@ theorem recrMotiveResult_mem_sort :
   simpa [hsuffix] using
     Reachable.apps_mem_of_base (k := ι.nindices s + 1) hfinal (by simp [final]) hmotive
 
-theorem eq_proof_of_mem_fibre_motive (hl : l.eval zeroNs = 0) {value : ZFSet}
+theorem eq_proof_of_mem_fibre_motive (hl : l.eval ![] = 0) {value : ZFSet}
     (hvalue : value ∈ fibreOp
       (model.recrCaseMotive (RecSlots.paramsOf γ) (RecSlots.motivesOf γ)) (model.recrState s γ)) :
     value = proof := by
@@ -192,7 +192,7 @@ theorem eq_proof_of_mem_fibre_motive (hl : l.eval zeroNs = 0) {value : ZFSet}
   exact mem_verum.mp (eq_verum_of_mem hsorted hvalue ▸ hvalue)
 
 theorem recrBody_denotes :
-    ε₂[γ]⟦ι.recrBody s⟧ = propSet (l.eval zeroNs)
+    ε₂[γ]⟦ι.recrBody s⟧ = propSet (l.eval ![])
       (fibreOp (model.recrCaseMotive (RecSlots.paramsOf γ) (RecSlots.motivesOf γ))
         (model.recrState s γ)) := by
   rw [model.fibre_motive_recrState s l γ hγ,

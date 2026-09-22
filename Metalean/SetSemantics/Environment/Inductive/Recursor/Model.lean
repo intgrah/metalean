@@ -124,7 +124,7 @@ theorem mem_largeAccessRel_of_predecessor
   rwa [entry_eq, fst_pair, htarget] at hprojected
 
 theorem recGraph_congr_key
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
     (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
@@ -141,7 +141,7 @@ theorem recGraph_congr_key
   have hmaps := model.mapsTo vps
   have hps := model.recrParamsReachable s l γ hγ
   have hstep := model.recrStepSound s l γ hγ
-  have hzero : (I.level.inst ls).eval zeroNs = 0 := hlevel
+  have hzero : (I.level.inst ls).eval ![] = 0 := hlevel
   have hdecompose {entry : ZFSet} (hentry : entry ∈ block) :
       ∃ s₁, ∃ c₁, ∃ args ∈ (model.codeOf s₁ c₁).argSet block vps,
         entry =
@@ -199,9 +199,9 @@ theorem recGraph_congr_key
 
 noncomputable def recLeaf (s : Fin ι.nsorts) (l : Level 0) :
     Dom (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1) :=
-  fun γ => propVal (l.eval zeroNs) (app (model.recrGraph s γ) (model.recrState s γ))
+  fun γ => propVal (l.eval ![]) (app (model.recrGraph s γ) (model.recrState s γ))
 
-theorem recLeaf_eq_proof (s : Fin ι.nsorts) (l : Level 0) (hl : l.eval zeroNs = 0)
+theorem recLeaf_eq_proof (s : Fin ι.nsorts) (l : Level 0) (hl : l.eval ![] = 0)
     (γ : RecSlots ι s) :
     model.recLeaf s l γ = proof := by
   rw [recLeaf, hl, propVal_zero]
@@ -216,7 +216,7 @@ theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
   exact model.recrState_mem s l γ hγ
 
 theorem recLeaf_iota
-    (hdecl : SemDecls E₁ ε₁ zeroNs) (hrule : SemDeclRules E₁ ε₁ zeroNs)
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (l : Level 0)
     (hallowed : I.RecAllowed l) (γ : RecSlots ι s)
@@ -249,7 +249,7 @@ theorem recLeaf_iota
       show RecSlots.casesOf γ (Fin.encodeSigma ι.nctors ⟨s, c⟩) = [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s c))] from by exact (app_minorFamily (RecSlots.casesOf γ) (Fin.encodeSigma ι.nctors ⟨s, c⟩)).symm,
       ← htarget]
     exact recGraph_iota hmaps hstep hargs
-  by_cases hresult : l.eval zeroNs = 0
+  by_cases hresult : l.eval ![] = 0
   · have hmem : app (model.recrGraph s γ)
         (pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs)) ∈
         fibreOp (model.recrCaseMotive (RecSlots.paramsOf γ) (RecSlots.motivesOf γ))
@@ -290,7 +290,7 @@ theorem recLeaf_eq_recGraph_app
     (hpredecessor : predecessor ∈ model.toModel.block (RecSlots.paramsOf outer))
     (hstate : model.recrState s₁ child = predecessor) :
     model.recLeaf s₁ l child = app (model.recrGraph s outer) predecessor := by
-  by_cases hresult : l.eval zeroNs = 0
+  by_cases hresult : l.eval ![] = 0
   · have hmaps := model.mapsTo (RecSlots.paramsOf outer)
     have hmem : app (model.recrGraph s outer) predecessor ∈
         fibreOp (model.recrCaseMotive (RecSlots.paramsOf child) (RecSlots.motivesOf child))

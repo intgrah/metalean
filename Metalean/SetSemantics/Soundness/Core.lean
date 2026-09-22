@@ -69,7 +69,7 @@ structure SemDefeq (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) (γ : S
   mem : ε[ν; γ]⟦e₁⟧ ∈ ε[ν; γ]⟦t⟧
 
 notation:65 ε:max "[" ν "; " γ "]" " ⊨ " e₁ " ≡ " e₂ " : " t:lead => SemDefeq ε ν γ e₁ e₂ t
-notation:65 ε:max "[" γ "]" " ⊨ " e₁ " ≡ " e₂ " : " t:lead => SemDefeq ε zeroNs γ e₁ e₂ t
+notation:65 ε:max "[" γ "]" " ⊨ " e₁ " ≡ " e₂ " : " t:lead => SemDefeq ε ![] γ e₁ e₂ t
 
 namespace SemDefeq
 

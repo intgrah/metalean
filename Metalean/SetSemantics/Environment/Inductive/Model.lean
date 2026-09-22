@@ -30,8 +30,8 @@ structure StrongInductiveModel
   ctors (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     StrongCtorModel E₁ ε₁ I ls (I.ctors s c) tele.params
 
-theorem InductiveWF.model (hdecl : SemDecls E₁ ε₁ zeroNs)
-    (hrule : SemDeclRules E₁ ε₁ zeroNs) (hE : EnvWF E₁) (hB : InductiveWF E₁ I) :
+theorem InductiveWF.model (hdecl : SemDecls E₁ ε₁ ![])
+    (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hB : InductiveWF E₁ I) :
     Nonempty (StrongInductiveModel E₁ ε₁ I ls) :=
   have ⟨tele⟩ := hB.teleModels hdecl hrule hE
   ⟨⟨tele, fun s c => Classical.choice
@@ -79,7 +79,7 @@ theorem codeOf_domsIn (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     (StrongCtorSource.targetIndex (model.ctors s c).target) |>.mono hle
 
 theorem codeOf_localDoms {level : Nat} (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (hlevel : (I.level.inst ls).eval zeroNs = level + 1) :
+    (hlevel : (I.level.inst ls).eval ![] = level + 1) :
     (codeOf model s c).DomsIn level :=
   (model.ctors s c).localDoms level hlevel
 
@@ -109,7 +109,7 @@ noncomputable abbrev toModel : InductiveModel ι where
   paramsSem := model.paramsSem
   codes := model.codeOf
   bound := U_ model.bound
-  level := (I.level.inst ls).eval zeroNs
+  level := (I.level.inst ls).eval ![]
   ordinaryOf := model.ordinaryOf
   indicesSem := model.indicesSem
   targetValues := model.targetValues
@@ -182,7 +182,7 @@ theorem fieldsRealize (s : Fin ι.nsorts)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
-    ε₁[zeroNs] ⊨ ordinaryOf model s c vps vargs :
+    ε₁[![]] ⊨ ordinaryOf model s c vps vargs :
       Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele) := by
   rw [Ctx.instL_append]
   exact (model.ctors s c).source.ordinary.semCtx _
@@ -206,7 +206,7 @@ theorem realizes
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hsorts : ∀ s vps vis,
       ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis) :
-    model.toModel.Interprets ε₂ zeroNs (I.map pre.sigs) η ls where
+    model.toModel.Interprets ε₂ ![] (I.map pre.sigs) η ls where
   level_eq := rfl
   params := by
     simpa [paramsSem, Inductive.map] using model.tele.params.realizes_mapInst pre hatoms

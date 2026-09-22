@@ -26,7 +26,7 @@ variable {bound : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)}
   {ls : Fin ι.nlevels → Level 0}
   {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts} {ctor : Ctor ζ₁ ι s csig}
-  {params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params)}
+  {params : StrongTeleModel E₁ ε₁ ![] (Ctx.instL ls I.params)}
   (model : StrongInductiveModel E₁ ε₁ I ls)
   (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
   (hsorts : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis)
@@ -61,7 +61,7 @@ private theorem SemTele.piAt_lamAt
 private theorem StrongRecursiveFieldSource.ihType_eraseRecField
     {nfields arity : Nat} {s : Fin ι.nsorts}
     {Γ : Ctx ζ₁ 0 0 (ι.nparams + nfields)}
-    {base : StrongTeleModel E₁ ε₁ zeroNs Γ}
+    {base : StrongTeleModel E₁ ε₁ ![] Γ}
     (recFd : RecField ζ₁ ι nfields arity s)
     (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd)
     (level : Nat) (vms : Fin ι.nsorts → ZFSet) (block : ZFSet)
@@ -223,7 +223,7 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
       (fun s => Expr.var ⟨ι.nparams + s.val, by omega⟩)
       s c⟧ = model.recrCaseDomain s c γ := by
   let ctorModel := model.ctors s c
-  have hresult : DenotesOver ε₂ zeroNs
+  have hresult : DenotesOver ε₂ ![]
       (Reachable (Reachable Set.univ model.paramsSem)
         (model.recrMotivesSem l)) (model.recrCaseTele s c)
       ((I.map pre.sigs).caseType η ls
@@ -285,7 +285,7 @@ theorem recrCasesSem_mem
 
 include hatoms hsorts hctors in
 theorem recrCasesRealizes :
-    Realizes ε₂ zeroNs
+    Realizes ε₂ ![]
       (Reachable (Reachable Set.univ model.paramsSem)
         (model.recrMotivesSem l))
       ((I.map pre.sigs).caseBinders η ls)

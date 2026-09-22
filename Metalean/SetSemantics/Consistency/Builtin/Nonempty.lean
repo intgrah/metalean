@@ -22,17 +22,17 @@ variable {ζ : Sigs} {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}}
 
 structure Sem (ε : Atom ζ 0 → ZFSet.{u})
     (η : Head ζ (.inductive sig)) : Prop where
-  exists_mem {l : Level 0} {α h : ZFSet.{u}} (hα : α ∈ S_ (l.eval zeroNs))
+  exists_mem {l : Level 0} {α h : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![]))
     (hh : h ∈ ε (.ind η ⟨0, by decide⟩ (fun _ => l) ![α] ![])) :
     ∃ x, x ∈ α
 
 namespace Sem
 
 private theorem reachable (h : InductiveModel.Sound E ε Nonempty.block η (fun _ => l) w)
-    {α : ZFSet.{u}} (hα : α ∈ S_ (l.eval zeroNs)) :
+    {α : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![])) :
     ![α] ∈ Reachable Set.univ w.paramsSem :=
   h.realizes.params.reachable_of_semCtx ![α]
-    (by simpa! [Ctx.instL] using (.nil : ε[zeroNs] ⊨ ![] : #t[]).snoc hα) trivial
+    (by simpa! [Ctx.instL] using (.nil : ε[![]] ⊨ ![] : #t[]).snoc hα) trivial
 
 theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Nonempty.sig,
       InductiveModel.Sound E ε Nonempty.block η (fun _ => level) w) :
