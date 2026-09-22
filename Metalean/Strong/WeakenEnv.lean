@@ -8,7 +8,7 @@ module
 public import Metalean.Strong.Defs
 public import Metalean.Syntax.Weakening
 import Metalean.Syntax.Structure.Projection
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 

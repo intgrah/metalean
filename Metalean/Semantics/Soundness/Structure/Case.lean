@@ -10,7 +10,7 @@ public import Metalean.Semantics.Soundness.Telescope.Beta
 public import Metalean.Semantics.Soundness.Recursor.Case
 public import Metalean.Semantics.Soundness.Structure.Fields
 import Metalean.Strong.Structure
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 import Metalean.Semantics.Soundness.Context.Transport
 import Metalean.Semantics.Soundness.Rules.Function
 import Metalean.Syntax.Structure.Projection

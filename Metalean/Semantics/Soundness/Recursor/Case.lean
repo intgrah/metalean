@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Semantics.Soundness.Recursor.Fields
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 

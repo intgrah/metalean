@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Syntax.Ctx
+public import Metalean.Level.Order
 import Metalean.Meta.DeriveFunctor
 
 @[expose] public section
@@ -187,6 +188,19 @@ def indexTele (I : Inductive ζ₁ ι)
         fun i => (ps i).instL levelSubst := by
   simp [indexTele]
   rfl
+
+end Inductive
+
+namespace Inductive
+
+variable {ι : IndSig} (I : Inductive ζ ι)
+
+def LevelOK (l : Level ι.nlevels) : Prop :=
+  Level.imax l I.level ≤ I.level
+
+theorem levelOK_of_zero {l : Level ι.nlevels} :
+    I.level = .zero → I.LevelOK l :=
+  Level.imax_le_right_of_eq_zero
 
 end Inductive
 

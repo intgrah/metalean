@@ -10,7 +10,7 @@ import Metalean.Checker.Eta
 public import Metalean.Metatheory.Unique
 public import Metalean.Strong.Structure
 import Metalean.Meta.IfRfl
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
 
 @[expose] public section
 
@@ -981,15 +981,12 @@ partial def isDefEqLamTele (G : FCtx) (k : Nat) (hk : k ≤ G.size) :
       have ht₂ := hpi₂.forallE_inv.1
       have hd := hdom hS hdt₁ hdt₂ ht₁ ht₂
       have ⟨_, ht₁'⟩ := ht₁
-      have hb₂'' := ((hd.symm.snocConv hS.ordered hS.wf).mp hb₂'.defeq).toStrongOrdered
-        hS.ordered (hS.wf.snoc ht₁)
+      have hb₂'' := DefeqStrong.snocConvTy hd.symm hb₂'
       have hb := hbody (hS.snoc (hdt₁.openBVars (by omega)) ht₁') hb₁ hb₂ hb₁' hb₂''
       have ⟨_, hdl⟩ := hd.sort_uniq hS.ordered hS.wf
       have ⟨_, htb⟩ := hb₁'.regular
-      have htb₂ := ((hd.snocConv hS.ordered hS.wf).mp htb.defeq).toStrongOrdered hS.ordered
-        (hS.wf.snoc ht₂)
-      have hb₂ := ((hd.snocConv hS.ordered hS.wf).mp hb.defeq).toStrongOrdered hS.ordered
-        (hS.wf.snoc ht₂)
+      have htb₂ := DefeqStrong.snocConvTy hd htb
+      have hb₂ := DefeqStrong.snocConvTy hd hb
       have hlam := DefeqStrong.lamDF hdl htb htb₂ hb hb₂
       exact hchain₁.symm.convStrong hlam⟩
   | fe₁, fe₂ => do

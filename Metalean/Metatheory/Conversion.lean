@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.Context
-import Metalean.Strong.Strengthen
+public import Metalean.Typing.Env
 import Metalean.Metatheory.Unique
 
 @[expose] public section
@@ -24,8 +24,7 @@ theorem IsTypeEq.forallE_dom_congr (ho : E.Ordered)
   fun hΓ hd hc =>
     have ⟨_, hdl⟩ := hd.sort_uniq ho hΓ
     have ⟨_, hcl₁⟩ := hc
-    have hcl₂ := ((IsTypeEq.snocConv ho hΓ hd).1 hcl₁.defeq).toStrongOrdered ho
-      (hΓ.snoc hd.isType.2)
+    have hcl₂ := DefeqStrong.snocConvTy hd hcl₁
     .ofDefEq (.forallEDF hdl hcl₁ hcl₂)
 
 theorem IsTypeEq.forallE_congr' (ho : E.Ordered)

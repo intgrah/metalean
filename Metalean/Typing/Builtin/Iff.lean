@@ -32,20 +32,20 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   · exact Subsingleton.elim _ _
   · exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WF E :=
-  ⟨.snoc (.snoc .nil ⟨_, .sortDF, trivial⟩) ⟨_, .sortDF, trivial⟩,
+theorem wf (E : Env ζ) : block.WFStrong E :=
+  ⟨.snoc (.snoc .nil ⟨_, trivial, .sortDF⟩) ⟨_, trivial, .sortDF⟩,
     fun _ => .nil,
     fun _ _ => {
       ordinary
         | ⟨0, _⟩ =>
           ⟨by
-              refine .defeqDF (l := .succ .zero) ?_ (.forallEDF .var .var)
+              refine .defeqDF (l := .succ .zero) ?_ (.forallEDF (.var .sortDF) (.var .sortDF) (.var .sortDF))
               rw [Level.imax_zero]
               exact .sortDF,
             Inductive.levelOK_of_zero _ rfl⟩
         | ⟨1, _⟩ =>
           ⟨by
-              refine .defeqDF (l := .succ .zero) ?_ (.forallEDF .var .var)
+              refine .defeqDF (l := .succ .zero) ?_ (.forallEDF (.var .sortDF) (.var .sortDF) (.var .sortDF))
               rw [Level.imax_zero]
               exact .sortDF,
             Inductive.levelOK_of_zero _ rfl⟩

@@ -26,15 +26,15 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   dsimp [Ctor.map]
   congr <;> exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WF E where
+theorem wf (E : Env ζ) : block.WFStrong E where
   params := .snoc
-    (.snoc .nil ⟨_, .sortDF, trivial⟩)
-    ⟨_, .var, trivial⟩
-  indices | ⟨0, _⟩ => .snoc .nil ⟨_, .var, trivial⟩
+    (.snoc .nil ⟨_, trivial, .sortDF⟩)
+    ⟨_, trivial, .var .sortDF⟩
+  indices | ⟨0, _⟩ => .snoc .nil ⟨_, trivial, .var .sortDF⟩
   ctors | ⟨0, _⟩, ⟨0, _⟩ => {
     ordinary f := Fin.elim0 f
     recursive f := Fin.elim0 f
-    targetIndices | ⟨0, _⟩ => .var
+    targetIndices | ⟨0, _⟩ => .var (.var .sortDF)
   }
 
 end Metalean.Eq

@@ -7,7 +7,6 @@ module
 
 public import Metalean.SetSemantics.Environment.Inductive.Model
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 @[expose] public section
 

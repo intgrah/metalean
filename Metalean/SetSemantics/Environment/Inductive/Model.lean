@@ -30,10 +30,10 @@ structure StrongInductiveModel
   ctors (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     StrongCtorModel E₁ ε₁ I ls (I.ctors s c) tele.params
 
-theorem Inductive.WF.model
+theorem Inductive.WFStrong.model
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hB : I.WF E₁) :
+    (hB : I.WFStrong E₁) :
     Nonempty (StrongInductiveModel E₁ ε₁ I ls) :=
   have ⟨tele⟩ := hB.teleModels hdecl hrule ho
   ⟨⟨tele, fun s c => Classical.choice

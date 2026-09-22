@@ -9,7 +9,7 @@ public import Metalean.TypeTheory.Syntactic.Section
 public import Metalean.Semantics.Soundness.Recursor.Typing
 public import Metalean.Semantics.Soundness.Telescope.Basic
 import Metalean.Semantics.Interpretation.Computation
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 

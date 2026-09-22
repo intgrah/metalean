@@ -9,7 +9,7 @@ public import Metalean.FastChecker.Instantiate
 public import Metalean.Metatheory.SubjectReduction
 public import Metalean.Metatheory.Unique
 public import Metalean.Strong.Inversion
-public import Metalean.Strong.Strengthen
+public import Metalean.Strong.Env
 public import Metalean.Metatheory.Conversion
 public import Metalean.Metatheory.Injectivity
 
@@ -113,12 +113,12 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have ⟨ht₁@⟨_, ht₁'⟩, _⟩ := hpi₁.forallE_inv
     have ⟨ht₂@⟨_, ht₂'⟩, _⟩ := hpi₂.forallE_inv
     have hd : E.2[Δ] ⊢ₛ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
-    have hb₂'' := ((hd.symm.snocConv ho hΔ).mp hb₂'.defeq).toStrongOrdered ho (hΔ.snoc ht₁)
+    have hb₂'' := DefeqStrong.snocConvTy hd.symm hb₂'
     have hb := ihb hb₂d (hΔ.snoc ht₁) (hσ.lift _) hb₁' hb₂''
     have ⟨_, hdl⟩ := hd.sort_uniq ho hΔ
     have ⟨_, htb⟩ := hb₁'.regular
-    have htb₂ := ((hd.snocConv ho hΔ).mp htb.defeq).toStrongOrdered ho (hΔ.snoc ht₂)
-    have hb₂ := ((hd.snocConv ho hΔ).mp hb.defeq).toStrongOrdered ho (hΔ.snoc ht₂)
+    have htb₂ := DefeqStrong.snocConvTy hd htb
+    have hb₂ := DefeqStrong.snocConvTy hd hb
     have hlam := DefeqStrong.lamDF hdl htb htb₂ hb hb₂
     exact hchain₁.symm.convStrong hlam
   | forallE _ _ iht ihb =>
@@ -130,8 +130,7 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have hd : E.2[Δ] ⊢ₛ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')
     have ⟨_, hc₁⟩ := hinv₁.2
     have ⟨_, hc₂⟩ := hinv₂.2
-    have hc₂' := ((hd.symm.snocConv ho hΔ).mp hc₂.defeq).toStrongOrdered ho
-      (hΔ.snoc hinv₁.1)
+    have hc₂' := DefeqStrong.snocConvTy hd.symm hc₂
     have hcod : E.2[Δ.snoc _] ⊢ₛ _ ≡ _ typ :=
       .ofDefEq (ihb hb₂d (hΔ.snoc hinv₁.1) (hσ.lift _) hc₁ hc₂')
     have ⟨_, hpi⟩ := (hd.forallE_congr' ho hΔ hcod).sort_uniq ho hΔ

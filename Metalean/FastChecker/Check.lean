@@ -83,7 +83,7 @@ def EntryWFSpec (fe : FEntry) : Prop :=
   E.Ordered →
   L.NatTrust E →
   FEntry.Denotes L ⟨ζ, E⟩ fe entry₀ →
-  ∃ entry : Entry ζ fe.sig, FEntry.Denotes L ⟨ζ, E⟩ fe entry ∧ Entry.WF E entry
+  ∃ entry : Entry ζ fe.sig, FEntry.Denotes L ⟨ζ, E⟩ fe entry ∧ Entry.WFStrong E entry
 
 def checkAxiom (nlevels : Nat) (ft : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.axiom nlevels ft))) := do
@@ -91,7 +91,7 @@ def checkAxiom (nlevels : Nat) (ft : FExpr) :
   pure ⟨fun {_ _ _} hE ho htr (.axiom ht') =>
     have hS := Sem.nil (ℓ := nlevels) hE ho htr
     have ⟨_, l, ht'', hty⟩ := ht hS ht'
-    ⟨_, .axiom ht'', .axiom ⟨l, hty.defeq⟩⟩⟩
+    ⟨_, .axiom ht'', .axiom ⟨l, hty⟩⟩⟩
 
 def checkDef (nlevels : Nat) (ft v : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.def nlevels ft v))) := do
@@ -101,7 +101,7 @@ def checkDef (nlevels : Nat) (ft v : FExpr) :
     have hS := Sem.nil (ℓ := nlevels) hE ho htr
     have ⟨_, _, hv'', ht'', hty⟩ := hv hS hv' ht'
     have ⟨l, hsort⟩ := hty.regular
-    ⟨_, .def ht'' hv'', .def ⟨l, hsort.defeq⟩ hty.defeq⟩⟩
+    ⟨_, .def ht'' hv'', .def ⟨l, hsort⟩ hty⟩⟩
 def checkTheorem (nlevels : Nat) (ft v : FExpr) :
     CheckM L F nlevels (PLift (EntryWFSpec L F (.def nlevels ft v))) := do
   let some _ ← isProp L F nlevels hints accel #[] ft | throw (.reject .nonPropTheorem)
@@ -117,7 +117,7 @@ def checkOpaque (nlevels : Nat) (ft v : FExpr) :
     have ⟨_, hv'⟩ := hvex hE
     have ⟨_, _, _, ht'', hty⟩ := hv hS hv' ht'
     have ⟨l, hsort⟩ := hty.regular
-    ⟨_, .opaque ht'', .opaque hty.defeq ⟨l, hsort.defeq⟩⟩⟩
+    ⟨_, .opaque ht'', .opaque hty ⟨l, hsort⟩⟩⟩
 
 def checkQuot (eqPos : Nat) :
     Except Failure (PLift (EntryWF L F (.quot eqPos)) × PLift (EntryWFSpec L F (.quot eqPos))) :=

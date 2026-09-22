@@ -14,7 +14,7 @@ public import Metalean.Strong.Telescope
 public import Metalean.Metatheory.Conversion
 public import Metalean.Metatheory.Injectivity
 public import Metalean.Metatheory.SubjectReduction
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
 import Metalean.Meta.IfRfl
 import Metalean.Metatheory.Unique
 
@@ -73,8 +73,12 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
       checkAgainst ho hΓ (recFds f)
         (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
     pure ⟨.ind η s ls ps fun index => ((E.get η).block.ctors s c).targetIndex ls ps fds index,
-      (Defeq.ctorDF (fun p => (hps p).defeq) (fun f => (hfds f).defeq)
-        (fun f => (hrecFds f).defeq)).toStrongOrdered ho hΓ⟩
+      (by
+        have hi := (ho.entryWFStrong η).block
+        exact .ctorDF hps hfds hrecFds
+          (fun f => (hi.ctors s c).ordinaryFieldExpr_congr hi.params f hps (fun g _ => hfds g))
+          (fun f => ((hi.ctors s c).recursiveFieldExpr_congr hi.params rfl f hps hfds).choose_spec)
+          ((ho.entryWFStrong η).ctorType s c hps hfds))⟩
   | .recr η s ls l ps ms mins is maj => do
     let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed l) (.reject .recursorLevel)
     let ⟨hps⟩ ← Fin.sequenceM fun p =>
@@ -87,9 +91,8 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
       checkAgainst ho hΓ (is i) ((E.get η).block.indexType ls s ps is i)
     let ⟨hmaj⟩ ← checkAgainst ho hΓ maj (.ind η s ls ps is)
     pure ⟨Inductive.motiveResult (ms s) is maj,
-      (Defeq.recrDF hrec (fun p => (hps p).defeq) (fun s => (hms s).defeq)
-        (fun s c => (hmins s c).defeq) (fun i => (his i).defeq)
-        hmaj.defeq).toStrongOrdered ho hΓ⟩
+      .recrDF hrec hps hms hmins his hmaj
+        ((ho.entryWFStrong η).block.motiveResult_congr hΓ hps hms his hmaj)⟩
   | .quot _ l α r => do
     let ⟨hα⟩ ← checkAgainst ho hΓ α (.sort l)
     let ⟨hr⟩ ← checkAgainst ho hΓ r (Quot.relType α)
@@ -113,8 +116,8 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
     let ⟨hβ⟩ ← checkAgainst ho hΓ β (Quot.motiveType η l α r)
     let ⟨hf⟩ ← checkAgainst ho hΓ f (Quot.minorType η l α r β)
     let ⟨he⟩ ← checkAgainst ho hΓ e (.quot η l α r)
-    pure ⟨.app β e,
-      (Defeq.quotIndDF hα.defeq hr.defeq hβ.defeq hf.defeq he.defeq).toStrongOrdered ho hΓ⟩
+    pure ⟨.app β e, .quotIndDF hα hr hβ hf he
+      (.appDF (.quotDF hα.left hr.left) .sortDF hβ he .sortDF)⟩
   | .app e e₁ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e
     let ⟨t, t', hpi⟩ ← ensureForall ho hΓ hfn
@@ -123,7 +126,9 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
       have ⟨_, hty⟩ := hpi.regular
       hty.forallE_inv
     let ⟨hconv⟩ ← isTypeEq ho hΓ t₁ t harg.regular hinv.1
-    pure ⟨t'.inst e₁, (hpi.defeq.appDF (hconv.convStrong harg).defeq).toStrongOrdered ho hΓ⟩
+    pure ⟨t'.inst e₁, (by
+      have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hinv
+      exact .appDF ht ht' hpi (hconv.convStrong harg) (ht'.inst_congr (hconv.convStrong harg)))⟩
   | .lam t e' => do
     let ⟨l, ht⟩ ← checkIsType ho hΓ t
     let ⟨t', he'⟩ ← infer ho (hΓ.snoc ⟨l, ht⟩) e'
@@ -198,7 +203,7 @@ partial def isForallEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
   let ⟨hdom⟩ ← isTypeEq ho hΓ t₁ t₂ ht₁.1 ht₂.1
   have hcod₂ : E[Γ.snoc t₁] ⊢ₛ t₂' typ :=
     have ⟨u, hcl⟩ := ht₂.2
-    ⟨u, ((hdom.symm.snocConv ho hΓ).mp hcl.defeq).toStrongOrdered ho (hΓ.snoc ht₁.1)⟩
+    ⟨u, DefeqStrong.snocConvTy hdom.symm hcl⟩
   let ⟨hcod⟩ ← isTypeEq ho (hΓ.snoc ht₁.1) t₁' t₂' ht₁.2 hcod₂
   pure ⟨IsTypeEq.forallE_congr' ho hΓ hdom hcod⟩
 
@@ -376,21 +381,29 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     pure ⟨by
       have ⟨_, hdomStrong⟩ := hdom.sort_uniq ho hΓ
       exact DefeqStrong.retype ho hΓ
-        ((Defeq.lamDF hdomStrong.defeq hbEq.defeq).toStrongOrdered ho hΓ) he⟩
+        (.lamDF hdomStrong htb (hdomStrong.snocConv htb) hbEq (hdomStrong.snocConv hbEq)) he⟩
   | .lam t₂ b, e₁ => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e₁
     let ⟨t₃, t₃', hpi⟩ ← ensureForall ho hΓ hfn
-    have heta := hpi.defeq.eta.toStrongOrdered ho hΓ
     let ⟨hlam⟩ ← isDefEqAt ho hΓ (.forallE t₃ t₃') (.lam t₂ b)
       (.lam t₃ (.app e₁.wk (.var (Fin.last n))))
-    pure ⟨DefeqStrong.retype ho hΓ (hlam.trans heta) he⟩
+    pure ⟨by
+      have ⟨_, htype⟩ := hpi.regular
+      have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := htype.forallE_inv
+      have heta := DefeqStrong.eta ht ht' (by simpa [Expr.wk] using ht.wk t₃)
+        (by simpa [Expr.wk] using hpi.wk t₃) hpi
+      exact DefeqStrong.retype ho hΓ (hlam.trans heta) he⟩
   | e, .lam t₂ b => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ e
     let ⟨t₃, t₃', hpi⟩ ← ensureForall ho hΓ hfn
-    have heta := hpi.defeq.eta.toStrongOrdered ho hΓ
     let ⟨hlam⟩ ← isDefEqAt ho hΓ (.forallE t₃ t₃')
       (.lam t₃ (.app e.wk (.var (Fin.last n)))) (.lam t₂ b)
-    pure ⟨DefeqStrong.retype ho hΓ (heta.symm.trans hlam) he⟩
+    pure ⟨by
+      have ⟨_, htype⟩ := hpi.regular
+      have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := htype.forallE_inv
+      have heta := DefeqStrong.eta ht ht' (by simpa [Expr.wk] using ht.wk t₃)
+        (by simpa [Expr.wk] using hpi.wk t₃) hpi
+      exact DefeqStrong.retype ho hΓ (heta.symm.trans hlam) he⟩
   | .const (kind := kind) (nlevels := nlevels) η ls,
       .const (kind := kind₁) (nlevels := nlevels₁) η₁ ls₁ => fun he _ => do
     let ⟨rfl⟩ ← guardProofOr (kind = kind₁) (.reject .notDefEq)
@@ -423,9 +436,13 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
         (((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f)
         (recFds f) (recFds₁ f)
     let ⟨rfl⟩ ← guardProofOr (ls = ls₁) (.reject .notDefEq)
-    pure ⟨DefeqStrong.retype ho hΓ
-      ((Defeq.ctorDF (fun p => (hps p).defeq) (fun f => (hfds f).defeq)
-        (fun f => (hrecFds f).defeq)).toStrongOrdered ho hΓ) he⟩
+    pure ⟨by
+      have hi := (ho.entryWFStrong η).block
+      exact DefeqStrong.retype ho hΓ
+        (.ctorDF hps hfds hrecFds
+          (fun f => (hi.ctors s c).ordinaryFieldExpr_congr hi.params f hps (fun g _ => hfds g))
+          (fun f => ((hi.ctors s c).recursiveFieldExpr_congr hi.params rfl f hps hfds).choose_spec)
+          ((ho.entryWFStrong η).ctorType s c hps hfds)) he⟩
   | .recr η s ls l ps ms mins is maj, .recr η₁ s₁ ls₁ l₁ ps₁ ms₁ mins₁ is₁ maj₁ => fun he _ => do
     let ⟨rfl, rfl⟩ ← η.indDecEq? η₁
     let ⟨rfl⟩ ← guardProofOr (s = s₁) (.reject .notDefEq)
@@ -443,9 +460,8 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨rfl⟩ ← guardProofOr (l = l₁) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (ls = ls₁) (.reject .notDefEq)
     pure ⟨DefeqStrong.retype ho hΓ
-      ((Defeq.recrDF hrec (fun p => (hps p).defeq) (fun s => (hms s).defeq)
-        (fun s c => (hmins s c).defeq) (fun i => (his i).defeq)
-        hmaj.defeq).toStrongOrdered ho hΓ) he⟩
+      (.recrDF hrec hps hms hmins his hmaj
+        ((ho.entryWFStrong η).block.motiveResult_congr hΓ hps hms his hmaj)) he⟩
   | .quot η l₁ α r, .quot η₁ l₂ α₁ r₁ => fun he _ => do
     let ⟨hα⟩ ← isDefEqAt ho hΓ (.sort l₁) α α₁
     let ⟨hr⟩ ← isDefEqAt ho hΓ (Quot.relType α) r r₁
@@ -480,7 +496,8 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨rfl⟩ ← guardProofOr (l₁ = l₂) (.reject .notDefEq)
     let ⟨rfl⟩ ← guardProofOr (η = η₁) (.reject .notDefEq)
     pure ⟨DefeqStrong.retype ho hΓ
-      ((Defeq.quotIndDF hα.defeq hr.defeq hβ.defeq hf.defeq ha.defeq).toStrongOrdered ho hΓ) he⟩
+      (.quotIndDF hα hr hβ hf ha
+        (.appDF (.quotDF hα.left hr.left) .sortDF hβ ha .sortDF)) he⟩
   | .app f a, .app f₁ a₁ => fun he _ => do
     let ⟨_, hfn⟩ ← infer ho hΓ f
     let ⟨t₂, t₂', hpi⟩ ← ensureForall ho hΓ hfn
@@ -500,8 +517,9 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨ldom, hdom⟩ ← checkIsType ho hΓ t₂
     let ⟨haeq⟩ ← isDefEq ho hΓ ldom t₂ a a₁ hdom
       (hac.convStrong harg) (hac₁.convStrong harg₁)
-    pure ⟨DefeqStrong.retype ho hΓ
-      ((hfeq.defeq.appDF haeq.defeq).toStrongOrdered ho hΓ) he⟩
+    pure ⟨by
+      have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hinv
+      exact DefeqStrong.retype ho hΓ (.appDF ht ht' hfeq haeq (ht'.inst_congr haeq)) he⟩
   | _, _ => fun _ _ => throw (.reject .notDefEq)
 
 end
@@ -511,20 +529,20 @@ def isProp (ho : E.Ordered) (t : Expr ζ ℓ 0) : Except Failure Bool := do
   pure (decide (l = .zero))
 
 def checkAxiom (ho : E.Ordered) (t : Expr ζ ℓ 0) :
-    Except Failure (PLift (Entry.WF E (.axiom t))) := do
+    Except Failure (PLift (Entry.WFStrong E (.axiom t))) := do
   let ⟨l, ht⟩ ← checkIsType ho .nil t
-  pure ⟨.axiom ⟨l, ht.defeq⟩⟩
+  pure ⟨.axiom ⟨l, ht⟩⟩
 
 def checkDef (ho : E.Ordered) (t e : Expr ζ ℓ 0) :
-    Except Failure (PLift (Entry.WF E (.def t e))) := do
+    Except Failure (PLift (Entry.WFStrong E (.def t e))) := do
   let ⟨l, ht⟩ ← checkIsType ho .nil t
   let ⟨hvalue⟩ ← checkAgainst ho .nil e t
-  pure ⟨.def ⟨l, ht.defeq⟩ hvalue.defeq⟩
+  pure ⟨.def ⟨l, ht⟩ hvalue⟩
 
 def checkOpaque (ho : E.Ordered) (t e : Expr ζ ℓ 0) :
-    Except Failure (PLift (Entry.WF E (.opaque t))) := do
+    Except Failure (PLift (Entry.WFStrong E (.opaque t))) := do
   let ⟨l, ht⟩ ← checkIsType ho .nil t
   let ⟨hvalue⟩ ← checkAgainst ho .nil e t
-  pure ⟨.opaque hvalue.defeq ⟨l, ht.defeq⟩⟩
+  pure ⟨.opaque hvalue ⟨l, ht⟩⟩
 
 end Metalean.Checker

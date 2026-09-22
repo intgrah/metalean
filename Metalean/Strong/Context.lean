@@ -6,7 +6,6 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.TypeEq
-public import Metalean.Typing.Context
 public import Metalean.Syntax.Weakening
 import Metalean.Syntax.Substitution
 

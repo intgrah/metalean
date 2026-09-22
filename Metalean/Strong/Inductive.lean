@@ -11,7 +11,6 @@ import Metalean.Strong.Substitution
 import Metalean.Strong.Telescope
 import Metalean.Strong.WeakenEnv
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 @[expose] public section
 
@@ -29,10 +28,6 @@ variable {ζ : Sigs} {sig : Sig} {E : Env ζ} {ℓ n m : Nat}
   {mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
   {is is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n}
   {σ : Subst ζ ℓ (ι.nparams + nfields) n} {r : Expr ζ ℓ n}
-  (tr : ∀ {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {e t : Expr ζ ℓ n},
-    E[Γ] ⊢ e : t →
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ e : t)
 
 theorem WFTeleStrong.mono {P Q : Level ℓ → Prop}
     (hPQ : ∀ {u}, P u → Q u) (hΔ : WFTeleStrong E P Γ Δ) :
@@ -42,19 +37,6 @@ theorem WFTeleStrong.mono {P Q : Level ℓ → Prop}
   | snoc _ ht ih =>
     have ⟨u, hu, ht⟩ := ht
     exact .snoc ih ⟨u, hPQ hu, ht⟩
-
-include tr in
-theorem WFTele.toStrong
-    {P : Level ℓ → Prop} :
-    E[Γ] ⊢ₛ ok →
-    WFTele E P Γ Δ →
-    WFTeleStrong E P Γ Δ := by
-  intro hΓ hΔ
-  induction hΔ with
-  | nil => exact .nil
-  | snoc _ ht ih =>
-    have ⟨_, ht, hu⟩ := ht
-    exact .snoc ih ⟨_, hu, tr ht (ih.appendCtxWFStrong hΓ)⟩
 
 theorem WFTeleStrong.instLevel {P : Level ℓ → Prop}
     {ℓ' : Nat} {Q : Level ℓ' → Prop} (levelSubst : Param ℓ → Level ℓ')
@@ -145,13 +127,6 @@ theorem paramSubstEqStrong :
   rw [← Ctx.get_instL, I.paramType_eq_get_subst ls ps₁ v]
   exact hps v
 
-include tr in
-theorem IdxWF.toStrong
-    (hΓ : E[Γ] ⊢ₛ ok)
-    (h : I.IdxWF E Γ s ls ps is) :
-    I.IdxWFStrong E Γ s ls ps is :=
-  fun i => tr (h i) hΓ
-
 theorem IdxWFStrong.instLevel {ℓ' : Nat}
     (h : I.IdxWFStrong E Γ s ls ps is)
     (levelSubst : Param ℓ → Level ℓ') :
@@ -181,13 +156,6 @@ theorem WFStrong.type :
     E[Γ] ⊢ₛ fd.type typ
   | ⟨htype, _⟩ => ⟨_, htype⟩
 
-include tr in
-theorem WF.toStrong :
-    E[Γ] ⊢ₛ ok →
-    fd.WF E I Γ →
-    fd.WFStrong E I Γ
-  | hΓ, ⟨htype, hlevel⟩ => ⟨tr htype hΓ, hlevel⟩
-
 theorem WFStrong.weakenEnv {entry : Entry ζ sig} :
     fd.WFStrong E I Γ →
     (fd.map (.step .refl)).WFStrong (E.snoc entry)
@@ -201,15 +169,6 @@ namespace RecField
 
 variable {Γ Δ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
 
-include tr in
-theorem WF.toStrong :
-    E[Γ] ⊢ₛ ok →
-    fd.WF E I Γ →
-    fd.WFStrong E I Γ
-  | hΓ, ⟨htele, his⟩ =>
-    let htele := htele.toStrong tr hΓ
-    ⟨htele, his.toStrong tr (htele.appendCtxWFStrong hΓ)⟩
-
 theorem WFStrong.weakenEnv {entry : Entry ζ sig} :
     fd.WFStrong E I Γ →
     (fd.map (.step .refl)).WFStrong (E.snoc entry)
@@ -218,6 +177,37 @@ theorem WFStrong.weakenEnv {entry : Entry ζ sig} :
     ⟨htele.weakenEnv,
       congr(Inductive.IdxWFStrong _ _ $(Ctx.map_append (.step .refl) Γ _) _ _ _ _).mp
         his.weakenEnv⟩
+
+section
+
+variable {Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields)}
+variable {arity : Nat} {s : Fin ι.nsorts}
+  {Θ : Ctx ζ ι.nlevels (ι.nparams + nfields) (ι.nparams + nfields + arity)}
+  {is : Fin (ι.nindices s) → Expr ζ ι.nlevels (ι.nparams + nfields + arity)}
+
+theorem WFStrong.teleAt (h : RecField.WFStrong E I Γ ⟨Θ, is⟩)
+    {ls : Fin ι.nlevels → Level 0} {bound : Nat}
+    (hblock : (I.level.inst ls).eval zeroNs = bound + 1) :
+    WFTeleStrong E (fun l => l.eval zeroNs ≤ bound + 1)
+      (Ctx.instL ls Γ) (Ctx.instL ls Θ) := by
+  have hnz : I.level.eval (Level.eval zeroNs ∘ ls) ≠ 0 := by
+    rw [← Level.eval_inst]
+    omega
+  apply h.tele.instLevel ls
+  intro l hl
+  rw [Level.eval_inst, ← hblock, Level.eval_inst]
+  exact Level.eval_le_of_imax_le hl hnz
+
+theorem WFStrong.recursiveIndex (h : RecField.WFStrong E I Γ ⟨Θ, is⟩)
+    {ls : Fin ι.nlevels → Level ℓ} (index : Fin (ι.nindices s)) :
+    E[Ctx.instL ls Γ ++ Ctx.instL ls Θ] ⊢ₛ
+      (is index).instL ls :
+        I.indexType ls s
+          (fun param => .var ⟨param.val, by omega⟩)
+          (fun i => (is i).instL ls) index := by
+  simpa! using h.indices.instLevel ls index
+
+end
 
 theorem WFStrong.instantiatedIndices
     {fd : RecField ζ ι nfields arity s}
@@ -276,49 +266,6 @@ variable {fds fds₁ fds₂ : Fin csig.nfields → Expr ζ ℓ n}
 
 namespace Ctor
 
-include tr in
-private theorem WF.ordinaryToStrongAux
-    (h : ctor.WF E I)
-    (hps : WFTeleStrong E (fun _ => True) .nil I.params)
-    (count : Nat) (hcount : count ≤ csig.nfields) :
-    (∀ f : Fin count,
-      Field.WFStrong E I
-        (I.params ++ ctor.ordinaryTeleAux f.val (by omega))
-        (ctor.ordinary (f.castLE hcount))) ∧
-    WFTeleStrong E (fun _ => True) I.params
-      (ctor.ordinaryTeleAux count hcount) := by
-  induction count with
-  | zero => exact ⟨fun f => Fin.elim0 f, .nil⟩
-  | succ count ih =>
-    have ⟨hfields, htele⟩ := ih (by omega)
-    have hΓparams : E[I.params] ⊢ₛ ok := by
-      simpa using hps.appendCtxWFStrong .nil
-    have hΓ := htele.appendCtxWFStrong hΓparams
-    have hfield := (h.ordinary ⟨count, by omega⟩).toStrong tr hΓ
-    constructor
-    · intro f
-      cases f using Fin.lastCases with
-      | last => exact hfield
-      | cast f => exact hfields f
-    · have ⟨u, htype⟩ := hfield.type
-      exact .snoc htele ⟨u, trivial, htype⟩
-
-include tr in
-theorem WF.toStrong
-    (hps : WFTeleStrong E (fun _ => True) .nil I.params)
-    (h : ctor.WF E I) :
-    ctor.WFStrong E I :=
-  have ⟨hfields, hfieldTele⟩ := h.ordinaryToStrongAux tr hps
-    csig.nfields le_rfl
-  have hΓparams : E[I.params] ⊢ₛ ok := by
-    simpa using hps.appendCtxWFStrong .nil
-  have hΓfields := hfieldTele.appendCtxWFStrong hΓparams
-  {
-    ordinary := hfields
-    recursive := fun f => (h.recursive f).toStrong tr hΓfields
-    targetIndices := h.targetIndices.toStrong tr hΓfields
-  }
-
 theorem WFStrong.weakenEnv
     {entry : Entry ζ sig} (h : ctor.WFStrong E I) :
     (ctor.map (.step .refl)).WFStrong (E.snoc entry)
@@ -365,17 +312,45 @@ theorem WFStrong.recursiveFieldExprStrong (hctor : ctor.WFStrong E I)
     (hctor.recursive f).instantiatedType hhead (by simp) hΓ hps
       (Ctor.forall_ordinarySubst le_rfl hps hfields)
 
+theorem wfOrdinaryTeleAux (count : Nat) (hcount : count ≤ csig.nfields)
+    (h : ∀ f : Fin count,
+      Field.WFStrong E I (I.params ++ ctor.ordinaryTeleAux f.val (by omega))
+        (ctor.ordinary (f.castLE hcount))) :
+    WFTeleStrong E I.LevelOK I.params (ctor.ordinaryTeleAux count hcount) := by
+  induction count with
+  | zero => exact .nil
+  | succ count ih =>
+    have ⟨htype, hlevel⟩ := h ⟨count, by omega⟩
+    exact .snoc (ih (by omega) fun f => h (f.castSucc)) ⟨_, hlevel, htype⟩
+
 theorem WFStrong.ordinaryTeleAux
     (h : ctor.WFStrong E I)
     (count : Nat) (hcount : count ≤ csig.nfields) :
     WFTeleStrong E I.LevelOK I.params
-      (ctor.ordinaryTeleAux count hcount) := by
-  induction count with
-  | zero => exact .nil
-  | succ count ih =>
-    have hfield := h.ordinary ⟨count, by omega⟩
-    exact .snoc (ih (by omega))
-      ⟨_, hfield.levelOK, hfield.typeExact⟩
+      (ctor.ordinaryTeleAux count hcount) :=
+  wfOrdinaryTeleAux count hcount fun f => h.ordinary (f.castLE hcount)
+
+private theorem WFStrong.ordinaryTeleAux_get (h : ctor.WFStrong E I) (count : Nat)
+    (hcount : count ≤ csig.nfields) (f : Fin count) :
+    E[I.params ++ ctor.ordinaryTeleAux count hcount] ⊢ₛ
+      Ctx.get (Fin.natAdd ι.nparams f)
+        (I.params ++ ctor.ordinaryTeleAux count hcount) :
+      .sort (ctor.ordinary (f.castLE hcount)).level := by
+  induction f using Fin.lastInduction with
+  | last count =>
+    rw [Ctor.ordinaryTeleAux, Tele.append_snoc, Fin.natAdd_last, Ctx.get_last]
+    exact (h.ordinary ((Fin.last count).castLE hcount)).typeExact.wk
+      ((ctor.ordinary ⟨count, hcount⟩).type)
+  | @cast count f ih =>
+    rw [Ctor.ordinaryTeleAux, Tele.append_snoc, Ctx.get_snoc _ _ _ (by simp; omega)]
+    exact (ih (by omega)).wk ((ctor.ordinary ⟨count, hcount⟩).type)
+
+theorem WFStrong.ordinaryTele_get (h : ctor.WFStrong E I) (f : Fin csig.nfields) :
+    E[I.params ++ ctor.ordinaryTele] ⊢ₛ
+      Ctx.get (Fin.natAdd ι.nparams f)
+        (I.params ++ ctor.ordinaryTele) :
+      .sort (ctor.ordinary f).level :=
+  h.ordinaryTeleAux_get csig.nfields le_rfl f
 
 theorem WFStrong.ordinaryFieldTele
     (h : ctor.WFStrong E I)
@@ -575,14 +550,6 @@ theorem WFStrong.recursiveFieldExpr_congr (h : ctor.WFStrong E I)
 end Ctor
 
 namespace Inductive
-
--- TODO fun _ => True
-structure WFStrong (E : Env ζ) (I : Inductive ζ ι) : Prop where
-  params : WFTeleStrong E (fun _ => True) .nil I.params
-  indices (s : Fin ι.nsorts) :
-    WFTeleStrong E (fun _ => True) I.params (I.indices s)
-  ctors (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    (I.ctors s c).WFStrong E I
 
 theorem WFStrong.paramClosedWF {ℓ : Nat} (hB : I.WFStrong E)
     (ls : Fin ι.nlevels → Level ℓ) :
@@ -1454,18 +1421,6 @@ theorem WFStrong.recrTele
   exact .snoc (hpsMotivesCases.append hisTele)
     ⟨(E.get η).block.level.inst ls, trivial, by
       simpa [casesEnd, ps] using hmaj⟩
-
-include tr in
-theorem WF.toStrong
-    (h : I.WF E) :
-    I.WFStrong E := by
-  have hps := h.params.toStrong tr .nil
-  exact {
-    params := hps
-    indices s := (h.indices s).toStrong tr <| by
-      simpa using hps.appendCtxWFStrong .nil
-    ctors s c := (h.ctors s c).toStrong tr hps
-  }
 
 theorem WFStrong.weakenEnv
     {entry : Entry ζ sig} (h : I.WFStrong E) :

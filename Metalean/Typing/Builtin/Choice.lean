@@ -6,18 +6,23 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Builtin.Choice
-public import Metalean.Typing.Defeq
+public import Metalean.Strong.Defs
 
 @[expose] public section
 
 namespace Metalean.Choice
 
-theorem isType : Propext.env[.nil] ⊢ type typ :=
+theorem isType : Propext.env[.nil] ⊢ₛ type typ :=
   ⟨_, .forallEDF .sortDF
     (.forallEDF
       (.indDF (η := nonemptyHead) (s := ⟨0, by decide⟩)
-        (fun ⟨0, _⟩ => .var)
-        fun index => Fin.elim0 index)
-      .var)⟩
+        (fun ⟨0, _⟩ => .var .sortDF)
+        fun i => Fin.elim0 i)
+      (.var .sortDF) (.var .sortDF))
+    (.forallEDF
+      (.indDF (η := nonemptyHead) (s := ⟨0, by decide⟩)
+        (fun ⟨0, _⟩ => .var .sortDF)
+        fun i => Fin.elim0 i)
+      (.var .sortDF) (.var .sortDF))⟩
 
 end Metalean.Choice

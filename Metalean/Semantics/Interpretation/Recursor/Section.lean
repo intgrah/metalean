@@ -11,7 +11,7 @@ public import Metalean.Semantics.Interpretation.Recursor.Fields
 public import Metalean.TypeTheory.Syntactic.Telescope
 import Metalean.TypeTheory.Syntactic.Comprehension
 import Metalean.Syntax.Structure.Projection
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 

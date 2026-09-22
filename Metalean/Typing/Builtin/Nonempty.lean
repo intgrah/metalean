@@ -24,13 +24,13 @@ variable {ζ ζ₁ ζ₂ : Sigs}
   dsimp [Ctor.map]
   congr <;> exact Subsingleton.elim _ _
 
-theorem wf (E : Env ζ) : block.WF E :=
-  ⟨.snoc .nil ⟨_, .sortDF, trivial⟩,
+theorem wf (E : Env ζ) : block.WFStrong E :=
+  ⟨.snoc .nil ⟨_, trivial, .sortDF⟩,
     fun _ => .nil,
     fun ⟨0, _⟩ ⟨0, _⟩ => {
       ordinary
         | ⟨0, _⟩ =>
-          ⟨.var, Inductive.levelOK_of_zero block rfl⟩
+          ⟨.var .sortDF, Inductive.levelOK_of_zero block rfl⟩
       recursive f := Fin.elim0 f
       targetIndices i := Fin.elim0 i
     }⟩

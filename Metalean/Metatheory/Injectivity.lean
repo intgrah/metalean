@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.Context
-import Metalean.Strong.Strengthen
+public import Metalean.Typing.Env
 import Metalean.Semantics.Inversion
 
 @[expose] public section
@@ -78,31 +78,6 @@ theorem IsTypeEq.instCongr {t v : Expr ζ ℓ n}
   | single h =>
     have ⟨_, h⟩ := h
     exact .ofDefEq (h.substitution (SubstWFStrong.inst hΓ hv))
-  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-
-theorem Defeq.snocConv (ho : E.Ordered)
-    {t₁ t₂ : Expr ζ ℓ n} {l : Level ℓ}
-    {e₁' e₂' t' : Expr ζ ℓ (n + 1)} :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ t₁ ≡ t₂ : .sort l →
-    E[Γ.snoc t₁] ⊢ e₁' ≡ e₂' : t' →
-    E[Γ.snoc t₂] ⊢ e₁' ≡ e₂' : t' := by
-  intro hΓ ht d
-  have hS := ht.toStrongOrdered ho hΓ
-  have dS := d.toStrongOrdered ho (hΓ.snoc ⟨l, hS.left⟩)
-  exact (hS.snocConv dS).defeq
-
-theorem IsTypeEq.snocConv (ho : E.Ordered)
-    {e₁' e₂' t' : Expr ζ ℓ (n + 1)} {t₁ t₂ : Expr ζ ℓ n} :
-    E[Γ] ⊢ₛ ok →
-    E[Γ] ⊢ₛ t₁ ≡ t₂ typ →
-    (E[Γ.snoc t₁] ⊢ e₁' ≡ e₂' : t' ↔ E[Γ.snoc t₂] ⊢ e₁' ≡ e₂' : t') := by
-  intro hΓ h
-  induction h using Relation.TransGen.trans_induction_on with
-  | single h =>
-    have ⟨_, h⟩ := h
-    exact ⟨Defeq.snocConv ho hΓ h.defeq,
-      Defeq.snocConv ho hΓ h.symm.defeq⟩
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
 end Metalean

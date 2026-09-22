@@ -6,10 +6,11 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.Defs
+public import Metalean.Typing.Env
 public import Metalean.Syntax.Reduction
 public import Metalean.Syntax.Structure
 import Metalean.Strong.Inversion
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
 import Metalean.Strong.Structure
 import Metalean.Strong.Substitution
 import Metalean.Syntax.Substitution

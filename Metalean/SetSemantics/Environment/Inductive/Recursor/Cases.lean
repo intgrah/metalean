@@ -9,7 +9,6 @@ public import Metalean.SetSemantics.Environment.Inductive.Model
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Case
 import Metalean.SetSemantics.InductiveComputation
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 public section
 

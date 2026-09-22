@@ -5,7 +5,10 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Typing.Env
+public import Metalean.Syntax.Env
+public import Metalean.Syntax.Inductive.Iota
+public import Metalean.Syntax.Quot
+public import Metalean.Syntax.Structure
 import Metalean.Meta.Judgement
 
 @[expose] public section
@@ -253,42 +256,6 @@ theorem right :
     E[Γ] ⊢ₛ e₂ : t :=
   fun h => h.symm.trans h
 
-theorem defeq :
-    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
-    E[Γ] ⊢ e₁ ≡ e₂ : t := by
-  intro h
-  induction h with
-  | var => exact .var
-  | symm _ ih => exact ih.symm
-  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | sortDF => exact .sortDF
-  | constDF => exact .constDF
-  | indDF _ _ hps his => exact .indDF hps his
-  | ctorDF _ _ _ _ _ _ hps hfields hrecFields _ _ =>
-    exact .ctorDF hps hfields hrecFields
-  | recrDF hallowed _ _ _ _ _ _ hps hms hmins his hmaj _ =>
-    exact .recrDF hallowed hps hms hmins his hmaj
-  | appDF _ _ _ _ _ _ _ ihf ihe _ => exact .appDF ihf ihe
-  | lamDF _ _ _ _ _ iht _ _ ihbody _ => exact .lamDF iht ihbody
-  | forallEDF _ _ _ iht ihbody _ => exact .forallEDF iht ihbody
-  | defeqDF _ _ iht ihe => exact .defeqDF iht ihe
-  | beta _ _ _ _ _ _ _ _ ihbody ihe _ _ => exact .beta ihbody ihe
-  | zeta _ _ _ _ iht ihv _ ihbody => exact .zeta iht ihv ihbody
-  | eta _ _ _ _ _ _ _ _ _ ihe => exact .eta ihe
-  | etaStruct h _ _ _ ihps ihmaj _ => exact .etaStruct h ihps ihmaj
-  | proofIrrel _ _ _ _ ihh ihh' => exact .proofIrrel ‹_› ihh ihh'
-  | iota hallowed _ _ _ _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields _ _ _ =>
-    exact .iota hallowed ihps ihms ihmins ihfields ihrecFields
-  | quotDF _ _ ihα ihr => exact .quotDF ihα ihr
-  | quotMkDF _ _ _ ihα ihr iha => exact .quotMkDF ihα ihr iha
-  | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    exact .quotLiftDF ihα ihr ihβ ihf ihh iha
-  | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha _ =>
-    exact .quotIndDF ihα ihr ihβ ihf iha
-  | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
-    exact .quotIota ihα ihr ihβ ihf ihh iha ihlhs ihrhs
-  | delta => exact .delta
-
 end DefeqStrong
 
 section
@@ -406,5 +373,16 @@ structure Ctor.WFStrong {csig : CtorSig ι.nsorts} (ctor : Ctor ζ ι s csig) : 
   targetIndices :
     I.IdxWFStrong E (I.params ++ ctor.ordinaryTele) s Level.param
       (fun p => .var ⟨p.val, by omega⟩) ctor.targetIndices
+
+namespace Inductive
+
+structure WFStrong (E : Env ζ) (I : Inductive ζ ι) : Prop where
+  params : WFTeleStrong E (fun _ => True) .nil I.params
+  indices : ∀ s : Fin ι.nsorts,
+    WFTeleStrong E (fun _ => True) I.params (I.indices s)
+  ctors : ∀ (s : Fin ι.nsorts) (c : Fin (ι.nctors s)),
+    (I.ctors s c).WFStrong E I
+
+end Inductive
 
 end Metalean

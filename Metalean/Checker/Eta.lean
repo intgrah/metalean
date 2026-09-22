@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Strong.Strengthen
+public import Metalean.Strong.Env
 import Metalean.Strong.Structure
 
 @[expose] public section

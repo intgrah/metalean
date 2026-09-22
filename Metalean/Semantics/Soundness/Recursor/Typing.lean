@@ -11,7 +11,7 @@ public import Metalean.Semantics.Soundness.Recursor.Recovery
 public import Metalean.Semantics.Soundness.Telescope.Beta
 import Metalean.Semantics.Domain.Decoder.FixedPoint
 import Metalean.Semantics.Soundness.Rules.Core
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 

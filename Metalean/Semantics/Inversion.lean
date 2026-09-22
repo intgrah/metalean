@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Semantics.Interpretation
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
 import Metalean.Semantics.Soundness
 
 @[expose] public section

@@ -7,7 +7,6 @@ module
 
 public import Metalean.FastChecker.LiteralTyping
 public import Metalean.FastChecker.Quot
-public import Metalean.FastChecker.LiteralTyping
 public import Metalean.FastChecker.Whnf
 public import Metalean.Strong.Inversion
 public import Metalean.Control
@@ -19,7 +18,8 @@ public import Metalean.Metatheory.SubjectReduction
 public import Metalean.Strong.Context
 import Metalean.Metatheory.Unique
 public import Metalean.FastChecker.Coherence
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
+import Metalean.Strong.Telescope
 
 @[expose] public section
 
@@ -767,9 +767,9 @@ theorem Sem.append {G ts : FCtx} {E : Env ζ} {n b : Nat} {Γ : Ctx ζ ℓ 0 n}
     {Δ : Ctx ζ ℓ n b} {P : Level ℓ → Prop} :
     Sem L F G E Γ →
     FCtx.Denotes L ⟨ζ, E⟩ ts Δ →
-    WFTele E P Γ Δ →
+    WFTeleStrong E P Γ Δ →
     Sem L F (G ++ ts) E (Γ ++ Δ) := fun hS hΔ hwf =>
-  ⟨hS.env, hS.ordered, hS.trust, hS.ctx.append hΔ, CtxWFStrong.append hS.ordered hS.wf hwf⟩
+  ⟨hS.env, hS.ordered, hS.trust, hS.ctx.append hΔ, hwf.appendCtxWFStrong hS.wf⟩
 
 theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FExpr}
     (hk : k ≤ G.size) :
@@ -786,9 +786,7 @@ theorem TypeEqTeleSpec.forallE {G : FCtx} {k : Nat} {ft₁ ft₂ b₁ b₂ : FEx
   have hd := hdom hS hdt₁ hdt₂ hinv₁.1 hinv₂.1
   have ⟨_, ht₁⟩ := hinv₁.1
   have ⟨u, hcl⟩ := hinv₂.2
-  have hcod₁ : IsTypeStrong _ _ _ :=
-    ⟨u, ((hd.symm.snocConv hS.ordered hS.wf).mp hcl.defeq).toStrongOrdered
-      hS.ordered (hS.wf.snoc hinv₁.1)⟩
+  have hcod₁ : IsTypeStrong _ _ _ := ⟨u, hcl.snocConvTy hd.symm⟩
   exact hd.forallE_congr' hS.ordered hS.wf
     (hcod (hS.snoc (hdt₁.openBVars (by omega)) ht₁) hb₁ hb₂ hinv₁.2 hcod₁)
 

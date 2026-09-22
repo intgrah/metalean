@@ -6,8 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Interpretation
-import Metalean.Typing.Inductive
-import Metalean.Typing.InstLevel
+import Metalean.Strong.Inductive
+import Metalean.Strong.InstLevel
 import Metalean.Syntax.Substitution
 
 /-! # Semantic models for constructors -/
@@ -39,10 +39,10 @@ structure BlockTeleModels (E : Env ζ₁) (ls : Fin ι.nlevels → Level 0)
   indices (s : Fin ι.nsorts) :
     StrongTeleExtension E ε zeroNs params (Ctx.instL ls (I.indices s)) (indicesBound s)
 
-theorem Inductive.WF.teleModels
+theorem Inductive.WFStrong.teleModels
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hB : I.WF E₁) :
+    (hB : I.WFStrong E₁) :
     Nonempty (BlockTeleModels E₁ ls ε₁ I) := by
   have ⟨paramsModel⟩ :=
     (hB.params.instLevel ls fun _ => trivial).model hdecl hrule ho
@@ -150,11 +150,11 @@ theorem ihType_denotes
 
 end StrongRecursiveFieldSource
 
-theorem RecField.WF.recursiveSourceOf
+theorem RecField.WFStrong.recursiveSourceOf
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
     {Δ : Ctx ζ₁ ι.nlevels ι.nparams (ι.nparams + nfields)}
-    (hfield : RecField.WF E₁ I (I.params ++ Δ) recFd)
+    (hfield : RecField.WFStrong E₁ I (I.params ++ Δ) recFd)
     (params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params))
     (extension : StrongTeleExtension E₁ ε₁ zeroNs params (Ctx.instL ls Δ) bound₁)
     (fieldExtension : StrongTeleExtension E₁ ε₁ zeroNs (params.append extension)
@@ -173,17 +173,17 @@ structure StrongCtorSource (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
   recursive (f : Fin csig.nrecFields) :
     StrongRecursiveFieldSource E ε I ls (params.append ordinary) bound (ctor.recursive f)
 
-theorem Ctor.WF.sourceAt
+theorem Ctor.WFStrong.sourceAt
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hctor : ctor.WF E₁ I)
+    (hctor : ctor.WFStrong E₁ I)
     (params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params))
     (hblock : (I.level.inst ls).eval zeroNs = bound + 1) :
     Nonempty (StrongCtorSource E₁ ε₁ I ls ctor params bound) := by
   have hnz : I.level.eval (Level.eval zeroNs ∘ ls) ≠ 0 := by
     rw [← Level.eval_inst]
     omega
-  have ⟨fields⟩ := (hctor.ordinaryTele.instLevel
+  have ⟨fields⟩ := ((hctor.ordinaryTeleAux _ le_rfl).instLevel
     (Q := fun l => l.eval zeroNs ≤ bound + 1) ls fun hl => by
       rw [Level.eval_inst, ← hblock, Level.eval_inst]
       exact Level.eval_le_of_imax_le hl hnz).modelExtensionAt hdecl hrule ho (fun hl => hl) params
@@ -194,13 +194,13 @@ theorem Ctor.WF.sourceAt
     htele.modelExtensionAt hdecl hrule ho (fun hl => hl) (params.append fields)
   exact (hctor.recursive f).recursiveSourceOf hdecl hrule ho params fields fieldExtension
 
-theorem Ctor.WF.source
+theorem Ctor.WFStrong.source
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hctor : ctor.WF E₁ I)
+    (hctor : ctor.WFStrong E₁ I)
     (params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params)) :
     Nonempty (Σ bound, StrongCtorSource E₁ ε₁ I ls ctor params bound) := by
-  have ⟨fieldBound, fields⟩ := (hctor.ordinaryTele.instLevel
+  have ⟨fieldBound, fields⟩ := ((hctor.ordinaryTeleAux _ le_rfl).instLevel
     (Q := fun _ => True) ls fun _ => trivial).modelExtension hdecl hrule ho params
   have hsources (f : Fin csig.nrecFields) :
       Nonempty (Σ bound₂, StrongTeleExtension E₁ ε₁ zeroNs (params.append fields)
@@ -378,7 +378,7 @@ theorem recursivePhaseAux
           pre hatoms (ctor.recursive f) (source.recursive f) hreaches
           (hsortValues (csig.recursiveTarget f)) (happlyRecursive f)
           _ (hreach hγ)
-        simpa [Ctor.map] using h
+        simpa [Ctor.map, -RecField.instantiatedType_wkN] using h
     refine ⟨{γ | Fin.init γ ∈ reachEnd ∧
         γ (Fin.last (ι.nparams + csig.nfields + count)) ∈
           typedRecFieldSetDep code.tele code.index block level
@@ -457,10 +457,10 @@ theorem realizes
 end StrongCtorSource
 
 open scoped Classical in
-theorem Ctor.WF.targetModel
+theorem Ctor.WFStrong.targetModel
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hctor : ctor.WF E₁ I)
+    (hctor : ctor.WFStrong E₁ I)
     (indices : StrongTeleExtension E₁ ε₁ zeroNs params (Ctx.instL ls (I.indices s)) bound₁)
     (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
     Nonempty (StrongCtorSource.Target source) := by
@@ -506,10 +506,10 @@ structure StrongCtorModel (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
     (I.level.inst ls).eval zeroNs = level + 1 →
     (source.code (StrongCtorSource.targetIndex target)).DomsIn level
 
-theorem Ctor.WF.model
+theorem Ctor.WFStrong.model
     (hdecl : SemDecls E₁ ε₁ zeroNs)
     (hrule : SemDeclRules E₁ ε₁ zeroNs) (ho : E₁.Ordered)
-    (hctor : ctor.WF E₁ I)
+    (hctor : ctor.WFStrong E₁ I)
     (params : StrongTeleModel E₁ ε₁ zeroNs (Ctx.instL ls I.params))
     (indices : StrongTeleExtension E₁ ε₁ zeroNs params (Ctx.instL ls (I.indices s)) bound₁) :
     Nonempty (StrongCtorModel E₁ ε₁ I ls ctor params) := by

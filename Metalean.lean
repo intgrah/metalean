@@ -221,7 +221,7 @@ public import Metalean.Strong.InstLevel
 public import Metalean.Strong.Inversion
 public import Metalean.Strong.ProofFields
 public import Metalean.Strong.Quot
-public import Metalean.Strong.Strengthen
+public import Metalean.Strong.Env
 public import Metalean.Strong.Structure
 public import Metalean.Strong.Substitution
 public import Metalean.Strong.Telescope
@@ -270,9 +270,4 @@ public import Metalean.Typing.Builtin.Iff
 public import Metalean.Typing.Builtin.Nonempty
 public import Metalean.Typing.Builtin.Propext
 public import Metalean.Typing.Builtin.QuotSound
-public import Metalean.Typing.Context
-public import Metalean.Typing.Defeq
 public import Metalean.Typing.Env
-public import Metalean.Typing.Inductive
-public import Metalean.Typing.InstLevel
-public import Metalean.Typing.Weakening

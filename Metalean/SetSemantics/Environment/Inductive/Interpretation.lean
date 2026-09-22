@@ -68,34 +68,34 @@ private theorem SemDefeq.exists_domain {t : Expr ζ₁ ℓ m}
   · simpa [hγ] using mem_type_of_mem_sort hlevel (interp γ hγ).mem
   · simpa [hγ] using empty_mem_type
 
-theorem WFTele.modelExtensionAt
+theorem WFTeleStrong.modelExtensionAt
     (hdecl : SemDecls E₁ ε₁ ν)
     (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
     {P : Level ℓ → Prop}
     (hls : ∀ {l}, P l → l.eval ν ≤ bound + 1)
     (base : StrongTeleModel E₁ ε₁ ν Γ)
-    (hΔ : WFTele E₁ P Γ Δ) :
+    (hΔ : WFTeleStrong E₁ P Γ Δ) :
     Nonempty (StrongTeleExtension E₁ ε₁ ν base Δ bound) := by
   induction hΔ with
   | nil => exact ⟨#t[], .nil, .nil⟩
   | @snoc m Δ t _ hA ih =>
     have ⟨model⟩ := ih
-    have ⟨l, ht, hl⟩ := hA
+    have ⟨l, hl, ht⟩ := hA
     have ⟨_, hbounded, htype⟩ := SemDefeq.exists_domain
       (fun γ hγ => soundness hdecl hrule ho ht γ (model.semCtx γ hγ)) (hls hl)
     exact ⟨model.sem.snoc _, .snoc model.bounded hbounded, .snoc model.realizes htype⟩
 
-theorem WFTele.modelExtension
+theorem WFTeleStrong.modelExtension
     (hdecl : SemDecls E₁ ε₁ ν)
     (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
     (base : StrongTeleModel E₁ ε₁ ν Γ)
-    (hΔ : WFTele E₁ (fun _ => True) Γ Δ) :
+    (hΔ : WFTeleStrong E₁ (fun _ => True) Γ Δ) :
     Nonempty (Σ bound, StrongTeleExtension E₁ ε₁ ν base Δ bound) := by
   induction hΔ with
   | nil => exact ⟨0, #t[], .nil, .nil⟩
   | @snoc m Δ t _ hA ih =>
     have ⟨level, model⟩ := ih
-    have ⟨l, ht, _⟩ := hA
+    have ⟨l, _, ht⟩ := hA
     have ⟨_, hbounded, htype⟩ := SemDefeq.exists_domain
       (fun γ hγ => soundness hdecl hrule ho ht γ (model.semCtx γ hγ)) (Nat.le_succ (l.eval ν))
     exact ⟨max level (l.eval ν), model.sem.snoc _,
@@ -103,10 +103,10 @@ theorem WFTele.modelExtension
         (fun γ => type_mono (Nat.le_max_right _ _) (hbounded γ)),
       .snoc model.realizes htype⟩
 
-theorem WFTele.model
+theorem WFTeleStrong.model
     (hdecl : SemDecls E₁ ε₁ ν)
     (hrule : SemDeclRules E₁ ε₁ ν) (ho : E₁.Ordered)
-    (hΓ : WFTele E₁ (fun _ => True) #t[] Γ) :
+    (hΓ : WFTeleStrong E₁ (fun _ => True) #t[] Γ) :
     Nonempty (StrongTeleModel E₁ ε₁ ν Γ) :=
   have ⟨_, extension⟩ := hΓ.modelExtension hdecl hrule ho ⟨#t[], ⟨0, .nil⟩, .nil⟩
   ⟨extension.sem, ⟨_, extension.bounded⟩,

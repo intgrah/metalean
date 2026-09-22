@@ -38,7 +38,7 @@ def bind (st : State) (name : Name) (b : Binding) : Except Failure Table := do
     pure (st.table.insert name b)
 
 def extend (st : State) {sig : Sig} (entry : Entry st.ζ sig)
-    (hwf : Entry.WF st.env entry) : State where
+    (hwf : Entry.WFStrong st.env entry) : State where
   ζ := st.ζ.snoc sig
   env := st.env.snoc entry
   ordered := st.ordered.snoc hwf

@@ -7,7 +7,7 @@ module
 
 public import Metalean.SetSemantics.Environment.Inductive.Soundness
 public import Metalean.SetSemantics.Environment.Quot
-public import Metalean.Typing.InstLevel
+public import Metalean.Strong.InstLevel
 
 @[expose] public section
 
@@ -211,27 +211,27 @@ noncomputable def Env.Model.addAxiom {pre : Env ζ} {nlevels : Nat}
   rw [hvalue, ← Expr.map_instL, Expr.denote_map _ hatoms]
   exact (hvalid ls).choose_spec
 
-noncomputable def Env.Model.addOpaque {pre : Env ζ} {nlevels : Nat}
-    {type : Expr ζ nlevels 0} (m : Model.{u} pre) (ho : pre.Ordered)
-    (hwf : Entry.WF pre (.opaque type)) : Model.{u} (pre.snoc (.opaque type)) := by
-  have hex : ∃ value, pre[.nil] ⊢ value : type :=
-    have @Entry.WF.opaque _ _ _ value _ hvalue _ := hwf
-    ⟨value, hvalue⟩
+noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
+    {t : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
+    (hwf : Entry.WFStrong pre (.opaque t)) : Model.{u} (pre.snoc (.opaque t)) := by
+  have hex : ∃ e, pre[.nil] ⊢ₛ e : t :=
+    have @Entry.WFStrong.opaque _ _ _ e _ heq _ := hwf
+    ⟨e, heq⟩
   apply m.addConst (m.atoms[![]]⟦hex.choose.instL ·⟧)
-  intro ε hatoms hvalue
+  intro ε hatoms heq
   refine .opaque fun ls => ?_
-  rw [hvalue, ← Expr.map_instL, Expr.denote_map _ hatoms]
+  rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
   exact (soundness m.semDecls m.semDeclRules ho (hex.choose_spec.instLevel ls) ![] .nil).mem
 
-noncomputable def Env.Model.addDef {pre : Env ζ} {nlevels : Nat}
-    {type value : Expr ζ nlevels 0} (m : Model.{u} pre) (ho : pre.Ordered)
-    (hwf : Entry.WF pre (.def type value)) : Model.{u} (pre.snoc (.def type value)) := by
-  apply m.addConst (m.atoms[![]]⟦value.instL ·⟧)
-  intro ε hatoms hvalue
+noncomputable def Env.Model.addDef {pre : Env ζ} {ℓ : Nat}
+    {t e : Expr ζ ℓ 0} (m : Model.{u} pre) (ho : pre.Ordered)
+    (hwf : Entry.WFStrong pre (.def t e)) : Model.{u} (pre.snoc (.def t e)) := by
+  apply m.addConst (m.atoms[![]]⟦e.instL ·⟧)
+  intro ε hatoms heq
   refine .def (fun ls => ?_) fun ls => ?_
   · have .def _ htyped := hwf
-    rw [hvalue, ← Expr.map_instL, Expr.denote_map _ hatoms]
+    rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
     exact (soundness m.semDecls m.semDeclRules ho (htyped.instLevel ls) ![] .nil).mem
-  · rw [hvalue, ← Expr.map_instL, Expr.denote_map _ hatoms]
+  · rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
 
 end Metalean

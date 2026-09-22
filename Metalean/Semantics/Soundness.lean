@@ -12,7 +12,7 @@ public import Metalean.Semantics.Soundness.Rules.Function
 public import Metalean.Semantics.Soundness.Rules.Inductive
 public import Metalean.Semantics.Soundness.Rules.Quotient
 public import Metalean.Semantics.Soundness.Structure.Eta
-import Metalean.Strong.Strengthen
+import Metalean.Strong.Env
 import Metalean.Strong.InstLevel
 import Metalean.Strong.WeakenEnv
 import Metalean.Strong.Substitution

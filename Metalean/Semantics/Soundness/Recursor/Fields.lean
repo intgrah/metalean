@@ -13,7 +13,6 @@ public import Metalean.Semantics.Soundness.Telescope.Transport
 import Metalean.Strong.InstLevel
 import Metalean.Semantics.Soundness.Rules.Core
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 @[expose] public section
 

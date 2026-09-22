@@ -8,10 +8,10 @@ module
 public import Metalean.FastChecker.Infer
 public import Metalean.FastChecker.WF
 public import Metalean.Level.Order
-public import Metalean.Typing.Inductive
-import Metalean.Strong.Strengthen
+public import Metalean.Strong.Inductive
+import Metalean.Strong.Env
 import Metalean.Strong.Telescope
-import Metalean.Typing.Weakening
+import Metalean.Syntax.Substitution
 
 @[expose] public section
 
@@ -26,7 +26,7 @@ def TeleWFSpec (G : FCtx) (P : Level ℓ → Prop) (ts : FCtx) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃b : Nat⦄ ⦃Δ₀ : Ctx ζ ℓ n b⦄,
   Sem L F G E Γ →
   FCtx.Denotes L ⟨ζ, E⟩ ts Δ₀ →
-  ∃ Δ : Ctx ζ ℓ n b, FCtx.Denotes L ⟨ζ, E⟩ ts Δ ∧ WFTele E P Γ Δ
+  ∃ Δ : Ctx ζ ℓ n b, FCtx.Denotes L ⟨ζ, E⟩ ts Δ ∧ WFTeleStrong E P Γ Δ
 
 def TeleEntriesSpec (G : FCtx) (Q : FLevel → Bool) (ts : FCtx) : Prop :=
   ∀ j (hj : j < ts.size),
@@ -41,7 +41,7 @@ theorem TeleWFSpec.ofSigma {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → B
     ∀ {E : Σ ζ, Env ζ} {n : Nat} {Γ : Ctx E.1 ℓ 0 n} {b : Nat} {Δ₀ : Ctx E.1 ℓ n b},
     Sem L F G E.2 Γ →
     FCtx.Denotes L E ts Δ₀ →
-    ∃ Δ : Ctx E.1 ℓ n b, FCtx.Denotes L E ts Δ ∧ WFTele E.2 P Γ Δ := by
+    ∃ Δ : Ctx E.1 ℓ n b, FCtx.Denotes L E ts Δ ∧ WFTeleStrong E.2 P Γ Δ := by
   intro h E _ _ _ _ hS hΔ₀
   induction hΔ₀ with
   | nil => exact ⟨.nil, .nil, .nil⟩
@@ -60,7 +60,7 @@ theorem TeleWFSpec.ofSigma {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → B
     have ⟨l, hl, hQl⟩ := h ts₀.size (by simp)
     rw [hpre ts₀.size le_rfl, Array.extract_size] at hl
     have ⟨t', l', ht', hl', hty⟩ := hl (hS.append hΔ hwf) (by simpa using ht)
-    exact ⟨Δ.snoc t', hΔ.snoc (by simpa using ht'), .snoc hwf ⟨⟦l'⟧, hty.defeq, hQ hl' hQl⟩⟩
+    exact ⟨Δ.snoc t', hΔ.snoc (by simpa using ht'), .snoc hwf ⟨⟦l'⟧, hQ hl' hQl, hty⟩⟩
 
 theorem TeleWFSpec.of {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → Bool}
     {ts : FCtx}
@@ -99,7 +99,7 @@ def IdxSpec (G : FCtx) (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts)
   (∀ p, E[Γ] ⊢ₛ σ p : I.paramType (⟦ls' ·⟧) σ p) →
   ArgsDenote L ⟨ζ, E⟩ is is₀ →
   ∃ is' : Fin (ι.nindices s) → Expr ζ ℓ n,
-    ArgsDenote L ⟨ζ, E⟩ is is' ∧ I.IdxWF E Γ s (⟦ls' ·⟧) σ is'
+    ArgsDenote L ⟨ζ, E⟩ is is' ∧ I.IdxWFStrong E Γ s (⟦ls' ·⟧) σ is'
 
 def checkIdx (G : FCtx) (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts)
     (us : Array FLevel) (ps is : FCtx) (hsI : s.val < fI.indices.size)
@@ -115,7 +115,7 @@ def checkIdx (G : FCtx) (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts)
       (fun _ he i => hI.indexType hus hus' hps s ⟨his₀.size, he⟩ i)
       (fun _ i he => Inductive.indexType_isTypeStrong hidx i hS.wf hσ he)
       h
-    ⟨is', ⟨his₀.size, hisD⟩, fun i => (hisT i).defeq⟩⟩
+    ⟨is', ⟨his₀.size, hisD⟩, hisT⟩⟩
 
 def levelOKB (ι : IndSig) (fI : FInductive) (l : FLevel) : Bool :=
   match l.toRaw ι.nlevels, fI.level.toRaw ι.nlevels with
@@ -170,10 +170,10 @@ def OrdFieldSpec (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (�
   Sem L F fI.params E I.params →
   FInductive.Denotes L ⟨ζ, E⟩ fI I →
   (hc : FCtor.Denotes L ⟨ζ, E⟩ fctor ctor) →
-  WFTele E I.LevelOK I.params (ctor.ordinaryTeleAux f.val f.isLt.le) →
+  WFTeleStrong E I.LevelOK I.params (ctor.ordinaryTeleAux f.val f.isLt.le) →
   ∃ fd : Field ζ ι f.val,
     FField.Denotes L ⟨ζ, E⟩ (fctor.ordinary[f.val]'(hc.ordinarySize.symm ▸ f.isLt)) fd ∧
-    Field.WF E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) fd
+    Field.WFStrong E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) fd
 
 def OrdFieldsSpec (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fctor : FCtor) : Prop :=
@@ -183,7 +183,7 @@ def OrdFieldsSpec (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
   FCtor.Denotes L ⟨ζ, E⟩ fctor ctor₀ →
   ∃ ctor : Ctor ζ ι s (ι.ctors s c), FCtor.Denotes L ⟨ζ, E⟩ fctor ctor ∧
     ∀ f : Fin (ι.ctors s c).nfields,
-    Field.WF E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) (ctor.ordinary f)
+    Field.WFStrong E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) (ctor.ordinary f)
 
 variable {L F ℓ hints accel}
 
@@ -195,7 +195,7 @@ theorem OrdFieldsSpec.of {ι : IndSig} {fI : FInductive} {s : Fin ι.nsorts} {c 
   suffices this : ∀ count, count ≤ (ι.ctors s c).nfields →
       ∃ ctor : Ctor ζ ι s (ι.ctors s c), FCtor.Denotes L ⟨ζ, E⟩ fctor ctor ∧
         ∀ f : Fin (ι.ctors s c).nfields, f.val < count →
-        Field.WF E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) (ctor.ordinary f) by
+        Field.WFStrong E I (I.params ++ ctor.ordinaryTeleAux f.val f.isLt.le) (ctor.ordinary f) by
     have ⟨ctor, hc, hf⟩ := this _ le_rfl
     exact ⟨ctor, hc, fun f => hf f f.isLt⟩
   intro count
@@ -204,7 +204,7 @@ theorem OrdFieldsSpec.of {ι : IndSig} {fI : FInductive} {s : Fin ι.nsorts} {c 
   | succ count ih =>
     intro hcount
     have ⟨ctor, hc, hf⟩ := ih (by omega)
-    have hwf : WFTele E I.LevelOK I.params (ctor.ordinaryTeleAux count (by omega)) :=
+    have hwf : WFTeleStrong E I.LevelOK I.params (ctor.ordinaryTeleAux count (by omega)) :=
       Ctor.wfOrdinaryTeleAux count (by omega) fun g => hf (g.castLE (by omega)) g.isLt
     have ⟨fd, hfdD, hfdWF⟩ := h ⟨count, by omega⟩ hS hI hc hwf
     have hne (f : Fin (ι.ctors s c).nfields) (hne : f ≠ ⟨count, by omega⟩) :
@@ -251,7 +251,7 @@ def checkOrdField (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
     have .sort hl'' := htd
     obtain rfl := hl''.unique hl'
     refine ⟨⟨e, (ctor.ordinary f).level⟩, ⟨he, _, hl', hlevel⟩, ⟨?_, ?_⟩⟩
-    · have h : E[_] ⊢ e : .sort (ctor.ordinary f).level := hlevel ▸ hty.defeq
+    · have h : E[_] ⊢ₛ e : .sort (ctor.ordinary f).level := hlevel ▸ hty
       exact h
     · change I.LevelOK (ctor.ordinary f).level
       rw [← hlevel]
@@ -277,11 +277,11 @@ def RecFieldSpec (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (�
   FInductive.Denotes L ⟨ζ, E⟩ fI I →
   HeaderWF E I →
   (hc : FCtor.Denotes L ⟨ζ, E⟩ fctor ctor) →
-  WFTele E I.LevelOK I.params ctor.ordinaryTele →
+  WFTeleStrong E I.LevelOK I.params ctor.ordinaryTele →
   ∃ fd : RecField ζ ι (ι.ctors s c).nfields ((ι.ctors s c).recursiveArity r)
       ((ι.ctors s c).recursiveTarget r),
     FRecField.Denotes L ⟨ζ, E⟩ (fctor.recursive[r.val]'(hc.recursiveSize.symm ▸ r.isLt)) fd ∧
-    RecField.WF E I (I.params ++ ctor.ordinaryTele) fd
+    RecField.WFStrong E I (I.params ++ ctor.ordinaryTele) fd
 
 def checkRecField (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fctor : FCtor) (hrec : ∀ r : Fin (ι.ctors s c).nrecFields, r.val < fctor.recursive.size)
@@ -322,7 +322,7 @@ def CtorDeclSpec (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (�
   FInductive.Denotes L ⟨ζ, E⟩ fI I →
   HeaderWF E I →
   FCtor.Denotes L ⟨ζ, E⟩ fctor ctor₀ →
-  ∃ ctor : Ctor ζ ι s (ι.ctors s c), FCtor.Denotes L ⟨ζ, E⟩ fctor ctor ∧ Ctor.WF E I ctor
+  ∃ ctor : Ctor ζ ι s (ι.ctors s c), FCtor.Denotes L ⟨ζ, E⟩ fctor ctor ∧ Ctor.WFStrong E I ctor
 
 def checkCtorDecl (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fctor : FCtor) (hindicesLt : ∀ t : Fin ι.nsorts, t.val < fI.indices.size)
@@ -343,7 +343,7 @@ def checkCtorDecl (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
     (fun i => Nat.lt_of_lt_of_eq i.isLt htgtSize.symm) (hindexLt s)
   pure ⟨fun {_ _ _ _} hS hI hH hc₀ => by
     have ⟨ctor, hc, hfields⟩ := hord hS hI hc₀
-    have hwf : WFTele _ _ _ ctor.ordinaryTele :=
+    have hwf : WFTeleStrong _ _ _ ctor.ordinaryTele :=
       Ctor.wfOrdinaryTeleAux (ι.ctors s c).nfields le_rfl fun f => hfields (f.castLE le_rfl)
     have hrecs := fun r => hrec r hS hI hH hc hwf
     choose rfs hrfD hrfWF using hrecs
@@ -374,7 +374,7 @@ def InductiveWFSpec (ι : IndSig) (fI : FInductive) : Prop :=
   E.Ordered →
   L.NatTrust E →
   FInductive.Denotes L ⟨ζ, E⟩ fI I₀ →
-  ∃ I : Inductive ζ ι, FInductive.Denotes L ⟨ζ, E⟩ fI I ∧ Inductive.WF E I
+  ∃ I : Inductive ζ ι, FInductive.Denotes L ⟨ζ, E⟩ fI I ∧ Inductive.WFStrong E I
 
 def checkInductive (ι : IndSig) (fI : FInductive) :
     CheckM L F ι.nlevels (PLift (InductiveWFSpec L F ι fI)) := do
@@ -416,7 +416,7 @@ def checkInductive (ι : IndSig) (fI : FInductive) :
     have hI₁ : FInductive.Denotes L ⟨ζ, E⟩ fI { I₀ with params := Δp, indices := Δi } :=
       ⟨hΔp, hI₀.indicesSize, hΔi, hI₀.level, hI₀.ctorsSize, hI₀.ctorsRow, hI₀.ctors⟩
     have hH : HeaderWF E ({ I₀ with params := Δp, indices := Δi } : Inductive ζ ι) :=
-      ⟨hSp.wf, fun t => WFTele.toStrong (fun h hΓ => h.toStrongOrdered ho hΓ) hSp.wf (hwfi t)⟩
+      ⟨hSp.wf, hwfi⟩
     have hcs := fun t c => hctors t c hSp hI₁ hH (hI₀.ctors t c)
     choose cs hcsD hcsWF using hcs
     exact ⟨{ I₀ with params := Δp, indices := Δi, ctors := cs },

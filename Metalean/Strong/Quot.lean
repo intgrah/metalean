@@ -6,9 +6,9 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Strong.Defs
+public import Metalean.Syntax.Eq
 import Metalean.Strong.Substitution
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 @[expose] public section
 

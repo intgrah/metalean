@@ -957,4 +957,64 @@ theorem Subst.renames_wkFrom {cut : Nat} (Γ₀ : Ctx ζ ℓ 0 cut) (t : Expr ζ
     Subst.Renames (Γ₀ ++ Δ) (Γ₀.insert t Δ) (Subst.wkFrom cut) := fun v =>
   ⟨Ren.wkFrom cut v, rfl, (Ctx.get_insert Γ₀ t Δ v).trans (Expr.wkFrom_eq_subst cut _)⟩
 
+section
+
+variable {cut : Nat} (fd : RecField ζ ι nfields arity target)
+
+namespace Quot
+
+@[simp] theorem relType_wkFrom (α : Expr ζ ℓ m) :
+    (relType α).wkFrom cut = relType (α.wkFrom cut) := by
+  simp [Expr.wkFrom_eq_subst]
+
+end Quot
+
+namespace Inductive
+
+@[simp] theorem paramType_wkFrom (f : Fin ι.nparams) :
+    (I.paramType ls ps f).wkFrom cut =
+      I.paramType ls (fun i => (ps i).wkFrom cut) f := by
+  simp [Expr.wkFrom_eq_subst]
+
+@[simp] theorem paramType_wkN (f : Fin ι.nparams) (k : Nat) :
+    (I.paramType ls ps f).wkN k =
+      I.paramType ls (fun i => (ps i).wkN k) f := by
+  simp [Expr.wkN_eq_subst]
+
+@[simp] theorem motiveType_wkN (l : Level ℓ) (s : Fin ι.nsorts) (k : Nat) :
+    (I.motiveType η ls ps l s).wkN k =
+      I.motiveType η ls (fun i => (ps i).wkN k) l s := by
+  simp [Expr.wkN_eq_subst]
+
+@[simp] theorem caseFnType_wkN (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (k : Nat) :
+    (I.caseFnType η ls ps ms s c).wkN k =
+      I.caseFnType η ls (fun i => (ps i).wkN k)
+        (fun s => (ms s).wkN k) s c := by
+  simp [Expr.wkN_eq_subst]
+
+end Inductive
+
+namespace RecField
+
+@[simp] theorem instantiatedType_wkN (σ : Subst ζ ℓ (ι.nparams + nfields) m) (k : Nat) :
+    (fd.instantiatedType η ls ps σ).wkN k =
+      fd.instantiatedType η ls (fun p => (ps p).wkN k)
+        fun v => (σ v).wkN k := by
+  simp [Expr.wkN_eq_subst, -Expr.subst_vars]
+
+end RecField
+
+namespace Ctor
+
+@[simp] theorem ordinaryFieldType_wkN (f : Fin csig.nfields)
+    (previous : Fin f.val → Expr ζ ℓ m) (k : Nat) :
+    ((((ctor.ordinary f).type).instL ls).subst (Fin.append ps previous)).wkN k =
+      (((ctor.ordinary f).type).instL ls).subst
+        (Fin.append (fun i => (ps i).wkN k) fun i => (previous i).wkN k) := by
+  simp [Expr.wkN_eq_subst]
+
+end Ctor
+
+end
+
 end Metalean

@@ -11,7 +11,6 @@ import Metalean.Strong.Substitution
 import Metalean.Strong.Telescope
 import Metalean.Syntax.Structure.Projection
 import Metalean.Syntax.Substitution
-import Metalean.Typing.Weakening
 
 @[expose] public section
 

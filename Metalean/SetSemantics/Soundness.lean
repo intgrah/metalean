@@ -120,11 +120,11 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
 
 theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     (ho : Env.Ordered E) :
-    E[Γ] ⊢ e₁ ≡ e₂ : t →
+    E[Γ] ⊢ₛ e₁ ≡ e₂ : t →
     ∀ γ, ε[ν] ⊨ γ : Γ → ε[ν; γ] ⊨ e₁ ≡ e₂ : t := by
   intro h γ hρ
   induction h with
-  | @var n Γ v => exact ⟨rfl, hρ v⟩
+  | @var n Γ v _ _ _ => exact ⟨rfl, hρ v⟩
   | symm _ ih => exact (ih γ hρ).symm
   | trans _ _ ih₁ ih₂ => exact (ih₁ γ hρ).trans (ih₂ γ hρ)
   | @sortDF n Γ l =>
@@ -139,7 +139,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     have h₁ := ih₁ γ hρ
     have h₂ := ih₂ γ hρ
     exact ⟨eq_of_mem_truth hp.mem h₁.mem h₂.mem, h₁.mem⟩
-  | @forallEDF n Γ l₁ l₂ body₁ body₂ t₁ t₂ _ _ iht ihbody =>
+  | @forallEDF n Γ l₁ l₂ t₁ t₂ body₁ body₂ _ _ _ iht ihbody _ =>
     have ht := iht γ hρ
     have hbody := fun x hx => ihbody (γ.snoc x) (hρ.snoc hx)
     constructor
@@ -151,7 +151,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
       refine pi_mem_sort_imax ht.mem fun x hx => ?_
       rw [app_map hx]
       exact (hbody x hx).mem
-  | @lamDF n Γ l body₁ body₂ bt t₁ t₂ _ _ iht ihbody =>
+  | @lamDF n Γ _ _ t₁ t₂ body₁ body₂ bt _ _ _ _ _ iht _ _ ihbody _ =>
     have ht := iht γ hρ
     have hbody := fun x hx => ihbody (γ.snoc x) (hρ.snoc hx)
     constructor
@@ -161,7 +161,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     · refine Aczel.lam_mem_piMap fun x hx => ?_
       rw [app_map hx]
       exact (hbody x hx).mem
-  | @appDF n Γ f₁ f₂ a₁ a₂ t bt _ _ ihf iha =>
+  | @appDF n Γ _ _ f₁ f₂ a₁ a₂ t bt _ _ _ _ _ _ _ ihf iha _ =>
     have hf := ihf γ hρ
     have ha := iha γ hρ
     constructor
@@ -169,7 +169,7 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     · simp
       have h := Aczel.app_mem hf.mem ha.mem
       rwa [app_map ha.mem] at h
-  | @beta n Γ e t body bt _ _ ihbody ihe =>
+  | @beta n Γ _ _ e t body bt _ _ _ _ _ _ _ _ ihbody ihe _ _ =>
     have he := ihe γ hρ
     have hbody := ihbody (γ.snoc ε[ν; γ]⟦e⟧) (hρ.snoc he.mem)
     have heq : ε[ν; γ]⟦Expr.app (.lam t body) e⟧ =
@@ -177,26 +177,26 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
       simpa! using Aczel.app_lam he.mem
     refine ⟨heq, ?_⟩
     simpa [heq] using hbody.mem
-  | zeta _ _ _ _ _ ihbody =>
+  | zeta _ _ _ _ _ _ _ ihbody =>
     have hbody := ihbody γ hρ
     refine ⟨?_, ?_⟩
     · simp!
     · simpa! using hbody.mem
-  | @eta n Γ e t bt _ ihe =>
+  | @eta n Γ _ _ e t bt _ _ _ _ _ _ _ _ _ ihe =>
     have he := ihe γ hρ
     have heq : ε[ν; γ]⟦Expr.lam t (.app e.wk (.var (Fin.last n)))⟧ =
         ε[ν; γ]⟦e⟧ := by
       simpa! using Aczel.lam_app he.mem
     exact ⟨heq, heq ▸ he.mem⟩
-  | @constDF n nlevels kind Γ η ls =>
+  | @constDF n ℓ' kind Γ η ls _ _ _ =>
     refine ⟨rfl, ?_⟩
     simpa! using hdecl η ls
   | indDF _ _ ihps ihis =>
     exact hrule.ind ho (fun p => ihps p γ hρ) fun i => ihis i γ hρ
-  | ctorDF _ _ _ ihps ihfields ihrecFields =>
+  | ctorDF _ _ _ _ _ _ ihps ihfields ihrecFields _ _ _ =>
     exact hrule.ctor ho (fun p => ihps p γ hρ) (fun f => ihfields f γ hρ)
       fun f => ihrecFields f γ hρ
-  | recrDF hallowed _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
+  | recrDF hallowed _ _ _ _ _ _ ihps ihms ihmins ihis ihmaj _ =>
     exact hrule.recr ho hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
       (fun s c => ihmins s c γ hρ) (fun i => ihis i γ hρ) (ihmaj γ hρ)
   | quotDF _ _ ihα ihr => exact hrule.quot ho (ihα γ hρ) (ihr γ hρ)
@@ -204,15 +204,15 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν)
     exact hrule.quotMk ho (ihα γ hρ) (ihr γ hρ) (iha γ hρ)
   | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
     exact hrule.quotLift ho (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
-  | quotIndDF _ _ _ _ _ ihα ihr ihβ ihf iha =>
+  | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha _ =>
     exact hrule.quotInd ho (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (iha γ hρ)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
     exact hrule.quotIota ho (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
       (ihlhs γ hρ) (ihrhs γ hρ)
-  | iota hallowed _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields =>
+  | iota hallowed _ _ _ _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields _ _ _ =>
     exact hrule.iota ho hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
       (fun s c => ihmins s c γ hρ) (fun f => ihfields f γ hρ) fun f => ihrecFields f γ hρ
-  | etaStruct h _ _ ihps ihmaj =>
+  | etaStruct h _ _ _ ihps ihmaj _ =>
     exact hrule.etaStruct h ho (fun p => ihps p γ hρ) (ihmaj γ hρ)
   | delta => exact hrule.delta ho
 
