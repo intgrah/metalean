@@ -39,7 +39,7 @@ def forallE (T : Repr Γ) (B : Repr ⟨Γ.as.snoc T.wf⟩) : Repr Γ :=
 def pi (T : Repr Γ) : Ty_ (⟨Γ.as.snoc T.wf⟩ : CtxCat E ℓ) → Ty_ Γ :=
   Quotient.lift (fun B => ⟦T.forallE B⟧) fun _ _ h =>
     have ⟨_, ht⟩ := T.wf
-    Quotient.sound (IsTypeEq.forallE_cod ht h)
+    Quotient.sound (TypeEq.forallE_cod ht h)
 
 theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ T₂.term typ)
     (b : Ty_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
@@ -48,10 +48,10 @@ theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ 
   induction b using Quotient.inductionOn with
   | h B =>
     have ⟨_, hB⟩ := B.wf
-    refine Quotient.sound (IsTypeEq.symm ?_)
+    refine Quotient.sound (TypeEq.symm ?_)
     change E[Γ.as.ctx] ⊢ .forallE T₁.term B.term ≡ .forallE T₂.term (B.term.subst Subst.id) typ
     rw [Expr.subst_id]
-    exact IsTypeEq.forallE_dom h hB
+    exact TypeEq.forallE_dom h hB
 
 end Repr
 

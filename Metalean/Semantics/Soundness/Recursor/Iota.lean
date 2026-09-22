@@ -534,7 +534,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
   have hn : Tm.label (t := Inductive.motiveResult (ms s)
       (fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)
       (.ctor η s c ls ps inst.fds inst.recFds)) Γ₁.as heq.left = Tm.label Γ₁.as prhs.typed :=
-    Tm.label_eq (IsType.isTypeEq heq.left.regular) heq
+    Tm.label_eq (IsType.typeEq heq.left.regular) heq
   rw [hsound.recr_value hB hblock hr pargs fargs hrel σ₁ ρ₁ hρ, hpayload, hn]
   exact prhs.fixed prhs.typed σ₁ ρ₁ hρ
 

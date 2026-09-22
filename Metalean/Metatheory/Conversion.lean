@@ -15,7 +15,7 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
-theorem IsTypeEq.forallE_dom_congr (ho : E.Ordered)
+theorem TypeEq.forallE_dom_congr (ho : E.Ordered)
     {t₁ t₂ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ t₁ ≡ t₂ typ →
@@ -27,7 +27,7 @@ theorem IsTypeEq.forallE_dom_congr (ho : E.Ordered)
     have hcl₂ := Defeq.snocConvTy hd hcl₁
     .ofDefEq (.forallEDF hdl hcl₁ hcl₂)
 
-theorem IsTypeEq.forallE_congr' (ho : E.Ordered)
+theorem TypeEq.forallE_congr' (ho : E.Ordered)
     {t₁ t₂ : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ t₁ ≡ t₂ typ →
@@ -35,7 +35,7 @@ theorem IsTypeEq.forallE_congr' (ho : E.Ordered)
     E[Γ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ :=
   fun hΓ hd hc =>
     have ⟨_, hdl⟩ := hd.sort_uniq ho hΓ
-    (IsTypeEq.forallE_congr hdl.left hc).trans
-      (IsTypeEq.forallE_dom_congr ho hΓ hd hc.isType.2)
+    (TypeEq.forallE_congr hdl.left hc).trans
+      (TypeEq.forallE_dom_congr ho hΓ hd hc.right)
 
 end Metalean

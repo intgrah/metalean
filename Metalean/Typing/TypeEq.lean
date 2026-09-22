@@ -13,15 +13,15 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n m : Nat} {Γ : Ctx ζ ℓ 0 n} {u : Level ℓ}
 
-def IsTypeEq (E : Env ζ) {ℓ n : Nat} (Γ : Ctx ζ ℓ 0 n) :
+def TypeEq (E : Env ζ) {ℓ n : Nat} (Γ : Ctx ζ ℓ 0 n) :
     Expr ζ ℓ n → Expr ζ ℓ n → Prop :=
   Relation.TransGen fun t₁ t₂ => ∃ u, E[Γ] ⊢ t₁ ≡ t₂ : .sort u
 
-notation:65 E "[" Γ "]" " ⊢ " t₁:51 " ≡ " t₂:51 " typ" => IsTypeEq E Γ t₁ t₂
+notation:65 E "[" Γ "]" " ⊢ " t₁:51 " ≡ " t₂:51 " typ" => TypeEq E Γ t₁ t₂
 
 variable {e₁ e₂ t t₁ t₂ t₃ : Expr ζ ℓ n}
 
-namespace IsTypeEq
+namespace TypeEq
 
 theorem ofDefEq :
     E[Γ] ⊢ t₁ ≡ t₂ : .sort u →
@@ -56,7 +56,7 @@ theorem conv :
     exact ⟨.defeqDF h, .defeqDF h.symm⟩
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem isType :
+private theorem regularity :
     E[Γ] ⊢ t₁ ≡ t₂ typ →
     E[Γ] ⊢ t₁ typ ∧ E[Γ] ⊢ t₂ typ := by
   intro h
@@ -64,11 +64,21 @@ theorem isType :
   | single h =>
     have ⟨l, h⟩ := h
     exact ⟨⟨l, h.left⟩, ⟨l, h.right⟩⟩
-  | trans _ _ ih₁ ih₂ => exact ⟨ih₁.1, ih₂.2⟩
+  | trans _ _ ih₁ ih₂ => exact ⟨ih₁.left, ih₂.right⟩
 
-end IsTypeEq
+theorem left :
+    E[Γ] ⊢ t₁ ≡ t₂ typ →
+    E[Γ] ⊢ t₁ typ :=
+  fun h => h.regularity.left
 
-theorem IsType.isTypeEq {t : Expr ζ ℓ n} :
+theorem right :
+    E[Γ] ⊢ t₁ ≡ t₂ typ →
+    E[Γ] ⊢ t₂ typ :=
+  fun h => h.regularity.right
+
+end TypeEq
+
+theorem IsType.typeEq {t : Expr ζ ℓ n} :
     E[Γ] ⊢ t typ →
     E[Γ] ⊢ t ≡ t typ :=
   fun h => have ⟨_, h⟩ := h; .ofDefEq h
@@ -81,7 +91,7 @@ theorem Defeq.snocConvTy {t₁ t₂ : Expr ζ ℓ n} (h : E[Γ] ⊢ t₁ ≡ t�
   | single h => have ⟨_, h⟩ := h; exact h.snocConv
   | trans _ _ ih₁ ih₂ => exact fun d => ih₂ (ih₁ d)
 
-theorem IsTypeEq.snocConvTy {t₁ t₂ : Expr ζ ℓ n}
+theorem TypeEq.snocConvTy {t₁ t₂ : Expr ζ ℓ n}
     {e₁ e₂ : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ t₁ ≡ t₂ typ →
     E[Γ.snoc t₁] ⊢ e₁ ≡ e₂ typ →
@@ -93,7 +103,7 @@ theorem IsTypeEq.snocConvTy {t₁ t₂ : Expr ζ ℓ n}
     exact .ofDefEq (Defeq.snocConvTy h he)
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem IsTypeEq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ n}
+theorem TypeEq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ n}
     {e₁' e₂' : Expr ζ ℓ (n + 1)} :
     E[Γ.snoc t] ⊢ e₁' ≡ e₂' typ →
     E[Γ] ⊢ e₁ ≡ e₂ : t →
@@ -105,7 +115,7 @@ theorem IsTypeEq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ n}
     exact .ofDefEq (Defeq.inst_congr₂ h he₁)
   | trans _ _ ih₁ ih₂ => exact (ih₁ he₁).trans (ih₂ he₁.right)
 
-theorem IsTypeEq.forallE_dom {t₁ t₂ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)} {v : Level ℓ}
+theorem TypeEq.forallE_dom {t₁ t₂ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 1)} {v : Level ℓ}
     (h : E[Γ] ⊢ t₁ ≡ t₂ typ) :
     E[Γ.snoc t₁] ⊢ t' : .sort v →
     E[Γ] ⊢ .forallE t₁ t' ≡ .forallE t₂ t' typ := by
@@ -115,7 +125,7 @@ theorem IsTypeEq.forallE_dom {t₁ t₂ : Expr ζ ℓ n} {t' : Expr ζ ℓ (n + 
     exact fun hb => .ofDefEq (.forallEDF h hb (Defeq.snocConvTy (.ofDefEq h) hb))
   | trans h₁ _ ih₁ ih₂ => exact fun hb => (ih₁ hb).trans (ih₂ (Defeq.snocConvTy h₁ hb))
 
-theorem IsTypeEq.lam_dom {t₁ t₂ : Expr ζ ℓ n} {t' e' : Expr ζ ℓ (n + 1)} {v : Level ℓ}
+theorem TypeEq.lam_dom {t₁ t₂ : Expr ζ ℓ n} {t' e' : Expr ζ ℓ (n + 1)} {v : Level ℓ}
     (h : E[Γ] ⊢ t₁ ≡ t₂ typ) :
     E[Γ.snoc t₁] ⊢ t' : .sort v →
     E[Γ.snoc t₁] ⊢ e' : t' →
@@ -126,10 +136,10 @@ theorem IsTypeEq.lam_dom {t₁ t₂ : Expr ζ ℓ n} {t' e' : Expr ζ ℓ (n + 1
     exact fun ht' he' => .lamDF h ht' (Defeq.snocConvTy (.ofDefEq h) ht') he'
       (Defeq.snocConvTy (.ofDefEq h) he')
   | trans h₁ _ ih₁ ih₂ =>
-    exact fun ht' he' => (ih₁ ht' he').trans ((IsTypeEq.forallE_dom h₁ ht').symm.conv
+    exact fun ht' he' => (ih₁ ht' he').trans ((TypeEq.forallE_dom h₁ ht').symm.conv
       (ih₂ (Defeq.snocConvTy h₁ ht') (Defeq.snocConvTy h₁ he')))
 
-theorem IsTypeEq.forallE_cod {t : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} {u : Level ℓ} :
+theorem TypeEq.forallE_cod {t : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} {u : Level ℓ} :
     E[Γ] ⊢ t : .sort u →
     E[Γ.snoc t] ⊢ t₁' ≡ t₂' typ →
     E[Γ] ⊢ .forallE t t₁' ≡ .forallE t t₂' typ := by
@@ -144,7 +154,7 @@ section
 
 variable {Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}
 
-theorem IsTypeEq.substitution {σ : Subst ζ ℓ n m} {t₁ t₂ : Expr ζ ℓ n} :
+theorem TypeEq.substitution {σ : Subst ζ ℓ n m} {t₁ t₂ : Expr ζ ℓ n} :
     E[Γ₂] ⊢ σ ⊣ Γ₁ →
     E[Γ₁] ⊢ t₁ ≡ t₂ typ →
     E[Γ₂] ⊢ t₁.subst σ ≡ t₂.subst σ typ := by

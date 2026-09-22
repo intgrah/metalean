@@ -17,17 +17,17 @@ open Relation
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
-theorem IsTypeEq.sort_inj (ho : E.Ordered) (hΓ : E[Γ] ⊢ ok) {l₁ l₂ : Level ℓ}
+theorem TypeEq.sort_inj (ho : E.Ordered) (hΓ : E[Γ] ⊢ ok) {l₁ l₂ : Level ℓ}
     (h : E[Γ] ⊢ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ :=
-  IsTypeEq.sort_model_inj ho hΓ h
+  TypeEq.sort_model_inj ho hΓ h
 
-theorem IsTypeEq.forallE_inj (ho : E.Ordered)
+theorem TypeEq.forallE_inj (ho : E.Ordered)
     {t₁ t₂ : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ →
     E[Γ] ⊢ t₁ ≡ t₂ typ ∧ E[Γ.snoc t₁] ⊢ t₁' ≡ t₂' typ :=
   fun hΓ h =>
-    have ⟨h₁, h₂, _⟩ := IsTypeEq.forallE_model_inj ho hΓ h
+    have ⟨h₁, h₂, _⟩ := TypeEq.forallE_model_inj ho hΓ h
     ⟨h₁, h₂⟩
 
 theorem Defeq.ind_inj (ho : E.Ordered) {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
@@ -44,7 +44,7 @@ theorem Defeq.ind_inj (ho : E.Ordered) {ι : IndSig} {η : Head ζ (.inductive �
         E[Γ] ⊢ is₁ index ≡ is₂ index : t :=
   ind_model_inv ho
 
-theorem IsTypeEq.quot_inj (ho : E.Ordered)
+theorem TypeEq.quot_inj (ho : E.Ordered)
     {η : Head ζ .quot} {l₁ l₂ : Level ℓ} {α α' r r' : Expr ζ ℓ n} :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .quot η l₁ α r ≡ .quot η l₂ α' r' typ →
@@ -53,7 +53,7 @@ theorem IsTypeEq.quot_inj (ho : E.Ordered)
     have ⟨hl, hα, hr⟩ := h.quot_model_inj ho hΓ
     ⟨hl, .ofDefEq hα, hr⟩
 
-theorem IsTypeEq.forallE_congr {t : Expr ζ ℓ n} {l : Level ℓ}
+theorem TypeEq.forallE_congr {t : Expr ζ ℓ n} {l : Level ℓ}
     {t₁' t₂' : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ t : .sort l →
     E[Γ.snoc t] ⊢ t₁' ≡ t₂' typ →
@@ -65,7 +65,7 @@ theorem IsTypeEq.forallE_congr {t : Expr ζ ℓ n} {l : Level ℓ}
     exact .ofDefEq (.forallEDF ht h h)
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem IsTypeEq.instCongr {t v : Expr ζ ℓ n}
+theorem TypeEq.instCongr {t v : Expr ζ ℓ n}
     {t₁' t₂' : Expr ζ ℓ (n + 1)} :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ v : t →

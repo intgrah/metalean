@@ -79,7 +79,7 @@ theorem rawExtensionIsRepresented {t : Expr ζ ℓ Γ₁.as.len} {u : Level ℓ}
     change E[Γ₂.as.ctx] ⊢ ((Γ₁.as.ctx.snoc t).get (Fin.last _)).subst σ.subst ≡
       t.subst (σ ≫ projectionRaw Γ₁ ht).subst typ
     rw [Ctx.get_last, ← Expr.subst_wk, Expr.subst_subst]
-    exact (IsType.substitution ⟨u, ht⟩ (σ ≫ projectionRaw Γ₁ ht).typed).isTypeEq
+    exact (IsType.substitution ⟨u, ht⟩ (σ ≫ projectionRaw Γ₁ ht).typed).typeEq
   · intro σ₁ σ₂ ⟨hgeneric, hover⟩
     exact extension_hom_ext hover hgeneric
   · intro a σ h

@@ -27,7 +27,7 @@ theorem conv {l : Level ℓ} :
     E[Γ] ⊢ t₁ ≡ t₂ : .sort l →
     E[Γ] ⊢ e !: t₂ →
     E[Γ] ⊢ e !: t₁ :=
-  fun ht h _ hc => (IsTypeEq.ofDefEq ht).trans (h hc)
+  fun ht h _ hc => (TypeEq.ofDefEq ht).trans (h hc)
 
 theorem var {v : Var n} : E[Γ] ⊢ .var v !: Γ.get v :=
   fun hc => hc.var_inv.symm
@@ -101,7 +101,7 @@ theorem lam :
     E[Γ] ⊢ .lam t e' !: .forallE t t' :=
   fun hΓ ht hl _ hc =>
     have ⟨_, he', hres⟩ := hc.lam_inv hΓ
-    (IsTypeEq.forallE_congr ht (hl he')).trans hres.symm
+    (TypeEq.forallE_congr ht (hl he')).trans hres.symm
 
 theorem letE {v r : Expr ζ ℓ n} :
     E[Γ] ⊢ ok →
@@ -119,8 +119,8 @@ theorem app (ho : E.Ordered) {f a : Expr ζ ℓ n} (hinst : t'.inst a = t₂) :
   subst hinst
   intro hΓ hl ha _ hc
   have ⟨_, _, hf, _, ht⟩ := hc.app_inv
-  have ⟨_, hcod⟩ := IsTypeEq.forallE_inj ho hΓ (hl hf)
-  exact (IsTypeEq.instCongr hΓ ha hcod).trans ht.symm
+  have ⟨_, hcod⟩ := TypeEq.forallE_inj ho hΓ (hl hf)
+  exact (TypeEq.instCongr hΓ ha hcod).trans ht.symm
 
 theorem forallE (ho : E.Ordered) :
     E[Γ] ⊢ ok →
@@ -129,8 +129,8 @@ theorem forallE (ho : E.Ordered) :
     E[Γ] ⊢ .forallE t t' !: .sort (.imax l₁ l₂) := by
   intro hΓ ht ht' _ hc
   have ⟨_, _, hu, hv, hres⟩ := hc.forallE_ty_inv
-  obtain rfl := IsTypeEq.sort_inj ho hΓ (ht hu)
-  obtain rfl := IsTypeEq.sort_inj ho (hΓ.snoc ⟨_, hu⟩) (ht' hv)
+  obtain rfl := TypeEq.sort_inj ho hΓ (ht hu)
+  obtain rfl := TypeEq.sort_inj ho (hΓ.snoc ⟨_, hu⟩) (ht' hv)
   exact hres.symm
 
 end
@@ -192,7 +192,7 @@ theorem Defeq.uniqTy (ho : E.Ordered) :
   | quotIota _ _ _ _ _ _ _ _ _ _ _ _ _ _ ihlhs ihrhs => exact ⟨(ihlhs hΓ).1, (ihrhs hΓ).1⟩
   | delta _ _ _ ihvalue => exact ⟨const, (ihvalue hΓ).1⟩
 
-theorem IsTypeEq.sort_uniq (ho : E.Ordered) :
+theorem TypeEq.sort_uniq (ho : E.Ordered) :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ t₁ ≡ t₂ typ →
     ∃ l, E[Γ] ⊢ t₁ ≡ t₂ : .sort l := by
@@ -202,7 +202,7 @@ theorem IsTypeEq.sort_uniq (ho : E.Ordered) :
   | trans _ _ ih₁ ih₂ =>
     have ⟨l₁, h₁⟩ := ih₁
     have ⟨l₂, h₂⟩ := ih₂
-    obtain rfl := IsTypeEq.sort_inj ho hΓ (Defeq.uniqTy ho hΓ h₁.right h₂.left)
+    obtain rfl := TypeEq.sort_inj ho hΓ (Defeq.uniqTy ho hΓ h₁.right h₂.left)
     exact ⟨l₁, h₁.trans h₂⟩
 
 end Metalean

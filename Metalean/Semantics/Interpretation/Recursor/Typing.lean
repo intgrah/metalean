@@ -103,7 +103,7 @@ theorem right (hB : InductiveWF E (E.get η).block) (hallowed : (E.get η).block
   motive s₁ := (Inductive.motiveType_congr hB hΓ hps).conv (hms s₁).right
   case s₁ c₁ := Inductive.caseFnType_conv hB hΓ hps hms (hmins s₁ c₁)
   index := (Inductive.indexType_conv hB · hps his)
-  major := (IsTypeEq.ofDefEq (Defeq.indDF hps his)).conv hmaj.right
+  major := (TypeEq.ofDefEq (Defeq.indDF hps his)).conv hmaj.right
 
 theorem iota (hB : InductiveWF E (E.get η).block) (hallowed : (E.get η).block.RecAllowed l)
     (hΓ : E[Γ₁.as.ctx] ⊢ ok)

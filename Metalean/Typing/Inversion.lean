@@ -34,7 +34,7 @@ theorem var_inv {v : Var n} :
   intro n Γ e₁ e₂ t v he h
   induction h with
   | var => rcases he with he | he <;> cases he <;> exact .ofDefEq ‹_›
-  | defeqDF ht _ _ ihe => exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+  | defeqDF ht _ _ ihe => exact (TypeEq.ofDefEq ht).symm.trans (ihe he)
   | _ => rigid he
 
 theorem sort_inv :
@@ -50,7 +50,7 @@ theorem sort_inv :
   | sortDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
   | defeqDF ht _ _ ihe =>
-    exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+    exact (TypeEq.ofDefEq ht).symm.trans (ihe he)
   | _ => rigid he
 
 theorem forallE_ty_inv :
@@ -76,7 +76,7 @@ theorem forallE_ty_inv :
     · exact ⟨_, _, ht.right, ht₂'.right, .ofDefEq sortDF⟩
   | defeqDF ht _ _ ihe =>
     have ⟨l₁, l₂, hdom, hcod, hres⟩ := ihe he
-    exact ⟨l₁, l₂, hdom, hcod, (IsTypeEq.ofDefEq ht).symm.trans hres⟩
+    exact ⟨l₁, l₂, hdom, hcod, (TypeEq.ofDefEq ht).symm.trans hres⟩
   | _ => rigid he
 
 theorem const_inv {kind nlevels}
@@ -102,7 +102,7 @@ theorem const_inv {kind nlevels}
     · exact .ofDefEq htype.left
     · exact .ofDefEq htype
   | defeqDF ht _ _ ihe =>
-    exact (IsTypeEq.ofDefEq ht).symm.trans (ihe he)
+    exact (TypeEq.ofDefEq ht).symm.trans (ihe he)
   | _ => rigid he
 
 section Inductive
@@ -190,7 +190,7 @@ theorem ctor_inv :
     have ⟨ps₁, fds₁, recFds₁, hps,
       hfields, hrecFields, hresult, hT⟩ := ih he
     exact ⟨ps₁, fds₁, recFds₁, hps,
-      hfields, hrecFields, hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      hfields, hrecFields, hresult, (TypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
 theorem recr_inv :
@@ -263,7 +263,7 @@ theorem recr_inv :
       hresult, hT⟩ := ih he
     exact ⟨ps₁, ms₁, mins₁, is₁, maj₁,
       hallowed, hps, hms, hmins, his, hmaj,
-      hresult, (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      hresult, (TypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
 theorem ind_inv :
@@ -299,7 +299,7 @@ theorem ind_inv :
   | defeqDF ht _ _ ih =>
     have ⟨ps₁, is₁, hps, his, hT⟩ := ih he
     exact ⟨ps₁, is₁, hps, his,
-      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      (TypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
 end Inductive
@@ -317,7 +317,7 @@ theorem quot_inv :
   | quotDF =>
     rcases he with he | he <;> cases he <;> exact .ofDefEq .sortDF
   | defeqDF ht _ _ ih =>
-    exact (IsTypeEq.ofDefEq ht).symm.trans (ih he)
+    exact (TypeEq.ofDefEq ht).symm.trans (ih he)
   | _ => rigid he
 
 theorem quotInd_prem :
@@ -356,7 +356,7 @@ theorem quotInd_prem :
   | defeqDF ht _ _ ih =>
     have ⟨α₁, r₁, β₁, f₁, a₁, hα, hr, hβ, he, ha, hresult, hT⟩ := ih he
     exact ⟨α₁, r₁, β₁, f₁, a₁, hα, hr, hβ, he, ha, hresult,
-      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      (TypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
 theorem quotMk_prem :
@@ -387,7 +387,7 @@ theorem quotMk_prem :
   | defeqDF ht _ _ ih =>
     have ⟨α₁, r₁, a₁, hα, hr, ha, hT⟩ := ih he
     exact ⟨α₁, r₁, a₁, hα, hr, ha,
-      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      (TypeEq.ofDefEq ht).symm.trans hT⟩
   | _ => rigid he
 
 theorem quotLift_prem :
@@ -432,7 +432,7 @@ theorem quotLift_prem :
       hr, hβ, he, hcompat, ha, hT⟩ := ih he
     exact ⟨α₁, r₁, β₁, f₁, h₁, a₁, hα,
       hr, hβ, he, hcompat, ha,
-      (IsTypeEq.ofDefEq ht).symm.trans hT⟩
+      (TypeEq.ofDefEq ht).symm.trans hT⟩
   | quotIota hα hr hβ he hcompat ha _ _ _ _ _ _ _ _ _ ih =>
     rcases he with he | he
     · cases he
@@ -522,7 +522,7 @@ theorem app_inv :
         .ofDefEq hres⟩
   | defeqDF ht _ _ ih =>
     obtain ⟨t₁, t', hf, he, hinst⟩ := ih hd
-    exact ⟨t₁, t', hf, he, (IsTypeEq.ofDefEq ht).symm.trans hinst⟩
+    exact ⟨t₁, t', hf, he, (TypeEq.ofDefEq ht).symm.trans hinst⟩
   | beta ht₁ ht' hbody he hres _ _ _ _ _ _ ihresult =>
     rcases hd with hd | hd
     · cases hd
@@ -553,7 +553,7 @@ theorem letE_inv {v : Expr ζ ℓ n} :
   induction h with
   | defeqDF ht _ _ ih =>
     have ⟨t', ht₁, hv, he', hinst⟩ := ih he hΓ
-    exact ⟨t', ht₁, hv, he', (IsTypeEq.ofDefEq ht).symm.trans hinst⟩
+    exact ⟨t', ht₁, hv, he', (TypeEq.ofDefEq ht).symm.trans hinst⟩
   | zeta ht hv htype hbody _ _ _ ihresult =>
     rcases he with he | he
     · cases he
@@ -600,7 +600,7 @@ theorem lam_inv :
           ht'.left ht₂'.left)⟩
   | defeqDF ht _ _ ih =>
     obtain ⟨t', he', hinst⟩ := ih he hΓ
-    exact ⟨t', he', (IsTypeEq.ofDefEq ht).symm.trans hinst⟩
+    exact ⟨t', he', (TypeEq.ofDefEq ht).symm.trans hinst⟩
   | beta => simp_all
   | zeta => simp_all
   | @eta n Γ u v e t₁ t' ht₁ ht' htw hew hee iht₁ iht' ihtw ihew ih =>

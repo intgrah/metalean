@@ -196,7 +196,7 @@ theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
   refine Eq.trans (Tm.label_eq ?_ ?_)
     (Tm.apply_label Γ₂.as htσ htσ' (.lamDF htσ htσ' htσ' heσ' heσ') harg).symm
   · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
-      IsTypeEq.ofDefEq (Defeq.inst_congr htσ' harg)
+      TypeEq.ofDefEq (Defeq.inst_congr htσ' harg)
   · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
       (Defeq.beta htσ htσ' heσ' harg (Defeq.inst_congr htσ' harg) (Defeq.inst_congr heσ' harg)).symm
 
@@ -531,7 +531,7 @@ theorem RawJudgment.appDF (pt : RawJudgment Γ₁ t t (.sort u)) :
   have p₂ := pf.symm.toRawTyped.app pt.syntactic pt'.syntactic pt'.left pe.symm.toRawTyped pResult.right
   refine ⟨.appDF pt.syntactic pt'.syntactic pf.syntactic pe.syntactic pResult.syntactic,
     pResult.left, p₁.1.term, p₂.1.term, fun _ σ ρ hρ => ?_, p₁.1.fixed⟩
-  rw [p₁.2 σ ρ hρ, p₂.2 σ ρ hρ, Tm.label_eq (IsTypeEq.ofDefEq pt.syntactic) pe.syntactic,
+  rw [p₁.2 σ ρ hρ, p₂.2 σ ρ hρ, Tm.label_eq (TypeEq.ofDefEq pt.syntactic) pe.syntactic,
     HasEquality.eval pf.equal hρ pf.left.ideal pf.right.ideal,
     HasEquality.eval pe.equal hρ pe.left.ideal pe.right.ideal]
 

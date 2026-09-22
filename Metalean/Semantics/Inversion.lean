@@ -38,7 +38,7 @@ theorem Defeq.ind_model_inv (ho : E.Ordered) {ι : IndSig}
     fun p => ⟨_, (Quotient.exact (congrFun hcode.2.1 p)).2⟩,
     fun i => ⟨_, (Quotient.exact (congrFun hcode.2.2 i)).2⟩⟩
 
-theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok)
+theorem TypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok)
     {t t' : Expr ζ ℓ n} :
     E[Δ] ⊢ t ≡ t' typ →
     (rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) t).app _ (𝟙 _).op (fun _ ↦ ⊥) =
@@ -51,7 +51,7 @@ theorem IsTypeEq.rawInterpret_eq (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok)
       (hΔ.bottom_admissible ho (𝟙 _))
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-theorem IsTypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok) {l₁ l₂ : Level ℓ}
+theorem TypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok) {l₁ l₂ : Level ℓ}
     (h : E[Δ] ⊢ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ := by
   have heq := h.rawInterpret_eq ho hΔ
   rw [rawInterpret_sort, rawInterpret_sort, RawFamily.sort_value, RawFamily.sort_value] at heq
@@ -61,13 +61,14 @@ theorem IsTypeEq.sort_model_inj (ho : E.Ordered) (hΔ : E[Δ] ⊢ ok) {l₁ l₂
     exact (ΩLower.mem_principal_id _ _).mpr le_rfl
   exact sortAtom_le_iff.mp hmem
 
-theorem IsTypeEq.forallE_model_inj (ho : E.Ordered)
+theorem TypeEq.forallE_model_inj (ho : E.Ordered)
     {t₁ t₂ : Expr ζ ℓ n} {t₁' t₂' : Expr ζ ℓ (n + 1)} :
     E[Δ] ⊢ ok →
     E[Δ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ →
     E[Δ] ⊢ t₁ ≡ t₂ typ ∧ E[Δ.snoc t₁] ⊢ t₁' ≡ t₂' typ ∧ E[Δ.snoc t₂] ⊢ t₁' ≡ t₂' typ := by
   intro hΔ h
-  have ⟨⟨_, hl⟩, ⟨_, hr⟩⟩ := h.isType
+  have ⟨_, hl⟩ := h.left
+  have ⟨_, hr⟩ := h.right
   have ⟨⟨_, ht₁⟩, ⟨_, ht₁'⟩⟩ := hl.forallE_inv
   have ⟨⟨_, ht₂⟩, ⟨_, ht₂'⟩⟩ := hr.forallE_inv
   have hp : ((rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) (.forallE t₁ t₁')).app _ (𝟙 _).op
@@ -79,13 +80,14 @@ theorem IsTypeEq.forallE_model_inj (ho : E.Ordered)
   simp at hp
   exact (Ty.pairOfTyping_eq_iff _ ht₁ ht₁' ht₂ ht₂').mp hp
 
-theorem IsTypeEq.quot_model_inj (ho : E.Ordered)
+theorem TypeEq.quot_model_inj (ho : E.Ordered)
     {η : Head ζ .quot} {u u' : Level ℓ} {α α' r r' : Expr ζ ℓ n} :
     E[Δ] ⊢ ok →
     E[Δ] ⊢ .quot η u α r ≡ .quot η u' α' r' typ →
     u = u' ∧ E[Δ] ⊢ α ≡ α' : .sort u ∧ E[Δ] ⊢ r ≡ r' : Quot.relType α := by
   intro hΔ h
-  have ⟨⟨_, hl⟩, ⟨_, hr⟩⟩ := h.isType
+  have ⟨_, hl⟩ := h.left
+  have ⟨_, hr⟩ := h.right
   have h₁ := QuotTyping.ofTyping ⟨Δ, hΔ⟩ hl
   have h₂ := QuotTyping.ofTyping ⟨Δ, hΔ⟩ hr
   have heq := h.rawInterpret_eq ho hΔ

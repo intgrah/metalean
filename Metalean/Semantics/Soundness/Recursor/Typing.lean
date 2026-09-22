@@ -265,8 +265,8 @@ theorem CoherentShape.HasEquality.recr (h₁ : RecTyping Γ η s ls l ps₁ ms�
       RawFamily.closedApps_value]
     congr 1
     · funext v
-      exact congrArg _ (Tm.label_eq (IsTypeEq.substitution_congr (CtxCat.recr h₁.toRecDecl ls s).as.wf hσ
-        (IsType.isTypeEq ((CtxCat.recr h₁.toRecDecl ls s).as.wf.var v).regular)) (hσ v))
+      exact congrArg _ (Tm.label_eq (TypeEq.substitution_congr (CtxCat.recr h₁.toRecDecl ls s).as.wf hσ
+        (IsType.typeEq ((CtxCat.recr h₁.toRecDecl ls s).as.wf.var v).regular)) (hσ v))
     · funext v
       exact eargs v σ ρ hρ
 

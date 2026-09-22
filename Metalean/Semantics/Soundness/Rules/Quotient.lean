@@ -182,7 +182,7 @@ theorem quotLiftDF :
         pβ.equal σ ρ hρ, pf.equal σ ρ hρ, pa.equal σ ρ hρ,
         Tm.label_eq (.ofDefEq pβ.syntactic) hsyn,
         show Ty.ofTyping Γ₁.as pα.syntactic.left = Ty.ofTyping Γ₁.as pα.syntactic.right from
-          Quotient.sound (IsTypeEq.ofDefEq pα.syntactic)]
+          Quotient.sound (TypeEq.ofDefEq pα.syntactic)]
     fixed _ _ σ ρ hρ := by
       rw [rawInterpret_quotLift_app hsyn.left]
       apply (piLimit E ℓ).rawExtend_idempotent piLimit_isIdempotent _ (pβ.left.ideal σ ρ hρ)

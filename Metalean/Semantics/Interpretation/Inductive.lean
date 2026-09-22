@@ -133,8 +133,8 @@ theorem right
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₁ ps₁ fds₁ f ≡
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls₂ ps₂ fds₂ f : .sort (recFieldLevels f)) :
     CtorTyping Γ₁ η s c ls₂ ps₂ fds₂ recFds₂ :=
-  ⟨fun f => (IsTypeEq.ofDefEq (hfieldTypes f)).conv (hfields f).right,
-    fun f => (IsTypeEq.ofDefEq (hrecFieldTypes f)).conv (hrecFields f).right⟩
+  ⟨fun f => (TypeEq.ofDefEq (hfieldTypes f)).conv (hfields f).right,
+    fun f => (TypeEq.ofDefEq (hrecFieldTypes f)).conv (hrecFields f).right⟩
 
 theorem subst (h : CtorTyping Γ₁ η s c ls₁ ps₁ fds₁ recFds₁) (σ : Γ₂.as ⟶ Γ₁.as) :
     CtorTyping Γ₂ η s c ls₁ (fun p => (ps₁ p).subst σ.subst) (fun f => (fds₁ f).subst σ.subst)

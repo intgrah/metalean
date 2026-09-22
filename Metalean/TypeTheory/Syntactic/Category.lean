@@ -157,9 +157,9 @@ instance : HasTerminal (CtxCat E ℓ) :=
 
 def RawCtx.Hom.convert (Γ : RawCtx E ℓ) {t₁ t₂ : Expr ζ ℓ Γ.len}
     (h : E[Γ.ctx] ⊢ t₁ ≡ t₂ typ) :
-    RawCtx.Hom (Γ.snoc h.isType.2) (Γ.snoc h.isType.1) where
+    RawCtx.Hom (Γ.snoc h.right) (Γ.snoc h.left) where
   subst := Subst.id
-  typed := (SubstWF.id (Γ.wf.snoc h.isType.1)).snocConv h
+  typed := (SubstWF.id (Γ.wf.snoc h.left)).snocConv h
 
 abbrev CtxCat.extension (Γ : CtxCat E ℓ) {t : Expr ζ ℓ Γ.as.len}
     {u : Level ℓ} (ht : E[Γ.as.ctx] ⊢ t : .sort u) : CtxCat E ℓ :=

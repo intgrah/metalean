@@ -99,7 +99,7 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have ⟨_, _, hg', hb', _⟩ := he₂.app_inv
     have hfg := ihf hf₂ hΔ hσ hf' hg'
     have hteq := Defeq.uniqTy ho hΔ hfg.right hg'
-    have ⟨hdom, _⟩ := IsTypeEq.forallE_inj ho hΔ hteq
+    have ⟨hdom, _⟩ := TypeEq.forallE_inj ho hΔ hteq
     have hab := iha ha₂ hΔ hσ ha' (hdom.symm.conv hb')
     have ⟨_, hpi⟩ := hf'.regular
     have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv
@@ -108,8 +108,8 @@ theorem FExpr.Denotes.coherent {E : Σ ζ, Env ζ} (ho : E.2.Ordered) {k n : Nat
     have .lam ht₂d hb₂d := h₂
     have ⟨_, hb₁', hchain₁⟩ := he₁.lam_inv hΔ
     have ⟨_, hb₂', hchain₂⟩ := he₂.lam_inv hΔ
-    have ⟨_, hpi₁⟩ := hchain₁.isType.2
-    have ⟨_, hpi₂⟩ := hchain₂.isType.2
+    have ⟨_, hpi₁⟩ := hchain₁.right
+    have ⟨_, hpi₂⟩ := hchain₂.right
     have ⟨ht₁@⟨_, ht₁'⟩, _⟩ := hpi₁.forallE_inv
     have ⟨ht₂@⟨_, ht₂'⟩, _⟩ := hpi₂.forallE_inv
     have hd : E.2[Δ] ⊢ _ ≡ _ typ := .ofDefEq (iht ht₂d hΔ hσ ht₁' ht₂')

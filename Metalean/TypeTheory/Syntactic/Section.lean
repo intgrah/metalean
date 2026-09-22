@@ -33,7 +33,7 @@ def ofTyping {Γ₁ Γ₂ : CtxCat E ℓ} {t : Expr ζ ℓ Γ₂.as.len} {u : Le
   generic := by
     refine (Tm.map_varLabel (σ.snoc ⟨u, ht⟩ he) _).trans (Tm.label_eq ?_ ?_)
     · rw [Ctx.get_last, RawCtx.Hom.snoc_subst, Expr.wk_subst_extend]
-      exact (IsType.substitution ⟨u, ht⟩ σ.typed).isTypeEq
+      exact (IsType.substitution ⟨u, ht⟩ σ.typed).typeEq
     · change E[Γ₁.as.ctx] ⊢ (σ.subst.extend e) (Fin.last _) ≡ e :
         ((Γ₂.as.ctx.snoc t).get (Fin.last _)).subst (σ.subst.extend e)
       rw [Ctx.get_last, Expr.wk_subst_extend, Subst.extend_last]
@@ -49,7 +49,7 @@ def ofTerm {Γ : CtxCat E ℓ} {t e : Expr ζ ℓ Γ.as.len} {u : Level ℓ}
   generic := by
     refine (Tm.map_varLabel (RawCtx.Hom.one ⟨u, ht⟩ he) _).trans (Tm.label_eq ?_ ?_)
     · rw [Ctx.get_last, RawCtx.Hom.one_subst, Expr.wk_subst_extend, Expr.subst_id]
-      exact IsTypeEq.ofDefEq ht
+      exact TypeEq.ofDefEq ht
     · change E[Γ.as.ctx] ⊢ (Subst.id.extend e) (Fin.last _) ≡ e :
         ((Γ.as.ctx.snoc t).get (Fin.last _)).subst (Subst.id.extend e)
       rw [Ctx.get_last, Expr.wk_subst_extend, Expr.subst_id, Subst.extend_last]

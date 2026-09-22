@@ -139,7 +139,7 @@ theorem fixed_right (h : HasEquality Γ₁ e₁ e₂) (he : E₂[Γ₁.as.ctx] �
     (hf : HasFixedness Γ₁ e₁ t) : HasFixedness Γ₁ e₂ t := by
   intro Γ₂ he₂ σ ρ hρ
   rw [← h σ ρ hρ,
-    ← Tm.label_eq (IsType.isTypeEq he.regular) he]
+    ← Tm.label_eq (IsType.typeEq he.regular) he]
   exact hf he.left σ ρ hρ
 
 end HasEquality

@@ -451,14 +451,14 @@ theorem trans :
 
 end SubstEq
 
-theorem IsTypeEq.substitution_congr {σ₁ σ₂ : Subst ζ ℓ n m}
+theorem TypeEq.substitution_congr {σ₁ σ₂ : Subst ζ ℓ n m}
     {t₁ t₂ : Expr ζ ℓ n} :
     E[Γ₁] ⊢ ok →
     E[Γ₂] ⊢ σ₁ ≡ σ₂ ⊣ Γ₁ →
     E[Γ₁] ⊢ t₁ ≡ t₂ typ →
     E[Γ₂] ⊢ t₁.subst σ₁ ≡ t₂.subst σ₂ typ :=
   fun hΓ hσ h =>
-    have ⟨_, ht₂⟩ := h.isType.2
+    have ⟨_, ht₂⟩ := h.right
     (h.substitution hσ.left).trans (.ofDefEq (Defeq.substitution_congr hΓ hσ ht₂))
 
 section

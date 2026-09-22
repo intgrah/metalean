@@ -125,7 +125,7 @@ partial def infer (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] 
     have hinv : E[Γ] ⊢ t typ ∧ E[Γ.snoc t] ⊢ t' typ :=
       have ⟨_, hty⟩ := hpi.regular
       hty.forallE_inv
-    let ⟨hconv⟩ ← isTypeEq ho hΓ t₁ t harg.regular hinv.1
+    let ⟨hconv⟩ ← checkTypeEq ho hΓ t₁ t harg.regular hinv.1
     pure ⟨t'.inst e₁, (by
       have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hinv
       exact .appDF ht ht' hpi (hconv.conv harg) (ht'.inst_congr (hconv.conv harg)))⟩
@@ -157,7 +157,7 @@ partial def checkAgainst (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ :
     (e t₁ : Expr ζ ℓ n) : Except Failure (PLift (E[Γ] ⊢ e : t₁)) := do
   let ⟨l, ht⟩ ← checkIsType ho hΓ t₁
   let ⟨t₂, he⟩ ← infer ho hΓ e
-  let ⟨hconv⟩ ← isTypeEq ho hΓ t₂ t₁ he.regular ⟨l, ht⟩
+  let ⟨hconv⟩ ← checkTypeEq ho hΓ t₂ t₁ he.regular ⟨l, ht⟩
   pure ⟨hconv.conv he⟩
 
 partial def isDefEqAt (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ ok)
@@ -167,7 +167,7 @@ partial def isDefEqAt (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[
   let ⟨he₂⟩ ← checkAgainst ho hΓ e₂ t
   isDefEq ho hΓ l t e₁ e₂ ht he₁ he₂
 
-partial def isTypeEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ ok)
+partial def checkTypeEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ ok)
     (t t₁ : Expr ζ ℓ n) (ht : E[Γ] ⊢ t typ) (ht₁ : E[Γ] ⊢ t₁ typ) :
     Except Failure (PLift (E[Γ] ⊢ t ≡ t₁ typ)) :=
   match t.decEq? t₁ with
@@ -180,10 +180,10 @@ partial def isTypeEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[�
       pure ⟨hred.trans hred₁.symm⟩
     | .ok ⟨.forallE t₂ t₂', hred⟩, .ok ⟨.forallE t₃ t₃', hred₁⟩ => do
       have hinv : E[Γ] ⊢ t₂ typ ∧ E[Γ.snoc t₂] ⊢ t₂' typ :=
-        have ⟨_, hpi⟩ := hred.isType.2
+        have ⟨_, hpi⟩ := hred.right
         hpi.forallE_inv
       have hinv₁ : E[Γ] ⊢ t₃ typ ∧ E[Γ.snoc t₃] ⊢ t₃' typ :=
-        have ⟨_, hpi⟩ := hred₁.isType.2
+        have ⟨_, hpi⟩ := hred₁.right
         hpi.forallE_inv
       let ⟨hpi⟩ ← isForallEq ho hΓ t₂ t₃ t₂' t₃' hinv hinv₁
       pure ⟨hred.trans (hpi.trans hred₁.symm)⟩
@@ -200,12 +200,12 @@ partial def isForallEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (ht₁ : E[Γ] ⊢ t₁ typ ∧ E[Γ.snoc t₁] ⊢ t₁' typ)
     (ht₂ : E[Γ] ⊢ t₂ typ ∧ E[Γ.snoc t₂] ⊢ t₂' typ) :
     Except Failure (PLift (E[Γ] ⊢ .forallE t₁ t₁' ≡ .forallE t₂ t₂' typ)) := do
-  let ⟨hdom⟩ ← isTypeEq ho hΓ t₁ t₂ ht₁.1 ht₂.1
+  let ⟨hdom⟩ ← checkTypeEq ho hΓ t₁ t₂ ht₁.1 ht₂.1
   have hcod₂ : E[Γ.snoc t₁] ⊢ t₂' typ :=
     have ⟨u, hcl⟩ := ht₂.2
     ⟨u, Defeq.snocConvTy hdom.symm hcl⟩
-  let ⟨hcod⟩ ← isTypeEq ho (hΓ.snoc ht₁.1) t₁' t₂' ht₁.2 hcod₂
-  pure ⟨IsTypeEq.forallE_congr' ho hΓ hdom hcod⟩
+  let ⟨hcod⟩ ← checkTypeEq ho (hΓ.snoc ht₁.1) t₁' t₂' ht₁.2 hcod₂
+  pure ⟨TypeEq.forallE_congr' ho hΓ hdom hcod⟩
 
 partial def isDefEq (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] ⊢ ok)
     (l : Level ℓ) (t e₁ e₂ : Expr ζ ℓ n) (ht : E[Γ] ⊢ t : .sort l)
@@ -364,16 +364,16 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
   | .lam t₂ b, .lam t₃ b₁ => fun he he₁ => do
     have ht₂ : E[Γ] ⊢ t₂ typ :=
       have ⟨_, _, hchain⟩ := Defeq.lam_inv he hΓ
-      have ⟨_, hpi⟩ := hchain.isType.2
+      have ⟨_, hpi⟩ := hchain.right
       hpi.forallE_inv.1
     have ht₃ : E[Γ] ⊢ t₃ typ :=
       have ⟨_, _, hchain⟩ := Defeq.lam_inv he₁ hΓ
-      have ⟨_, hpi⟩ := hchain.isType.2
+      have ⟨_, hpi⟩ := hchain.right
       hpi.forallE_inv.1
-    let ⟨hdom⟩ ← isTypeEq ho hΓ t₂ t₃ ht₂ ht₃
+    let ⟨hdom⟩ ← checkTypeEq ho hΓ t₂ t₃ ht₂ ht₃
     let ⟨tb, hb⟩ ← infer ho (hΓ.snoc ht₂) b
     let ⟨tb₁, hb₁⟩ ← infer ho (hΓ.snoc ht₂) b₁
-    let ⟨hbt⟩ ← isTypeEq ho (hΓ.snoc ht₂) tb₁ tb hb₁.regular hb.regular
+    let ⟨hbt⟩ ← checkTypeEq ho (hΓ.snoc ht₂) tb₁ tb hb₁.regular hb.regular
     let ⟨lb, htb⟩ ← checkIsType ho (hΓ.snoc ht₂) tb
     let ⟨hbEq⟩ ← isDefEq ho (hΓ.snoc ht₂) lb tb b b₁ htb hb (hbt.conv hb₁)
     pure ⟨by
@@ -499,7 +499,7 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
     let ⟨t₂, t₂', hpi⟩ ← ensureForall ho hΓ hfn
     let ⟨_, hfn₁⟩ ← infer ho hΓ f₁
     let ⟨t₃, t₃', hpi₁⟩ ← ensureForall ho hΓ hfn₁
-    let ⟨hpiEq⟩ ← isTypeEq ho hΓ (.forallE t₃ t₃') (.forallE t₂ t₂')
+    let ⟨hpiEq⟩ ← checkTypeEq ho hΓ (.forallE t₃ t₃') (.forallE t₂ t₂')
       hpi₁.regular hpi.regular
     let ⟨lπ, hπ⟩ ← checkIsType ho hΓ (.forallE t₂ t₂')
     let ⟨hfeq⟩ ← isDefEq ho hΓ lπ (.forallE t₂ t₂') f f₁ hπ hpi (hpiEq.conv hpi₁)
@@ -507,9 +507,9 @@ partial def isDefEqCore (ho : E.Ordered) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : 
       have ⟨_, hty⟩ := hpi.regular
       Defeq.forallE_inv hty
     let ⟨ta, harg⟩ ← infer ho hΓ a
-    let ⟨hac⟩ ← isTypeEq ho hΓ ta t₂ harg.regular hinv.1
+    let ⟨hac⟩ ← checkTypeEq ho hΓ ta t₂ harg.regular hinv.1
     let ⟨ta₁, harg₁⟩ ← infer ho hΓ a₁
-    let ⟨hac₁⟩ ← isTypeEq ho hΓ ta₁ t₂ harg₁.regular hinv.1
+    let ⟨hac₁⟩ ← checkTypeEq ho hΓ ta₁ t₂ harg₁.regular hinv.1
     let ⟨ldom, hdom⟩ ← checkIsType ho hΓ t₂
     let ⟨haeq⟩ ← isDefEq ho hΓ ldom t₂ a a₁ hdom (hac.conv harg) (hac₁.conv harg₁)
     pure ⟨by

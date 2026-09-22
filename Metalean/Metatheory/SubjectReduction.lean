@@ -42,7 +42,7 @@ theorem WHRed.beta_defeq (ho : E.Ordered) {t e : Expr ζ ℓ n}
   intro hΓ hty
   have ⟨_, _, hf, he, _⟩ := Defeq.app_inv hty
   have ⟨_, he', hπ⟩ := Defeq.lam_inv hf hΓ
-  have ⟨_, hπTy⟩ := hπ.isType.2
+  have ⟨_, hπTy⟩ := hπ.right
   have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ :=
     Defeq.forallE_inv hπTy
   have het := (hπ.forallE_inj ho hΓ).1.conv he

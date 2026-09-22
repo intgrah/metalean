@@ -1228,7 +1228,7 @@ theorem Inductive.caseFnType_congr (hB : InductiveWF E (E.get η).block) :
   have ⟨_, hpi⟩ := TeleWF.pi_instL_substN_congr hB.params
     (((hB.ctors s c).ordinaryTeleAux (ι.ctors s c).nfields le_rfl).mono fun _ => trivial)
     ls (paramSubstEq hps) hrec
-  exact IsTypeEq.ofDefEq <| by
+  exact TypeEq.ofDefEq <| by
     simpa [caseFnType, caseTele, Ctor.fieldTele, Ctx.pi, Tele.foldr_append]
 
 theorem Inductive.caseFnType_conv
@@ -1257,7 +1257,7 @@ theorem InductiveWF.caseBinders
   intro tag
   obtain ⟨⟨s, c⟩, rfl⟩ : ∃ point, Fin.encodeSigma ι.nctors point = tag :=
     ⟨_, Fin.encodeSigma_decodeSigma ..⟩
-  have ⟨v, ht⟩ := (caseFnType_congr hB (c := c) hΓ hps hms).isType.1
+  have ⟨v, ht⟩ := (caseFnType_congr hB (c := c) hΓ hps hms).left
   rw [Fin.decodeSigma_encodeSigma]
   exact ⟨v, trivial, ht⟩
 

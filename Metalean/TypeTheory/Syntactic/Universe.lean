@@ -24,7 +24,7 @@ namespace Ty
 
 instance Repr.setoid (Γ : CtxCat E ℓ) : Setoid (Repr Γ) where
   r A B := E[Γ.as.ctx] ⊢ A.term ≡ B.term typ
-  iseqv := ⟨fun A => A.wf.isTypeEq, IsTypeEq.symm, IsTypeEq.trans⟩
+  iseqv := ⟨fun A => A.wf.typeEq, TypeEq.symm, TypeEq.trans⟩
 
 def Element (Γ : CtxCat E ℓ) := Quotient (Repr.setoid Γ)
 
@@ -53,7 +53,7 @@ end Ty
   (CategoryTheory.Quotient.lift (RawCtx.homRel E ℓ) Ty.functor.rightOp fun _ Γ₁ _ _ h =>
     Quiver.Hom.unop_inj (ConcreteCategory.hom_ext _ _ fun A => by
       obtain ⟨A⟩ := A
-      exact Quotient.sound (IsTypeEq.substitution_congr Γ₁.wf h A.wf.isTypeEq))).leftOp
+      exact Quotient.sound (TypeEq.substitution_congr Γ₁.wf h A.wf.typeEq))).leftOp
 
 notation:max "Ty_" Γ:max => Functor.obj (Metalean.Ty _ _) (Opposite.op Γ)
 
@@ -92,7 +92,7 @@ namespace Tm
 instance Repr.setoid (Γ : CtxCat E ℓ) : Setoid (Repr Γ) where
   r p q := E[Γ.as.ctx] ⊢ p.ty ≡ q.ty typ ∧ E[Γ.as.ctx] ⊢ p.val ≡ q.val : p.ty
   iseqv := {
-    refl p := ⟨p.tyWF.isTypeEq, p.valWF⟩
+    refl p := ⟨p.tyWF.typeEq, p.valWF⟩
     symm | ⟨hty, hval⟩ => ⟨hty.symm, hty.conv hval.symm⟩
     trans := fun ⟨hpqTy, hpqVal⟩ ⟨hqrTy, hqrVal⟩ =>
       ⟨hpqTy.trans hqrTy, hpqVal.trans (hpqTy.symm.conv hqrVal)⟩
@@ -129,7 +129,7 @@ end Tm
   (CategoryTheory.Quotient.lift (RawCtx.homRel E ℓ) Tm.functor.rightOp fun _ Γ₁ _ _ h => by
     apply Quiver.Hom.unop_inj
     ext ⟨p⟩
-    exact Quotient.sound ⟨IsTypeEq.substitution_congr Γ₁.wf h p.tyWF.isTypeEq,
+    exact Quotient.sound ⟨TypeEq.substitution_congr Γ₁.wf h p.tyWF.typeEq,
       Defeq.substitution_congr Γ₁.wf h p.valWF⟩).leftOp
 
 def Tm.typing (E : Env ζ) (ℓ : Nat) : Tm E ℓ ⟶ Ty E ℓ where
@@ -165,9 +165,9 @@ def elim {β : Sort*} (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = ⟦T⟧)
     (f : (e : Expr ζ ℓ Γ.as.len) → E[Γ.as.ctx] ⊢ e : T.term → β)
     (hf : ∀ e₁ e₂ (h₁ : E[Γ.as.ctx] ⊢ e₁ : T.term) (h₂ : E[Γ.as.ctx] ⊢ e₂ : T.term),
       E[Γ.as.ctx] ⊢ e₁ ≡ e₂ : T.term → f e₁ h₁ = f e₂ h₂) : β :=
-  Quotient.pliftOn n (fun R hR => f R.val (IsTypeEq.conv (Quotient.exact ((congrArg type hR).symm.trans hn)) R.valWF))
+  Quotient.pliftOn n (fun R hR => f R.val (TypeEq.conv (Quotient.exact ((congrArg type hR).symm.trans hn)) R.valWF))
     fun _ _ h₁ _ h => hf _ _ _ _ <|
-      IsTypeEq.conv (Quotient.exact ((congrArg type h₁).symm.trans hn)) h.2
+      TypeEq.conv (Quotient.exact ((congrArg type h₁).symm.trans hn)) h.2
 
 theorem exists_label (n : Tm_ Γ) (T : Ty.Repr Γ) (hn : type n = ⟦T⟧) :
     ∃ e, ∃ he : E[Γ.as.ctx] ⊢ e : T.term, n = label Γ.as he := by

@@ -536,7 +536,7 @@ theorem TypedSpec.fixArgs {G : FCtx} {E : Env ζ} {n k : Nat} {Γ : Ctx ζ ℓ 0
       have ⟨_, hSp⟩ := hpre e p fun q hq => ih q (by have := Fin.lt_def.mp hq; omega)
       have ⟨_, htp⟩ := (hty p).regular
       have heq := FExpr.Denotes.defeq hS.ordered hS.wf (hdt p) (hden e hde p) htp hSp
-      exact (IsTypeEq.ofDefEq heq).conv (hty p)
+      exact (TypeEq.ofDefEq heq).conv (hty p)
   exact fun p => key (p.val + 1) p (Nat.lt_succ_self _)
 
 theorem TypedSpec.at {G : FCtx} {fe ft : FExpr} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
@@ -550,7 +550,7 @@ theorem TypedSpec.at {G : FCtx} {fe ft : FExpr} {E : Env ζ} {n : Nat} {Γ : Ctx
   intro h hS he₀ hT ⟨_, hTty⟩
   have ⟨_, _, hd, htd, hty⟩ := h hS he₀ hT
   have ⟨_, htty⟩ := hty.regular
-  exact ⟨_, hd, (IsTypeEq.ofDefEq (FExpr.Denotes.defeq hS.ordered hS.wf htd hT htty hTty)).conv hty⟩
+  exact ⟨_, hd, (TypeEq.ofDefEq (FExpr.Denotes.defeq hS.ordered hS.wf htd hT htty hTty)).conv hty⟩
 
 theorem Sem.eqBlock {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (hS : Sem L F G E Γ) (η : Head ζ .quot) :
@@ -561,7 +561,7 @@ theorem Sem.eqBlock {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
   | quot heq => exact heq
 
 theorem ForallSpec.refl {G : FCtx} (t b : FExpr) : ForallSpec L F ℓ G (.forallE t b) t b :=
-  fun {_ _ _ _ _} _ (.forallE ht hb) hty => ⟨_, _, ht, hb, hty.isTypeEq⟩
+  fun {_ _ _ _ _} _ (.forallE ht hb) hty => ⟨_, _, ht, hb, hty.typeEq⟩
 
 theorem InferOnlySpec.app {G : FCtx} {f a tf t b : FExpr} :
     InferOnlySpec L F ℓ G f tf →
@@ -572,7 +572,7 @@ theorem InferOnlySpec.app {G : FCtx} {f a tf t b : FExpr} :
     have ⟨_, htf, hfty'⟩ := hf hS hfd hfty
     have ⟨_, _, _, hb, hconv⟩ := hpi hS htf hfty'.regular
     have hfAB := hconv.conv hfty'
-    have ⟨hdom, _⟩ := IsTypeEq.forallE_inj hS.ordered hS.wf
+    have ⟨hdom, _⟩ := TypeEq.forallE_inj hS.ordered hS.wf
       (Defeq.uniqTy hS.ordered hS.wf hfty hfAB)
     have haA := hdom.conv haty
     have ⟨_, hty⟩ := hfAB.regular
@@ -756,7 +756,7 @@ theorem DefEqSpec.app {G : FCtx} {ff g fa fb : FExpr} :
   have ⟨_, _, hg', hb', _⟩ := he₂.app_inv
   have hfg := hf hS hdf hdg hf' hg'
   have hteq := Defeq.uniqTy hS.ordered hS.wf hfg.right hg'
-  have ⟨hdom, _⟩ := IsTypeEq.forallE_inj hS.ordered hS.wf hteq
+  have ⟨hdom, _⟩ := TypeEq.forallE_inj hS.ordered hS.wf hteq
   have hab := ha hS hda hdb ha' (hdom.symm.conv hb')
   have ⟨_, hpi⟩ := hf'.regular
   have ⟨⟨_, ht⟩, ⟨_, ht'⟩⟩ := hpi.forallE_inv

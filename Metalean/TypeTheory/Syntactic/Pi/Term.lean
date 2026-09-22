@@ -29,7 +29,7 @@ def lam (T : Repr Γ) : Tm_ (⟨Γ.as.snoc T.wf⟩ : CtxCat E ℓ) → Tm_ Γ :=
     fun R₁ _ ⟨hty, hval⟩ =>
       have ⟨_, ht⟩ := T.wf
       have ⟨_, hB⟩ := R₁.tyWF
-      Quotient.sound ⟨IsTypeEq.forallE_cod ht hty, .lamDF ht hB hB hval hval⟩
+      Quotient.sound ⟨TypeEq.forallE_cod ht hty, .lamDF ht hB hB hval hval⟩
 
 theorem lam_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ T₂.term typ)
     (c : Tm_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
@@ -41,11 +41,11 @@ theorem lam_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡
     have hty : E[Γ.as.ctx] ⊢ .forallE T₂.term (R.ty.subst Subst.id) ≡
         .forallE T₁.term R.ty typ := by
       rw [Expr.subst_id]
-      exact IsTypeEq.forallE_dom h.symm (Defeq.snocConvTy h hB)
+      exact TypeEq.forallE_dom h.symm (Defeq.snocConvTy h hB)
     have hval : E[Γ.as.ctx] ⊢ .lam T₂.term (R.val.subst Subst.id) ≡ .lam T₁.term R.val :
         .forallE T₂.term (R.ty.subst Subst.id) := by
       rw [Expr.subst_id, Expr.subst_id]
-      exact IsTypeEq.lam_dom h.symm (Defeq.snocConvTy h hB) (Defeq.snocConvTy h R.valWF)
+      exact TypeEq.lam_dom h.symm (Defeq.snocConvTy h hB) (Defeq.snocConvTy h R.valWF)
     exact Quotient.sound ⟨hty, hval⟩
 
 end Ty.Repr
@@ -143,7 +143,7 @@ def apply (L : Ty.Pair Γ) (n m : Tm_ Γ)
       rw [Ty.elim_eq _ _ _ C₁ hC₁.symm, Ty.elim_eq _ _ _ _ hC₂.symm]
       exact Repr.apply_congr T₁ T₂ C₁ _
         ((congrArg (E[Γ.as.ctx.snoc T₁.term] ⊢ C₁.term ≡ · typ) (Expr.subst_id C₁.term)).mpr
-          C₁.wf.isTypeEq) n m _ _ _ _
+          C₁.wf.typeEq) n m _ _ _ _
 
 theorem apply_eq (A : y Γ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (T : Ty.Repr Γ) (hT : yonedaEquiv A = ⟦T⟧)

@@ -140,7 +140,7 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : Inductiv
       refine congrArg _ (Quotient.sound ⟨?_, ?_⟩) <;> dsimp only [Tm.Repr.ty, Tm.Repr.val]
       · simp only [Inductive.IsStructure.projType_subst, RecTyping.recrHom, Expr.subst,
           Inductive.recrSubst_param, Inductive.recrSubst_major]
-        exact IsType.isTypeEq (hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major).regular
+        exact IsType.typeEq (hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major).regular
       · simp only [Inductive.IsStructure.projType_subst, Inductive.IsStructure.projTerm_subst,
           RecTyping.recrHom, Expr.subst, Inductive.recrSubst_param, Inductive.recrSubst_major]
         exact hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major
