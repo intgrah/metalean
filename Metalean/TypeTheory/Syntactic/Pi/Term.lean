@@ -35,18 +35,17 @@ theorem lam_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡
     (c : Tm_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
     T₂.lam ((Tm E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ.as h)).op c) =
       T₁.lam c := by
-  induction c using Quotient.inductionOn with
-  | h R =>
-    have ⟨_, hB⟩ := R.tyWF
-    have hty : E[Γ.as.ctx] ⊢ .forallE T₂.term (R.ty.subst Subst.id) ≡
-        .forallE T₁.term R.ty typ := by
-      rw [Expr.subst_id]
-      exact TypeEq.forallE_dom h.symm (Defeq.snocConvTy h hB)
-    have hval : E[Γ.as.ctx] ⊢ .lam T₂.term (R.val.subst Subst.id) ≡ .lam T₁.term R.val :
-        .forallE T₂.term (R.ty.subst Subst.id) := by
-      rw [Expr.subst_id, Expr.subst_id]
-      exact TypeEq.lam_dom h.symm (Defeq.snocConvTy h hB) (Defeq.snocConvTy h R.valWF)
-    exact Quotient.sound ⟨hty, hval⟩
+  obtain ⟨c⟩ := c
+  have ⟨_, hB⟩ := c.tyWF
+  have hty : E[Γ.as.ctx] ⊢ .forallE T₂.term (c.ty.subst Subst.id) ≡
+      .forallE T₁.term c.ty typ := by
+    rw [Expr.subst_id]
+    exact TypeEq.forallE_dom h.symm (Defeq.snocConvTy h hB)
+  have hval : E[Γ.as.ctx] ⊢ .lam T₂.term (c.val.subst Subst.id) ≡ .lam T₁.term c.val :
+      .forallE T₂.term (c.ty.subst Subst.id) := by
+    rw [Expr.subst_id, Expr.subst_id]
+    exact TypeEq.lam_dom h.symm (Defeq.snocConvTy h hB) (Defeq.snocConvTy h c.valWF)
+  exact Quotient.sound ⟨hty, hval⟩
 
 end Ty.Repr
 
@@ -77,9 +76,8 @@ def lam (E : Env ζ) (ℓ : Nat) :
       (Tm E ℓ).map (RawCtx.toCtx.map σ).op (lamApp A B)
     rw [lamApp_eq _ _ (T.reindex σ) (Ty.reindex_yonedaEquiv hT σ), lamApp_eq A B T hT,
       Ty.Repr.eval_reindex T σ A B (Ty.comprehension_type_eq hT)]
-    generalize T.comprehension.eval A B (Ty.comprehension_type_eq hT) = c
-    induction c using Quotient.inductionOn with
-    | h R => rfl
+    rcases T.comprehension.eval A B (Ty.comprehension_type_eq hT)
+    rfl
 
 end Tm
 

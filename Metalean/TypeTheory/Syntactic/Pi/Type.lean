@@ -45,13 +45,12 @@ theorem pi_conversion (T₁ T₂ : Repr Γ) (h : E[Γ.as.ctx] ⊢ T₁.term ≡ 
     (b : Ty_(⟨Γ.as.snoc T₁.wf⟩ : CtxCat E ℓ)) :
     T₂.pi ((Ty E ℓ).map (RawCtx.toCtx.map (RawCtx.Hom.convert Γ.as h)).op b) =
       T₁.pi b := by
-  induction b using Quotient.inductionOn with
-  | h B =>
-    have ⟨_, hB⟩ := B.wf
-    refine Quotient.sound (TypeEq.symm ?_)
-    change E[Γ.as.ctx] ⊢ .forallE T₁.term B.term ≡ .forallE T₂.term (B.term.subst Subst.id) typ
-    rw [Expr.subst_id]
-    exact TypeEq.forallE_dom h hB
+  obtain ⟨b⟩ := b
+  have ⟨_, hb⟩ := b.wf
+  refine Quotient.sound (TypeEq.symm ?_)
+  change E[Γ.as.ctx] ⊢ .forallE T₁.term b.term ≡ .forallE T₂.term (b.term.subst Subst.id) typ
+  rw [Expr.subst_id]
+  exact TypeEq.forallE_dom h hb
 
 end Repr
 
@@ -85,9 +84,8 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
       (Ty E ℓ).map (RawCtx.toCtx.map σ).op (piApp A B)
     rw [piApp_eq _ _ (T.reindex σ) (reindex_yonedaEquiv hT σ), piApp_eq A B T hT,
       Repr.eval_reindex T σ A B (comprehension_type_eq hT)]
-    generalize T.comprehension.eval A B (comprehension_type_eq hT) = b
-    induction b using Quotient.inductionOn with
-    | h B => rfl
+    rcases T.comprehension.eval A B (comprehension_type_eq hT)
+    rfl
 
 @[simp] theorem map_piApp (A : y Γ₁ ⟶ Ty E ℓ) (B : pullback A ℒ.typing ⟶ Ty E ℓ)
     (σ : Γ₂ ⟶ Γ₁) :
