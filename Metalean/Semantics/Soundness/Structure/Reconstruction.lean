@@ -26,20 +26,20 @@ theorem RawTyped.structural_value_bot
     (hs : (E.get η).block.IsStructure s c) (hB : InductiveWF E (E.get η).block)
     (hps : ∀ p, E[Γ₁.as.ctx] ⊢ ps p : (E.get η).block.paramType ls ps p)
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
-    (hrel : Level.rel ((E.get η).block.level.inst ls) = false)
+    (hrel : Level.rel ((E.get η).block.level{ls}) = false)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (hρ : SourceAdmissible σ ρ) :
     (rawInterpret (piLimit E ℓ) Γ₁ maj).app _ σ.op ρ = ⊥ := by
   have ht := hs.indType hps
   have htype := HasFixedness.ind (IndTyping.ofTyping hB ht) hB ht σ ρ hρ
   rw [rawInterpret_sort] at htype
-  conv_lhs at htype => arg 2; rw [show (E.get η).block.level.inst ls = .zero by simpa using hrel]
+  conv_lhs at htype => arg 2; rw [show (E.get η).block.level{ls} = .zero by simpa using hrel]
   exact (pmaj.fixed pmaj.typed σ ρ hρ).symm.trans
     (piLimit_rawExtend_prop _ htype _ _)
 
 theorem HasEquality.structure_eta_of_projections
     (hs : (E.get η).block.IsStructure s c) (hB : InductiveWF E (E.get η).block)
     (pfn : ∀ d : Fin (ι.nctors s), RawInterpretationProperties (CtxCat.nil E ℓ)
-      (((E.get η).block.ctorTypeFn s d).instL fun p => ls p))
+      ((E.get η).block.ctorTypeFn s d){ls})
     (pps : ∀ p, RawTyped Γ₁ (ps p) ((E.get η).block.paramType ls ps p))
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))
     (hproj : ∀ (f : Fin (ι.ctors s c).nfields) {Γ₂ : CtxCat E ℓ}
@@ -56,7 +56,7 @@ theorem HasEquality.structure_eta_of_projections
   intro Γ₂ σ ρ hρ
   change (rawInterpret (piLimit E ℓ) Γ₁ (.ctor η s c ls ps
     (fun f => hs.projTerm η ls ps f maj) hs.recursive)).app _ σ.op ρ = _
-  cases hrel : Level.rel ((E.get η).block.level.inst ls) with
+  cases hrel : Level.rel ((E.get η).block.level{ls}) with
   | false =>
     rw [rawInterpret_ctor_prop _ hrel,
       pmaj.structural_value_bot hs hB (fun p => (pps p).typed) hrel σ ρ hρ]
@@ -89,9 +89,9 @@ theorem HasEquality.structure_eta_of_projections
 
 theorem RawTyped.structural_field_telescope
     (hs : (E.get η).block.IsStructure s c) (hB : InductiveWF E (E.get η).block)
-    (hrel : Level.rel ((E.get η).block.level.inst ls) = true)
+    (hrel : Level.rel ((E.get η).block.level{ls}) = true)
     (pfn : ∀ d : Fin (ι.nctors s), HasIdeality (CtxCat.nil E ℓ)
-      (((E.get η).block.ctorTypeFn s d).instL fun p => ls p))
+      ((E.get η).block.ctorTypeFn s d){ls})
     (hps : ∀ p, E[Γ₁.as.ctx] ⊢ ps p : (E.get η).block.paramType ls ps p)
     (pps : ∀ p, HasIdeality Γ₁ (ps p))
     (pmaj : RawTyped Γ₁ maj (.ind η s ls ps hs.indices))

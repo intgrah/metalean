@@ -29,19 +29,19 @@ namespace RecField
 
 def instantiatedTelescope :
     Ctx ζ₁ ℓ n (n + arity) :=
-  Ctx.substN fieldSubst arity (fd.tele.instL ls)
+  Ctx.substN fieldSubst arity fd.tele{ls}
 
 def instantiatedIndices :
     Fin (ι.nindices target) → Expr ζ₁ ℓ (n + arity) :=
-  fun i => ((fd.indices i).instL ls).subst (fieldSubst.liftN arity)
+  fun i => (fd.indices i){ls}.subst (fieldSubst.liftN arity)
 
 @[simp] theorem instantiatedTelescope_id :
-    fd.instantiatedTelescope ls Subst.id = fd.tele.instL ls :=
+    fd.instantiatedTelescope ls Subst.id = fd.tele{ls} :=
   letI := Subst.category ζ₁ ℓ
   (Ctx.substFunctor _).map_id_apply _ _
 
 @[simp] theorem instantiatedIndices_id :
-    fd.instantiatedIndices ls Subst.id = fun i => (fd.indices i).instL ls := by
+    fd.instantiatedIndices ls Subst.id = fd.indices{ls} := by
   funext i
   simp [instantiatedIndices]
 
@@ -80,22 +80,19 @@ theorem instantiatedType_of_arity_eq_zero
   · exact instantiatedTelescope_map pre fd ls σ
 
 @[simp] theorem instantiatedTelescope_instL :
-    (fd.instantiatedTelescope ls fieldSubst).instL ls' =
-      fd.instantiatedTelescope (fun i => (ls i).inst ls')
-        (fieldSubst.instL ls') := by
-  simp [instantiatedTelescope]
+    (fd.instantiatedTelescope ls fieldSubst){ls'} =
+      fd.instantiatedTelescope ls{ls'} fieldSubst{ls'} := by
+  simp [instantiatedTelescope, InstLevel.inst_tuple]
 
 @[simp] theorem instantiatedIndices_instL (i : Fin (ι.nindices target)) :
-    (fd.instantiatedIndices ls fieldSubst i).instL ls' =
-      fd.instantiatedIndices (fun p => (ls p).inst ls')
-        (fieldSubst.instL ls') i := by
+    (fd.instantiatedIndices ls fieldSubst i){ls'} =
+      fd.instantiatedIndices ls{ls'} fieldSubst{ls'} i := by
   simp [instantiatedIndices]
 
 @[simp] theorem instantiatedType_instL :
-    (fd.instantiatedType η ls ps fieldSubst).instL ls' =
-      fd.instantiatedType η (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls') (fieldSubst.instL ls') := by
-  simp [instantiatedType, Expr.instL]
+    (fd.instantiatedType η ls ps fieldSubst){ls'} =
+      fd.instantiatedType η ls{ls'} ps{ls'} fieldSubst{ls'} := by
+  simp [instantiatedType, InstLevel.inst_tuple]
 
 end RecField
 

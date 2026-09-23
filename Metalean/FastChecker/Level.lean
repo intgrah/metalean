@@ -36,8 +36,10 @@ def inst (us : Array FLevel) : FLevel → FLevel
   | imax l₁ l₂ => imax (l₁.inst us) (l₂.inst us)
   | param p => us[p]?.getD (param p)
 
-instance : InstLevel (Array FLevel) FLevel FLevel where
-  inst := inst
+instance : InstLevel (Array FLevel) FLevel FLevel := ⟨inst⟩
+
+@[simp] theorem inst_param (us : Array FLevel) (p : Nat) :
+    (param p){us} = us[p]?.getD (param p) := rfl
 
 def toRaw (ℓ : Nat) : FLevel → Option (RawLevel ℓ)
   | .zero => some .zero
@@ -86,7 +88,7 @@ theorem Denotes.inst {us : Array FLevel} {σ : Param ℓ → RawLevel ℓ'} (hus
     {l : FLevel} {l' : RawLevel ℓ} :
     Denotes l l' →
     (∀ i, Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (σ i)) →
-    Denotes (l.inst us) (l'.inst σ)
+    Denotes l{us} l'{σ}
   | .zero, _ => .zero
   | .succ h, hus' => .succ (h.inst hus hus')
   | .max h₁ h₂, hus' => .max (h₁.inst hus hus') (h₂.inst hus hus')
@@ -96,7 +98,7 @@ theorem Denotes.inst {us : Array FLevel} {σ : Param ℓ → RawLevel ℓ'} (hus
 theorem Denotes.inst_of_hasParam_eq_false {l : FLevel} {l' : RawLevel ℓ}
     (hp : l.hasParam = false) (σ : Param ℓ → RawLevel ℓ') :
     Denotes l l' →
-    Denotes l (l'.inst σ) := by
+    Denotes l l'{σ} := by
   intro h
   induction h with
   | zero => exact .zero

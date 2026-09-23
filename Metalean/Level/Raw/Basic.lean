@@ -67,29 +67,27 @@ def inst : RawLevel ℓ → RawLevel ℓ₁
   | imax u₁ u₂ => imax u₁.inst u₂.inst
   | param p => ls p
 
-instance : InstLevel (Param ℓ → RawLevel ℓ₁) (RawLevel ℓ) (RawLevel ℓ₁) where
-  inst := inst
+instance : InstLevel (Param ℓ → RawLevel ℓ₁) (RawLevel ℓ) (RawLevel ℓ₁) := ⟨inst⟩
 
-@[simp] theorem inst_zero (ls : Param ℓ → RawLevel ℓ₁) : (zero : RawLevel ℓ).inst ls = zero := rfl
+@[simp] theorem inst_zero (ls : Param ℓ → RawLevel ℓ₁) : (zero : RawLevel ℓ){ls} = zero := rfl
 
 @[simp] theorem inst_succ (ls : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
-    l.succ.inst ls = (l.inst ls).succ := rfl
+    l.succ{ls} = l{ls}.succ := rfl
 
 @[simp] theorem inst_max (ls : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
-    (l₁.max l₂).inst ls = (l₁.inst ls).max (l₂.inst ls) := rfl
+    (l₁.max l₂){ls} = l₁{ls}.max l₂{ls} := rfl
 
 @[simp] theorem inst_imax (ls : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
-    (l₁.imax l₂).inst ls = (l₁.inst ls).imax (l₂.inst ls) := rfl
+    (l₁.imax l₂){ls} = l₁{ls}.imax l₂{ls} := rfl
 
-@[simp] theorem inst_param (ls : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p).inst ls = ls p := rfl
+@[simp] theorem inst_param (ls : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p){ls} = ls p := rfl
 
-@[simp] theorem inst_id (l : RawLevel ℓ) : l.inst param = l := by
+@[simp] theorem inst_id (l : RawLevel ℓ) : l{@param ℓ} = l := by
   induction l <;> simp [*]
 
 @[simp] theorem inst_inst (ls₁ : Param ℓ → RawLevel ℓ₁)
     (ls₂ : Param ℓ₁ → RawLevel ℓ₂) (l : RawLevel ℓ) :
-    (l.inst ls₁).inst ls₂ =
-      l.inst fun p => (ls₁ p).inst ls₂ := by
+    l{ls₁}{ls₂} = l{ls₁{ls₂}} := by
   induction l <;> simp [*]
 
 end RawLevel

@@ -99,11 +99,11 @@ theorem RawSound.motiveTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : Ind
     (fps : ∀ p, HasFixedness Γ₁ (ps p) ((E₂.get η).block.paramType ls ps p))
     (s : Fin ι.nsorts) :
     RawTeleProperties E₂ Γ₁.as.ctx ((E₂.get η).block.motiveTele η ls ps s) := by
-  let Src : CtxCat E₂ ℓ := ⟨Ctx.instL ls (E₂.get η).block.params, hI.paramClosedWF ls⟩
+  let Src : CtxCat E₂ ℓ := ⟨(E₂.get η).block.params{ls}, hI.paramClosedWF ls⟩
   have pctx : RawTeleProperties E₂ .nil Src.as.ctx := by
     simpa using hsound.paramTeleProperties hB hblock ls
   have hindices := (hI.indices s).instLevel (Q := fun _ => True) ls fun _ => trivial
-  have pindices : RawTeleProperties E₂ Src.as.ctx (Ctx.instL ls ((E₂.get η).block.indices s)) := by
+  have pindices : RawTeleProperties E₂ Src.as.ctx ((E₂.get η).block.indices s){ls} := by
     simpa [Src, hblock, Inductive.map] using hsound.teleProperties (hB.paramClosedWF ls)
       ((hB.indices s).instLevel (Q := fun _ => True) ls fun _ => trivial)
   let σ : Γ₁.as ⟶ Src.as := ⟨ps, (Inductive.paramSubstEq hps).left⟩

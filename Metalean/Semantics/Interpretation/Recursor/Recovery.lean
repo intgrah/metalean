@@ -27,7 +27,7 @@ noncomputable def recoveredField (η : Head ζ (.inductive ι)) (s : Fin ι.nsor
     (indices : Fin (ι.nindices s) → RawValue Γ₁) :
     Fin (CtorHead.mk η s c).arity → RawValue Γ₁ :=
   Fin.append (fun f =>
-    if Level.rel ((((E.get η).block.ctors s c).ordinary f).level.inst ls) then
+    if Level.rel ((((E.get η).block.ctors s c).ordinary f).level{ls}) then
       match ((E.get η).block.ctors s c).recoveryIndex f with
       | some i => indices i
       | none => ⊥
@@ -38,7 +38,7 @@ def RecoveryNames (η : Head ζ (.inductive ι)) (s : Fin ι.nsorts) (c : Fin (�
     (indices : Fin (ι.nindices s) → Tm_ Γ₁)
     (names : Fin (CtorHead.mk η s c).arity → Tm_ Γ₁) : Prop :=
   ∀ f : Fin (ι.ctors s c).nfields,
-    Level.rel ((((E.get η).block.ctors s c).ordinary f).level.inst ls) = true →
+    Level.rel ((((E.get η).block.ctors s c).ordinary f).level{ls}) = true →
     ∃ i, ((E.get η).block.ctors s c).recoveryIndex f = some i ∧
       names (Fin.castAdd (ι.ctors s c).nrecFields f) = indices i
 
@@ -126,7 +126,7 @@ theorem pullback_proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : Fi
 noncomputable def recoverMajor (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
     (source : Γ₂ ⟶ Γ₁) (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
     (indices : Fin (ι.nindices s) → RawFamily Γ₂) (major : RawFamily Γ₂) : RawFamily Γ₂ :=
-  if Level.rel ((E.get η).block.level.inst ls) then major else {
+  if Level.rel ((E.get η).block.level{ls}) then major else {
     app _ σ := Preord.ofHom {
       toFun ρ := proofConstructor h s (σ.unop ≫ source)
         (fun i => (Tm E ℓ).map σ (indexNames i)) fun i => (indices i).app _ σ ρ
@@ -191,7 +191,7 @@ theorem recoverMajor_isFinitary (h : RecData Γ₁ η ls l ps ms mins) (s : Fin 
     (hi : ∀ i, (indices i).IsFinitary) (hm : major.IsFinitary) :
     (recoverMajor h s source indexNames indices major).IsFinitary := by
   intro Γ₃ σ i ρ
-  by_cases hrel : Level.rel ((E.get η).block.level.inst ls) = true
+  by_cases hrel : Level.rel ((E.get η).block.level{ls}) = true
   · simpa only [recoverMajor, hrel, ↓reduceIte] using hm σ i ρ
   · simp only [recoverMajor, hrel]
     exact ΩLower.IsFinitary.of_eventually fun I _ hy =>

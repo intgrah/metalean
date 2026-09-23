@@ -38,10 +38,10 @@ namespace FRecField
 variable (ffd : FRecField) (pos target : Nat) (us : Array FLevel) (ps args : Array FExpr) (n : Nat)
 
 def instTele : Array FExpr :=
-  Array.ofFn fun j : Fin ffd.tele.size => (ffd.tele[j].instL us).instFVars (args ++ FExpr.fvars n j)
+  Array.ofFn fun j : Fin ffd.tele.size => ffd.tele[j]{us}.instFVars (args ++ FExpr.fvars n j)
 
 def instIndices : Array FExpr :=
-  ffd.indices.map fun t => (t.instL us).instFVars (args ++ FExpr.fvars n ffd.tele.size)
+  ffd.indices.map fun t => t{us}.instFVars (args ++ FExpr.fvars n ffd.tele.size)
 
 def instType : FExpr :=
   FExpr.piTele n (ffd.instTele us args n) (.ind pos target us ps (ffd.instIndices us args n))
@@ -62,17 +62,17 @@ namespace FCtor
 variable (fctor : FCtor) (pos s c : Nat) (us : Array FLevel) (ps fds : Array FExpr) (n : Nat)
 
 def ordinaryFieldExpr (f : Nat) (hf : f < fctor.ordinary.size) : FExpr :=
-  (fctor.ordinary[f].type.instL us).instFVars (ps ++ fds.extract 0 f)
+  fctor.ordinary[f].type{us}.instFVars (ps ++ fds.extract 0 f)
 
 def recursiveFieldExpr (target : Nat) (r : Nat) (hr : r < fctor.recursive.size) : FExpr :=
   fctor.recursive[r].instType pos target us ps (ps ++ fds) n
 
 def instTargetIndices : Array FExpr :=
-  fctor.targetIndices.map fun t => (t.instL us).instFVars (ps ++ fds)
+  fctor.targetIndices.map fun t => t{us}.instFVars (ps ++ fds)
 
 def ordinaryTys : Array FExpr :=
   Array.ofFn fun f : Fin fctor.ordinary.size =>
-    (fctor.ordinary[f].type.instL us).instFVars (ps ++ FExpr.fvars n f)
+    fctor.ordinary[f].type{us}.instFVars (ps ++ FExpr.fvars n f)
 
 def recursiveTys (target : Fin fctor.recursive.size → Nat) : Array FExpr :=
   Array.ofFn fun r => fctor.recursive[r].instType pos (target r) us ps
@@ -109,15 +109,15 @@ namespace FInductive
 variable (fI : FInductive) (pos : Nat) (us : Array FLevel) (ps : Array FExpr) (n : Nat)
 
 def paramType (p : Nat) (hp : p < fI.params.size) : FExpr :=
-  (fI.params[p].instL us).instFVars (ps.extract 0 p)
+  fI.params[p]{us}.instFVars (ps.extract 0 p)
 
 def indexType (s : Nat) (hs : s < fI.indices.size) (is : Array FExpr) (i : Nat)
     (hi : i < fI.indices[s].size) : FExpr :=
-  (fI.indices[s][i].instL us).instFVars (ps ++ is.extract 0 i)
+  fI.indices[s][i]{us}.instFVars (ps ++ is.extract 0 i)
 
 def indexTele (s : Nat) (hs : s < fI.indices.size) : Array FExpr :=
   Array.ofFn fun j : Fin fI.indices[s].size =>
-    (fI.indices[s][j].instL us).instFVars (ps ++ FExpr.fvars n j)
+    fI.indices[s][j]{us}.instFVars (ps ++ FExpr.fvars n j)
 
 def motiveTele (s : Nat) (hs : s < fI.indices.size) : Array FExpr :=
   (fI.indexTele us ps n s hs).push (.ind pos s us ps (FExpr.fvars n fI.indices[s].size))
@@ -240,8 +240,8 @@ theorem ctorLt (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
 theorem levelInst (hus : us.size = ι.nlevels) :
     FInductive.Denotes L E fI I →
     (∀ i, FLevel.Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (ls' i)) →
-    ∃ l : RawLevel ℓ, FLevel.Denotes (fI.level.inst us) l ∧
-      ⟦l⟧ = I.level.inst (⟦ls' ·⟧) := by
+    ∃ l : RawLevel ℓ, FLevel.Denotes fI.level{us} l ∧
+      ⟦l⟧ = I.level{fun p : Param ι.nlevels => (⟦ls' p⟧ : Level ℓ)} := by
   intro hI hus'
   have ⟨fl₀, hl₀, hl₀'⟩ := hI.level
   exact ⟨_, hl₀.inst hus hus', by rw [Level.mk_inst, hl₀']⟩

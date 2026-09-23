@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Export.Basic
+public import Metalean.Level.Inst
 
 @[expose] public section
 
@@ -47,15 +48,19 @@ def Level.inst (σ : Lean.Name → Level) : Level → Level
   | .imax l r => .imax (l.inst σ) (r.inst σ)
   | .param p => σ p
 
+instance : InstLevel (Lean.Name → Level) Level Level := ⟨Level.inst⟩
+
 def Expr.instLevels (σ : Lean.Name → Level) : Expr → Expr
-  | .sort l => .sort (l.inst σ)
-  | .const name ls => .const name (ls.map (·.inst σ))
+  | .sort l => .sort l{σ}
+  | .const name ls => .const name ls{σ}
   | .app f a => .app (f.instLevels σ) (a.instLevels σ)
   | .lam t b => .lam (t.instLevels σ) (b.instLevels σ)
   | .forallE t b => .forallE (t.instLevels σ) (b.instLevels σ)
   | .letE t v b => .letE (t.instLevels σ) (v.instLevels σ) (b.instLevels σ)
   | .proj name idx e => .proj name idx (e.instLevels σ)
   | e => e
+
+instance : InstLevel (Lean.Name → Level) Expr Expr := ⟨Expr.instLevels⟩
 
 abbrev Definitions := Std.HashMap Lean.Name (List Lean.Name × Export.Expr)
 

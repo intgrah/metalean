@@ -387,23 +387,23 @@ theorem FExpr.Denotes.bindUnused {m d : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
 theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     (hp : fe.data.hasLevelParam = false) (σ : Param ℓ → RawLevel ℓ') :
     FExpr.Denotes L E k fe e →
-    FExpr.Denotes L E k fe (e.instL (⟦σ ·⟧)) := by
+    FExpr.Denotes L E k fe e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} := by
   intro h
   induction h with
   | bvar hi hj => exact .bvar hi hj
   | fvar hi => exact .fvar hi
   | sort hl =>
     rw [FExpr.data_sort, Data.hasLevelParam_mk] at hp
-    simpa! [← Level.mk_inst] using .sort (hl.inst_of_hasParam_eq_false hp σ)
+    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .sort (hl.inst_of_hasParam_eq_false hp σ)
   | const hls hη hls' =>
     rw [FExpr.data_const, Data.hasLevelParam_mk, Array.any_eq_false] at hp
-    simpa! [← Level.mk_inst] using .const hls hη (fun i =>
+    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .const hls hη (fun i =>
       (hls' i).inst_of_hasParam_eq_false (by simpa using hp _ (hls.symm ▸ i.isLt)) σ)
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
     rw [FExpr.data_ind] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst] using .ind hls hps his hη hs
+    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .ind hls hps his hη hs
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
       (fun i => ihis i (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -411,7 +411,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     rw [FExpr.data_ctor] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst] using .ctor hls hps hfds hrecFds hη hs hc
+    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .ctor hls hps hfds hrecFds hη hs hc
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
       (fun f => ihfds f (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -420,7 +420,7 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
     rw [FExpr.data_recr] at hp
     have hlp := Data.hasLevelParam_eq_false_init hp
     rw [Bool.or_eq_false_iff, Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst] using .recr hls hps hms hmins his hη hs
+    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .recr hls hps hms hmins his hη hs
       (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp.1 _ (hls.symm ▸ i.isLt)) σ)
       (hl.inst_of_hasParam_eq_false hlp.2 σ)
       (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
@@ -469,7 +469,8 @@ theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
   | proj hstruct hη hs hidx _ ihe =>
     rw [FExpr.data_proj] at hp
     rw [Inductive.IsStructure.projTerm_instL]
-    simpa [← Level.mk_inst] using .proj hstruct hη hs hidx (ihe (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
+    simpa [← Level.mk_inst, InstLevel.inst_tuple] using
+      .proj hstruct hη hs hidx (ihe (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
   | app _ _ ihf iha =>
     rw [FExpr.data_app, Data.hasLevelParam_mkApp, Bool.or_eq_false_iff] at hp
     exact .app (ihf hp.1) (iha hp.2)
@@ -911,8 +912,8 @@ theorem FExpr.Denotes.abstractAt {m d x : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
 theorem FExpr.Denotes.instLStep {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {us : Array FLevel}
     {σ : Param ℓ → RawLevel ℓ'} :
     FExpr.Denotes L E k fe e →
-    FExpr.Denotes L E k (FExpr.instLCore us fe) (e.instL (⟦σ ·⟧)) →
-    FExpr.Denotes L E k (FExpr.instL us fe) (e.instL (⟦σ ·⟧)) := by
+    FExpr.Denotes L E k (FExpr.instLCore us fe) e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} →
+    FExpr.Denotes L E k (FExpr.instL us fe) e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} := by
   intro h hcore
   cases hp : fe.data.hasLevelParam
   · rw [FExpr.instL_of_not_hasLevelParam us hp]
@@ -924,7 +925,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
     {σ : Param ℓ → RawLevel ℓ'} (hus : us.size = ℓ) :
     FExpr.Denotes L E k fe e →
     (∀ i, FLevel.Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (σ i)) →
-    FExpr.Denotes L E k (fe.instLCore us) (e.instL (⟦σ ·⟧)) := by
+    FExpr.Denotes L E k (fe.instLCore us) e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} := by
   intro h hus'
   induction h with
   | bvar hi hj =>
@@ -932,11 +933,12 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
   | fvar hi =>
     simpa [FExpr.instLCore] using .fvar hi
   | sort hl =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .sort (hl.inst hus hus')
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .sort (hl.inst hus hus')
   | const hls hη hls' =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .const (by simpa using hls) hη (fun i => by simpa using (hls' i).inst hus hus')
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using
+      .const (by simpa using hls) hη (fun i => by simpa using (hls' i).inst hus hus')
   | ind hls hps his hη hs hls' hps' his' ihps ihis =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .ind
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .ind
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using his)
@@ -945,7 +947,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun p => by simpa using (hps' p).instLStep (ihps p))
       (fun i => by simpa using (his' i).instLStep (ihis i))
   | ctor hls hps hfds hrecFds hη hs hc hls' hps' hfds' hrecFds' ihps ihfds ihrecFds =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .ctor
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .ctor
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using hfds)
@@ -957,7 +959,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun f => by simpa using (hrecFds' f).instLStep (ihrecFds f))
   | recr hls hps hms hmins his hη hs hls' hl hps' hms' hmins' his' hmaj ihps ihms ihmins ihis
       ihmaj =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .recr
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .recr
       (by simpa using hls)
       (by simpa using hps)
       (by simpa using hms)
@@ -972,15 +974,16 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (fun i => by simpa using (his' i).instLStep (ihis i))
       (hmaj.instLStep ihmaj)
   | quot hη hl hα hr ihα ihr =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quot hη (hl.inst hus hus') (hα.instLStep ihα) (hr.instLStep ihr)
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using
+      .quot hη (hl.inst hus hus') (hα.instLStep ihα) (hr.instLStep ihr)
   | quotMk hη hl hα hr ha ihα ihr iha =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotMk hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .quotMk hη
       (hl.inst hus hus')
       (hα.instLStep ihα)
       (hr.instLStep ihr)
       (ha.instLStep iha)
   | quotLift hη hl₁ hl₂ hα hr hβ hf hh ha ihα ihr ihβ ihf ihh iha =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotLift hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .quotLift hη
       (hl₁.inst hus hus')
       (hl₂.inst hus hus')
       (hα.instLStep ihα)
@@ -990,7 +993,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (hh.instLStep ihh)
       (ha.instLStep iha)
   | quotInd hη hl hα hr hβ hf ha ihα ihr ihβ ihf iha =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .quotInd hη
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using .quotInd hη
       (hl.inst hus hus')
       (hα.instLStep ihα)
       (hr.instLStep ihr)
@@ -998,7 +1001,8 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
       (hf.instLStep ihf)
       (ha.instLStep iha)
   | proj hstruct hη hs hidx he' ihe =>
-    simpa! [FExpr.instLCore, ← Level.mk_inst] using .proj hstruct hη hs hidx (he'.instLStep ihe)
+    simpa! [FExpr.instLCore, ← Level.mk_inst, InstLevel.inst_tuple] using
+      .proj hstruct hη hs hidx (he'.instLStep ihe)
   | app hf ha ihf iha =>
     simpa [FExpr.instLCore] using .app (hf.instLStep ihf) (ha.instLStep iha)
   | lam ht hb iht ihb =>
@@ -1016,7 +1020,7 @@ theorem FExpr.Denotes.instL {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {us : 
     {σ : Param ℓ → RawLevel ℓ'} (hus : us.size = ℓ) :
     FExpr.Denotes L E k fe e →
     (∀ i, FLevel.Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (σ i)) →
-    FExpr.Denotes L E k (fe.instL us) (e.instL (⟦σ ·⟧)) :=
+    FExpr.Denotes L E k fe{us} e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} :=
   fun h hus' => h.instLStep (h.instLCore hus hus')
 
 structure Subst.InstFVars {n₀ n k : Nat} (args : Array FExpr) (σ : Subst E.1 ℓ n₀ (n + k)) : Prop where

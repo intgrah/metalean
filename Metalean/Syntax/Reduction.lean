@@ -50,7 +50,7 @@ judgement WHRed (E : Env ζ) {ℓ : Nat} :
   E ⊢ .letE t v e' ⤳ e'.inst v
 
   ──────────────────── delta {n nlevels : Nat} {η : Head ζ (.const .def nlevels)} {ls}
-  E ⊢ .const η (n := n) ls ⤳ ((E.get η).defValue.instL ls).wkClosed
+  E ⊢ .const η (n := n) ls ⤳ (E.get η).defValue{ls}.wkClosed
 
   E ⊢ maj₁ ⤳ maj₂
   ──────────────────── recrMajor {n ι} {η : Head ζ (.inductive ι)}

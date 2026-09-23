@@ -18,30 +18,20 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ ℓ' n : Nat} {Γ : Ctx ζ ℓ 0 n} {e e�
 
 theorem Defeq.instLevel (ls : Param ℓ → Level ℓ') :
     E[Γ] ⊢ e₁ ≡ e₂ : t →
-    E[Γ.instL ls] ⊢ e₁.instL ls ≡ e₂.instL ls : t.instL ls := by
+    E[Γ{ls}] ⊢ e₁{ls} ≡ e₂{ls} : t{ls} := by
   intro d
-  -- Lol
   induction_cases d with c =>
-    simp -failIfUnchanged only [Ctx.get_instL, Expr.instL, Level.inst_succ, Expr.instL_wkClosed,
-      Expr.instL_instL, Inductive.paramType_instL, Inductive.indexType_instL, Level.inst_inst,
-      Expr.instL_subst, Subst.instL_append, RecField.instantiatedType_instL,
-      Ctor.ordinaryFieldExpr_instL, Ctor.recursiveFieldExpr_instL, Ctor.targetIndex_instL,
-      Inductive.motiveType_instL, Inductive.caseFnType_instL, Inductive.motiveResult_instL,
-      Expr.instL_inst, Level.inst_imax, Expr.instL_wk, Expr.instL_wkFrom,
-      Inductive.IsStructure.rebuildTerm_instL, Level.inst_zero, Inductive.iotaType_instL,
-      Inductive.iotaLhs_instL, Inductive.iotaRhs_instL, Quot.relType_instL,
-      Quot.compatType_instL, Quot.motiveType_instL, Quot.minorType_instL] at *
-    apply c <;> solve_by_elim -constructor -symm -exfalso
-      [-c, Inductive.RecAllowed.instL]
+    simp -failIfUnchanged [Ctx.get_instL] at *
+    apply c <;> solve_by_elim [Inductive.RecAllowed.instL]
 
 theorem CtxWF.instLevel (ls : Param ℓ → Level ℓ') :
     E[Γ] ⊢ ok →
-    E[Γ.instL ls] ⊢ ok := by
+    E[Γ{ls}] ⊢ ok := by
   intro hΓ
   induction hΓ with
   | nil => exact .nil
   | snoc _ ht ih =>
       have ⟨u, ht⟩ := ht
-      exact .snoc ih ⟨u.inst ls, ht.instLevel ls⟩
+      exact .snoc ih ⟨u{ls}, ht.instLevel ls⟩
 
 end Metalean

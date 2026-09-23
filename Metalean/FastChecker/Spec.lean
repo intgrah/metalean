@@ -242,7 +242,7 @@ def DefEqAtSpec (G : FCtx) (ft fe₁ fe₂ : FExpr) : Prop :=
   E[Γ] ⊢ e₁ ≡ e₂ : t
 
 def UnfoldsTo (F : FEnv) (pos : Nat) (ls : Array FLevel) (v : FExpr) : Prop :=
-  ∀ nlevels t v₀, F[pos]? = some (.def nlevels t v₀) → v = v₀.instL ls
+  ∀ nlevels t v₀, F[pos]? = some (.def nlevels t v₀) → v = v₀{ls}
 
 structure Caches where
   whnfCore : Std.DHashMap (FCtx × FExpr)

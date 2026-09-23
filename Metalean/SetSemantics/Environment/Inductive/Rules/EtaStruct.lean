@@ -160,25 +160,25 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     w (Fin.natAdd ι.nparams f) ∈
         ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∧
       ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∈
-        S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
+        S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
   have hentry : Ctx.get (Fin.natAdd ι.nparams f)
-      (Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)) =
-      (Ctx.entry (Ctx.instL ls (I.ctors s c).ordinaryTele)
+      (I.params ++ (I.ctors s c).ordinaryTele){ls} =
+      (Ctx.entry (I.ctors s c).ordinaryTele{ls}
           (Nat.le_add_right ι.nparams f.val) (by omega)).rename
         fun slot : Var (ι.nparams + f.val) => slot.castLE (by omega) := by
     rw [Ctx.get_eq_entry_rename _ _ (ι.nparams + f.val) (by omega) rfl, Ctx.instL_append,
-      Ctx.entry_append_right (Ctx.instL ls I.params)
-        (Ctx.instL ls (I.ctors s c).ordinaryTele) (by omega)
+      Ctx.entry_append_right I.params{ls}
+        (I.ctors s c).ordinaryTele{ls} (by omega)
         (Nat.le_add_right ι.nparams f.val) (by omega)]
   let domain := ε₁[w]⟦Ctx.get (Fin.natAdd ι.nparams f)
-    (Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele))⟧
+    (I.params ++ (I.ctors s c).ordinaryTele){ls}⟧
   have hden : ε₁[fun v => w (v.castLE (by omega))]⟦Ctx.entry
-      (Ctx.instL ls (I.ctors s c).ordinaryTele) (Nat.le_add_right ι.nparams f.val) (by omega)⟧ =
+      (I.ctors s c).ordinaryTele{ls} (Nat.le_add_right ι.nparams f.val) (by omega)⟧ =
       domain := by
     dsimp only [domain]
     rw [hentry, Expr.denote_rename]
     rfl
-  have hsorted : domain ∈ S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
+  have hsorted : domain ∈ S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
     simpa [domain, Ctx.get_instL, Expr.denote, Level.eval_inst] using
       (soundness hdecl hrule hE (((hB.ctors s c).ordinaryTele_get f).instLevel ls) w
         (model.ordinarySemCtx s c vps hps w hw)).mem
@@ -187,7 +187,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     rw [htype]
     exact ⟨model.ordinarySemCtx s c vps hps w hw (Fin.natAdd ι.nparams f), hsorted⟩
   rw [← Ctx.entry_instL, Ctor.ordinaryTeleAux_entry] at hden
-  change ε₂[γ]⟦((((I.ctors s c).ordinary f).type.map total.sigs).instL ls).subst
+  change ε₂[γ]⟦(((I.ctors s c).ordinary f).type.map total.sigs){ls}.subst
     (Fin.append ps₁ previous)⟧ = domain
   rw [Expr.denote_subst]
   have hσ : (ε₂[γ]⟦Fin.append ps₁ previous ·⟧) =
@@ -236,7 +236,7 @@ theorem projTerm_denotes_field
       simp only [Expr.denote]
       rw [hps, hsorts₂]
       exact congrArg _ (funext hstruct.no_indices.elim)
-    let u : Level 0 := (((I.map total.sigs).ctors s c).ordinary f).level.inst ls
+    let u : Level 0 := (((I.map total.sigs).ctors s c).ordinary f).level{ls}
     let mot := hstruct.projectionMotives η ls ps₁ f
     let Δcase := (I.map total.sigs).caseTele η ls ps₁ mot s c
     let projTy {m₂ : Nat} (ps₂ : Fin ι.nparams → Expr ζ₂ 0 m₂) (maj₂ : Expr ζ₂ 0 m₂) :=
@@ -250,7 +250,7 @@ theorem projTerm_denotes_field
         (hmajMem₂ : ε₂[γ₂]⟦maj₂⟧ ∈ model.toModel.sortValue s vps vis) :
         model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧ f ∈ ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∧
           ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∈
-            S_ ((((I.ctors s c).ordinary f).level.inst ls).eval ![]) := by
+            S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
       have ⟨hmem, hsorted⟩ := model.projTypeWith_denotes hdecl hrule hE hB total hatoms vps hvps
         (Fin.append vps (model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧)) (hdecomp hmajMem₂).1 f ps₂
         (fun prior => hstruct.projTerm η ls ps₂ (prior.castLT (prior.isLt.trans f.isLt)) maj₂)
@@ -305,7 +305,7 @@ theorem projTerm_denotes_field
       exact (hbody (maj₂ := .var (Fin.last (m₁ + ι.nindices s))) hpsSlots hpsTySlots
         hlastMem).2
     have hord₂ := ((congrArg (Realizes ε₂ ![] _ · _)
-      (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
+      (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
       ((model.ctors s c).source.ordinary.realizes_mapInst total hatoms)).pull
       (reach₁ := {γ₁}) ps₁ (fun _ => vps)
       (fun δ hδ => by subst hδ; exact hvps) fun δ hδ v => by subst hδ; rfl

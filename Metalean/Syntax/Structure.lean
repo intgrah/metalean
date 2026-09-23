@@ -59,8 +59,7 @@ def projTypeWith (I : Inductive ζ₁ ι) {n : Nat}
     (f : Fin (ι.ctors s c).nfields)
     (previous : Fin f.val → Expr ζ₁ ℓ n) : Expr ζ₁ ℓ n :=
   let C := I.ctors s c
-  (((C.ordinary f).type).instL ls).subst
-    (Fin.append ps previous)
+  (C.ordinary f).type{ls}.subst (Fin.append ps previous)
 
 @[simp] theorem projTypeWith_map
     (pre : ζ₁ ⟶ ζ₂)
@@ -80,11 +79,9 @@ def projTypeWith (I : Inductive ζ₁ ι) {n : Nat}
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (f : Fin (ι.ctors s c).nfields)
     (previous : Fin f.val → Expr ζ₁ ℓ n) :
-    (projTypeWith I ls ps f previous).instL ls' =
-      projTypeWith I (fun level => (ls level).inst ls')
-        (fun param => (ps param).instL ls') f
-        fun prior => (previous prior).instL ls' := by
-  simp [projTypeWith]
+    (projTypeWith I ls ps f previous){ls'} =
+      projTypeWith I ls{ls'} ps{ls'} f previous{ls'} := by
+  simp [projTypeWith, InstLevel.inst_tuple, Fin.append_comp]
 
 def projection {n : Nat} (h : I.IsStructure s c)
     (η : Head ζ₁ (.inductive ι))
@@ -96,7 +93,7 @@ def projection {n : Nat} (h : I.IsStructure s c)
     (projection h η ls ps
       (previous.castLT (previous.isLt.trans f.isLt)) maj).2
   let type := projTypeWith I ls ps f previous
-  let u := ((I.ctors s c).ordinary f).level.inst ls
+  let u := ((I.ctors s c).ordinary f).level{ls}
   let ms : Fin ι.nsorts → Expr ζ₁ ℓ n := fun other => by
     have hs := h.sort_unique other
     subst other
@@ -177,7 +174,7 @@ def projectionCases (ms : Fin ι.nsorts → Expr ζ₁ ℓ n) (other : Fin ι.ns
 
 theorem projTerm_eq_recr :
     h.projTerm η ls ps f maj =
-      .recr η s ls (((I.ctors s c).ordinary f).level.inst ls) ps
+      .recr η s ls ((I.ctors s c).ordinary f).level{ls} ps
         (h.projectionMotives η ls ps f)
         (h.projectionCases η ls ps f (h.projectionMotives η ls ps f)) h.indices maj := by
   rw [projTerm, projection]
@@ -240,11 +237,15 @@ theorem projection_map :
   · exact funext h.no_recursive.elim
 
 theorem projection_instL :
-    (h.projection η ls ps f maj).map (Expr.instL ls') (Expr.instL ls') =
-      h.projection η (fun level => (ls level).inst ls')
-        (fun param => (ps param).instL ls') f (maj.instL ls') := by
+    (h.projection η ls ps f maj).map (·{ls'}) (·{ls'}) =
+      h.projection η ls{ls'} ps{ls'} f maj{ls'} := by
   fun_induction h.projection η ls ps f maj with
-  | case1 η ls ps f maj type u ms cases ihMajor ihMotive =>
+  | case1 n ps₁ field maj previous type u ms cases ihMajor ihMotive =>
+    have hwk : ((fun param => (ps₁ param).wkN (ι.nindices s + 1)) :
+        Fin ι.nparams → Expr ζ₁ ℓ (n + (ι.nindices s + 1))){ls'} =
+        (fun param => (ps₁ param){ls'}.wkN (ι.nindices s + 1)) := by
+      funext param
+      simp
     have ihMajorTerm := fun previous => congrArg Prod.snd (ihMajor previous)
     have ihMotiveTerm := fun previous => congrArg Prod.snd (ihMotive previous)
     simp at ihMajorTerm ihMotiveTerm
@@ -254,38 +255,46 @@ theorem projection_instL :
       congr 1
       funext previous
       exact ihMajorTerm previous
-    · simp only [Expr.instL]
+    · simp only [Expr.inst_recr]
       congr 1
-      · simp [u]
+      · simp [u, InstLevel.inst_tuple]
       · funext other
         have hs := h.sort_unique other
         subst other
-        simp [ms, ihMotiveTerm, Expr.instL]
+        simp [ms, ← hwk]
+        congr 2
+        funext previous
+        exact ihMotiveTerm previous
       · funext other otherCtor
         have hs := h.sort_unique other
         subst other
         have hc := h.ctor_unique otherCtor
         subst otherCtor
-        simp [cases, ms, ihMotiveTerm, Expr.instL]
+        simp [cases, ms, ← hwk]
+        congr 2
+        funext other
+        have hs := h.sort_unique other
+        subst other
+        simp
+        congr 2
+        funext previous
+        exact ihMotiveTerm previous
       · exact funext h.no_indices.elim
 
 @[simp] theorem projType_instL :
-    (h.projType η ls ps f maj).instL ls' =
-      h.projType η (fun level => (ls level).inst ls')
-        (fun param => (ps param).instL ls') f (maj.instL ls') :=
+    (h.projType η ls ps f maj){ls'} =
+      h.projType η ls{ls'} ps{ls'} f maj{ls'} :=
   congrArg Prod.fst (h.projection_instL ls' η ls ps f maj)
 
 @[simp] theorem projTerm_instL :
-    (h.projTerm η ls ps f maj).instL ls' =
-      h.projTerm η (fun level => (ls level).inst ls')
-        (fun param => (ps param).instL ls') f (maj.instL ls') :=
+    (h.projTerm η ls ps f maj){ls'} =
+      h.projTerm η ls{ls'} ps{ls'} f maj{ls'} :=
   congrArg Prod.snd (h.projection_instL ls' η ls ps f maj)
 
 @[simp] theorem rebuildTerm_instL :
-    (h.rebuildTerm η ls ps maj).instL ls' =
-      h.rebuildTerm η (fun level => (ls level).inst ls')
-        (fun param => (ps param).instL ls') (maj.instL ls') := by
-  simp only [rebuildTerm, Expr.instL]
+    (h.rebuildTerm η ls ps maj){ls'} =
+      h.rebuildTerm η ls{ls'} ps{ls'} maj{ls'} := by
+  simp only [rebuildTerm, Expr.inst_ctor]
   congr 1
   · funext f
     exact h.projTerm_instL ls' η ls ps f maj
@@ -293,7 +302,7 @@ theorem projection_instL :
 
 theorem ordinaryLevel_eq_zero_of_eval_zero
     {ν : Param ℓ → Nat} {c : Fin (ι.nctors s)} (h : I.IsStructure s c) (ls : Fin ι.nlevels → Level ℓ)
-    (hzero : (I.level.inst ls).eval ν = 0) (f : Fin (ι.ctors s c).nfields) :
+    (hzero : I.level{ls}.eval ν = 0) (f : Fin (ι.ctors s c).nfields) :
     ((I.ctors s c).ordinary f).level = .zero := by
   have hel := (h.sortLargeElim.singleton_of_eval_zero ls hzero c).2.ordinary f
   rcases hel with hu | ⟨i, _⟩

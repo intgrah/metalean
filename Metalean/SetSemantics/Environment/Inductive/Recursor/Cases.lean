@@ -26,7 +26,7 @@ variable {bound : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)}
   {ls : Fin ι.nlevels → Level 0}
   {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts} {ctor : Ctor ζ₁ ι s csig}
-  {params : StrongTeleModel E₁ ε₁ ![] (Ctx.instL ls I.params)}
+  {params : StrongTeleModel E₁ ε₁ ![] I.params{ls}}
   (model : StrongInductiveModel E₁ ε₁ I ls)
   (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
   (hsorts : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis)
@@ -93,7 +93,7 @@ private theorem StrongRecursiveFieldSource.ihType_eraseRecField
         numeral s.val := by
       change fst (fst (pair
         (pair (numeral s.val)
-          (encode (ε₁[final]⟦recFd.indices · |>.instL ls⟧)))
+          (encode (ε₁[final]⟦recFd.indices{ls} ·⟧)))
         value)) = _
       simp
     have hright := fibre_bundleMotive_value (level := level)

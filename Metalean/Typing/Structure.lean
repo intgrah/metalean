@@ -32,12 +32,11 @@ theorem projTypeWith_hasType
         fun earlier => previous
           (earlier.castLE prior.isLt.le)) :
     E[Γ] ⊢ projTypeWith I ls ps f previous :
-      .sort (((I.ctors s c).ordinary f).level.inst ls) := by
+      .sort ((I.ctors s c).ordinary f).level{ls} := by
   have hσ := Ctor.forall_ordinarySubst
     f.isLt.le hps fun prior => by
       simpa [projTypeWith] using hprevious prior
-  have htype := ((hctor.ordinary f).typeExact.instLevel ls).substitution hσ
-  simpa [projTypeWith, Expr.instL] using htype
+  simpa [projTypeWith] using ((hctor.ordinary f).typeExact.instLevel ls).substitution hσ
 
 theorem projTypeWith_congr
     (hB : InductiveWF E I) (hctor : CtorWF E I (I.ctors s c))
@@ -51,7 +50,7 @@ theorem projTypeWith_congr
           (earlier.castLE prior.isLt.le)) :
     E[Γ] ⊢ projTypeWith I ls ps f previous ≡
       projTypeWith I ls ps f previous' :
-        .sort (((I.ctors s c).ordinary f).level.inst ls) := by
+        .sort ((I.ctors s c).ordinary f).level{ls} := by
   have hpsEq := paramSubstEq hps
   have hfieldsTele := (hctor.ordinaryTeleAux f.val f.isLt.le).instLevel
     (Q := fun _ => True) ls fun _ => trivial
@@ -66,7 +65,7 @@ theorem projTypeWith_congr
     ls fun _ => trivial
   rw [Ctx.instL_append] at hsourceInst
   have hfield := hsourceInst.substitution_congr hfullEq hfield
-  simpa [projTypeWith, Expr.instL] using hfield
+  simpa [projTypeWith] using hfield
 
 structure Projection
     (E : Env ζ) (Γ : Ctx ζ ℓ 0 n)
@@ -77,18 +76,18 @@ structure Projection
     (f : Fin (ι.ctors s c).nfields)
     (maj : Expr ζ ℓ n) : Prop where
   type : E[Γ] ⊢ h.projType η ls ps f maj :
-    .sort (((I.ctors s c).ordinary f).level.inst ls)
+    .sort ((I.ctors s c).ordinary f).level{ls}
   result : E[Γ] ⊢ Inductive.motiveResult
         (h.projectionMotives η ls ps f s) h.indices maj ≡
       h.projType η ls ps f maj :
-        .sort (((I.ctors s c).ordinary f).level.inst ls)
+        .sort ((I.ctors s c).ordinary f).level{ls}
   term : E[Γ] ⊢ h.projTerm η ls ps f maj : h.projType η ls ps f maj
   case : E[Γ] ⊢ h.projectionCases η ls ps f
         (h.projectionMotives η ls ps f) s c :
     I.caseFnType η ls ps
       (h.projectionMotives η ls ps f) s c
   motive (other : Fin ι.nsorts) : E[Γ] ⊢ h.projectionMotives η ls ps f other :
-      I.motiveType η ls ps (((I.ctors s c).ordinary f).level.inst ls) other
+      I.motiveType η ls ps ((I.ctors s c).ordinary f).level{ls} other
   iota (fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n)
       (heq : maj = .ctor η s c ls ps fds h.recursive)
       (hfields : ∀ current, E[Γ] ⊢ fds current :
@@ -116,7 +115,7 @@ theorem recursive_eq {α : Sort _} (g : Fin (ι.ctors s c).nrecFields → α) :
 theorem indType :
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ] ⊢ (.ind η s ls ps h.indices : Expr ζ ℓ n) :
-      .sort ((E.get η).block.level.inst ls) :=
+      .sort (E.get η).block.level{ls} :=
   fun hps => .indDF hps h.no_indices.elim
 
 theorem wkParams
@@ -148,7 +147,7 @@ theorem projection_spec {n : Nat} {Γ : Ctx ζ ℓ 0 n} {ps : Fin ι.nparams →
     Projection E Γ h η ls ps f maj := by
   have hni := Fin.eq_zero_of_isEmpty h.no_indices
   have hnr := Fin.eq_zero_of_isEmpty h.no_recursive
-  let u := (((E.get η).block.ctors s c).ordinary f).level.inst ls
+  let u := (((E.get η).block.ctors s c).ordinary f).level{ls}
   let ms := h.projectionMotives η ls ps f
   let mins := h.projectionCases η ls ps f ms
   have hmsDef : ms = h.projectionMotives η ls ps f := rfl
@@ -326,7 +325,7 @@ theorem projType_hasType :
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     E[Γ] ⊢ maj : .ind η s ls ps h.indices →
     E[Γ] ⊢ h.projType η ls ps f maj :
-      .sort ((((E.get η).block.ctors s c).ordinary f).level.inst ls) :=
+      .sort (((E.get η).block.ctors s c).ordinary f).level{ls} :=
   fun hΓ hps hmaj => (h.projection_spec hB hΓ hps hmaj f).type
 
 theorem projTerm_generic :
@@ -366,10 +365,10 @@ theorem projTerm_congr :
       h.projType η ls ps₁ f maj₁ := by
   intro hps hmaj
   have hparams := hB.params.instLevel (Q := fun _ => True) ls fun _ => trivial
-  have hΓ₀ : E[Ctx.instL ls (E.get η).block.params] ⊢ ok := by
+  have hΓ₀ : E[(E.get η).block.params{ls}] ⊢ ok := by
     simpa using hparams.appendCtxWF (Γ := .nil) .nil
   have hgeneric : ∀ p : Fin ι.nparams,
-      E[Ctx.instL ls (E.get η).block.params] ⊢ Expr.var p :
+      E[(E.get η).block.params{ls}] ⊢ Expr.var p :
         (E.get η).block.paramType ls (Subst.id : Subst ζ ℓ ι.nparams ι.nparams) p := by
     intro p
     have hvar := hΓ₀.var p
@@ -385,7 +384,7 @@ theorem projType_congr :
   intro hps hmaj
   have hfields : ∀ current : Fin (ι.ctors s c).nfields,
       E[Γ] ⊢ h.projTerm η ls ps₁ current maj₁ ≡ h.projTerm η ls ps₂ current maj₂ :
-        (((((E.get η).block.ctors s c).ordinary current).type).instL ls).subst
+        (((E.get η).block.ctors s c).ordinary current).type{ls}.subst
           (Fin.append ps₁ fun prior : Fin current.val =>
             h.projTerm η ls ps₁ (prior.castLE current.isLt.le) maj₁) := by
     intro current
@@ -403,7 +402,7 @@ theorem rebuildTerm_hasType (is : Fin (ι.nindices s) → Expr ζ ℓ n) :
     E[Γ] ⊢ h.rebuildTerm η ls ps maj : .ind η s ls ps is := by
   intro hΓ hps hmaj
   have hfields : ∀ f, E[Γ] ⊢ h.projTerm η ls ps f maj :
-      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+      (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
         (Fin.append ps fun previous : Fin f.val =>
           h.projTerm η ls ps
             (previous.castLE f.isLt.le) maj) := by

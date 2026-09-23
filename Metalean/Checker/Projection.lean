@@ -23,8 +23,8 @@ variable {ζ : Sigs} (E : Env ζ) {ℓ : Nat}
 partial def inferType {n : Nat} (Γ : Ctx ζ ℓ 0 n) : Expr ζ ℓ n → Except Failure (Expr ζ ℓ n)
   | .var v => pure (Γ.get v)
   | .sort l => pure (.sort (.succ l))
-  | .const η ls => pure ((E.get η).constType.instL ls).wkClosed
-  | .ind η _ ls _ _ => pure (.sort ((E.get η).block.level.inst ls))
+  | .const η ls => pure (E.get η).constType{ls}.wkClosed
+  | .ind η _ ls _ _ => pure (.sort (E.get η).block.level{ls})
   | .ctor η s c ls ps fds _ =>
     pure (.ind η s ls ps fun i => ((E.get η).block.ctors s c).targetIndex ls ps fds i)
   | .recr _ s _ _ _ ms _ is maj => pure (Inductive.motiveResult (ms s) is maj)

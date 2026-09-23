@@ -37,9 +37,8 @@ theorem Defeq.ind_inj {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.n
     {is₁ is₂ : Fin (ι.nindices s) → Expr ζ ℓ n} :
     EnvWF E →
     E[Γ] ⊢ ok →
-    E[Γ] ⊢ .ind η s ls₁ ps₁ is₁ ≡
-      .ind η s ls₂ ps₂ is₂ :
-        .sort ((E.get η).block.level.inst ls₁) →
+    E[Γ] ⊢ .ind η s ls₁ ps₁ is₁ ≡ .ind η s ls₂ ps₂ is₂ :
+        .sort (E.get η).block.level{ls₁} →
     ls₁ = ls₂ ∧
       (∀ p, ∃ t : Expr ζ ℓ n, E[Γ] ⊢ ps₁ p ≡ ps₂ p : t) ∧
       ∀ index, ∃ t : Expr ζ ℓ n,

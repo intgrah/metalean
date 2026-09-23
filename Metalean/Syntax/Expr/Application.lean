@@ -68,8 +68,7 @@ theorem apps_append (e : Expr ζ ℓ n) (args₁ : Fin k → Expr ζ ℓ n)
 
 @[simp] theorem instL_apps (ls : Param ℓ → Level ℓ')
     (η : Expr ζ ℓ n) (args : Fin k → Expr ζ ℓ n) :
-    (η.apps args).instL ls =
-      (η.instL ls).apps fun i => (args i).instL ls :=
+    (η.apps args){ls} = η{ls}.apps args{ls} :=
   (appLevelHom.finFold k).naturality_apply ls ⟨η, args⟩ |>.symm
 
 def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :=
@@ -83,8 +82,7 @@ def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :
 
 @[simp] theorem instL_appList (ls : Param ℓ → Level ℓ')
     (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) :
-    (η.appList args).instL ls =
-      (η.instL ls).appList (args.map (Expr.instL ls)) :=
+    (η.appList args){ls} = η{ls}.appList args{ls} :=
   appLevelHom.listFold.naturality_apply ls ⟨η, args⟩ |>.symm
 
 theorem applyBound_eq_apps (e : Expr ζ ℓ n) (k : Nat) :

@@ -29,7 +29,7 @@ theorem structure_projection_type_properties
     (pprevious : ∀ g : Fin f.val, RawTyped Γ
       (hs.projTerm η ls ps (g.castLE f.isLt.le) maj) (hs.projType η ls ps (g.castLE f.isLt.le) maj)) :
     RawTyped Γ (hs.projType η ls ps f maj)
-      (.sort ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)) := by
+      (.sort (((E₂.get η).block.ctors s c).ordinary f).level{ls}) := by
   have hctx := hB.ordinaryClosedWF s c ls f.val f.isLt.le
   have pctx := hsound.ordinaryPrefixProperties η hI hblock s c ls f.val f.isLt.le
   have pfield := hsound.ordinaryTypeJudgment η hI hblock s c ls f

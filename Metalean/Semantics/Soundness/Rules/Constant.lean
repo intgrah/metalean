@@ -18,19 +18,19 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ : CtxCat E ℓ} {nlevels : 
 open CategoryTheory CodeAssignment Presheaf
 
 theorem RawJudgment.delta (η : Head ζ (.const .def nlevels)) {ls : Fin nlevels → Level ℓ}
-    (p : RawJudgment (CtxCat.nil E ℓ) ((E.get η).defValue.instL ls)
-      ((E.get η).defValue.instL ls) ((E.get η).constType.instL ls))
-    (pt : RawJudgment Γ₁ ((E.get η).constType.instL ls).wkClosed
-      ((E.get η).constType.instL ls).wkClosed (.sort u)) :
-    RawJudgment Γ₁ (.const η ls) ((E.get η).defValue.instL ls).wkClosed
-      ((E.get η).constType.instL ls).wkClosed := by
+    (p : RawJudgment (CtxCat.nil E ℓ) (E.get η).defValue{ls}
+      (E.get η).defValue{ls} (E.get η).constType{ls})
+    (pt : RawJudgment Γ₁ (E.get η).constType{ls}.wkClosed
+      (E.get η).constType{ls}.wkClosed (.sort u)) :
+    RawJudgment Γ₁ (.const η ls) (E.get η).defValue{ls}.wkClosed
+      (E.get η).constType{ls}.wkClosed := by
   have hσ : SemanticHom (⟨Fin.elim0, fun v => v.elim0⟩ : Γ₁.as ⟶ (CtxCat.nil E ℓ).as) :=
     ⟨fun v => v.elim0, fun _ _ ρ _ => ⟨ρ, .nil _ _ _ _, .nil _ _⟩⟩
   have pv := hσ.props p.left
   have hf : HasFixedness Γ₁ _ _ := hσ.fixed p.syntactic.left p.type.subst p.left.subst p.fixed
   simp only [Expr.subst_closed] at pv hf
-  have hdelta : E[Γ₁.as.ctx] ⊢ .const η ls ≡ ((E.get η).defValue.instL ls).wkClosed :
-      ((E.get η).constType.instL ls).wkClosed :=
+  have hdelta : E[Γ₁.as.ctx] ⊢ .const η ls ≡ (E.get η).defValue{ls}.wkClosed :
+      (E.get η).constType{ls}.wkClosed :=
     .delta pt.syntactic p.syntactic.left.wkClosed
   refine ⟨hdelta, pt.left, ⟨fun _ σ ρ hρ => ?_, fun _ _ σ₁ σ₂ ρ₁ ρ₂ hσ₁ hρ => ?_⟩, pv,
     fun _ _ _ _ => by rw [rawInterpret_const_def], fun _ he σ ρ hρ => ?_⟩
@@ -46,9 +46,9 @@ theorem RawJudgment.delta (η : Head ζ (.const .def nlevels)) {ls : Fin nlevels
 theorem RawJudgment.const_bot {kind : ConstKind} (η : Head ζ (.const kind nlevels))
     {ls : Fin nlevels → Level ℓ}
     (hbot : ∀ Γ : CtxCat E ℓ, rawInterpret (piLimit E ℓ) Γ (.const η ls) = ⊥)
-    (pt : RawJudgment Γ₁ ((E.get η).constType.instL ls).wkClosed
-      ((E.get η).constType.instL ls).wkClosed (.sort u)) :
-    RawJudgment Γ₁ (.const η ls) (.const η ls) ((E.get η).constType.instL ls).wkClosed :=
+    (pt : RawJudgment Γ₁ (E.get η).constType{ls}.wkClosed
+      (E.get η).constType{ls}.wkClosed (.sort u)) :
+    RawJudgment Γ₁ (.const η ls) (.const η ls) (E.get η).constType{ls}.wkClosed :=
   have pc : RawInterpretationProperties Γ₁ (.const η ls) := by
     refine ⟨fun _ _ _ _ => ?_, fun _ _ _ σ₂ _ _ _ _ => ?_⟩
     · rw [hbot]

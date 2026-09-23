@@ -81,7 +81,7 @@ def wrapCase (fctor : FCtor) (pos : Nat) (us : Array FLevel) (ps ms : Array FExp
 
 def indTerm (fI : FInductive) (pos s : Nat) (hs : s < fI.indices.size) (us : Array FLevel) : FExpr :=
   let np := fI.params.size
-  FExpr.lamTele 0 (fI.params.map (·.instL us) ++ fI.indices[s].map (·.instL us))
+  FExpr.lamTele 0 (fI.params{us} ++ fI.indices[s]{us})
     (.ind pos s us (FExpr.fvars 0 np) (FExpr.fvars np fI.indices[s].size))
 
 def ctorTerm (fI : FInductive) (fctor : FCtor) (pos s c : Nat) (us : Array FLevel)
@@ -95,11 +95,11 @@ def ctorTerm (fI : FInductive) (fctor : FCtor) (pos s c : Nat) (us : Array FLeve
   let tys := Array.ofFn fun o : Fin (nf + nr) =>
     let m := toMeta o
     if hm : m.val < nf then
-      (fctor.ordinary[m.val].type.instL us).instFVars (ps ++ fieldVars.extract 0 m.val)
+      fctor.ordinary[m.val].type{us}.instFVars (ps ++ fieldVars.extract 0 m.val)
     else
       fctor.recursive[m.val - nf].instType pos (target ⟨m.val - nf, by omega⟩) us ps
         (ps ++ fieldVars.extract 0 nf) (np + o.val)
-  pure (FExpr.lamTele 0 (fI.params.map (·.instL us) ++ tys)
+  pure (FExpr.lamTele 0 (fI.params{us} ++ tys)
     (.ctor pos s c us ps (fieldVars.extract 0 nf) (fieldVars.extract nf (nf + nr))))
 
 def leanCaseType (fctor : FCtor) (pos t c : Nat) (us : Array FLevel) (ps ms : Array FExpr) (n : Nat)
@@ -146,7 +146,7 @@ def recrTerm (ι : IndSig) (fI : FInductive) (pos s : Nat) (hs : s < fI.indices.
     let target ← ctorTargets ι t c fctor
     wrapCase fctor pos us ps ms (casesEnd + ni + 1) (metaOrders t c) target
       (.fvar (np + ns + idx.val))
-  let tele := fI.params.map (·.instL us) ++ Array.ofFn motiveTys ++ Array.ofFn caseTys ++
+  let tele := fI.params{us} ++ Array.ofFn motiveTys ++ Array.ofFn caseTys ++
     fI.indexTele us ps casesEnd s hs ++ #[.ind pos s us ps (FExpr.fvars casesEnd ni)]
   pure (FExpr.lamTele 0 tele
     (.recr pos s us l ps ms (Array.ofFn mins) (FExpr.fvars casesEnd ni) (.fvar (casesEnd + ni))))

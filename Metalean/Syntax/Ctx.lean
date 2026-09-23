@@ -19,6 +19,10 @@ variable {ζ ζ₁ ζ₂ : Sigs} {ℓ ℓ' n m p a b d k : Nat}
 
 abbrev Ctx (ζ : Sigs) (ℓ : Nat) := Tele (Expr ζ ℓ)
 
+@[reducible] instance {a b c : Nat} :
+    HAppend (Ctx ζ ℓ a b) (Ctx ζ ℓ b c) (Ctx ζ ℓ a c) :=
+  ⟨Tele.append⟩
+
 namespace Ctx
 
 attribute [local instance] Level.category
@@ -113,14 +117,20 @@ abbrev snoc : Ctx ζ ℓ a b → Expr ζ ℓ b → Ctx ζ ℓ a (b + 1) :=
   Functor.pi' (fun n => (Expr.family n).obj ζ) ⋙ Tele.functor a b
 
 def instL (ls : Param ℓ → Level ℓ') : Ctx ζ ℓ a b → Ctx ζ ℓ' a b :=
-  Tele.map fun _ => Expr.instL ls
+  Tele.map fun _ e => e{ls}
 
-instance : InstLevel (Param ℓ → Level ℓ') (Ctx ζ ℓ a b) (Ctx ζ ℓ' a b) where
-  inst := instL
+instance : InstLevel (Param ℓ → Level ℓ') (Ctx ζ ℓ a b) (Ctx ζ ℓ' a b) := ⟨instL⟩
+
+@[simp] theorem inst_nil (ls : Param ℓ → Level ℓ') :
+    (Tele.nil : Ctx ζ ℓ a a){ls} = .nil := rfl
+
+@[simp] theorem inst_snoc (ls : Param ℓ → Level ℓ')
+    (Γ : Ctx ζ ℓ a b) (t : Expr ζ ℓ b) :
+    (Γ.snoc t){ls} = Tele.snoc Γ{ls} t{ls} := rfl
 
 @[simp] theorem map_instL (pre : ζ₁ ⟶ ζ₂)
     (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ₁ ℓ a b) :
-    (Γ.instL ls).map pre = (Γ.map pre).instL ls := by
+    Γ{ls}.map pre = (Γ.map pre){ls} := by
   induction Γ with
   | nil => rfl
   | snoc Γ t ih => exact congrArg₂ Tele.snoc ih (t.map_instL pre ls)
@@ -303,7 +313,7 @@ theorem ext {a k : Nat} (Δ₁ Δ₂ : Ctx ζ ℓ a (a + k))
 
 @[simp] theorem entry_instL (ls : Param ℓ → Level ℓ')
     (Γ : Ctx ζ ℓ a b) (ha : a ≤ p) (hp : p < b) :
-    (Γ.entry ha hp).instL ls = (Γ.instL ls).entry ha hp := by
+    (Γ.entry ha hp){ls} = (Γ{ls}).entry ha hp := by
   induction Γ with
   | nil => omega
   | @snoc b Γ t ih =>
@@ -345,7 +355,7 @@ theorem entry_append_right (Γ : Ctx ζ ℓ a b)
       exact ih (by omega)
 
 theorem get_instL (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ 0 n) (v : Var n) :
-    (Γ.get v).instL ls = (Γ.instL ls).get v := by
+    (Γ.get v){ls} = Γ{ls}.get v := by
   induction Γ with
   | nil => exact Fin.elim0 v
   | @snoc n Γ t ih =>
@@ -357,34 +367,37 @@ theorem get_instL (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ 0 n) (v : Var
 @[simp] theorem instL_instL (ls₁ : Param ℓ → Level ℓ')
     (ls₂ : Param ℓ' → Level k)
     (Γ : Ctx ζ ℓ a b) :
-    (Γ.instL ls₁).instL ls₂ =
-      Γ.instL fun p => (ls₁ p).inst ls₂ :=
+    Γ{ls₁}{ls₂} = Γ{fun p => (ls₁ p){ls₂}} :=
   ((levelFunctor ζ a b).map_comp_apply ls₁ ls₂ Γ).symm
 
 @[simp] theorem instL_substN (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
     {k : Nat} (Δ : Ctx ζ ℓ m (m + k)) :
-    (Δ.substN σ k).instL ls =
-      (Δ.instL ls).substN (Subst.instL ls σ) k := by
+    (Δ.substN σ k){ls} =
+      Ctx.substN σ{ls} k Δ{ls} := by
   induction Δ using Tele.addInduction with
   | nil => rfl
-  | snoc k Δ t ih => exact congrArg₂ Tele.snoc ih (by simp)
+  | snoc k Δ t ih =>
+      apply congrArg₂ Tele.snoc ih
+      rw [← Subst.instL_liftN]
+      exact Expr.instL_subst ls (σ.liftN k) t
 
 @[simp] theorem pi_instL (ls : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
     (e : Expr ζ ℓ b) :
-    (Δ.pi e).instL ls = (Δ.instL ls).pi (e.instL ls) :=
+    (Δ.pi e){ls} = Δ{ls}.pi e{ls} :=
   ((piLevelHom ζ a b).naturality_apply ls ⟨Δ, e⟩).symm
 
 @[simp] theorem lam_instL (ls : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
     (e : Expr ζ ℓ b) :
-    (Δ.lam e).instL ls = (Δ.instL ls).lam (e.instL ls) :=
+    (Δ.lam e){ls} = Δ{ls}.lam e{ls} :=
   ((lamLevelHom ζ a b).naturality_apply ls ⟨Δ, e⟩).symm
 
 @[simp] theorem instL_append (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ a b)
     (Δ : Ctx ζ ℓ b k) :
-    instL ls (Γ ++ Δ) = Γ.instL ls ++ Δ.instL ls :=
+    (Γ ++ Δ){ls} = Γ{ls} ++ Δ{ls} :=
   @Functor.map_comp _ (Tele.category _) _ (Tele.category _) (Tele.mapFunctor fun n => ((Expr.family n).obj ζ).map ls) _ _ _ Γ Δ
 
-@[simp] theorem instL_param (Γ : Ctx ζ ℓ a b) : Γ.instL Level.param = Γ :=
+@[simp] theorem instL_param (Γ : Ctx ζ ℓ a b) :
+    Γ{(Level.param : Param ℓ → Level ℓ)} = Γ :=
   (levelFunctor ζ a b).map_id_apply ℓ Γ
 
 @[simp] def ofTypes : {k : Nat} → (Fin k → Expr ζ ℓ n) → Ctx ζ ℓ n (n + k)
@@ -403,7 +416,7 @@ theorem get_instL (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ 0 n) (v : Var
 
 @[simp] theorem ofTypes_instL {k : Nat} (types : Fin k → Expr ζ ℓ n)
     (ls : Param ℓ → Level ℓ') :
-    (ofTypes types).instL ls = ofTypes fun i => (types i).instL ls := by
+    (ofTypes types){ls} = ofTypes types{ls} := by
   induction k with
   | zero => rfl
   | succ k ih =>

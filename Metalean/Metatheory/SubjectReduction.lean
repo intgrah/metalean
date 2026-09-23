@@ -62,7 +62,7 @@ theorem WHRed.zeta_defeq :
 theorem WHRed.delta_defeq {nlevels : Nat} {η : Head ζ (.const .def nlevels)}
     {ls : Fin nlevels → Level ℓ} {t : Expr ζ ℓ n} :
     EnvWF E →
-    E[Γ] ⊢ .const η ls : t ⤳ ((E.get η).defValue.instL ls).wkClosed := by
+    E[Γ] ⊢ .const η ls : t ⤳ (E.get η).defValue{ls}.wkClosed := by
   intro hE hty
   have ⟨u, htype⟩ := (hE.entryWF η).constType (Γ := Γ) ls
   exact hty.const_inv.symm.conv (.delta htype ((hE.entryWF η).defValue ls))

@@ -64,22 +64,22 @@ include hatoms hparamReach in
 theorem fieldSlotsReachable
     {fds₁ : Fin (ι.ctors s c).nfields → Expr ζ₂ 0 n}
     (hfields : ∀ f, ε₂[γ] ⊨ fds f ≡ fds₁ f :
-      (((((I.map pre.sigs).ctors s c).ordinary f).type).instL ls).subst
+      ((((I.map pre.sigs).ctors s c).ordinary f).type{ls}).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) :
     Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
       Reachable {(ε₂[γ]⟦ps ·⟧)} (model.ctors s c).source.ordinary.sem := by
   have hsourceMap : Realizes ε₂ ![]
       {(ε₂[γ]⟦ps ·⟧)}
-      (Ctx.instL ls ((I.ctors s c).map pre.sigs).ordinaryTele)
+      ((I.ctors s c).map pre.sigs).ordinaryTele{ls}
       (model.ctors s c).source.ordinary.sem :=
     (congrArg (fun Δ => Realizes ε₂ ![] _ Δ _)
       ((Ctx.map_instL pre.sigs ls (I.ctors s c).ordinaryTele).trans
-        (congrArg (Ctx.instL ls) (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) _ _)))).mp
+        (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) _ _)))).mp
           (((model.ctors s c).source.ordinary.realizes.monoReach
             (reach₂ := {(ε₂[γ]⟦ps ·⟧)})
             (Set.singleton_subset_iff.mpr hparamReach)).map pre hatoms)
-  apply hsourceMap.reachable_subst (γ := γ) (Γ := (I.map pre.sigs).params.instL ls)
+  apply hsourceMap.reachable_subst (γ := γ) (Γ := (I.map pre.sigs).params{ls})
     (Fin.append ps fds) (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
   · simp
   · intro v
@@ -91,9 +91,8 @@ theorem fieldSlotsReachable
       rw [Ctx.get_subst _ _ (Fin.natAdd ι.nparams current)
         (ι.nparams + current.val) (by omega) (by simp),
         Ctx.entry_append_right
-          (Ctx.instL ls (I.map pre.sigs).params)
-          (Ctx.instL ls
-            ((I.ctors s c).map pre.sigs).ordinaryTele)
+          (I.map pre.sigs).params{ls}
+          ((I.ctors s c).map pre.sigs).ordinaryTele{ls}
           (by omega) (by omega) (by omega),
         ← Ctx.entry_instL]
       simpa [Inductive.map] using (hfields current).mem
@@ -173,8 +172,8 @@ theorem targetIndexInterp (index : Fin (ι.nindices s)) :
     (Γ := .nil) σ γ₁ (Reachable.append hvalues) hσ (Fin.natAdd ι.nparams index) (by simp)
   rwa [show σ (Fin.natAdd ι.nparams index) = expressions index by simp [σ],
     show (Ctx.get (Fin.natAdd ι.nparams index)
-      ((#t[] : Ctx ζ₂ 0 0 0) ++ (Ctx.instL ls (I.map pre.sigs).params ++
-        Ctx.instL ls ((I.map pre.sigs).indices s)))).subst σ =
+      ((#t[] : Ctx ζ₂ 0 0 0) ++ ((I.map pre.sigs).params{ls} ++
+        ((I.map pre.sigs).indices s){ls}))).subst σ =
       (I.map pre.sigs).indexType ls s ps expressions index by
       rw [← Inductive.indexType_eq_get_subst, Tele.nil_append, ← Ctx.instL_append,
         ← Ctx.get_instL]] at h
@@ -191,12 +190,12 @@ theorem indRuleSound
     (∀ index, ε₂[γ] ⊨ is₁ index ≡ is₂ index : (E₂.get η).block.indexType ls s ps₁ is₁ index) →
     ε₂[γ] ⊨ .ind η s ls ps₁ is₁ ≡
       .ind η s ls ps₂ is₂ :
-      .sort ((E₂.get η).block.level.inst ls) := by
+      .sort (E₂.get η).block.level{ls} := by
   intro hps his
   refine ⟨?_, ?_⟩
   · simp only [Expr.denote]
     rw [funext fun p => (hps p).eq, funext fun i => (his i).eq]
-  · change ε₂ (.ind η s ls _ _) ∈ S_ (((E₂.get η).block.level.inst ls).eval ![])
+  · change ε₂ (.ind η s ls _ _) ∈ S_ ((E₂.get η).block.level{ls}.eval ![])
     rw [hsorts, hblock]
     exact propSet_mem_sort fun k hk =>
       fibreOp_indSet_mem_type (fun s c => model.codeOf_localDoms s c hk) (model.mapsTo _) _
@@ -212,7 +211,7 @@ theorem ctorRuleSound
     {recFds₁ recFds₂ : Fin (ι.ctors s c).nrecFields → Expr ζ₂ 0 n} :
     (∀ param, ε₂[γ] ⊨ ps₁ param ≡ ps₂ param : (E₂.get η).block.paramType ls ps₁ param) →
     (∀ f, ε₂[γ] ⊨ fds₁ f ≡ fds₂ f :
-      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls).subst
+      ((((E₂.get η).block.ctors s c).ordinary f).type{ls}).subst
         (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))) →
     (∀ f, ε₂[γ] ⊨ recFds₁ f ≡ recFds₂ f :
       (((E₂.get η).block.ctors s c).recursive f).instantiatedType η ls ps₁

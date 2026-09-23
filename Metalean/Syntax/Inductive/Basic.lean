@@ -119,13 +119,13 @@ variable
   (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
 
 def paramType (f : Fin ι.nparams) : Expr ζ₁ ℓ n :=
-  ((I.params.entry (Nat.zero_le f.val) f.isLt).instL ls).subst
+  (I.params.entry (Nat.zero_le f.val) f.isLt){ls}.subst
     fun previous : Fin f.val => ps (previous.castLE (by omega))
 
 def indexType
     (is : Fin (ι.nindices s) → Expr ζ₁ ℓ n)
     (f : Fin (ι.nindices s)) : Expr ζ₁ ℓ n :=
-  I.indices s |>.proj f |>.instL ls |>.subst
+  ((I.indices s).proj f){ls}.subst
     (Fin.append ps fun previous => is (previous.castLE f.isLt.le))
 
 @[simp] theorem paramType_map
@@ -149,26 +149,23 @@ def indexType
     (ls : Fin ι.nlevels → Level ℓ)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (f : Fin ι.nparams) (ls' : Param ℓ → Level ℓ') :
-    (I.paramType ls ps f).instL ls' =
-      I.paramType (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls') f := by
+    (I.paramType ls ps f){ls'} = I.paramType ls{ls'} ps{ls'} f := by
   simp [paramType]
   rfl
 
 @[simp] theorem indexType_instL
     (is : Fin (ι.nindices s) → Expr ζ₁ ℓ n)
     (f : Fin (ι.nindices s)) (ls' : Param ℓ → Level ℓ') :
-    (I.indexType ls s ps is f).instL ls' =
-      I.indexType (fun i => (ls i).inst ls') s
-        (fun i => (ps i).instL ls')
-        (fun i => (is i).instL ls') f := by
+    (I.indexType ls s ps is f){ls'} =
+      I.indexType ls{ls'} s ps{ls'} is{ls'} f := by
   simp [indexType]
+  rfl
 
 def indexTele (I : Inductive ζ₁ ι)
     (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n) :
     Ctx ζ₁ ℓ n (n + ι.nindices s) :=
-  I.indices s |>.instL ls |>.substN ps (ι.nindices s)
+  (I.indices s){ls}.substN ps (ι.nindices s)
 
 @[simp] theorem indexTele_map (I : Inductive ζ₁ ι)
     (pre : ζ₁ ⟶ ζ₂) (ls : Fin ι.nlevels → Level ℓ)
@@ -183,9 +180,7 @@ def indexTele (I : Inductive ζ₁ ι)
     (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (ls' : Param ℓ → Level ℓ') :
-    (I.indexTele ls s ps).instL ls' =
-      I.indexTele (fun i => (ls i).inst ls') s
-        fun i => (ps i).instL ls' := by
+    (I.indexTele ls s ps){ls'} = I.indexTele ls{ls'} s ps{ls'} := by
   simp [indexTele]
   rfl
 

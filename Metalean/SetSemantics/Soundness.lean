@@ -25,19 +25,19 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {ε : Atom ζ ℓ → ZFSet}
 def SemDecls (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) : Prop :=
   ∀ {kind : ConstKind} {nlevels : Nat} (η : Head ζ (.const kind nlevels))
     (ls : Fin nlevels → Level ℓ),
-  ε (.const η ls) ∈ ε[ν; ![]]⟦(E.get η).constType.instL ls⟧
+  ε (.const η ls) ∈ ε[ν; ![]]⟦(E.get η).constType{ls}⟧
 
 structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) : Prop where
   ind {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)} {s ls ps₁ ps₂ is₁ is₂} :
     EnvWF E →
     (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
     (∀ i, ε[ν; γ] ⊨ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) →
-    ε[ν; γ] ⊨ .ind η s ls ps₁ is₁ ≡ .ind η s ls ps₂ is₂ : .sort ((E.get η).block.level.inst ls)
+    ε[ν; γ] ⊨ .ind η s ls ps₁ is₁ ≡ .ind η s ls ps₂ is₂ : .sort (E.get η).block.level{ls}
   ctor {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
       {s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂} :
     EnvWF E →
     (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
-    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
       (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))) →
     (∀ f, ε[ν; γ] ⊨ recFds₁ f ≡ recFds₂ f :
       (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps₁ (Fin.append ps₁ fds₁)) →
@@ -100,7 +100,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
     (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : (E.get η).block.paramType ls ps p) →
     (∀ s, ε[ν; γ] ⊨ ms s ≡ ms s : (E.get η).block.motiveType η ls ps l s) →
     (∀ s c, ε[ν; γ] ⊨ mins s c ≡ mins s c : (E.get η).block.caseFnType η ls ps ms s c) →
-    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
       (Fin.append ps fun previous : Fin f.val => fds (previous.castLE f.isLt.le))) →
     (∀ f, ε[ν; γ] ⊨ recFds f ≡ recFds f :
       (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps (Fin.append ps fds)) →
@@ -109,8 +109,8 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
       (E.get η).block.iotaType η ls ps ms s c fds recFds
   delta {n : Nat} {γ : Slots n} {nlevels} {η : Head ζ (.const .def nlevels)} {ls} :
     EnvWF E →
-    ε[ν; γ] ⊨ .const η ls ≡ ((E.get η).defValue.instL ls).wkClosed :
-      ((E.get η).constType.instL ls).wkClosed
+    ε[ν; γ] ⊨ .const η ls ≡ (E.get η).defValue{ls}.wkClosed :
+      (E.get η).constType{ls}.wkClosed
   etaStruct {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
       {s c ls ps is maj} (h : (E.get η).block.IsStructure s c) :
     EnvWF E →

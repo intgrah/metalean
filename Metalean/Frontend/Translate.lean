@@ -104,7 +104,7 @@ def indTerm {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
     (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) : Expr ζ ℓ 0 :=
   let body : Expr ζ ℓ (ι.nparams + ι.nindices s) :=
     .ind η s ls (fun p => .var ⟨p.val, by omega⟩) fun i => .var ⟨ι.nparams + i.val, by omega⟩
-  Ctx.lam body ((I.argTele s).instL ls)
+  (I.argTele s){ls}.lam body
 
 def ctorTerm {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ)
@@ -125,7 +125,7 @@ def ctorTerm {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
     | throw .internal
   let body : Expr ζ ℓ (ι.nparams + (csig.nfields + csig.nrecFields)) :=
     .ctor η s c ls (fun p => .var ⟨p.val, by omega⟩) fds recFds
-  pure (Ctx.lam body (I.params.instL ls ++ fields'))
+  pure (Ctx.lam body (I.params{ls} ++ fields'))
 
 def leanCaseType {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
     (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ n)
@@ -179,8 +179,8 @@ def recrTerm {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
     .ind η s ls (fun param => (ps param).wkN (ι.nindices s))
       fun index => .var ⟨ι.nparams + ι.nsorts + Fin.sum ι.nctors + index.val, by omega⟩
   let cases ← leanCaseBinders I η ls metaOrders (Fin.sum ι.nctors) le_rfl
-  let tele := I.params.instL ls ++ I.motiveBinders η ls l ++ cases ++ is
-    |>.snoc maj
+  let tele : Ctx ζ ℓ 0 _ :=
+    I.params{ls} ++ I.motiveBinders η ls l ++ cases ++ is |>.snoc maj
   let psB : Fin ι.nparams → Expr ζ ℓ (ι.recrEnd s) :=
     fun p => .var (IndSig.RecrBinder.param (s := s) p).resolve
   let msB : Fin ι.nsorts → Expr ζ ℓ (ι.recrEnd s) :=
@@ -192,7 +192,7 @@ def recrTerm {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
   let body : Expr ζ ℓ (ι.recrEnd s) :=
     .recr η s ls l psB msB minsB (fun i => .var (IndSig.RecrBinder.index i).resolve)
       (.var (IndSig.RecrBinder.major (ι := ι) (s := s)).resolve)
-  pure (Ctx.lam body tele)
+  pure (tele.lam body)
 
 def quotTerm (η : Head ζ .quot) (eqHead : Head ζ (.inductive Eq.sig)) :
     Export.QuotKind → List (Level ℓ) → Except Failure (Expr ζ ℓ 0)

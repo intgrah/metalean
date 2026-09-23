@@ -29,14 +29,14 @@ def atomBelow {sig : Sig} (previous : Atom ζ 0 → ZFSet.{u}) :
 inductive Entry.Sound (pre : Env ζ) : {sig : Sig} → Entry ζ sig →
     (Atom (.snoc ζ sig) 0 → ZFSet.{u}) → Prop
   | axiom {nlevels : Nat} {type : Expr ζ nlevels 0} {ε}
-    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)).instL ls⟧) :
+    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)){ls}⟧) :
     Sound pre (.axiom type) ε
   | opaque {nlevels : Nat} {type : Expr ζ nlevels 0} {ε}
-    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)).instL ls⟧) :
+    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)){ls}⟧) :
     Sound pre (.opaque type) ε
   | def {nlevels : Nat} {type value : Expr ζ nlevels 0} {ε}
-    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)).instL ls⟧)
-    (unfolds : ∀ ls, ε (.const .here ls) = ε[![]]⟦(value.map (.step .refl)).instL ls⟧) :
+    (mem : ∀ ls, ε (.const .here ls) ∈ ε[![]]⟦(type.map (.step .refl)){ls}⟧)
+    (unfolds : ∀ ls, ε (.const .here ls) = ε[![]]⟦(value.map (.step .refl)){ls}⟧) :
     Sound pre (.def type value) ε
   | inductive {ι : IndSig} {block : Inductive ζ ι} {ε}
     (sound : ∀ ls, ∃ w : InductiveModel.{u} ι,
@@ -76,7 +76,7 @@ def Env.Model.snoc {pre : Env ζ} {sig : Sig} {entry : Entry ζ sig}
 theorem Env.Sound.constMem {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.Sound E ε)
     {kind : ConstKind} {nlevels : Nat} (η : Head ζ (.const kind nlevels))
     (ls : Fin nlevels → Level 0) :
-    ε (.const η ls) ∈ ε[![]]⟦(E.get η).constType.instL ls⟧ := by
+    ε (.const η ls) ∈ ε[![]]⟦(E.get η).constType{ls}⟧ := by
   induction h with
   | nil => nomatch η
   | @snoc ζ sig pre entry ε fresh previous latest ih =>
@@ -90,7 +90,7 @@ theorem Env.Sound.constMem {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.
       let step : pre.as ⟶ (pre.snoc entry).as := .step .refl
       have hatoms : AtomsMap step.sigs ε (atomBelow ε fresh) := atomBelow.map ε fresh
       change ε (.const η ls) ∈
-        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).constType.instL ls⟧
+        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).constType{ls}⟧
       rw [show ((pre.get η).map step.sigs).constType = (pre.get η).constType.map step.sigs from
         (Entry.constTypeNatTrans _ _).naturality_apply step.sigs (pre.get η),
         ← Expr.map_instL, Expr.denote_map _ hatoms]
@@ -98,7 +98,7 @@ theorem Env.Sound.constMem {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.
 
 theorem Env.Sound.defEq {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.Sound E ε)
     {nlevels : Nat} (η : Head ζ (.const .def nlevels)) (ls : Fin nlevels → Level 0) :
-    ε (.const η ls) = ε[![]]⟦(E.get η).defValue.instL ls⟧ := by
+    ε (.const η ls) = ε[![]]⟦(E.get η).defValue{ls}⟧ := by
   induction h with
   | nil => nomatch η
   | @snoc ζ sig pre entry ε fresh previous latest ih =>
@@ -110,7 +110,7 @@ theorem Env.Sound.defEq {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} (h : Env.Sou
       let step : pre.as ⟶ (pre.snoc entry).as := .step .refl
       have hatoms : AtomsMap step.sigs ε (atomBelow ε fresh) := atomBelow.map ε fresh
       change ε (.const η ls) =
-        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).defValue.instL ls⟧
+        (atomBelow ε fresh)[![]]⟦((pre.get η).map step.sigs).defValue{ls}⟧
       rw [show ((pre.get η).map step.sigs).defValue = (pre.get η).defValue.map step.sigs from
         (Entry.defValueNatTrans _).naturality_apply step.sigs (pre.get η),
         ← Expr.map_instL, Expr.denote_map _ hatoms]
@@ -201,7 +201,7 @@ def Env.Model.addConst {pre : Env ζ} {kind : ConstKind} {nlevels : Nat}
 
 noncomputable def Env.Model.addAxiom {pre : Env ζ} {nlevels : Nat}
     {type : Expr ζ nlevels 0} (m : Model.{u} pre)
-    (hvalid : ∀ ls, ∃ v, v ∈ m.atoms[![]]⟦type.instL ls⟧) :
+    (hvalid : ∀ ls : Fin nlevels → Level 0, ∃ v, v ∈ m.atoms[![]]⟦type{ls}⟧) :
     Model.{u} (pre.snoc (.axiom type)) := by
   apply m.addConst fun ls => (hvalid ls).choose
   intro ε hatoms hvalue
@@ -215,7 +215,7 @@ noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
   have hex : ∃ e, pre[.nil] ⊢ e : t :=
     have @EntryWF.opaque _ _ _ e _ heq _ := hwf
     ⟨e, heq⟩
-  apply m.addConst (m.atoms[![]]⟦hex.choose.instL ·⟧)
+  apply m.addConst (m.atoms[![]]⟦hex.choose{·}⟧)
   intro ε hatoms heq
   refine .opaque fun ls => ?_
   rw [heq, ← Expr.map_instL, Expr.denote_map _ hatoms]
@@ -224,7 +224,7 @@ noncomputable def Env.Model.addOpaque {pre : Env ζ} {ℓ : Nat}
 noncomputable def Env.Model.addDef {pre : Env ζ} {ℓ : Nat}
     {t e : Expr ζ ℓ 0} (m : Model.{u} pre) (hE : EnvWF pre)
     (hwf : EntryWF pre (.def t e)) : Model.{u} (pre.snoc (.def t e)) := by
-  apply m.addConst (m.atoms[![]]⟦e.instL ·⟧)
+  apply m.addConst (m.atoms[![]]⟦e{·}⟧)
   intro ε hatoms heq
   refine .def (fun ls => ?_) fun ls => ?_
   · have .def _ htyped := hwf

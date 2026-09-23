@@ -40,7 +40,7 @@ theorem RecTyping.structure_projection (hs : (E₂.get η).block.IsStructure s c
     (hps : ∀ p, E₂[Γ₁.as.ctx] ⊢ ps p : (E₂.get η).block.paramType ls ps p)
     (hmaj : E₂[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hs.indices)
     (f : Fin (ι.ctors s c).nfields) :
-    RecTyping Γ₁ η s ls ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls)
+    RecTyping Γ₁ η s ls ((((E₂.get η).block.ctors s c).ordinary f).level{ls})
       ps (hs.projectionMotives η ls ps f)
       (hs.projectionCases η ls ps f (hs.projectionMotives η ls ps f)) hs.indices maj := by
   have hp := hs.projection_spec hB Γ₁.as.wf hps hmaj f
@@ -94,7 +94,7 @@ theorem rawRecCase_of_structural (hs : (E₂.get η).block.IsStructure s c)
 theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (hs : (E₂.get η).block.IsStructure s c)
     (h : RecTyping Γ₁ η s ls l ps ms mins hs.indices maj) (hrel : l.rel = true)
-    (hcarrier : Level.rel ((E₂.get η).block.level.inst ls) = true)
+    (hcarrier : Level.rel ((E₂.get η).block.level{ls}) = true)
     (pargs : ∀ v, RawInterpretationProperties Γ₁ (Inductive.recrSubst ps ms mins hs.indices maj v))
     (fargs : ∀ v, HasFixedness Γ₁ (Inductive.recrSubst ps ms mins hs.indices maj v)
       ((Ctx.get v ((E₂.get η).block.recrTele η s ls l)).subst (Inductive.recrSubst ps ms mins hs.indices maj)))

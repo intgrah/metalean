@@ -77,8 +77,8 @@ theorem headRank_le_length (e : Expr ζ ℓ n) : e.headRank ≤ 2 * ζ.length :=
   induction e <;> simp [headRank, map, *]
 
 @[simp] theorem headRank_instL (ls : Param ℓ → Level ℓ₁) (e : Expr ζ ℓ n) :
-    (e.instL ls).headRank = e.headRank := by
-  induction e <;> simp [headRank, instL, *]
+    e{ls}.headRank = e.headRank := by
+  induction e <;> simp [headRank, *]
 
 @[simp] theorem headRank_rename {m : Nat} (ρ : Ren m n) (e : Expr ζ ℓ m) :
     (e.rename ρ).headRank = e.headRank := by
@@ -296,7 +296,7 @@ theorem headRank_le_length (Γ : Ctx ζ ℓ a b) : Γ.headRank ≤ 2 * ζ.length
   | snoc Γ t ih => exact congrArg₂ max ih (Expr.headRank_map pre t)
 
 @[simp] theorem headRank_instL (ls : Param ℓ → Level ℓ₁) (Γ : Ctx ζ ℓ a b) :
-    (Γ.instL ls).headRank = Γ.headRank := by
+    Γ{ls}.headRank = Γ.headRank := by
   induction Γ with
   | nil => rfl
   | snoc Γ t ih => exact congrArg₂ max ih (Expr.headRank_instL ls t)
@@ -448,7 +448,7 @@ theorem Env.get_defValue_headRank_lt {nlevels : Nat} (E : Env ζ)
 
 theorem Expr.measure_const_def {nlevels : Nat} {E : Env ζ} (η : Head ζ (.const .def nlevels))
     (ls : Fin nlevels → Level ℓ) :
-    Prod.Lex (· < ·) (· < ·) (((E.get η).defValue.instL ls).wkClosed (n := n)).measure
+    Prod.Lex (· < ·) (· < ·) ((E.get η).defValue{ls}.wkClosed (n := n)).measure
       (Expr.const η ls : Expr ζ ℓ n).measure :=
   .left _ _ (by simpa [Expr.headRank] using E.get_defValue_headRank_lt η)
 

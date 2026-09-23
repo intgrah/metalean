@@ -81,14 +81,13 @@ theorem forallE_ty_inv :
 
 theorem const_inv {kind nlevels}
     {η : Head ζ (.const kind nlevels)}
-    {ls : Fin nlevels → Level ℓ}
-    :
+    {ls : Fin nlevels → Level ℓ} :
     E[Γ] ⊢ .const η ls : t →
-    E[Γ] ⊢ t ≡ ((E.get η).constType.instL ls).wkClosed typ := by
+    E[Γ] ⊢ t ≡ (E.get η).constType{ls}.wkClosed typ := by
   suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n},
       e₁ = .const η ls ∨ e₂ = .const η ls →
       E[Γ] ⊢ e₁ ≡ e₂ : t →
-      E[Γ] ⊢ t ≡ ((E.get η).constType.instL ls).wkClosed typ from
+      E[Γ] ⊢ t ≡ (E.get η).constType{ls}.wkClosed typ from
     hgen (Or.inl rfl)
   intro n Γ e₁ e₂ t he h
   induction h with
@@ -126,8 +125,7 @@ theorem ctor_inv :
       (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
         (E.get η).block.paramType ls ps₁ p) ∧
       (∀ f, E[Γ] ⊢ fds₁ f ≡ fds₂ f :
-        (((((E.get η).block.ctors s c).ordinary f).type).instL
-          ls).subst
+        (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
           (Fin.append ps₁ fun previous : Fin f.val =>
             fds₁ (previous.castLE f.isLt.le))) ∧
       (∀ f, E[Γ] ⊢ recFds₁ f ≡ recFds₂ f :
@@ -140,7 +138,7 @@ theorem ctor_inv :
         .ind η s ls ps₂
           (fun i => ((E.get η).block.ctors s c).targetIndex
             ls ps₂ fds₂ i) :
-          .sort ((E.get η).block.level.inst ls) ∧
+          .sort (E.get η).block.level{ls} ∧
       E[Γ] ⊢ t ≡ .ind η s ls ps₁
         (fun i => ((E.get η).block.ctors s c).targetIndex
           ls ps₁ fds₁ i) typ := by
@@ -156,8 +154,7 @@ theorem ctor_inv :
         (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
           (E.get η).block.paramType ls ps₁ p) ∧
         (∀ f, E[Γ] ⊢ fds₁ f ≡ fds₂ f :
-          (((((E.get η).block.ctors s c).ordinary f).type).instL
-            ls).subst
+          (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
             (Fin.append ps₁ fun previous : Fin f.val =>
               fds₁ (previous.castLE f.isLt.le))) ∧
         (∀ f, E[Γ] ⊢ recFds₁ f ≡ recFds₂ f :
@@ -170,7 +167,7 @@ theorem ctor_inv :
           .ind η s ls ps₂
             (fun i => ((E.get η).block.ctors s c).targetIndex
               ls ps₂ fds₂ i) :
-            .sort ((E.get η).block.level.inst ls) ∧
+            .sort (E.get η).block.level{ls} ∧
         E[Γ] ⊢ t ≡ .ind η s ls ps₁
           (fun i => ((E.get η).block.ctors s c).targetIndex
             ls ps₁ fds₁ i) typ from
@@ -274,7 +271,7 @@ theorem ind_inv :
         (E.get η).block.paramType ls ps₁ p) ∧
       (∀ i, E[Γ] ⊢ is₁ i ≡ is₂ i :
         (E.get η).block.indexType ls s ps₁ is₁ i) ∧
-      E[Γ] ⊢ t ≡ .sort ((E.get η).block.level.inst ls) typ := by
+      E[Γ] ⊢ t ≡ .sort (E.get η).block.level{ls} typ := by
   suffices hgen : ∀ {n : Nat} {Γ : Ctx ζ ℓ 0 n} {e₁ e₂ t : Expr ζ ℓ n}
       {ps₂ : Fin ι.nparams → Expr ζ ℓ n} {is₂ : Fin (ι.nindices s) → Expr ζ ℓ n},
       e₁ = .ind η s ls ps₂ is₂ ∨ e₂ = .ind η s ls ps₂ is₂ →
@@ -285,7 +282,7 @@ theorem ind_inv :
           (E.get η).block.paramType ls ps₁ p) ∧
         (∀ i, E[Γ] ⊢ is₁ i ≡ is₂ i :
           (E.get η).block.indexType ls s ps₁ is₁ i) ∧
-        E[Γ] ⊢ t ≡ .sort ((E.get η).block.level.inst ls) typ from
+        E[Γ] ⊢ t ≡ .sort (E.get η).block.level{ls} typ from
     hgen (Or.inl rfl)
   intro n Γ e₁ e₂ t ps₂ is₂ he h
   induction h with

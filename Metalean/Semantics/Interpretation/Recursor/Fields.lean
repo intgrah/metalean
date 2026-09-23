@@ -19,19 +19,19 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
 theorem InductiveWF.ordinaryClosedWF {ι : IndSig} {I : Inductive ζ ι} (hB : InductiveWF E I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) (count : Nat)
     (hcount : count ≤ (ι.ctors s c).nfields) :
-    E[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTeleAux count hcount)] ⊢ ok := by
+    E[(I.params ++ (I.ctors s c).ordinaryTeleAux count hcount){ls}] ⊢ ok := by
   have htele : TeleWF E I.LevelOK ((#t[] : Ctx ζ ι.nlevels 0 0) ++ I.params)
       ((I.ctors s c).ordinaryTeleAux count hcount) := by
     simpa using (hB.ctors s c).ordinaryTeleAux count hcount
-  simpa [Ctx.instL] using
+  simpa using
     ((hB.params.append (htele.mono fun _ => trivial)).instLevel (Q := fun _ => True) ls
       fun _ => trivial).appendCtxWF .nil
 
 theorem Inductive.paramType_var {k : Nat} {ι : IndSig} {I : Inductive ζ ι}
     {ls : Fin ι.nlevels → Level ℓ} {Δ : Ctx ζ ι.nlevels ι.nparams (ι.nparams + k)}
     (p : Fin ι.nparams) :
-    E[Ctx.instL ls (I.params ++ Δ)] ⊢ ok →
-    E[Ctx.instL ls (I.params ++ Δ)] ⊢ .var (p.castAdd k) :
+    E[(I.params ++ Δ){ls}] ⊢ ok →
+    E[(I.params ++ Δ){ls}] ⊢ .var (p.castAdd k) :
       I.paramType ls (fun q => .var (q.castAdd k)) p := by
   intro hΓ
   have hv := SubstWF.id hΓ (p.castAdd k)
@@ -91,7 +91,7 @@ variable (h : IndData Γ₁ η ls ps) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)
   (f : Fin (ι.ctors s c).nrecFields)
 
 abbrev CtxCat.ctorSource : CtxCat E ℓ :=
-  ⟨Ctx.instL ls ((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele),
+  ⟨((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele){ls},
     h.block.ordinaryClosedWF s c ls _ le_rfl⟩
 
 theorem recursiveSourceTele_wf :
@@ -102,27 +102,27 @@ theorem recursiveSourceTele_wf :
     (ps := (Subst.id : Subst ζ ℓ ι.nparams ι.nparams))
     (fun p => Inductive.paramType_var (k := 0) (Δ := #t[]) p hparams)
   have hsplit := (TeleWF.of_append hfield).2
-  have hctx : Ctx.instL ls (E.get η).block.params ++
+  have hctx : (E.get η).block.params{ls} ++
       ((E.get η).block.ctors s c).ordinaryFieldTele η ls (Subst.id : Subst ζ ℓ ι.nparams ι.nparams) =
-      Ctx.instL ls ((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele) :=
-    (congrArg (Ctx.instL ls (E.get η).block.params ++ ·)
+      ((E.get η).block.params ++ ((E.get η).block.ctors s c).ordinaryTele){ls} :=
+    (congrArg ((E.get η).block.params{ls} ++ ·)
       ((Ctx.substFunctor _).map_id_apply _ _)).trans
-      (Ctx.instL_append _ _ _).symm
+    (Ctx.instL_append _ _ _).symm
   rwa [hctx] at hsplit
 
 theorem sourceTelescope_wf :
-    TeleWF E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx ((((E.get η).block.ctors s c).recursive f).tele.instL ls) :=
+    TeleWF E (fun _ => True) (CtxCat.ctorSource h s c).as.ctx (((E.get η).block.ctors s c).recursive f).tele{ls} :=
   ((h.block.ctors s c).recursive f).tele.instLevel ls fun _ => trivial
 
 abbrev CtxCat.sourceFieldTarget : CtxCat E ℓ :=
-  CtxCat.extendTele (CtxCat.ctorSource h s c) ((((E.get η).block.ctors s c).recursive f).tele.instL ls)
+  CtxCat.extendTele (CtxCat.ctorSource h s c) (((E.get η).block.ctors s c).recursive f).tele{ls}
     (sourceTelescope_wf h s c f)
 
 theorem sourceIndexTyping (i : Fin (ι.nindices ((ι.ctors s c).recursiveTarget f))) :
-    E[(CtxCat.sourceFieldTarget h s c f).as.ctx] ⊢ (fun i => ((((E.get η).block.ctors s c).recursive f).indices i).instL ls) i :
+    E[(CtxCat.sourceFieldTarget h s c f).as.ctx] ⊢ (((E.get η).block.ctors s c).recursive f).indices{ls} i :
       (E.get η).block.indexType ls ((ι.ctors s c).recursiveTarget f)
         (fun p => ((Expr.var (p.castAdd (ι.ctors s c).nfields))).wkN ((ι.ctors s c).recursiveArity f))
-        ((fun i => ((((E.get η).block.ctors s c).recursive f).indices i).instL ls)) i := by
+        (((E.get η).block.ctors s c).recursive f).indices{ls} i := by
   have hi := ((h.block.ctors s c).recursive f).instantiatedIndices
     (fun _ => rfl) i (SubstWF.id (CtxCat.ctorSource h s c).as.wf)
   simp only [RecField.instantiatedTelescope_id, RecField.instantiatedIndices_id] at hi

@@ -367,7 +367,7 @@ theorem Expr.inst_subst_lift (σ : Subst ζ ℓ n p) (e' : Expr ζ ℓ (n + 1)) 
     Ctx.substN σ arity (fd.instantiatedTelescope ls fieldSubst) =
       fd.instantiatedTelescope ls (fieldSubst.comp σ) :=
   letI := Subst.category ζ ℓ
-  ((Ctx.substFunctor arity).map_comp_apply fieldSubst σ (fd.tele.instL ls)).symm
+  ((Ctx.substFunctor arity).map_comp_apply fieldSubst σ fd.tele{ls}).symm
 
 @[simp] theorem RecField.instantiatedIndices_subst
     (fd : RecField ζ ι a arity target)
@@ -652,7 +652,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
     Expr.subst_subst, Subst.liftN_comp_append]
   congr 1
   rw [← Ctx.entry_instL]
-  exact congrArg (Expr.instL ls)
+  exact congrArg (·{ls})
     (Eq.symm (Ctx.proj_eq_entry i (I.indices s)))
 
 @[simp] theorem Inductive.indexTele_get (s : Fin ι.nsorts)
@@ -693,9 +693,9 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   exact Expr.subst_vars (Ren.wkN (ι.nindices s)) (ps p)
 
 @[simp] theorem Inductive.params_get (param : Fin ι.nparams) :
-    Ctx.get param (Ctx.instL ls I.params) =
+    Ctx.get param I.params{ls} =
       I.paramType ls Expr.var param := by
-  rw [← Expr.subst_id (Ctx.get param (Ctx.instL ls I.params)),
+  rw [← Expr.subst_id (Ctx.get param I.params{ls}),
     Ctx.get_subst _ Subst.id param param.val param.isLt rfl,
     ← Ctx.entry_instL]
   rfl
@@ -763,7 +763,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
 
 theorem Inductive.paramType_eq_get_subst (ps : Fin ι.nparams → Expr ζ ℓ n)
     (f : Fin ι.nparams) :
-    ((I.params.get f).instL ls).subst ps = I.paramType ls ps f := by
+    (I.params.get f){ls}.subst ps = I.paramType ls ps f := by
   rw [Ctx.get_instL, Ctx.get_subst _ ps f f.val f.isLt rfl, ← Ctx.entry_instL]
   rfl
 
@@ -773,11 +773,11 @@ theorem Ctor.forall_ordinarySubst {I : Inductive ζ ι} {ctor : Ctor ζ ι s csi
     {motive : Expr ζ ℓ n → Expr ζ ℓ n → Expr ζ ℓ n → Prop}
     (hps : ∀ p, motive (ps₁ p) (ps₂ p) (I.paramType ls ps₁ p))
     (hfds : ∀ f, motive (fds₁ f) (fds₂ f)
-      ((((ctor.ordinary (f.castLE hcount)).type).instL ls).subst
+      ((ctor.ordinary (f.castLE hcount)).type{ls}.subst
         (Fin.append ps₁ fun g : Fin f.val => fds₁ (g.castLE f.isLt.le))))
     (v : Fin (ι.nparams + count)) :
     motive (Fin.append ps₁ fds₁ v) (Fin.append ps₂ fds₂ v)
-      (((Ctx.instL ls (I.params ++ ctor.ordinaryTeleAux count hcount)).get v).subst
+      ((((I.params ++ ctor.ordinaryTeleAux count hcount){ls}).get v).subst
         (Fin.append ps₁ fds₁)) := by
   rw [Ctx.get_subst _ _ v v.val v.isLt rfl, ← Ctx.entry_instL]
   cases v using Fin.addCases with
@@ -831,8 +831,8 @@ theorem Ctor.forall_caseSubst {ctor : Ctor ζ ι s csig} {η : Head ζ (.inducti
 theorem Inductive.indexType_eq_get_subst (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ ℓ n) (is : Fin (ι.nindices s) → Expr ζ ℓ n)
     (f : Fin (ι.nindices s)) :
-    ((Ctx.get (f.natAdd ι.nparams)
-          (I.params ++ I.indices s)).instL ls).subst
+    (Ctx.get (f.natAdd ι.nparams)
+          (I.params ++ I.indices s)){ls}.subst
         (Fin.append ps is) =
       I.indexType ls s ps is f := by
   have hsub : (fun w : Var (f.natAdd ι.nparams).val =>
@@ -1008,8 +1008,8 @@ namespace Ctor
 
 @[simp] theorem ordinaryFieldType_wkN (f : Fin csig.nfields)
     (previous : Fin f.val → Expr ζ ℓ m) (k : Nat) :
-    ((((ctor.ordinary f).type).instL ls).subst (Fin.append ps previous)).wkN k =
-      (((ctor.ordinary f).type).instL ls).subst
+    (((ctor.ordinary f).type{ls}).subst (Fin.append ps previous)).wkN k =
+      ((ctor.ordinary f).type{ls}).subst
         (Fin.append (fun i => (ps i).wkN k) fun i => (previous i).wkN k) := by
   simp [Expr.wkN_eq_subst]
 

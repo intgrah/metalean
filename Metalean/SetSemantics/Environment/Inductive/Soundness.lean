@@ -35,7 +35,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
         (E₂.get (η.map pre.sigs)).block.indexType ls s ps₁ is₁ index) :
       ε₂[γ] ⊨ .ind (η.map pre.sigs) s ls ps₁ is₁ ≡
         .ind (η.map pre.sigs) s ls ps₂ is₂ :
-        .sort ((E₂.get (η.map pre.sigs)).block.level.inst ls)
+        .sort (E₂.get (η.map pre.sigs)).block.level{ls}
   ctor {ζ₂ : Sigs} {E₂ : Env ζ₂}
       {ε₂ : Atom ζ₂ 0 → ZFSet.{u}}
       (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
@@ -47,7 +47,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
       (hps : ∀ param, ε₂[γ] ⊨ ps₁ param ≡ ps₂ param :
         (E₂.get (η.map pre.sigs)).block.paramType ls ps₁ param)
       (hfields : ∀ f, ε₂[γ] ⊨ fds₁ f ≡ fds₂ f :
-        (((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type).instL ls).subst
+        (((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type{ls}.subst
           (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le)))
       (hrecFields : ∀ f, ε₂[γ] ⊨ recFds₁ f ≡ recFds₂ f :
         (((E₂.get (η.map pre.sigs)).block.ctors s c).recursive f).instantiatedType
@@ -103,7 +103,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
       (hmins : ∀ s c, ε₂[γ] ⊨ mins s c ≡ mins s c :
         (E₂.get (η.map pre.sigs)).block.caseFnType (η.map pre.sigs) ls ps ms s c)
       (hfields : ∀ f, ε₂[γ] ⊨ fds f ≡ fds f :
-        (((((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type).instL ls).subst
+        (((E₂.get (η.map pre.sigs)).block.ctors s c).ordinary f).type{ls}.subst
           (Fin.append ps fun previous : Fin f.val =>
             fds (previous.castLE f.isLt.le)))
       (hrecFields : ∀ f, ε₂[γ] ⊨ recFds f ≡ recFds f :

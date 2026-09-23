@@ -27,7 +27,7 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
   | .var v => RawFamily.lookup v.db
   | .sort l => RawFamily.sort l
   | .const (kind := .def) η ls =>
-      rawInterpret Γ₁ ((E.get η).defValue.instL ls).wkClosed
+      rawInterpret Γ₁ (E.get η).defValue{ls}.wkClosed
   | .const (kind := .axiom) _ _ => ⊥
   | .const (kind := .opaque) _ _ => ⊥
   | .ind η s ls ps is =>
@@ -35,10 +35,10 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
         ⨆ _hB : InductiveWF E (E.get η).block,
           RawFamily.ind h.code fun c =>
             RawFamily.closedApps
-              (rawInterpret (CtxCat.nil E ℓ) (((E.get η).block.ctorTypeFn s c).instL fun p => ls p))
+              (rawInterpret (CtxCat.nil E ℓ) ((E.get η).block.ctorTypeFn s c){ls})
               (fun p => Tm.label Γ₁.as (h.param p)) fun p => rawInterpret Γ₁ (ps p)
   | .ctor η s c ls ps fds recFds =>
-      match Level.rel ((E.get η).block.level.inst ls) with
+      match Level.rel (E.get η).block.level{ls} with
       | false => ⊥
       | true =>
         ⨆ h : CtorTyping Γ₁ η s c ls ps fds recFds,
@@ -110,7 +110,7 @@ variable {Γ₁ Γ₂ : CtxCat E ℓ} {nlevels : Nat} (l : Level ℓ)
 
 @[simp] theorem rawInterpret_const_def (η : Head ζ (.const .def nlevels))
     (ls : Fin nlevels → Level ℓ) :
-    rawInterpret D Γ₁ (.const η ls) = rawInterpret D Γ₁ ((E.get η).defValue.instL ls).wkClosed := by
+    rawInterpret D Γ₁ (.const η ls) = rawInterpret D Γ₁ (E.get η).defValue{ls}.wkClosed := by
   rw [rawInterpret]
 
 @[simp] theorem rawInterpret_const_axiom (η : Head ζ (.const .axiom nlevels))
@@ -135,7 +135,7 @@ variable {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts} {c : F
   {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ Γ₁.as.len}
   {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ Γ₁.as.len}
 
-theorem rawInterpret_ctor_prop (hrel : Level.rel ((E.get η).block.level.inst ls) = false) :
+theorem rawInterpret_ctor_prop (hrel : Level.rel (E.get η).block.level{ls} = false) :
     rawInterpret D Γ₁ (.ctor η s c ls ps fds recFds) = ⊥ := by
   rw [rawInterpret, hrel]
 
@@ -188,7 +188,7 @@ theorem rawInterpret_ind_typed {ι : IndSig} {η : Head ζ (.inductive ι)} {s :
     rawInterpret D Γ₁ (.ind η s ls ps is) =
       RawFamily.ind h.code fun c =>
         RawFamily.closedApps
-          (rawInterpret D (CtxCat.nil E ℓ) (((E.get η).block.ctorTypeFn s c).instL fun p => ls p))
+          (rawInterpret D (CtxCat.nil E ℓ) ((E.get η).block.ctorTypeFn s c){ls})
           (fun p => Tm.label Γ₁.as (h.param p)) fun p => rawInterpret D Γ₁ (ps p) := by
   rw [rawInterpret]
   exact RawFamily.iSup_eq h fun _ => RawFamily.iSup_eq hB fun _ => rfl
@@ -198,7 +198,7 @@ theorem rawInterpret_ctor_typed {ι : IndSig} {η : Head ζ (.inductive ι)} {s 
     {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ Γ₁.as.len}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ Γ₁.as.len}
     (h : CtorTyping Γ₁ η s c ls ps fds recFds)
-    (hrel : Level.rel ((E.get η).block.level.inst ls) = true) :
+    (hrel : Level.rel (E.get η).block.level{ls} = true) :
     rawInterpret D Γ₁ (.ctor η s c ls ps fds recFds) =
       RawFamily.ctor ⟨η, s, c⟩ h.names fun i => rawInterpret D Γ₁ (Fin.append fds recFds i) := by
   rw [rawInterpret, hrel]

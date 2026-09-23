@@ -42,10 +42,10 @@ theorem rawInterpret_structure_projection_of_previous
   have pfields := structure_field_telescope_properties hsound hI hblock hB hps pparams fparams
     (s := s) (c := c)
   have hcurrent (g : Fin f.val) := hprev g hR pps pmaj
-  cases hcarrier : Level.rel ((E₂.get η).block.level.inst ls) with
+  cases hcarrier : Level.rel ((E₂.get η).block.level{ls}) with
   | false =>
-    have hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) = false := by
-      cases hfrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) with
+    have hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level{ls}) = false := by
+      cases hfrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level{ls}) with
       | false => rfl
       | true => exact Bool.noConfusion (hcarrier.symm.trans (structure_carrier_relevant hs f hfrel))
     rw [hs.projTerm_eq_recr, rawInterpret_recr_prop _ hrel,
@@ -60,7 +60,7 @@ theorem rawInterpret_structure_projection_of_previous
     have ppfields := hsound.ordinaryTeleProperties η hI hblock s c ls
     have ppbody := hsound.ctorFieldProperties η hI hblock s c ls
     have pfn (d : Fin (ι.nctors s)) : HasIdeality (CtxCat.nil E₂ ℓ)
-        (((E₂.get η).block.ctorTypeFn s d).instL fun p => ls p) :=
+        ((E₂.get η).block.ctorTypeFn s d){ls} :=
       (hsound.ctorTypeFnProperties η hI hblock s d ls).ideal
     have hf (g : Fin (ι.ctors s c).nfields) : E₂[Γ₁.as.ctx] ⊢ hs.projTerm η ls ps g maj :
         ((E₂.get η).block.ctors s c).ordinaryFieldExpr ls ps (fun g => hs.projTerm η ls ps g maj) g := by
@@ -77,7 +77,7 @@ theorem rawInterpret_structure_projection_of_previous
       hps pparams fparams hf σ₁ ρ hρ
     rw [← hproj] at hT' hbase
     have hsource := (rawInterpret_ctxPi_decode _ hd ppfields
-      (.sort ((E₂.get η).block.level.inst ls)) .sortDF (HasIdeality.sort _ _)
+      (.sort (E₂.get η).block.level{ls}) .sortDF (HasIdeality.sort _ _)
       (σ₁ ≫ RawCtx.toCtx.map (ctorTargetHom hpctx hd hps hf)) _ args
       (by rw [← hT']; exact T.property)).2 hbase
       (congr(((piLimit E₂ ℓ).telescope $(Subtype.val_injective hT'.symm) $hnames args).1).trans hfixed)
@@ -130,13 +130,13 @@ theorem rawInterpret_structure_projection_of_previous
     rw [← Ctor.ordinaryFieldExpr.eq_def ((E₂.get η).block.ctors s c) ls ps
       (fun g => hs.projTerm η ls ps g maj) f] at hfixed
     simp only [← hs.projType_eq] at hfixed
-    cases hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) with
+    cases hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level{ls}) with
     | false =>
       have pt := structure_projection_type_properties hsound hI hblock hs hB pps f
         fun g => (hcurrent g).toRawTyped
       have hp := pt.fixed
       have ht := pt.typed
-      have hz : (((E₂.get η).block.ctors s c).ordinary f).level.inst ls = .zero := by simpa using hrel
+      have hz : (((E₂.get η).block.ctors s c).ordinary f).level{ls} = .zero := by simpa using hrel
       rw [hz] at hp ht
       have hsrt := hp ht σ₁ ρ hρ
       rw [rawInterpret_sort] at hsrt

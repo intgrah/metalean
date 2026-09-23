@@ -182,8 +182,8 @@ theorem instTele {a m n k : Nat} {ts : Array FExpr} {Δ : Ctx E.1 a m (m + k)} {
     (∀ i, FLevel.Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (ls' i)) →
     ArgsDenote L E args σ →
     FCtx.Denotes L E
-      (Array.ofFn fun j : Fin ts.size => (ts[j].instL us).instFVars (args ++ FExpr.fvars n j.val))
-      ((Δ.instL (⟦ls' ·⟧)).substN σ k) := fun h hus' hargs =>
+      (Array.ofFn fun j : Fin ts.size => ts[j]{us}.instFVars (args ++ FExpr.fvars n j.val))
+      (Δ{fun i => (⟦ls' i⟧ : Level ℓ)}.substN σ k) := fun h hus' hargs =>
   FCtx.Denotes.ofFn (by have := h.size; lia) _ _ fun i => by
     have := h.size
     rw [Ctx.entry_substN (σ := σ) _ _ i.val (by omega) (by omega) (by omega) (by omega),

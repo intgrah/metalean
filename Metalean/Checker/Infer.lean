@@ -53,7 +53,7 @@ partial def infer (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] �
   | .var v => pure ⟨Γ.get v, hΓ.var v⟩
   | .sort l => pure ⟨.sort (.succ l), .sortDF⟩
   | .const η ls =>
-    pure ⟨((E.get η).constType.instL ls).wkClosed,
+    pure ⟨(E.get η).constType{ls}.wkClosed,
       have ⟨_, htype⟩ := (hE.entryWF η).constType (Γ := Γ) ls
       .constDF htype⟩
   | .ind η s ls ps is => do
@@ -61,7 +61,7 @@ partial def infer (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] �
       checkAgainst hE hΓ (ps p) ((E.get η).block.paramType ls ps p)
     let ⟨his⟩ ← Fin.sequenceM fun i =>
       checkAgainst hE hΓ (is i) ((E.get η).block.indexType ls s ps is i)
-    pure ⟨.sort ((E.get η).block.level.inst ls),
+    pure ⟨.sort (E.get η).block.level{ls},
       .indDF hps his⟩
   | .ctor η s c ls ps fds recFds => do
     let ⟨hps⟩ ← Fin.sequenceM fun p =>
@@ -256,7 +256,7 @@ partial def whnfStep (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n}
       let ⟨maj₂, hm⟩ ← whnf hE hΓ maj₁ hmaj
       let ⟨maj₃, hη⟩ ←
         (do
-          if (E.get η).block.level.inst ls = .zero then throw (.reject .notDefEq)
+          if (E.get η).block.level{ls} = .zero then throw (.reject .notDefEq)
           etaStruct hE hΓ maj₂ hm.right) <|>
         pure ⟨maj₂, hm.right⟩
       if maj₁.decEq? maj₃ matches .ok _ then throw (.reject .notDefEq)

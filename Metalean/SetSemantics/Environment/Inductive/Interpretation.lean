@@ -118,26 +118,26 @@ def StrongTeleModel.append (base : StrongTeleModel E₁ ε₁ ν Γ)
 
 theorem Realizes.mapInst {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
     {reach : Set (Slots n)} {Δsem : SemTele n m}
-    (h : Realizes ε₁ ν reach (Ctx.instL ls Δ) Δsem)
+    (h : Realizes ε₁ ν reach Δ{ls} Δsem)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν reach (Ctx.instL ls (Δ.map pre.sigs)) Δsem :=
+    Realizes ε₂ ν reach (Δ.map pre.sigs){ls} Δsem :=
   (congrArg (fun Δ => Realizes ε₂ ν _ Δ _)
     (Ctx.map_instL pre.sigs ls Δ)).mp (h.map pre hatoms)
 
 theorem StrongTeleModel.realizes_mapInst
     {Γ : Ctx ζ₁ ℓ₁ 0 n} {ls : Param ℓ₁ → Level ℓ}
-    (model : StrongTeleModel E₁ ε₁ ν (Ctx.instL ls Γ))
+    (model : StrongTeleModel E₁ ε₁ ν Γ{ls})
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν Set.univ (Ctx.instL ls (Γ.map pre.sigs)) model.sem :=
+    Realizes ε₂ ν Set.univ (Γ.map pre.sigs){ls} model.sem :=
   model.realizes.mapInst pre hatoms
 
 theorem StrongTeleExtension.realizes_mapInst
     {Γ : Ctx ζ₁ ℓ₁ 0 n} {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
-    {base : StrongTeleModel E₁ ε₁ ν (Ctx.instL ls Γ)}
-    (extension : StrongTeleExtension E₁ ε₁ ν base (Ctx.instL ls Δ) bound)
+    {base : StrongTeleModel E₁ ε₁ ν Γ{ls}}
+    (extension : StrongTeleExtension E₁ ε₁ ν base Δ{ls} bound)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
     Realizes ε₂ ν (Reachable Set.univ base.sem)
-      (Ctx.instL ls (Δ.map pre.sigs)) extension.sem :=
+      (Δ.map pre.sigs){ls} extension.sem :=
   extension.realizes.mapInst pre hatoms
 
 inductive CtorCode.Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet) (ν : Param ℓ → Nat) (block : ZFSet)
@@ -344,11 +344,11 @@ noncomputable def sortValue (witness : InductiveModel ι) (s : Fin ι.nsorts)
 structure Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
     (I : Inductive ζ₁ ι) (η : Head ζ₁ (.inductive ι))
     (ls : Fin ι.nlevels → Level ℓ) (witness : InductiveModel.{u} ι) : Prop where
-  level_eq : witness.level = (I.level.inst ls).eval ν
-  params : Realizes ε₁ ν Set.univ (Ctx.instL ls I.params) witness.paramsSem
+  level_eq : witness.level = I.level{ls}.eval ν
+  params : Realizes ε₁ ν Set.univ I.params{ls} witness.paramsSem
   indicesRealizes (s : Fin ι.nsorts) :
     Realizes ε₁ ν (Reachable Set.univ witness.paramsSem)
-      (Ctx.instL ls (I.indices s)) (witness.indicesSem s)
+      (I.indices s){ls} (witness.indicesSem s)
   ctorRealizes : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
     CtorCode.Interprets ε₁ ν (witness.block vps) witness.level (fun γ => γ) {vps}
       (let sig := ι.ctors s c
@@ -366,12 +366,12 @@ structure Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → 
       sortKey s.val (encode (witness.targetValues s c (witness.ordinaryOf s c vps vargs)))
   targetRealizes : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
     ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps, ∀ index,
-    ε₁[ν; witness.ordinaryOf s c vps vargs]⟦Expr.instL ls ((I.ctors s c).targetIndices index)⟧ =
+    ε₁[ν; witness.ordinaryOf s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
       witness.targetValues s c (witness.ordinaryOf s c vps vargs) index
   fieldsRealize : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
     ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps,
     ε₁[ν] ⊨ witness.ordinaryOf s c vps vargs :
-      Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)
+      (I.params ++ (I.ctors s c).ordinaryTele){ls}
   bounded : ∀ vps,
     Set.MapsTo (indOp witness.codes vps) (Set.Iic witness.bound) (Set.Iic witness.bound)
 

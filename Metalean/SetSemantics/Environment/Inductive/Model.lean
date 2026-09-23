@@ -79,7 +79,7 @@ theorem codeOf_domsIn (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     (StrongCtorSource.targetIndex (model.ctors s c).target) |>.mono hle
 
 theorem codeOf_localDoms {level : Nat} (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (hlevel : (I.level.inst ls).eval ![] = level + 1) :
+    (hlevel : I.level{ls}.eval ![] = level + 1) :
     (codeOf model s c).DomsIn level :=
   (model.ctors s c).localDoms level hlevel
 
@@ -109,7 +109,7 @@ noncomputable abbrev toModel : InductiveModel ι where
   paramsSem := model.paramsSem
   codes := model.codeOf
   bound := U_ model.bound
-  level := (I.level.inst ls).eval ![]
+  level := I.level{ls}.eval ![]
   ordinaryOf := model.ordinaryOf
   indicesSem := model.indicesSem
   targetValues := model.targetValues
@@ -171,7 +171,7 @@ theorem targetRealizes (s : Fin ι.nsorts)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps)
     (index : Fin (ι.nindices s)) :
-    ε₁[ordinaryOf model s c vps vargs]⟦Expr.instL ls ((I.ctors s c).targetIndices index)⟧ =
+    ε₁[ordinaryOf model s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
       targetValues model s c (ordinaryOf model s c vps vargs) index :=
   (model.ctors s c).target.denotes _
     (Reachable.append (model.ordinaryOf_reachable s c vps hps vargs hargs)) index
@@ -183,7 +183,7 @@ theorem fieldsRealize (s : Fin ι.nsorts)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
     ε₁[![]] ⊨ ordinaryOf model s c vps vargs :
-      Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele) := by
+      (I.params ++ (I.ctors s c).ordinaryTele){ls} := by
   rw [Ctx.instL_append]
   exact (model.ctors s c).source.ordinary.semCtx _
     (model.ordinaryOf_reachable s c vps hps vargs hargs)
@@ -195,7 +195,7 @@ theorem recursiveField_apply
       (ι.ctors s c).recursiveArity f)) :
     model.toModel.sortValue ((ι.ctors s c).recursiveTarget f)
       (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-      (ε₁[γ]⟦((I.ctors s c).recursive f).indices · |>.instL ls⟧) =
+      (ε₁[γ]⟦((I.ctors s c).recursive f).indices{ls} ·⟧) =
       propSet model.toModel.level (fibreOp (model.toModel.block
         fun param => γ (param.castLE (by omega)))
         ((StrongRecursiveFieldSource.code ((I.ctors s c).recursive f)

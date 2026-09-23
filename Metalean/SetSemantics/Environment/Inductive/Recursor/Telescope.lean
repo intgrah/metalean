@@ -56,7 +56,7 @@ noncomputable def recrTeleSem :
 include hatoms hsorts hctors in
 theorem recrPrefixRealizes :
     Realizes ε₂ ![] Set.univ
-      (Ctx.instL ls (I.map pre.sigs).params ++ (I.map pre.sigs).motiveBinders η ls l ++
+      ((I.map pre.sigs).params{ls} ++ (I.map pre.sigs).motiveBinders η ls l ++
         (I.map pre.sigs).caseBinders η ls)
       (model.recrPrefixSem l) :=
   ((model.tele.params.realizes_mapInst pre hatoms).append

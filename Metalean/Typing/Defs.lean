@@ -42,21 +42,21 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
   ──────────────────── sortDF {n} {Γ : Ctx ζ ℓ 0 n} {l}
   E[Γ] ⊢ .sort l : .sort (.succ l)
 
-  E[Γ] ⊢ ((E.get η).constType.instL ls).wkClosed : .sort l
+  E[Γ] ⊢ (E.get η).constType{ls}.wkClosed : .sort l
   ──────────────────── constDF {n nlevels kind} {Γ : Ctx ζ ℓ 0 n}
     {η : Head ζ (.const kind nlevels)} {ls l}
-  E[Γ] ⊢ .const η ls : ((E.get η).constType.instL ls).wkClosed
+  E[Γ] ⊢ .const η ls : (E.get η).constType{ls}.wkClosed
 
   ∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p
   ∀ i, E[Γ] ⊢ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i
   ──────────────────── indDF {n} {Γ : Ctx ζ ℓ 0 n} {ι}
     {η : Head ζ (.inductive ι)} {s ls ps₁ ps₂ is₁ is₂}
   E[Γ] ⊢ .ind η s ls ps₁ is₁ ≡ .ind η s ls ps₂ is₂ :
-    .sort ((E.get η).block.level.inst ls)
+    .sort (E.get η).block.level{ls}
 
   ∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p
   ∀ f, E[Γ] ⊢ fds₁ f ≡ fds₂ f :
-    (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+    (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
       (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))
   ∀ f, E[Γ] ⊢ recFds₁ f ≡ recFds₂ f :
     (((E.get η).block.ctors s c).recursive f).instantiatedType
@@ -71,7 +71,7 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
       (((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁) ≡
     .ind η s ls ps₂
       (((E.get η).block.ctors s c).targetIndex ls ps₂ fds₂) :
-      .sort ((E.get η).block.level.inst ls)
+      .sort (E.get η).block.level{ls}
   ──────────────────── ctorDF {n} {Γ : Ctx ζ ℓ 0 n} {ι} {η : Head ζ (.inductive ι)}
     {s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂}
     {fieldLevels : Fin (ι.ctors s c).nfields → Level ℓ}
@@ -163,7 +163,7 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
   ∀ s, E[Γ] ⊢ ms s : (E.get η).block.motiveType η ls ps u s
   ∀ s c, E[Γ] ⊢ mins s c : (E.get η).block.caseFnType η ls ps ms s c
   ∀ f, E[Γ] ⊢ fds f :
-    (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+    (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
       (Fin.append ps fun previous : Fin f.val =>
         fds (previous.castLE f.isLt.le))
   ∀ f, E[Γ] ⊢ recFds f :
@@ -225,13 +225,13 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
     {l₁ l₂ α r β f h a}
   E[Γ] ⊢ .quotLift η l₁ l₂ α r β f h (.quotMk η l₁ α r a) ≡ .app f a : β
 
-  E[Γ] ⊢ ((E.get η).constType.instL ls).wkClosed : .sort u
-  E[Γ] ⊢ ((E.get η).defValue.instL ls).wkClosed :
-    ((E.get η).constType.instL ls).wkClosed
+  E[Γ] ⊢ (E.get η).constType{ls}.wkClosed : .sort u
+  E[Γ] ⊢ (E.get η).defValue{ls}.wkClosed :
+    (E.get η).constType{ls}.wkClosed
   ──────────────────── delta {n nlevels : Nat} {Γ : Ctx ζ ℓ 0 n}
     {η : Head ζ (.const .def nlevels)} {ls u}
-  E[Γ] ⊢ .const η ls ≡ ((E.get η).defValue.instL ls).wkClosed :
-    ((E.get η).constType.instL ls).wkClosed
+  E[Γ] ⊢ .const η ls ≡ (E.get η).defValue{ls}.wkClosed :
+    (E.get η).constType{ls}.wkClosed
 
 namespace Defeq
 

@@ -109,41 +109,34 @@ def minorType (η : Head ζ .quot) (l : Level ℓ)
   simp! [minorType]
 
 @[simp] theorem relType_instL (α : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (relType α).instL ls = relType (α.instL ls) := by
+    (relType α){ls} = relType α{ls} := by
   simp! [relType]
 
 @[simp] theorem eqApp_instL (eqHead : Head ζ (.inductive Eq.sig))
     (l : Level ℓ) (α e₁ e₂ : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (eqApp eqHead l α e₁ e₂).instL ls =
-      eqApp eqHead (l.inst ls) (α.instL ls) (e₁.instL ls)
-        (e₂.instL ls) := by
-  simp! [eqApp]
-  funext i
-  split <;> rfl
+    (eqApp eqHead l α e₁ e₂){ls} =
+      eqApp eqHead l{ls} α{ls} e₁{ls} e₂{ls} := by
+  simp [eqApp, funext_iff]
 
 @[simp] theorem compatType_instL (eqHead : Head ζ (.inductive Eq.sig))
     (l : Level ℓ) (α r β f : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (compatType eqHead l α r β f).instL ls =
-      compatType eqHead (l.inst ls) (α.instL ls) (r.instL ls)
-        (β.instL ls) (f.instL ls) := by
+    (compatType eqHead l α r β f){ls} =
+      compatType eqHead l{ls} α{ls} r{ls} β{ls} f{ls} := by
   simp! [compatType]
 
 @[simp] theorem motiveType_instL (η : Head ζ .quot) (l : Level ℓ)
     (α r : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (motiveType η l α r).instL ls =
-      motiveType η (l.inst ls) (α.instL ls) (r.instL ls) := by
+    (motiveType η l α r){ls} = motiveType η l{ls} α{ls} r{ls} := by
   simp! [motiveType]
 
 @[simp] theorem minorQuotMk_instL (η : Head ζ .quot) (l : Level ℓ)
     (α r : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (minorQuotMk η l α r).instL ls =
-      minorQuotMk η (l.inst ls) (α.instL ls) (r.instL ls) := by
+    (minorQuotMk η l α r){ls} = minorQuotMk η l{ls} α{ls} r{ls} := by
   simp! [minorQuotMk]
 
 @[simp] theorem minorType_instL (η : Head ζ .quot) (l : Level ℓ)
     (α r β : Expr ζ ℓ n) (ls : Param ℓ → Level ℓ') :
-    (minorType η l α r β).instL ls =
-      minorType η (l.inst ls) (α.instL ls) (r.instL ls) (β.instL ls) := by
+    (minorType η l α r β){ls} = minorType η l{ls} α{ls} r{ls} β{ls} := by
   simp! [minorType]
 
 end Metalean.Quot

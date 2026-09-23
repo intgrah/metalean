@@ -48,7 +48,7 @@ judgement FWHRed : FExpr → FExpr → Prop where
   F[pos]? = some (.def nlevels t v)
   ls.size = nlevels
   ──────────────────── delta {pos nlevels : Nat} {t v : FExpr} {ls : Array FLevel}
-  FWHRed (.const pos ls) (v.instL ls)
+  FWHRed (.const pos ls) v{ls}
 
   pos₂ = pos₁
   ──────────────────── quotIota {pos₁ pos₂ : Nat} {l₁ l₂ l₃ : FLevel} {α₁ r₁ β f h α₂ r₂ a : FExpr}

@@ -283,10 +283,10 @@ partial def unfoldHeadM (G : FCtx) :
     match hfe : F[pos]? with
     | some (.def nlevels t v) =>
       if hsize : ls.size = nlevels then
-        if ls.isEmpty then return some ⟨v.instL ls, .single (.delta hfe hsize)⟩
+        if ls.isEmpty then return some ⟨v{ls}, .single (.delta hfe hsize)⟩
         if let some ⟨r, hr⟩ := (← get).unfold.get? (pos, ls) then
           return some ⟨r, by rw [hr nlevels t v hfe]; exact .single (.delta hfe hsize)⟩
-        let r := v.instL ls
+        let r := v{ls}
         let entry : {v' : FExpr // UnfoldsTo F pos ls v'} :=
           ⟨r, fun _ _ _ h => by rw [hfe] at h; cases h; rfl⟩
         modify fun c => { c with unfold := c.unfold.insert (pos, ls) entry }
@@ -335,7 +335,7 @@ partial def inferCore (G : FCtx) :
     | some fe =>
       match hct : fe.constType? with
       | some (nlevels, t) =>
-        pure ⟨t.instL ls, fun {_ _ _ _ _} hS (.const hls hη hls') => by
+        pure ⟨t{ls}, fun {_ _ _ _ _} hS (.const hls hη hls') => by
           have ⟨_, η₀, hη₀, ht⟩ := FEnv.Denotes.constType (E := ⟨_, _⟩) hfe hct hS.env
           cases hη.symm.trans hη₀
           exact ⟨_, _, .const hls hη hls', ((ht.instL hls hls').wkClosed _),
@@ -410,7 +410,7 @@ partial def inferCore (G : FCtx) :
         checkTyped G (ps[p.val]'p.isLt) (I.paramType ls ps p.val (by omega))
       let hisT ← Fin.sequenceM fun i : Fin is.size =>
         checkTyped G (is[i.val]'i.isLt) (I.indexType ls ps s hs is i.val (by omega))
-      pure ⟨.sort (I.level.inst ls),
+      pure ⟨.sort I.level{ls},
         fun {_ E _ Γ _} hS (.ind (s' := s') (ls' := ls') hls hps' his' hη hs' hls' hps'' his'') => by
           have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
           cases hη.symm.trans hη₀
@@ -729,7 +729,7 @@ partial def inferOnlyCore (G : FCtx) :
   | .ind pos s ls ps is =>
     match hfe : F[pos]? with
     | some (.inductive _ I) =>
-      pure ⟨.sort (I.level.inst ls), fun {_ _ _ _ _ _} hS hden he => by
+      pure ⟨.sort I.level{ls}, fun {_ _ _ _ _ _} hS hden he => by
         have .ind hls _ _ hη _ hls' _ _ := hden
         have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
         cases hη.symm.trans hη₀
@@ -1198,7 +1198,8 @@ partial def toCtorWhenK (G : FCtx) (pos s : Nat) (maj : FExpr) :
             have hctor₂ := (TypeEq.ofDefEq hcc).symm.conv hctorT
             have ⟨l₀, hl₀, hl₀'⟩ := hI.level
             rw [hK.level] at hl₀
-            have hzero : (E.get η₀).block.level.inst (⟦ls' ·⟧) = Level.zero := by
+            have hzero : (E.get η₀).block.level{fun p : Param ι.nlevels =>
+                (⟦ls' p⟧ : Level ℓ)} = Level.zero := by
               rw [← hl₀', hl₀.eq_zero]
               exact Level.inst_zero _
             rw [hzero] at hsortEq
@@ -1225,7 +1226,7 @@ partial def etaMajor (G : FCtx) (pos s : Nat) (ls : Array FLevel) (maj : FExpr) 
   | some (.inductive _ I) =>
     if maj matches .ctor .. || !I.isStructure s 0 then
       return ⟨maj, RedSpec.refl maj⟩
-    if !(I.level.inst ls).nonZeroWhenPositive then return ⟨maj, RedSpec.refl maj⟩
+    if !I.level{ls}.nonZeroWhenPositive then return ⟨maj, RedSpec.refl maj⟩
     match ← etaStruct G maj with
     | some r => pure r
     | none => pure ⟨maj, RedSpec.refl maj⟩

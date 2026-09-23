@@ -48,7 +48,7 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
     (hatom : ∀ final ∈ Reachable {δ} (code recFd source).tele,
       ε₂ (.recr η s ls l (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧)
         (ε₂[γ]⟦mins · ·⟧)
-        (ε₁[final]⟦recFd.indices · |>.instL ls⟧)
+        (ε₁[final]⟦recFd.indices{ls} ·⟧)
         [zf|$(ε₂[γ]⟦r⟧) $(fun argument => final (Fin.natAdd (ι.nparams + nfields) argument))...]) =
         app graph (pair
             ((code recFd source).index final)
@@ -78,17 +78,17 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
       (Aczel.apps recovered fun v => final (Fin.natAdd n v)))
     (e := .recr η s ls l (fun p => (ps p).wkN arity)
       (fun s => (ms s).wkN arity) (fun s c => (mins s c).wkN arity)
-      (fun i => (((recFd.indices i).map pre.sigs).instL ls).subst (σ.liftN arity))
+      (fun i => ((recFd.indices i).map pre.sigs){ls}.subst (σ.liftN arity))
       (r.applyBound arity))
     (Set.mem_singleton γ) fun final hfinal => by
       simp only [Expr.denote, Expr.denote_wkN, Expr.denote_applyBound]
       rw [hbase final hfinal, funext fun index => show
-          ε₂[final]⟦(((recFd.indices index).map pre.sigs).instL ls).subst
-            (σ.liftN arity)⟧ = ε₁[Slots.pull project final]⟦(recFd.indices index).instL ls⟧ by
+          ε₂[final]⟦((recFd.indices index).map pre.sigs){ls}.subst
+            (σ.liftN arity)⟧ = ε₁[Slots.pull project final]⟦(recFd.indices index){ls}⟧ by
         rw [Expr.denote_subst, Expr.denote_substLiftN, hbase final hfinal, hσ, ← Expr.map_instL]
         exact Expr.denote_map pre.sigs hatoms _ _]
       have h := hatom (Slots.pull project final) (Reachable.pull hfinal fun _ _ => rfl)
-      simpa only [Slots.pull, Fin.addCases_right] using h
+      simpa [InstLevel.inst_apply, Slots.pull, Fin.addCases_right, leaf, recovered] using h
   rwa [SemTele.lam_applyAt (source.extension.sem.pull project arity)
     (fun final value => leaf (Slots.pull project final) value) γ recovered,
     SemTele.lamAt_pull] at hden
@@ -134,7 +134,7 @@ theorem recursiveIotaLeaf
         (RecSlots.motivesOf outer)
         (fun target c => RecSlots.casesOf outer
           (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-        (ε₁[final]⟦recFd.indices · |>.instL ls⟧) vmaj) =
+        (ε₁[final]⟦recFd.indices{ls} ·⟧) vmaj) =
       app (model.recrGraph s outer) (pair (code.index final) raw) := by
   dsimp only
   let source := (model.ctors s c).source
@@ -143,7 +143,7 @@ theorem recursiveIotaLeaf
   let code := StrongRecursiveFieldSource.code recFd recSource
   let vmaj := [zf|$(vrecFds f) $(fun argument => final (Fin.natAdd
     (ι.nparams + (ι.ctors s c).nfields) argument))...]
-  let vis := (ε₁[final]⟦recFd.indices · |>.instL ls⟧)
+  let vis := (ε₁[final]⟦recFd.indices{ls} ·⟧)
   let child : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors +
       ι.nindices ((ι.ctors s c).recursiveTarget f) + 1) :=
     RecSlots.childOf outer vis vmaj
@@ -198,7 +198,7 @@ theorem recursiveIotaLeaf
       (RecSlots.motivesOf outer)
       (fun target c => RecSlots.casesOf outer
         (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-      (ε₁[final]⟦recFd.indices · |>.instL ls⟧) vmaj = child by
+      (ε₁[final]⟦recFd.indices{ls} ·⟧) vmaj = child by
     simp [RecSlots.args, child, vis, RecSlots.append_params_motives_cases]]
   let fields := source.recursiveCodes
   let vargs := source.ordinary.sem.pack fieldSlots
@@ -268,7 +268,7 @@ theorem iotaRuleSound
     (∀ s c, ε₂[γ] ⊨ mins s c ≡ mins s c :
       (E₂.get η).block.caseFnType η ls ps ms s c) →
     (∀ f, ε₂[γ] ⊨ fds f ≡ fds f :
-      (((((E₂.get η).block.ctors s c).ordinary f).type).instL ls).subst
+      ((((E₂.get η).block.ctors s c).ordinary f).type{ls}).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) →
     (∀ f, ε₂[γ] ⊨ recFds f ≡ recFds f :
@@ -346,7 +346,7 @@ theorem iotaRuleSound
         (RecSlots.paramsOf outer) (RecSlots.motivesOf outer)
         (fun target c => RecSlots.casesOf outer
           (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-        (ε₁[final]⟦((I.ctors s c).recursive f).indices · |>.instL ls⟧)
+        (ε₁[final]⟦((I.ctors s c).recursive f).indices{ls} ·⟧)
         [zf|$(vrecFds f) $(fun argument =>
           final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument))...]).trans
         (model.recursiveIotaLeaf s c f outer houter fieldSlots

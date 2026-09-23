@@ -72,7 +72,7 @@ theorem code_map (h : IndTyping Γ₁ η s ls ps₁ is₁) (σ : Γ₂.as ⟶ Γ
     exact congr(Tm.label _ (t := $(by simp)) _)
 
 theorem code_rel (h : IndTyping Γ₁ η s ls ps₁ is₁) :
-    h.code.rel = Level.rel ((E.get η).block.level.inst ls) :=
+    h.code.rel = Level.rel ((E.get η).block.level{ls}) :=
   rfl
 
 theorem code_congr (hB : InductiveWF E (E.get η).block)
@@ -245,7 +245,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {ι : IndSig}
 theorem Expr.measure_ind_ctorTypeFn {n : Nat} (η : Head ζ (.inductive ι)) (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ n)
     (is : Fin (ι.nindices s) → Expr ζ ℓ n) :
-    Prod.Lex (· < ·) (· < ·) (((E.get η).block.ctorTypeFn s c).instL fun p => ls p).measure
+    Prod.Lex (· < ·) (· < ·) ((E.get η).block.ctorTypeFn s c){ls}.measure
       (Expr.ind η s ls ps is).measure := by
   refine .left _ _ (lt_of_le_of_lt ?_ ((E.get_block_headRank_lt η).trans_le (le_max_left _ _)))
   simp only [Expr.headRank_instL, Inductive.ctorTypeFn, Ctx.headRank_lam, Ctx.headRank_pi,

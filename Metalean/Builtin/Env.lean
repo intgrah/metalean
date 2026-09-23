@@ -230,7 +230,7 @@ theorem propextType_isType (heq : (E.get ηeq).block = Eq.block)
   let Γ₁ : Ctx ζ 0 0 2 := #t[.prop, .prop]
   have hi : E[Γ₁] ⊢ .ind ηiff 0 ![] ![#0, #1] ![] : .prop := by
     suffices h : E[Γ₁] ⊢ .ind ηiff 0 ![] ![#0, #1] ![] :
-        .sort ((E.get ηiff).block.level.inst ![]) by
+        .sort (E.get ηiff).block.level{(![] : Fin 0 → Level 0)} by
       simpa [hiff, Iff.block] using h
     apply Defeq.indDF
     · intro p
@@ -243,7 +243,7 @@ theorem propextType_isType (heq : (E.get ηeq).block = Eq.block)
   let Γ₂ := Γ₁.snoc (.ind ηiff 0 ![] ![#0, #1] ![])
   have he : E[Γ₂] ⊢ .ind ηeq 0 (fun _ => .succ .zero) ![.prop, #0] ![#1] : .prop := by
     suffices h : E[Γ₂] ⊢ .ind ηeq 0 (fun _ => .succ .zero) ![.prop, #0] ![#1] :
-        .sort ((E.get ηeq).block.level.inst (fun _ => .succ .zero)) by
+        .sort (E.get ηeq).block.level{fun _ : Fin 1 => (Level.succ .zero : Level 0)} by
       simpa [heq, Eq.block] using h
     apply Defeq.indDF
     · intro p
@@ -272,7 +272,7 @@ theorem classicalChoiceType_isType (hblock : (E.get η).block = Nonempty.block) 
   let l : Level 1 := .param ⟨0, by decide⟩
   have hn : E[#t[.sort l]] ⊢ .ind η 0 (fun _ => l) ![#0] ![] : .prop := by
     suffices h : E[#t[.sort l]] ⊢ .ind η 0 (fun _ => l) ![#0] ![] :
-        .sort ((E.get η).block.level.inst (fun _ => l)) by
+        .sort (E.get η).block.level{fun _ : Fin 1 => l} by
       simpa [hblock, Nonempty.block] using h
     apply Defeq.indDF
     · intro p

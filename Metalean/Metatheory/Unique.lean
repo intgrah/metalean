@@ -37,7 +37,7 @@ theorem sort {l : Level ℓ} : E[Γ] ⊢ .sort l !: .sort (.succ l) :=
 
 theorem const {kind : ConstKind} {k : Nat} {η : Head ζ (.const kind k)}
     {ls : Fin k → Level ℓ} :
-    E[Γ] ⊢ .const η ls !: ((E.get η).constType.instL ls).wkClosed :=
+    E[Γ] ⊢ .const η ls !: (E.get η).constType{ls}.wkClosed :=
   fun hc => hc.const_inv.symm
 
 section
@@ -50,7 +50,7 @@ variable {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
   {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
   {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
 
-theorem ind : E[Γ] ⊢ .ind η s ls ps is !: .sort ((E.get η).block.level.inst ls) :=
+theorem ind : E[Γ] ⊢ .ind η s ls ps is !: .sort (E.get η).block.level{ls} :=
   fun hc =>
     have ⟨_, _, _, _, ht⟩ := hc.ind_inv
     ht.symm

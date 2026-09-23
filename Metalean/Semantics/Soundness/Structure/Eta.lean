@@ -40,7 +40,7 @@ theorem structure_projection_properties (hsound : RawSound E₂ ℓ pre) (hI : I
         HasFixedness Γ (hs.projTerm η ls ps f maj)
           (Inductive.motiveResult (hs.projectionMotives η ls ps f s) hs.indices maj) := by
       rw [hs.projTerm_eq_recr]
-      cases hrel : Level.rel ((((E₂.get η).block.ctors s c).ordinary f).level.inst ls) with
+      cases hrel : Level.rel (((E₂.get η).block.ctors s c).ordinary f).level{ls} with
       | false =>
         exact ⟨⟨HasIdeality.recr_prop hrel, HasSubstitution.recr_prop hrel⟩,
           HasFixedness.recr_prop hrel⟩

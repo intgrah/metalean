@@ -45,9 +45,9 @@ theorem EnvWF.rawSound (hE : EnvWF E₂) (pre : E₁.as ⟶ E₂.as) :
     have ⟨_, _, incl, I, hlen, hI, hb⟩ := (hE.comap pre).block_spec pre η
     ⟨_, _, incl ≫ pre, I, ih _ (hlen.trans_eq hk) _ rfl, hI, hb⟩
   have hdef {m : Nat} (η : Head ζ₁ (.const .def m)) (ls : Fin m → Level ℓ) :
-      RawJudgment (CtxCat.nil E₂ ℓ) ((E₂.get (η.map pre.sigs)).defValue.instL ls)
-        ((E₂.get (η.map pre.sigs)).defValue.instL ls)
-        ((E₂.get (η.map pre.sigs)).constType.instL ls) := by
+      RawJudgment (CtxCat.nil E₂ ℓ) (E₂.get (η.map pre.sigs)).defValue{ls}
+        (E₂.get (η.map pre.sigs)).defValue{ls}
+        (E₂.get (η.map pre.sigs)).constType{ls} := by
     have ⟨_, _, incl, _, _, hlen, he, hη⟩ := (hE.comap pre).def_spec pre η
     have p := ih _ (hlen.trans_eq hk) (incl ≫ pre) rfl (he.instLevel ls) .nil .nil
     simp only [Expr.map_instL] at p

@@ -64,14 +64,14 @@ theorem type {kind : ConstKind} {entry : Entry ζ (.const kind ℓ)} :
 
 theorem constType {kind : ConstKind} {ℓ' : Nat}
     {η : Head ζ (.const kind ℓ')} (h : EntryWF E (E.get η)) (ls : Fin ℓ' → Level ℓ) :
-    E[Γ] ⊢ ((E.get η).constType.instL ls).wkClosed typ :=
+    E[Γ] ⊢ (E.get η).constType{ls}.wkClosed typ :=
   have ⟨l, ht⟩ := h.type
-  ⟨l.inst ls, by simpa! using (ht.instLevel ls).wkClosed⟩
+  ⟨l{ls}, by simpa! using (ht.instLevel ls).wkClosed⟩
 
 theorem defValue {ℓ' : Nat} {η : Head ζ (.const .def ℓ')}
     (h : EntryWF E (E.get η)) (ls : Fin ℓ' → Level ℓ) :
-    E[Γ] ⊢ ((E.get η).defValue.instL ls).wkClosed :
-      ((E.get η).constType.instL ls).wkClosed :=
+    E[Γ] ⊢ (E.get η).defValue{ls}.wkClosed :
+      (E.get η).constType{ls}.wkClosed :=
   (h.value.instLevel ls).wkClosed
 
 theorem ctorType {ι : IndSig} {η : Head ζ (.inductive ι)} (h : EntryWF E (E.get η))
@@ -82,12 +82,12 @@ theorem ctorType {ι : IndSig} {η : Head ζ (.inductive ι)} (h : EntryWF E (E.
     (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
       (E.get η).block.paramType ls ps₁ p) →
     (∀ f, E[Γ] ⊢ fds₁ f ≡ fds₂ f :
-      (((((E.get η).block.ctors s c).ordinary f).type).instL ls).subst
+      (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
         (Fin.append ps₁ fun previous : Fin f.val =>
           fds₁ (previous.castLE f.isLt.le))) →
     E[Γ] ⊢ .ind η s ls ps₁ (((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁) ≡
       .ind η s ls ps₂ (((E.get η).block.ctors s c).targetIndex ls ps₂ fds₂) :
-      .sort ((E.get η).block.level.inst ls) := by
+      .sort (E.get η).block.level{ls} := by
   intro hps hfields
   have hctor := h.block.ctors s c
   exact .indDF hps (hctor.targetIndex_congr h.block.params · hps hfields)

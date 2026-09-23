@@ -59,19 +59,18 @@ def fieldRecursive (csig : CtorSig nsorts) :
 @[simp] theorem fieldParams_instL {ι : IndSig} (csig : CtorSig ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (i : Fin ι.nparams) :
-    (csig.fieldParams ps i).instL ls' =
-      csig.fieldParams (fun i => (ps i).instL ls') i := by
+    (csig.fieldParams ps i){ls'} = csig.fieldParams ps{ls'} i := by
   simp [fieldParams]
 
 @[simp] theorem fieldOrdinary_instL (csig : CtorSig nsorts)
     (i : Fin csig.nfields) :
-    (csig.fieldOrdinary (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL ls' =
+    (csig.fieldOrdinary (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i){ls'} =
       csig.fieldOrdinary i := by
-  simp [fieldOrdinary, Expr.instL]
+  simp [fieldOrdinary]
 
 @[simp] theorem fieldRecursive_instL (csig : CtorSig nsorts)
     (i : Fin csig.nrecFields) :
-    (csig.fieldRecursive (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL ls' =
+    (csig.fieldRecursive (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i){ls'} =
       csig.fieldRecursive i := by
   simp! [fieldRecursive]
 
@@ -117,7 +116,7 @@ namespace Ctor
 def ordinaryFieldExpr
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (field : Fin csig.nfields) : Expr ζ₁ ℓ n :=
-  (((ctor.ordinary field).type).instL ls).subst
+  (ctor.ordinary field).type{ls}.subst
     (Fin.append ps fun prior => fds (prior.castLE field.isLt.le))
 
 def recursiveFieldExpr
@@ -146,19 +145,16 @@ def recursiveFieldExpr
 @[simp] theorem ordinaryFieldExpr_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (field : Fin csig.nfields) :
-    (ctor.ordinaryFieldExpr ls ps fds field).instL ls' =
-      ctor.ordinaryFieldExpr (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls')
-        (fun i => (fds i).instL ls') field := by
+    (ctor.ordinaryFieldExpr ls ps fds field){ls'} =
+      ctor.ordinaryFieldExpr ls{ls'} ps{ls'} fds{ls'} field := by
   simp [ordinaryFieldExpr]
+  congr 1
 
 @[simp] theorem recursiveFieldExpr_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (field : Fin csig.nrecFields) :
-    (ctor.recursiveFieldExpr η ls ps fds field).instL ls' =
-      ctor.recursiveFieldExpr η (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls')
-        (fun i => (fds i).instL ls') field := by
+    (ctor.recursiveFieldExpr η ls ps fds field){ls'} =
+      ctor.recursiveFieldExpr η ls{ls'} ps{ls'} fds{ls'} field := by
   simp [recursiveFieldExpr]
 
 theorem recursiveFieldExpr_eq
@@ -186,7 +182,7 @@ theorem recursiveFieldExpr_eq_ind
 def targetIndex
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (i : Fin (ι.nindices s)) : Expr ζ₁ ℓ n :=
-  ((ctor.targetIndices i).instL ls).subst (Fin.append ps fds)
+  (ctor.targetIndices i){ls}.subst (Fin.append ps fds)
 
 @[simp] theorem targetIndex_map
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
@@ -200,18 +196,23 @@ def targetIndex
 @[simp] theorem targetIndex_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (i : Fin (ι.nindices s)) :
-    (ctor.targetIndex ls ps fds i).instL ls' =
-      ctor.targetIndex (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls')
-        (fun i => (fds i).instL ls') i := by
+    (ctor.targetIndex ls ps fds i){ls'} =
+      ctor.targetIndex ls{ls'} ps{ls'} fds{ls'} i := by
   simp [targetIndex]
+
+@[simp] theorem targetIndex_tuple_instL
+    (fds : Fin csig.nfields → Expr ζ₁ ℓ n) :
+    (ctor.targetIndex ls ps fds){ls'} =
+      ctor.targetIndex ls{ls'} ps{ls'} fds{ls'} := by
+  funext i
+  simp
 
 def ordinaryFieldTeleAux
     (_η : Head ζ₁ (.inductive ι))
     (ls : Fin ι.nlevels → Level ℓ)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (count : Nat) (hcount : count ≤ csig.nfields) : Ctx ζ₁ ℓ n (n + count) :=
-  Ctx.substN ps count ((ctor.ordinaryTeleAux count hcount).instL ls)
+  Ctx.substN ps count ((ctor.ordinaryTeleAux count hcount){ls})
 
 def ordinaryFieldTele : Ctx ζ₁ ℓ n (n + csig.nfields) :=
   ordinaryFieldTeleAux ctor η ls ps csig.nfields le_rfl
@@ -221,15 +222,15 @@ def ordinaryFieldTele : Ctx ζ₁ ℓ n (n + csig.nfields) :=
     Ctx.entry (p := n + f.val)
         (ctor.ordinaryFieldTeleAux η ls ps count hcount)
         (by omega) (by omega) =
-      (((ctor.ordinary (f.castLE hcount)).type).instL ls).subst
+      (ctor.ordinary (f.castLE hcount)).type{ls}.subst
         (Subst.liftN ps f.val) := by
   induction f using Fin.lastInduction with
   | last count =>
     change (ctor.ordinaryFieldTeleAux η ls ps (count + 1) hcount).entry _ _ =
-      (((ctor.ordinary ⟨count, by omega⟩).type).instL ls).subst (Subst.liftN ps count)
-    simp [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.instL, Ctx.substN]
+      (ctor.ordinary ⟨count, by omega⟩).type{ls}.subst (Subst.liftN ps count)
+    simp [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.substN]
   | cast f ih =>
-    simpa [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.instL, Ctx.substN] using ih (by omega)
+    simpa [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.substN] using ih (by omega)
 
 def recursiveFieldTeleAux (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (count : Nat) (hcount : count ≤ csig.nrecFields) : Ctx ζ₁ ℓ n (n + count) :=
@@ -255,7 +256,7 @@ def fieldTele
         (fun i => (ps i).map pre) count hcount :=
   (Ctx.map_substN pre ps count _).trans
     (congrArg (Ctx.substN _ _) ((Ctx.map_instL pre ls _).trans
-      (congrArg (Ctx.instL ls) (ordinaryTeleAux_map pre ctor count hcount))))
+      (congrArg (·{ls}) (ordinaryTeleAux_map pre ctor count hcount))))
 
 @[simp] theorem ordinaryFieldTele_map :
     (ctor.ordinaryFieldTele η ls ps).map pre =
@@ -285,33 +286,29 @@ def fieldTele
 
 @[simp] theorem ordinaryFieldTeleAux_instL
     (count : Nat) (hcount : count ≤ csig.nfields) :
-    (ctor.ordinaryFieldTeleAux η ls ps count hcount).instL ls' =
-      ctor.ordinaryFieldTeleAux η (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls') count hcount := by
+    (ctor.ordinaryFieldTeleAux η ls ps count hcount){ls'} =
+      ctor.ordinaryFieldTeleAux η ls{ls'} ps{ls'} count hcount := by
   simp [ordinaryFieldTeleAux]
   rfl
 
 @[simp] theorem ordinaryFieldTele_instL :
-    (ctor.ordinaryFieldTele η ls ps).instL ls' =
-      ctor.ordinaryFieldTele η (fun i => (ls i).inst ls')
-        fun i => (ps i).instL ls' :=
+    (ctor.ordinaryFieldTele η ls ps){ls'} =
+      ctor.ordinaryFieldTele η ls{ls'} ps{ls'} :=
   ctor.ordinaryFieldTeleAux_instL η ls ps ls' _ _
 
 @[simp] theorem recursiveFieldTeleAux_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (count : Nat) (hcount : count ≤ csig.nrecFields) :
-    (ctor.recursiveFieldTeleAux η ls ps fds count hcount).instL ls' =
-      ctor.recursiveFieldTeleAux η (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls') (fun i => (fds i).instL ls')
-        count hcount := by
-  simp [recursiveFieldTeleAux]
+    (ctor.recursiveFieldTeleAux η ls ps fds count hcount){ls'} =
+      ctor.recursiveFieldTeleAux η ls{ls'} ps{ls'} fds{ls'} count hcount := by
+  simp [recursiveFieldTeleAux, InstLevel.inst_tuple, Fin.append_comp]
 
 @[simp] theorem fieldTele_instL
     (stop : Fin (csig.nrecFields + 1) := ⟨csig.nrecFields, Nat.lt_succ_self _⟩) :
-    (ctor.fieldTele η ls ps stop).instL ls' =
-      ctor.fieldTele η (fun i => (ls i).inst ls')
-        (fun i => (ps i).instL ls') stop := by
-  simp [fieldTele]
+    (ctor.fieldTele η ls ps stop){ls'} =
+      ctor.fieldTele η ls{ls'} ps{ls'} stop := by
+  simp [fieldTele, InstLevel.inst_tuple]
+  congr 1
 
 theorem targetIndex_boundVars
     (i : Fin (ι.nindices s)) :
@@ -319,7 +316,7 @@ theorem targetIndex_boundVars
         (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
           Expr ζ₁ ℓ (ι.nparams + csig.nfields)))
         (Expr.boundVars ι.nparams csig.nfields 0) i =
-      Expr.instL ls (ctor.targetIndices i) := by
+      (ctor.targetIndices i){ls} := by
   simp [targetIndex]
 
 @[simp] theorem targetIndex_fields
@@ -336,7 +333,7 @@ theorem targetIndex_fieldVars
         (fun param => (.var (param.castLE (by omega)) :
           Expr ζ₁ ℓ (ι.nparams + csig.nfields + csig.nrecFields)))
         csig.fieldOrdinary i =
-      (Expr.instL ls (ctor.targetIndices i)).wkN csig.nrecFields := by
+      (ctor.targetIndices i){ls}.wkN csig.nrecFields := by
   rw [← csig.fieldParams_vars, ctor.targetIndex_fields,
     Expr.vars_wkN, ctor.targetIndex_boundVars]
 
@@ -344,7 +341,7 @@ theorem targetType_fields :
     (Expr.ind η s ls
         (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
           Expr ζ₁ ℓ (ι.nparams + csig.nfields)))
-        fun i => Expr.instL ls (ctor.targetIndices i)).wkN
+        ctor.targetIndices{ls}).wkN
       csig.nrecFields =
       Expr.ind η s ls
         (csig.fieldParams fun param => (.var param : Expr ζ₁ ℓ ι.nparams))

@@ -330,25 +330,25 @@ unsafe def instLArray (us : Array FLevel) (xs : Array FExpr) : InstLM (Array FEx
   xs.mapM (instLCached us)
 
 unsafe def instLCoreShared (us : Array FLevel) : FExpr → InstLM FExpr
-  | .sort l => pure (.sort (l.inst us))
-  | .const pos ls => pure (.const pos (ls.map (·.inst us)))
+  | .sort l => pure (.sort l{us})
+  | .const pos ls => pure (.const pos ls{us})
   | .ind pos s ls ps is => do
-    pure (.ind pos s (ls.map (·.inst us)) (← instLArray us ps) (← instLArray us is))
+    pure (.ind pos s ls{us} (← instLArray us ps) (← instLArray us is))
   | .ctor pos s c ls ps fds recFds => do
-    pure (.ctor pos s c (ls.map (·.inst us)) (← instLArray us ps) (← instLArray us fds)
+    pure (.ctor pos s c ls{us} (← instLArray us ps) (← instLArray us fds)
       (← instLArray us recFds))
   | .recr pos s ls l ps ms mins is maj => do
-    pure (.recr pos s (ls.map (·.inst us)) (l.inst us) (← instLArray us ps) (← instLArray us ms)
+    pure (.recr pos s ls{us} l{us} (← instLArray us ps) (← instLArray us ms)
       (← instLArray us mins) (← instLArray us is) (← instLCached us maj))
   | .quot pos l α r => do
-    pure (.quot pos (l.inst us) (← instLCached us α) (← instLCached us r))
+    pure (.quot pos l{us} (← instLCached us α) (← instLCached us r))
   | .quotMk pos l α r a => do
-    pure (.quotMk pos (l.inst us) (← instLCached us α) (← instLCached us r) (← instLCached us a))
+    pure (.quotMk pos l{us} (← instLCached us α) (← instLCached us r) (← instLCached us a))
   | .quotLift pos l₁ l₂ α r β f h a => do
-    pure (.quotLift pos (l₁.inst us) (l₂.inst us) (← instLCached us α) (← instLCached us r)
+    pure (.quotLift pos l₁{us} l₂{us} (← instLCached us α) (← instLCached us r)
       (← instLCached us β) (← instLCached us f) (← instLCached us h) (← instLCached us a))
   | .quotInd pos l α r β f a => do
-    pure (.quotInd pos (l.inst us) (← instLCached us α) (← instLCached us r)
+    pure (.quotInd pos l{us} (← instLCached us α) (← instLCached us r)
       (← instLCached us β) (← instLCached us f) (← instLCached us a))
   | .proj pos s idx a => do
     pure (.proj pos s idx (← instLCached us a))
@@ -374,38 +374,29 @@ termination_by (sizeOf fe, 1)
 def instLCore (us : Array FLevel) : FExpr → FExpr
   | .bvar i => .bvar i
   | .fvar i => .fvar i
-  | .sort l => .sort (l.inst us)
-  | .const pos ls => .const pos (ls.map (·.inst us))
-  | .ind pos s ls ps is => .ind pos s (ls.map (·.inst us)) (ps.map (instL us)) (is.map (instL us))
+  | .sort l => .sort l{us}
+  | .const pos ls => .const pos ls{us}
+  | .ind pos s ls ps is => .ind pos s ls{us} (ps.map (instL us)) (is.map (instL us))
   | .ctor pos s c ls ps fds recFds =>
-    .ctor pos s c
-      (ls.map (·.inst us))
+    .ctor pos s c ls{us}
       (ps.map (instL us))
       (fds.map (instL us))
       (recFds.map (instL us))
   | .recr pos s ls l ps ms mins is maj =>
-    .recr pos s
-      (ls.map (·.inst us))
-      (l.inst us)
+    .recr pos s ls{us} l{us}
       (ps.map (instL us))
       (ms.map (instL us))
       (mins.map (instL us))
       (is.map (instL us))
       (instL us maj)
-  | .quot pos l α r => .quot pos (l.inst us) (instL us α) (instL us r)
-  | .quotMk pos l α r a => .quotMk pos (l.inst us) (instL us α) (instL us r) (instL us a)
+  | .quot pos l α r => .quot pos l{us} (instL us α) (instL us r)
+  | .quotMk pos l α r a => .quotMk pos l{us} (instL us α) (instL us r) (instL us a)
   | .quotLift pos l₁ l₂ α r β f h a =>
-    .quotLift pos
-      (l₁.inst us)
-      (l₂.inst us)
-      (instL us α)
-      (instL us r)
-      (instL us β)
-      (instL us f)
-      (instL us h)
-      (instL us a)
+    .quotLift pos l₁{us} l₂{us}
+      (instL us α) (instL us r) (instL us β)
+      (instL us f) (instL us h) (instL us a)
   | .quotInd pos l α r β f a =>
-    .quotInd pos (l.inst us) (instL us α) (instL us r) (instL us β) (instL us f) (instL us a)
+    .quotInd pos l{us} (instL us α) (instL us r) (instL us β) (instL us f) (instL us a)
   | .proj pos s idx a => .proj pos s idx (instL us a)
   | .app f a => .app (instL us f) (instL us a)
   | .lam t b => .lam (instL us t) (instL us b)
@@ -417,8 +408,7 @@ termination_by fe => (sizeOf fe, 0)
 
 end
 
-instance : InstLevel (Array FLevel) FExpr FExpr where
-  inst := FExpr.instL
+instance : InstLevel (Array FLevel) FExpr FExpr := ⟨FExpr.instL⟩
 
 theorem instAt_of_closed (a : FExpr) (d : Nat) {fe : FExpr}
     (h : fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange) :

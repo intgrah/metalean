@@ -31,11 +31,11 @@ theorem RawSound.recrTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : Induc
     (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts) :
     RawTeleProperties E₂ .nil ((E₂.get η).block.recrTele η s ls l) := by
   have hI := hd.block
-  let P₁ : CtxCat E₂ ℓ := ⟨Ctx.instL ls (E₂.get η).block.params, hI.paramClosedWF ls⟩
+  let P₁ : CtxCat E₂ ℓ := ⟨(E₂.get η).block.params{ls}, hI.paramClosedWF ls⟩
   have pP₁ : RawTeleProperties E₂ .nil P₁.as.ctx := hsound.paramTeleProperties hB hblock ls
   have heq₁ (p : Fin ι.nparams) :
       Ctx.get p P₁.as.ctx = (E₂.get η).block.paramType ls Expr.var p := by
-    change Ctx.get p (Ctx.instL ls (E₂.get η).block.params) = _
+    change Ctx.get p (E₂.get η).block.params{ls} = _
     rw [← Ctx.get_instL, ← Inductive.paramType_eq_get_subst]
     exact (Expr.subst_id _).symm
   have pps₁ (p : Fin ι.nparams) :

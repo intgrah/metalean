@@ -87,7 +87,7 @@ namespace IndCode
     (code.map arg).map arg' = code.map (arg' ∘ arg) := rfl
 
 noncomputable def rel (code : IndCode Γ₁) : Bool :=
-  ((E.get code.η).block.level.inst code.ls).rel
+  (E.get code.η).block.level{code.ls}.rel
 
 @[simp] theorem rel_map (arg : (Tm_ Γ₁) → Tm_ Γ₂) (code : IndCode Γ₁) :
     (code.map arg).rel = code.rel := rfl

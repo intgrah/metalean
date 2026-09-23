@@ -190,34 +190,36 @@ theorem natOp₁_subst {m : Nat} (σ : Subst ζ ℓ m n) (x : Expr ζ ℓ m) :
   simp [natOp₁, Expr.subst]
 
 theorem natType_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (natType ηNat : Expr ζ ℓ n).instL σ = natType ηNat := by
-  simp only [natType, Expr.instL]
+    (natType ηNat : Expr ζ ℓ n){σ} = natType ηNat := by
+  simp only [natType, Expr.inst_ind]
   congr 1 <;> exact funext nofun
 
 theorem natZero_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (natZero ηNat : Expr ζ ℓ n).instL σ = natZero ηNat := by
-  simp only [natZero, Expr.instL]
+    (natZero ηNat : Expr ζ ℓ n){σ} = natZero ηNat := by
+  refine (Expr.inst_ctor σ ηNat 0 0 ![] ![] ![] ![]).trans ?_
+  simp only [natZero]
   congr 1 <;> exact funext nofun
 
 theorem natSucc_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) :
-    (natSucc ηNat e).instL σ = natSucc ηNat (e.instL σ) := by
-  have hrec : (fun f : Fin (Nat.sig.ctors 0 1).nrecFields => ((![e] : Fin 1 → _) f).instL σ) =
-      ![e.instL σ] :=
-    funext fun ⟨0, _⟩ => rfl
-  simp! only [natSucc]
+    (natSucc ηNat e){σ} = natSucc ηNat e{σ} := by
+  refine (Expr.inst_ctor σ ηNat 0 1 ![] ![] ![] ![e]).trans ?_
+  have hrec : (![e] : Fin 1 → Expr ζ ℓ n){σ} = ![e{σ}] := by
+    funext ⟨0, _⟩
+    simp
+  simp only [natSucc]
   congr 1 <;> exact funext nofun
 
-theorem natConst_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (Expr.const ηOp fun a => Level.inst σ (![] a) : Expr ζ ℓ' n) = .const ηOp ![] :=
-  congrArg (Expr.const ηOp) (funext nofun)
-
 theorem natOp₂_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (x y : Expr ζ ℓ n) :
-    (natOp₂ ηOp x y).instL σ = natOp₂ ηOp (x.instL σ) (y.instL σ) := by
-  simp! only [natOp₂, natConst_instL]
+    (natOp₂ ηOp x y){σ} = natOp₂ ηOp x{σ} y{σ} := by
+  have hnil : (![] : Fin 0 → Level ℓ){σ} = ![] := funext nofun
+  simp only [natOp₂, Expr.instL_app, Expr.inst_const]
+  rw [hnil]
 
 theorem natOp₁_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (x : Expr ζ ℓ n) :
-    (natOp₁ ηOp x).instL σ = natOp₁ ηOp (x.instL σ) := by
-  simp! only [natOp₁, natConst_instL]
+    (natOp₁ ηOp x){σ} = natOp₁ ηOp x{σ} := by
+  have hnil : (![] : Fin 0 → Level ℓ){σ} = ![] := funext nofun
+  simp only [natOp₁, Expr.instL_app, Expr.inst_const]
+  rw [hnil]
 
 theorem boolType_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (boolType ηBool : Expr ζ ℓ m).subst σ = boolType ηBool := by
@@ -225,8 +227,8 @@ theorem boolType_subst {m : Nat} (σ : Subst ζ ℓ m n) :
   congr 1 <;> exact funext nofun
 
 theorem boolType_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (boolType ηBool : Expr ζ ℓ n).instL σ = boolType ηBool := by
-  simp only [boolType, Expr.instL]
+    (boolType ηBool : Expr ζ ℓ n){σ} = boolType ηBool := by
+  simp only [boolType, Expr.inst_ind]
   congr 1 <;> exact funext nofun
 
 theorem boolLit_subst {m : Nat} (σ : Subst ζ ℓ m n) :
@@ -241,12 +243,14 @@ theorem boolLit_subst {m : Nat} (σ : Subst ζ ℓ m n) :
 
 theorem boolLit_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
     (b : Bool) →
-    (boolLit ηBool b : Expr ζ ℓ n).instL σ = boolLit ηBool b
+    (boolLit ηBool b : Expr ζ ℓ n){σ} = boolLit ηBool b
   | false => by
-    simp only [boolLit, boolFalse, Expr.instL]
+    refine (Expr.inst_ctor σ ηBool 0 0 ![] ![] ![] ![]).trans ?_
+    simp only [boolLit, boolFalse]
     congr 1 <;> exact funext nofun
   | true => by
-    simp only [boolLit, boolTrue, Expr.instL]
+    refine (Expr.inst_ctor σ ηBool 0 1 ![] ![] ![] ![]).trans ?_
+    simp only [boolLit, boolTrue]
     congr 1 <;> exact funext nofun
 
 theorem natArrow_subst {m : Nat} (σ : Subst ζ ℓ m n) :
@@ -254,16 +258,16 @@ theorem natArrow_subst {m : Nat} (σ : Subst ζ ℓ m n) :
   simp [natArrow, natType_subst]
 
 theorem natArrow_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (natArrow ηNat : Expr ζ ℓ n).instL σ = natArrow ηNat := by
-  simp [natArrow, Expr.instL, natType_instL]
+    (natArrow ηNat : Expr ζ ℓ n){σ} = natArrow ηNat := by
+  simp [natArrow, natType_instL]
 
 theorem natArrow₂_subst {m : Nat} (σ : Subst ζ ℓ m n) :
     (natArrow₂ ηNat : Expr ζ ℓ m).subst σ = natArrow₂ ηNat := by
   simp [natArrow₂, natType_subst, natArrow_subst]
 
 theorem natArrow₂_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') :
-    (natArrow₂ ηNat : Expr ζ ℓ n).instL σ = natArrow₂ ηNat := by
-  simp [natArrow₂, Expr.instL, natType_instL, natArrow_instL]
+    (natArrow₂ ηNat : Expr ζ ℓ n){σ} = natArrow₂ ηNat := by
+  simp [natArrow₂, natType_instL, natArrow_instL]
 
 variable {ζ₂ : Sigs}
 
@@ -350,7 +354,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
 
 @[simp] theorem instL_natLit {ℓ' : Nat} (σ : Param ℓ → Level ℓ')
     (η : Head ζ (.inductive Nat.sig)) (num : Nat) :
-    (natLit η num : Expr ζ ℓ n).instL σ = natLit η num := by
+    (natLit η num : Expr ζ ℓ n){σ} = natLit η num := by
   induction num with
   | zero => exact natZero_instL σ
   | succ num ih => exact (natSucc_instL σ _).trans congr(natSucc η $ih)
@@ -359,21 +363,25 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
     (ηChar : Head ζ (.inductive Char.sig)) (ηOfNat : Head ζ (.const .def 0))
     (cs : List Char) :
-    (charList ηNat ηList ηChar ηOfNat cs : Expr ζ ℓ n).instL σ =
+    (charList ηNat ηList ηChar ηOfNat cs : Expr ζ ℓ n){σ} =
       charList ηNat ηList ηChar ηOfNat cs := by
-  have hChar : Expr.instL σ (.ind ηChar 0 ![] ![] ![] : Expr ζ ℓ n) = .ind ηChar 0 ![] ![] ![] := by
-    simp only [Expr.instL]
+  have hChar : (.ind ηChar 0 ![] ![] ![] : Expr ζ ℓ n){σ} = .ind ηChar 0 ![] ![] ![] := by
+    refine (Expr.inst_ind σ ηChar 0 ![] ![] ![]).trans ?_
     congr <;> funext i <;> exact i.elim0
   induction cs with
   | nil =>
-    simp only [charList, Expr.instL]
+    unfold charList
+    refine (Expr.inst_ctor σ ηList 0 0 ![.zero] ![.ind ηChar 0 ![] ![] ![]] ![] ![]).trans ?_
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
     all_goals first
       | exact hChar
       | rfl
       | simp at hi
   | cons c cs ih =>
-    simp only [charList, Expr.instL]
+    unfold charList
+    refine (Expr.inst_ctor σ ηList 0 1 ![.zero] ![.ind ηChar 0 ![] ![] ![]]
+      ![.app (.const ηOfNat ![]) (natLit ηNat c.toNat)]
+      ![charList ηNat ηList ηChar ηOfNat cs]).trans ?_
     congr 1 <;> funext i <;> obtain ⟨_ | _, hi⟩ := i
     all_goals first
       | exact hChar
@@ -386,10 +394,10 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (ηNat : Head ζ (.inductive Nat.sig)) (ηList : Head ζ (.inductive List.sig))
     (ηChar : Head ζ (.inductive Char.sig)) (ηOfNat : Head ζ (.const .def 0))
     (ηOfList : Head ζ (.const .def 0)) (str : String) :
-    (strLit ηNat ηList ηChar ηOfNat ηOfList str : Expr ζ ℓ n).instL σ =
+    (strLit ηNat ηList ηChar ηOfNat ηOfList str : Expr ζ ℓ n){σ} =
       strLit ηNat ηList ηChar ηOfNat ηOfList str := by
-  simp only [strLit, Expr.instL, instL_charList]
-  rw [Fin.emptyFun (fun i => Level.inst σ (![] i)) ![]]
+  have hnil : (![] : Fin 0 → Level ℓ){σ} = ![] := funext nofun
+  simp only [strLit, Expr.instL_app, Expr.inst_const, hnil, instL_charList]
 
 @[simp] theorem map_natLit {ζ₂ : Sigs} (pre : ζ ⟶ ζ₂) (η : Head ζ (.inductive Nat.sig))
     (num : Nat) :

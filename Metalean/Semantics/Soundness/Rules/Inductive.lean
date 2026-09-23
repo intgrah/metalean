@@ -33,13 +33,13 @@ variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {pre : E₁.
 
 noncomputable def ctorFieldTypes {Γ₂ : CtxCat E₂ ℓ}
     (pfn : ∀ d : Fin (ι.nctors s), HasIdeality (CtxCat.nil E₂ ℓ)
-      (((E₂.get η).block.ctorTypeFn s d).instL fun p => ls p))
+      ((E₂.get η).block.ctorTypeFn s d){ls})
     (names : Fin ι.nparams → Tm_ Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂)
     (hps : ∀ p, ((rawInterpret (piLimit E₂ ℓ) Γ₁ (ps₁ p)).app _ σ.op ρ).IsDirected)
     (d : Fin (ι.nctors s)) : Domain Γ₂ :=
   ((RawFamily.closedApps
-    (rawInterpret (piLimit E₂ ℓ) (CtxCat.nil E₂ ℓ) (((E₂.get η).block.ctorTypeFn s d).instL fun p => ls p))
+    (rawInterpret (piLimit E₂ ℓ) (CtxCat.nil E₂ ℓ) ((E₂.get η).block.ctorTypeFn s d){ls})
     names fun p => rawInterpret (piLimit E₂ ℓ) Γ₁ (ps₁ p)).app _ σ.op ρ).toIdeal
     (by
       rw [RawFamily.closedApps_value]
@@ -47,7 +47,7 @@ noncomputable def ctorFieldTypes {Γ₂ : CtxCat E₂ ℓ}
 
 theorem HasIdeality.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : InductiveWF E₂ (E₂.get η).block)
     (hfn : ∀ c : Fin (ι.nctors s), HasIdeality (CtxCat.nil E₂ ℓ)
-      (((E₂.get η).block.ctorTypeFn s c).instL fun p => ls p))
+      ((E₂.get η).block.ctorTypeFn s c){ls})
     (hp : ∀ p, HasIdeality Γ₁ (ps₁ p)) :
     HasIdeality Γ₁ (.ind η s ls ps₁ is₁) :=
   fun _ σ ρ hρ => by
@@ -76,7 +76,7 @@ theorem HasSubstitution.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : Indu
       exact hp p σ₁ σ₂ ρs ρt hsub hρ
 
 theorem HasFixedness.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : InductiveWF E₂ (E₂.get η).block) :
-    HasFixedness Γ₁ (.ind η s ls ps₁ is₁) (.sort ((E₂.get η).block.level.inst ls)) := by
+    HasFixedness Γ₁ (.ind η s ls ps₁ is₁) (.sort (E₂.get η).block.level{ls}) := by
   intro _ _ σ₁ ρ _
   rw [rawInterpret_sort, rawInterpret_ind_typed _ h hB]
   apply le_antisymm
@@ -90,11 +90,11 @@ theorem HasFixedness.ind (h : IndTyping Γ₁ η s ls ps₁ is₁) (hB : Inducti
 
 theorem RawJudgment.indDF (hB : InductiveWF E₂ (E₂.get η).block)
     (pfn : ∀ c : Fin (ι.nctors s), RawInterpretationProperties (CtxCat.nil E₂ ℓ)
-      (((E₂.get η).block.ctorTypeFn s c).instL fun p => ls p)) :
+      ((E₂.get η).block.ctorTypeFn s c){ls}) :
     (∀ p, RawJudgment Γ₁ (ps₁ p) (ps₂ p) ((E₂.get η).block.paramType ls ps₁ p)) →
     (∀ i, RawJudgment Γ₁ (is₁ i) (is₂ i) ((E₂.get η).block.indexType ls s ps₁ is₁ i)) →
     RawJudgment Γ₁ (.ind η s ls ps₁ is₁) (.ind η s ls ps₂ is₂)
-      (.sort ((E₂.get η).block.level.inst ls)) := by
+      (.sort (E₂.get η).block.level{ls}) := by
   intro pps pis
   have hps := fun p => (pps p).syntactic
   have his := fun i => (pis i).syntactic
@@ -124,7 +124,7 @@ theorem RawInterpretationProperties.ctor (h : CtorTyping Γ₁ η s c ls ps₁ f
     (pf : ∀ f, RawInterpretationProperties Γ₁ (fds₁ f)) (pr : ∀ f, RawInterpretationProperties Γ₁ (recFds₁ f)) :
     RawInterpretationProperties Γ₁ (.ctor η s c ls ps₁ fds₁ recFds₁) where
   ideal := fun _ σ ρ hρ => by
-    cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
+    cases hrel : Level.rel (E₂.get η).block.level{ls}
     · rw [rawInterpret_ctor_prop _ hrel]
       exact ΩLower.isDirected_bot
     · rw [rawInterpret_ctor_typed _ h hrel]
@@ -137,7 +137,7 @@ theorem RawInterpretationProperties.ctor (h : CtorTyping Γ₁ η s c ls ps₁ f
     intro Γ₂ Γ₃ σ₁ σ₂ ρs ρt hσ₁ hρ
     change (rawInterpret (piLimit E₂ ℓ) Γ₂ (.ctor η s c ls (fun p => (ps₁ p).subst σ₁.subst)
       (fun f => (fds₁ f).subst σ₁.subst) fun f => (recFds₁ f).subst σ₁.subst)).app _ σ₂.op ρt = _
-    cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
+    cases hrel : Level.rel (E₂.get η).block.level{ls}
     · rw [rawInterpret_ctor_prop _ hrel, rawInterpret_ctor_prop _ hrel]
       rfl
     · rw [rawInterpret_ctor_typed _ (h.subst σ₁) hrel, rawInterpret_ctor_typed _ h hrel,
@@ -168,7 +168,7 @@ theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     ⟨HasIdeality.ind hT hB (fun d => (hsound.ctorTypeFnProperties η hI hblock s d ls).ideal)
       (fun p => (pps p).term.ideal), HasSubstitution.ind hT hB fun p => (pps p).term.subst⟩,
     .ctor h₁ (fun f => (pf f).term) (fun f => (pr f).term), fun Γ₂ ht σ ρ hρ => ?_⟩
-  cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
+  cases hrel : Level.rel (E₂.get η).block.level{ls}
   · rw [rawInterpret_ctor_prop _ hrel]
     exact rawExtend_bottom_payload piLimit_isPayloadStrict _ _
   by_cases hs : (E₂.get η).block.IsStructure s c
@@ -246,14 +246,14 @@ theorem RawTyped.ctor (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E₁ I)
     have pσ := Ctor.forall_ordinarySubst
       (motive := fun e _ t => RawTyped Γ₁ e t) (ps₂ := ps₁) (fds₂ := fds₁) le_rfl pps pf
     simp only [Ctx.instL_append] at pσ
-    have hsource := (pctx.append (by simpa using pfields)).admissible_of_images
+    have hsource := (pctx.append (by simpa [Ctor.ordinaryTele] using pfields)).admissible_of_images
       (CtxCat.extendTele ⟨_, hctx⟩ _ hΔ).as.wf (ctorTargetHom hctx hΔ hps hf) σ ρ hρ
       (fun v => (pσ v).term) fun v => (pσ v).fixed
     dsimp only [ctorTargetHom] at hsource
     rw [Fin.append_comp ps₁ fds₁ (fun e => (rawInterpret (piLimit E₂ ℓ) Γ₁ e).app _ σ.op ρ),
       RawValuation.pushFin_append] at hsource
     have hd' := (rawInterpret_ctxPi_decode _ hΔ pfields
-      (.sort ((E₂.get η).block.level.inst ls)) .sortDF (HasIdeality.sort _ _)
+      (.sort (E₂.get η).block.level{ls}) .sortDF (HasIdeality.sort _ _)
       (σ ≫ RawCtx.toCtx.map (ctorTargetHom hctx hΔ hps hf)) _
       (fun f => ((rawInterpret (piLimit E₂ ℓ) Γ₁ (fds₁ f)).app _ σ.op ρ).toIdeal
         ((pf f).term.ideal σ ρ hρ))
@@ -321,7 +321,7 @@ theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E�
     RawJudgment Γ₁
       (.ind η s ls ps₁ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i)
       (.ind η s ls ps₂ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₂ fds₂ i)
-      (.sort ((E₂.get η).block.level.inst ls)) →
+      (.sort (E₂.get η).block.level{ls}) →
     RawJudgment Γ₁ (.ctor η s c ls ps₁ fds₁ recFds₁) (.ctor η s c ls ps₂ fds₂ recFds₂)
       (.ind η s ls ps₁ fun i => ((E₂.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i) := by
   intro pps pf pr hfieldTypes hrecFieldTypes pT
@@ -334,7 +334,7 @@ theorem RawJudgment.ctorDF (hsound : RawSound E₂ ℓ pre) (hI : InductiveWF E�
     .ctor h₂ (fun f => (pf f).right) fun f => (pr f).right, fun _ σ ρ hρ => ?_,
     (RawTyped.ctor hsound hI hblock hB (fun p => (pps p).toRawTyped)
       (fun f => (pf f).toRawTyped) (fun f => (pr f).toRawTyped)).fixed⟩
-  · cases hrel : Level.rel ((E₂.get η).block.level.inst ls)
+  · cases hrel : Level.rel (E₂.get η).block.level{ls}
     · rw [rawInterpret_ctor_prop _ hrel, rawInterpret_ctor_prop _ hrel]
     rw [rawInterpret_ctor_typed _ h₁ hrel, rawInterpret_ctor_typed _ h₂ hrel, RawFamily.ctor_value,
       CtorTyping.names_congr (fun f => (pf f).syntactic) (fun f => (pr f).syntactic) hfieldTypes hrecFieldTypes h₁ h₂]

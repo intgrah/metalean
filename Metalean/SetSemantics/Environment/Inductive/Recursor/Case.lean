@@ -22,7 +22,7 @@ variable {bound : Nat}
   {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₂ (.inductive ι)}
   {ls : Fin ι.nlevels → Level 0}
   {s : Fin ι.nsorts} {csig : CtorSig ι.nsorts} {ctor : Ctor ζ₁ ι s csig}
-  {params : StrongTeleModel E₁ ε₁ ![] (Ctx.instL ls I.params)}
+  {params : StrongTeleModel E₁ ε₁ ![] I.params{ls}}
   (model : StrongInductiveModel E₁ ε₁ I ls)
   (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
   (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
@@ -58,7 +58,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
         (fun param => γ (param.castLE (Nat.le_add_right _ _))) fun index =>
           γ (Fin.natAdd ι.nparams index)
     have hsnoc := Tele.Forall₂.snoc ((model.tele.indices s).realizes_mapInst pre hatoms) hlast
-    have hindexTele : Ctx.instL ls ((I.map pre.sigs).indices s) =
+    have hindexTele : ((I.map pre.sigs).indices s){ls} =
         (I.map pre.sigs).indexTele ls s fun param => Expr.var param :=
       ((Ctx.substFunctor _).map_id_apply _ _).symm
     rw [Inductive.motiveTele, ← hindexTele]
@@ -98,7 +98,7 @@ theorem _root_.Metalean.StrongCtorSource.recursiveSem_realizes
         (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
       sortValues (csig.recursiveTarget f)
           (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-          (ε₁[γ]⟦(ctor.recursive f).indices · |>.instL ls⟧) =
+          (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
         propSet level (fibreOp
           (block fun current : Fin (ι.nparams + csig.nfields) =>
             γ (current.castLE (StrongRecursiveFieldSource.code (ctor.recursive f)
@@ -211,7 +211,7 @@ theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (�
     (fun f γ _ => by simpa using model.recursiveField_apply s c f γ)
   have hfields := source.ordinary.realizes_mapInst pre hatoms
   simp at hfields
-  have hordTele : Ctx.instL ls ((I.ctors s c).map pre.sigs).ordinaryTele =
+  have hordTele : ((I.ctors s c).map pre.sigs).ordinaryTele{ls} =
       ((I.ctors s c).map pre.sigs).ordinaryFieldTele η ls fun param => Expr.var param :=
     ((Ctx.substFunctor _).map_id_apply _ _).symm
   rw [hordTele] at hfields
@@ -352,9 +352,9 @@ theorem recrCaseIhSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nc
           (code.index final)) at hvalue
       rw [hps] at hvalue
       change [zf|$(vms (sig.recursiveTarget f))
-        $((ε₁[final]⟦(C.recursive f).indices · |>.instL ls⟧))... value] = _
+        $((ε₁[final]⟦(C.recursive f).indices{ls} ·⟧))... value] = _
       exact (fibre_bundleMotive_typed (vms := vms) (sig.recursiveTarget f)
-        (ε₁[final]⟦(C.recursive f).indices · |>.instL ls⟧) hvalue).symm)
+        (ε₁[final]⟦(C.recursive f).indices{ls} ·⟧) hvalue).symm)
     (model.recrCaseFieldsSem_recursive_mem s c l γ hγ f)
   rw [hproject] at hden
   simp [Ctor.ihType] at hden ⊢

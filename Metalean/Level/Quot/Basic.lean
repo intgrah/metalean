@@ -101,55 +101,59 @@ def inst (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) : Level ℓ₁ :=
     rw [eval_instRaw, eval_instRaw]
     exact h.eval _
 
-instance : InstLevel (Param ℓ → Level ℓ₁) (Level ℓ) (Level ℓ₁) where
-  inst := inst
+instance : InstLevel (Param ℓ → Level ℓ₁) (Level ℓ) (Level ℓ₁) := ⟨inst⟩
 
 theorem mk_inst (σ : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
-    ⟦l.inst σ⟧ = Level.inst (⟦σ ·⟧) ⟦l⟧ := by
+    ⟦l{σ}⟧ = (⟦l⟧ : Level ℓ){fun p : Param ℓ => (⟦σ p⟧ : Level ℓ₁)} := by
   induction l with
   | zero | param => rfl
   | succ _ ih => exact congrArg succ ih
   | max _ _ ih₁ ih₂ => exact congrArg₂ max ih₁ ih₂
   | imax _ _ ih₁ ih₂ => exact congrArg₂ imax ih₁ ih₂
 
-@[simp] theorem inst_zero (σ : Param ℓ → Level ℓ₁) : (zero : Level ℓ).inst σ = zero := rfl
-@[simp] theorem inst_param (σ : Param ℓ → Level ℓ₁) (p : Param ℓ) : (param p).inst σ = σ p := rfl
+@[simp] theorem inst_zero (σ : Param ℓ → Level ℓ₁) : (zero : Level ℓ){σ} = zero := rfl
+@[simp] theorem inst_param (σ : Param ℓ → Level ℓ₁) (p : Param ℓ) : (param p){σ} = σ p := rfl
+
+@[simp] theorem inst_param_tuple (σ : Param ℓ → Level ℓ₁) :
+    (param : Param ℓ → Level ℓ){σ} = σ := by
+  funext p
+  simp
 
 @[simp] theorem inst_succ (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) :
-    u.succ.inst σ = (u.inst σ).succ := by
+    u.succ{σ} = u{σ}.succ := by
   rcases u
   rfl
 
 @[simp] theorem inst_max (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :
-    (u.max v).inst σ = (u.inst σ).max (v.inst σ) := by
+    (u.max v){σ} = u{σ}.max v{σ} := by
   rcases u
   rcases v
   rfl
 
 @[simp] theorem inst_imax (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :
-    (u.imax v).inst σ = (u.inst σ).imax (v.inst σ) := by
+    (u.imax v){σ} = u{σ}.imax v{σ} := by
   rcases u
   rcases v
   rfl
 
 theorem eval_inst (σ : Param ℓ → Level ℓ₁) (ν : Param ℓ₁ → Nat) (u : Level ℓ) :
-    eval ν (u.inst σ) = eval (eval ν ∘ σ) u := by
+    eval ν u{σ} = eval (eval ν ∘ σ) u := by
   rcases u with ⟨u⟩
   exact eval_instRaw σ ν u
 
-@[simp] theorem inst_id (u : Level ℓ) : u.inst param = u := by
+@[simp] theorem inst_id (u : Level ℓ) : u{(param : Param ℓ → Level ℓ)} = u := by
   ext ν
   simp [eval_inst, Function.comp_def]
 
 @[simp] theorem inst_inst (σ₁ : Param ℓ → Level ℓ₁) (σ₂ : Param ℓ₁ → Level ℓ₂) (u : Level ℓ) :
-    (u.inst σ₁).inst σ₂ = u.inst fun p => (σ₁ p).inst σ₂ := by
+    u{σ₁}{σ₂} = u{fun p => (σ₁ p){σ₂}} := by
   ext ν
   simp [eval_inst, Function.comp_def]
 
 @[reducible] def category : SmallCategory Nat where
   Hom ℓ₁ ℓ₂ := Param ℓ₁ → Level ℓ₂
   id _ := param
-  comp σ₁ σ₂ := fun p => (σ₁ p).inst σ₂
+  comp σ₁ σ₂ := fun p => (σ₁ p){σ₂}
   id_comp _ := rfl
   comp_id σ := funext fun p => inst_id (σ p)
   assoc σ₁ σ₂ σ₃ := funext fun p => inst_inst σ₂ σ₃ (σ₁ p)

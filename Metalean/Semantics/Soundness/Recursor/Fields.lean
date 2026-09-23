@@ -59,18 +59,19 @@ include hsound hB hblock
 
 theorem RawSound.recursiveArgumentProperties :
     RawTeleProperties E₂ (CtxCat.ctorSource h s c).as.ctx
-      ((((E₂.get η).block.ctors s c).recursive f).tele.instL ls) := by
+      (((E₂.get η).block.ctors s c).recursive f).tele{ls} := by
   have hΔ := ((hB.ctors s c).recursive f).tele.instLevel (Q := fun _ => True) ls fun _ => trivial
   simpa [CtxCat.ctorSource, hblock, Inductive.map, Ctor.map, RecField.map, Ctor.ordinaryTele] using
     hsound.teleProperties (hB.ordinaryClosedWF s c ls _ le_rfl) hΔ
 
 theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).recursiveTarget f))) :
     RawJudgment (CtxCat.sourceFieldTarget h s c f)
-      ((fun i => ((((E₂.get η).block.ctors s c).recursive f).indices i).instL ls) i) ((fun i => ((((E₂.get η).block.ctors s c).recursive f).indices i).instL ls) i)
+      ((((E₂.get η).block.ctors s c).recursive f).indices i){ls}
+      ((((E₂.get η).block.ctors s c).recursive f).indices i){ls}
       ((E₂.get η).block.indexType ls ((ι.ctors s c).recursiveTarget f)
         (fun p => ((Expr.var (p.castAdd (ι.ctors s c).nfields))).wkN ((ι.ctors s c).recursiveArity f))
-        ((fun i => ((((E₂.get η).block.ctors s c).recursive f).indices i).instL ls)) i) := by
-  have hctx : E₁[Ctx.instL ls (I.params ++ (I.ctors s c).ordinaryTele)] ⊢ ok :=
+        (((E₂.get η).block.ctors s c).recursive f).indices{ls} i) := by
+  have hctx : E₁[(I.params ++ (I.ctors s c).ordinaryTele){ls}] ⊢ ok :=
     hB.ordinaryClosedWF s c ls (ι.ctors s c).nfields le_rfl
   have hΔ := ((hB.ctors s c).recursive f).tele.instLevel (Q := fun _ => True) ls fun _ => trivial
   have hi := ((hB.ctors s c).recursive f).instantiatedIndices (ls := ls) (σ := Subst.id)
@@ -81,20 +82,22 @@ theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).
   have hp := hsound.properties hfull hi
   convert hp using 1 <;>
     simp [CtxCat.sourceFieldTarget, CtxCat.ctorSource, CtxCat.extendTele,
-      hblock, Inductive.map, Ctor.map, RecField.map, Expr.map]
+      hblock, Inductive.map, Ctor.map, Ctor.ordinaryTele, RecField.map,
+      Ctx.map_instL, Ctx.map_append, InstLevel.inst_apply, Expr.map]
+  congr 1
 
 theorem RawSound.recursiveSourceProperties :
     RawTeleProperties E₂ (CtxCat.ctorSource h s c).as.ctx (recursiveSourceTele E₂ η ls s c) := by
   apply RawTeleProperties.ofTypes (recursiveSourceTele_wf h s c)
   intro f
   erw [← Subst.liftN_eq_append, Subst.liftN_id]
-  let Δ := (((E₂.get η).block.ctors s c).recursive f).tele.instL ls
+  let Δ := (((E₂.get η).block.ctors s c).recursive f).tele{ls}
   have hΔ := sourceTelescope_wf h s c f
   have pΔ := hsound.recursiveArgumentProperties hB hblock s c h f
   let hI : IndTyping (CtxCat.sourceFieldTarget h s c f) η
       ((ι.ctors s c).recursiveTarget f) ls
       (fun p => ((Expr.var (p.castAdd (ι.ctors s c).nfields))).wkN ((ι.ctors s c).recursiveArity f))
-      ((fun i => ((((E₂.get η).block.ctors s c).recursive f).indices i).instL ls)) := {
+      (((E₂.get η).block.ctors s c).recursive f).indices{ls} := {
     param p := by
       have hp := (Inductive.paramType_var p (CtxCat.ctorSource h s c).as.wf).wkN (Δ := Δ)
       rwa [Inductive.paramType_wkN] at hp
@@ -117,8 +120,8 @@ theorem RawSound.fieldTeleProperties
     RawTeleProperties E₂ Γ.as.ctx (((E₂.get η).block.ctors s c).fieldTele η ls ps) ∧
       SemanticHom (CtxCat.ctorFieldsHom h s c) := by
   let := Subst.category ζ₂ ℓ
-  let Src : CtxCat E₂ ℓ := ⟨Ctx.instL ls (E₂.get η).block.params, h.block.paramClosedWF ls⟩
-  let O := Ctx.instL ls ((E₂.get η).block.ctors s c).ordinaryTele
+  let Src : CtxCat E₂ ℓ := ⟨(E₂.get η).block.params{ls}, h.block.paramClosedWF ls⟩
+  let O := ((E₂.get η).block.ctors s c).ordinaryTele{ls}
   have hparams := hsound.paramTeleProperties hB hblock ls
   have hO := ((h.block.ctors s c).ordinaryTeleAux _ le_rfl).instLevel (Q := fun _ => True) ls fun _ => trivial
   have pO := hsound.ordinaryTeleProperties η hB hblock s c ls
@@ -184,13 +187,13 @@ theorem RawSound.fieldIndexProperties
   exact hp
 
 theorem RawSound.sourceIndexProperties (h : IndData Γ η ls ps) (i : Fin (ι.nindices s)) :
-    RawTyped (CtxCat.ctorSource h s c) ((((E₂.get η).block.ctors s c).targetIndices i).instL ls)
+    RawTyped (CtxCat.ctorSource h s c) (((E₂.get η).block.ctors s c).targetIndices i){ls}
       ((E₂.get η).block.indexType ls s (fun p => .var (p.castAdd (ι.ctors s c).nfields))
-        (fun j => (((E₂.get η).block.ctors s c).targetIndices j).instL ls) i) := by
+        ((E₂.get η).block.ctors s c).targetIndices{ls} i) := by
   have hi := ((hB.ctors s c).targetIndices i).instLevel ls
   rw [Inductive.indexType_instL] at hi
   convert (hsound.properties (hB.ordinaryClosedWF s c ls _ le_rfl) hi).toRawTyped using 1 <;>
-    simp [CtxCat.ctorSource, hblock, Inductive.map, Ctor.map, Expr.map, Expr.instL]
+    simp [CtxCat.ctorSource, hblock, Inductive.map, Ctor.map, Expr.map]
   rfl
 
 theorem RawSound.appliedMajorProperties (h : IndData Γ η ls ps) (hR : RawTeleProperties E₂ .nil Γ.as.ctx)

@@ -27,7 +27,8 @@ def BinaryType (E : Env ζ) (ηNat : Head ζ (.inductive Nat.sig))
 
 theorem natArrowDF :
     E[Γ] ⊢ (natArrow ηNat : Expr ζ ℓ n) ≡ natArrow ηNat :
-      .sort (.imax ((E.get ηNat).block.level.inst ![]) ((E.get ηNat).block.level.inst ![])) :=
+      .sort (.imax (E.get ηNat).block.level{(![] : Param 0 → Level ℓ)}
+        (E.get ηNat).block.level{(![] : Param 0 → Level ℓ)}) :=
   .forallEDF natTypeDF natTypeDF natTypeDF
 
 theorem natArrow_inst (a : Expr ζ ℓ n) :

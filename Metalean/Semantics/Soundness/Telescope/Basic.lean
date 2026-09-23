@@ -195,7 +195,7 @@ theorem RawSound.teleProperties (hsound : RawSound E₂ ℓ pre) {Δ : Ctx ζ₁
 
 theorem RawSound.paramTeleProperties (hsound : RawSound E₂ ℓ pre) (hB : InductiveWF E₁ I)
     (hblock : (E₂.get η).block = I.map pre.sigs) (ls : Fin ι.nlevels → Level ℓ) :
-    RawTeleProperties E₂ .nil (Ctx.instL ls (E₂.get η).block.params) := by
+    RawTeleProperties E₂ .nil (E₂.get η).block.params{ls} := by
   have hp := hsound.teleProperties (.nil : E₁[(#t[] : Ctx ζ₁ ℓ 0 0)] ⊢ ok)
     (hB.params.instLevel (Q := fun _ => True) ls fun _ => trivial)
   rw [hblock]

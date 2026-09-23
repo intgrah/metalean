@@ -74,7 +74,7 @@ theorem RecAllowed.largeElim {l : Level ℓ} {ν : Param ℓ → Nat} (h : I.Rec
   · exact hlarge
 
 theorem RecAllowed.instL (h : I.RecAllowed u) (ls : Param ℓ → Level ℓ') :
-    I.RecAllowed (u.inst ls) := by
+    I.RecAllowed u{ls} := by
   rcases h with rfl | h
   · exact .inl rfl
   · exact .inr h
@@ -110,12 +110,12 @@ namespace SortLargeElim
 
 theorem singleton_of_eval_zero (h : I.SortLargeElim s)
     (ls : Fin ι.nlevels → Level ℓ)
-    (hzero : (I.level.inst ls).eval ν = 0)
+    (hzero : I.level{ls}.eval ν = 0)
     (c : Fin (ι.nctors s)) :
     ι.nctors s = 1 ∧ (I.ctors s c).Eligible I.level := by
   cases h with
   | large hlevel =>
-    have hpositive : 1 ≤ (I.level.inst ls).eval ν := by
+    have hpositive : 1 ≤ I.level{ls}.eval ν := by
       rw [Level.eval_inst]
       exact hlevel fun p => (ls p).eval ν
     omega

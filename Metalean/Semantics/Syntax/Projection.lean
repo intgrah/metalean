@@ -132,7 +132,7 @@ theorem proj_ctor_label (hs : (E.get η).block.IsStructure s c) (hB : InductiveW
       E[Γ.as.ctx] ⊢ hs.projTerm η ls ps current
           (.ctor η s c ls ps fds hs.recursive) ≡
         fds current :
-          (((((E.get η).block.ctors s c).ordinary current).type).instL ls).subst
+          ((((E.get η).block.ctors s c).ordinary current).type{ls}).subst
             (Fin.append ps fun previous : Fin current.val =>
               hs.projTerm η ls ps (previous.castLE current.isLt.le)
                 (.ctor η s c ls ps fds hs.recursive)) := by

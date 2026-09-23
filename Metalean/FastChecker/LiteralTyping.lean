@@ -17,12 +17,12 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
 theorem natTypeIndexDF (is : Fin 0 → Expr ζ ℓ n) :
     E[Γ] ⊢ (.ind η 0 ![] ![] is : Expr ζ ℓ n) ≡ .ind η 0 ![] ![] is :
-      .sort ((E.get η).block.level.inst ![]) :=
+      .sort (E.get η).block.level{(![] : Param 0 → Level ℓ)} :=
   .indDF nofun nofun
 
 theorem natTypeDF :
     E[Γ] ⊢ (natType η : Expr ζ ℓ n) ≡ natType η :
-      .sort ((E.get η).block.level.inst ![]) :=
+      .sort (E.get η).block.level{(![] : Param 0 → Level ℓ)} :=
   natTypeIndexDF ![]
 
 theorem natZeroTyped :
@@ -40,7 +40,7 @@ theorem natSuccDF {e₁ e₂ : Expr ζ ℓ n} :
         (natType η : Expr ζ ℓ n) := fun ⟨0, _⟩ => by
     simp [RecField.instantiatedType, RecField.instantiatedTelescope, Matrix.empty_eq, natType]
   have h := @Defeq.ctorDF ζ E ℓ n Γ Nat.sig η 0 1 ![] ![] ![] ![] ![] ![e₁] ![e₂] ![]
-      ![(E.get η).block.level.inst ![]]
+      ![(E.get η).block.level{(![] : Param 0 → Level ℓ)}]
     nofun nofun
     (fun ⟨0, _⟩ => by rw [hty]; exact he)
     nofun

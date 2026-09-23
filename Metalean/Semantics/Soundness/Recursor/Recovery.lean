@@ -27,7 +27,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat}
   (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
   (f : Fin (ι.ctors s c).nrecFields)
 
-theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level.inst ls = .zero)
+theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level{ls} = .zero)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {σ : Γ₂ ⟶ Γ₁}
     {indexNames : Fin (ι.nindices s) → Tm_ Γ₂}
     (sect : CtorSection h s c σ) (sect' : CtorSection h s c σ)
@@ -49,12 +49,12 @@ theorem CtorSection.eq_of_recovery (herased : (E.get η).block.level.inst ls = .
     refine Fin.addCases (fun v => ?_) (fun f => ?_) v
     · refine Fin.addCases (fun v => ?_) (fun f => ?_) v
       · exact Or.inr (of_names (baseVar h.toIndData s c v) ((sect.base v).trans (sect'.base v).symm))
-      · by_cases hf : Level.rel ((((E.get η).block.ctors s c).ordinary f).level.inst ls) = true
+      · by_cases hf : Level.rel ((((E.get η).block.ctors s c).ordinary f).level{ls}) = true
         · have ⟨i, hi, hni⟩ := hn f hf
           have ⟨j, hj, hnj⟩ := hn' f hf
           obtain rfl : i = j := Option.some.inj (hi.symm.trans hj)
           exact Or.inr (of_names _ (hni.trans hnj.symm))
-        · have hz : (((E.get η).block.ctors s c).ordinary f).level.inst ls = .zero := by
+        · have hz : (((E.get η).block.ctors s c).ordinary f).level{ls} = .zero := by
             simpa using hf
           have hp := (h.block.ctors s c).ordinaryFieldExpr f
             (h.fields s c).param (CtorInstance.generic h.toIndData s c).typed.ordinary
@@ -94,7 +94,7 @@ theorem recoveredField_isDirected (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 
 include h in
 theorem RecData.recovery_eligible (hresult : l.rel = true)
-    (herased : (E.get η).block.level.inst ls = .zero)
+    (herased : (E.get η).block.level{ls} = .zero)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     ι.nctors s = 1 ∧ ((E.get η).block.ctors s c).Eligible (E.get η).block.level := by
   rcases h.allowed with hl | hlarge
@@ -102,7 +102,7 @@ theorem RecData.recovery_eligible (hresult : l.rel = true)
   · exact (hlarge s).singleton_of_eval_zero ls (congrArg (Level.eval fun _ => 0) herased) c
 
 theorem proofConstructor_isDirected (hresult : l.rel = true)
-    (herased : (E.get η).block.level.inst ls = .zero)
+    (herased : (E.get η).block.level{ls} = .zero)
     (s : Fin ι.nsorts) (σ₁ : Γ₂ ⟶ Γ₁)
     (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
     (indices : Fin (ι.nindices s) → RawValue Γ₂) (hindices : ∀ i, (indices i).IsDirected) :
@@ -130,9 +130,9 @@ theorem recoverMajor_isDirected
     (hindices : ∀ i, ((indices i).app _ σ.op ρ).IsDirected)
     (hmajor : (major.app _ σ.op ρ).IsDirected) :
     ((recoverMajor h s source indexNames indices major).app _ σ.op ρ).IsDirected := by
-  by_cases hrel : Level.rel ((E.get η).block.level.inst ls) = true
+  by_cases hrel : Level.rel ((E.get η).block.level{ls}) = true
   · simpa only [recoverMajor, hrel, ↓reduceIte] using hmajor
-  · have hz : (E.get η).block.level.inst ls = .zero := by simpa using hrel
+  · have hz : (E.get η).block.level{ls} = .zero := by simpa using hrel
     simp only [recoverMajor, hrel]
     exact proofConstructor_isDirected h hresult hz s
       (σ ≫ source) (fun i => (Tm E ℓ).map σ.op (indexNames i))

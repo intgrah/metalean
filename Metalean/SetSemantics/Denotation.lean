@@ -52,6 +52,9 @@ inductive Atom (ζ : Sigs) (ℓ : Nat) : Type (u + 1) where
 
 variable {ζ ζ₁ ζ₂ ζ₃ : Sigs} {ℓ ℓ' : Nat} {ε : Atom ζ ℓ → ZFSet} {ν : Param ℓ → Nat}
 
+instance : InstLevel (Param ℓ → Level ℓ') (Atom ζ ℓ) (Atom ζ ℓ') where
+  inst ls a := a.instL ls
+
 namespace Atom
 
 def unstep (sig : Sig) : Atom (.snoc ζ sig) ℓ → Option (Atom ζ ℓ)
@@ -139,9 +142,9 @@ notation:max ε:max "[" γ "]⟦" e "⟧" => denote ε ![] γ e
 
 @[simp] theorem denote_instL {ℓ' n : Nat} (ε : Atom ζ ℓ' → ZFSet)
     (ν : Param ℓ' → Nat) (ls : Param ℓ → Level ℓ') (γ : Fin n → ZFSet) (e : Expr ζ ℓ n) :
-    ε[ν; γ]⟦e.instL ls⟧ =
-      (ε ∘ Atom.instL ls)[Level.eval ν ∘ ls; γ]⟦e⟧ := by
-  induction e <;> simp! [Level.eval_inst, *]
+    ε[ν; γ]⟦e{ls}⟧ =
+      (fun a : Atom ζ ℓ => ε a{ls})[Level.eval ν ∘ ls; γ]⟦e⟧ := by
+  induction e <;> simp! [Level.eval_inst, *] <;> rfl
 
 private theorem denote_snoc_lift {m n : Nat} (γ : Fin n → ZFSet) (ρ : Ren m n) (x : ZFSet) :
     Fin.snoc γ x ∘ ρ.lift = Fin.snoc (γ ∘ ρ) x := by

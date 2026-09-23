@@ -60,7 +60,7 @@ partial def whnfCore {n : Nat} :
       pure ⟨e₂, (WHRedS.frame (.app a) hred₁).trans ((ReflTransGen.single .beta).trans hred₂)⟩
     | f₂, hred₁ => pure ⟨.app f₂ a, WHRedS.frame (.app a) hred₁⟩
   | .const (kind := .def) η ls => do
-    let ⟨e₂, hred⟩ ← whnfCore ((E.get η).defValue.instL ls).wkClosed
+    let ⟨e₂, hred⟩ ← whnfCore (E.get η).defValue{ls}.wkClosed
     pure ⟨e₂, (ReflTransGen.single .delta).trans hred⟩
   | .recr η s ls l ps ms mins is maj₁ => do
     let ⟨maj₂, hred₁⟩ ← whnfCore maj₁

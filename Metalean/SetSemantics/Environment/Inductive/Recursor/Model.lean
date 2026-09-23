@@ -141,7 +141,7 @@ theorem recGraph_congr_key
   have hmaps := model.mapsTo vps
   have hps := model.recrParamsReachable s l γ hγ
   have hstep := model.recrStepSound s l γ hγ
-  have hzero : (I.level.inst ls).eval ![] = 0 := hlevel
+  have hzero : I.level{ls}.eval ![] = 0 := hlevel
   have hdecompose {entry : ZFSet} (hentry : entry ∈ block) :
       ∃ s₁, ∃ c₁, ∃ args ∈ (model.codeOf s₁ c₁).argSet block vps,
         entry =
