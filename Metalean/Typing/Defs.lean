@@ -258,8 +258,6 @@ theorem right :
 
 end Defeq
 
-section
-
 variable {E : Env ζ} {ℓ n m : Nat} {Γ Γ₁ : Ctx ζ ℓ 0 n} {Γ₂ : Ctx ζ ℓ 0 m}
 
 theorem Defeq.regular {e₁ e₂ t : Expr ζ ℓ n} :
@@ -330,11 +328,7 @@ def CtxWF (E : Env ζ) {ℓ n : Nat} (Γ : Ctx ζ ℓ 0 n) : Prop :=
 
 notation:65 E "[" Γ "]" " ⊢ " "ok" => CtxWF E Γ
 
-end
-
-variable (E : Env ζ) {ℓ n m : Nat}
-  {ι : IndSig} (I : Inductive ζ ι)
-  {nfields : Nat}
+variable (E) {ι : IndSig} (I : Inductive ζ ι) {nfields : Nat} {s : Fin ι.nsorts}
 
 include E
 
@@ -349,8 +343,6 @@ structure FieldWF (Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields))
     (fd : Field ζ ι nfields) : Prop where
   typeExact : E[Γ] ⊢ fd.type : .sort fd.level
   levelOK : I.LevelOK fd.level
-
-variable {s : Fin ι.nsorts}
 
 structure RecFieldWF (Γ : Ctx ζ ι.nlevels 0 (ι.nparams + nfields))
     {arity : Nat} (fd : RecField ζ ι nfields arity s) : Prop where

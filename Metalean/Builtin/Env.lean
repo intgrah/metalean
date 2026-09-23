@@ -284,12 +284,6 @@ theorem classicalChoiceType_isType (hblock : (E.get η).block = Nonempty.block) 
     (.forallEDF hn (.var .sortDF) (.var .sortDF))
     (.forallEDF hn (.var .sortDF) (.var .sortDF))⟩
 
-end ClassicalEnv
-
-end Metalean
-
-namespace Metalean.ClassicalEnv
-
 /-! ## Environment construction -/
 
 abbrev sigs₁ : Sigs := Sigs.nil.snoc (.inductive Eq.sig)

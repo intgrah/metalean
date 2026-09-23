@@ -20,14 +20,12 @@ namespace Metalean
 
 open CategoryTheory
 
-variable {ζ ζ₂ : Sigs} {E : Env ζ} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
+variable {ζ ζ₁ ζ₂ : Sigs} {E : Env ζ} {E₁ : Env ζ₁} {E₂ : Env ζ₂} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n}
 
 namespace EntryWF
 
-variable {sig : Sig} {entry : Entry ζ sig}
-
-theorem map (pre : E.as ⟶ E₂.as) :
-    EntryWF E entry →
+theorem map {sig : Sig} {entry : Entry ζ₁ sig} (pre : E₁.as ⟶ E₂.as) :
+    EntryWF E₁ entry →
     EntryWF E₂ (entry.map pre.sigs) := by
   intro h
   induction h with
