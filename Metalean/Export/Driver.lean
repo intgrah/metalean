@@ -19,25 +19,53 @@ def slowNanos : Nat := 100000000
 
 def channelCapacity : Nat := 1024
 
+structure Lines where
+  h : IO.FS.Handle
+  buf : ByteArray := ∅
+  pos : Nat := 0
+  eof : Bool := false
+
+def chunkSize : USize := 1048576
+
+partial def newlineFrom (b : ByteArray) (i : Nat) : Option Nat :=
+  if h : i < b.size then
+    if b[i] == 10 then some i else newlineFrom b (i + 1)
+  else none
+
+partial def trimEnd (b : ByteArray) (s e : Nat) : Nat :=
+  if s < e then
+    let c := b[e - 1]!
+    if c == 32 || c == 9 || c == 13 then trimEnd b s (e - 1) else e
+  else e
+
+partial def Lines.next (r : Lines) : IO (Option (ByteArray × Lines)) := do
+  match newlineFrom r.buf r.pos with
+  | some j => return some (r.buf.extract r.pos (trimEnd r.buf r.pos j), { r with pos := j + 1 })
+  | none =>
+    if r.eof then
+      if r.pos < r.buf.size then
+        return some (r.buf.extract r.pos (trimEnd r.buf r.pos r.buf.size), { r with pos := r.buf.size })
+      return none
+    let chunk ← r.h.read chunkSize
+    Lines.next { r with buf := r.buf.extract r.pos r.buf.size ++ chunk, pos := 0, eof := chunk.isEmpty }
+
 inductive Parsed where
   | decl (lineNo : Nat) (d : Decl)
   | error (lineNo : Nat)
 
-partial def produce (h : IO.FS.Handle) (ch : Std.CloseableChannel.Sync Parsed) (stop : IO.Ref Bool)
+partial def produce (r : Lines) (ch : Std.CloseableChannel.Sync Parsed) (stop : IO.Ref Bool)
     (lastUse : Array UInt32) (tables : Tables) (lineNo : Nat) : IO Unit := do
   if ← stop.get then return
-  let line ← h.getLine
-  if line.isEmpty then return
+  let some (line, r) ← r.next | return
   let lineNo := lineNo + 1
-  let trimmed := line.trimAsciiEnd.toString
-  if trimmed.isEmpty then return ← produce h ch stop lastUse tables lineNo
-  match parseLine tables lastUse lineNo trimmed with
+  if line.isEmpty then return ← produce r ch stop lastUse tables lineNo
+  match parseLine tables lastUse lineNo line with
   | .error _ =>
     ch.send (.error lineNo)
-  | .ok (tables, none) => produce h ch stop lastUse tables lineNo
+  | .ok (tables, none) => produce r ch stop lastUse tables lineNo
   | .ok (tables, some d) =>
     ch.send (.decl lineNo d)
-    produce h ch stop lastUse tables lineNo
+    produce r ch stop lastUse tables lineNo
 
 partial def drain (ch : Std.CloseableChannel.Sync Parsed) : IO Unit := do
   match ← ch.recv with
@@ -75,36 +103,27 @@ def fold {σ : Type} (h : IO.FS.Handle) (lastUse : Array UInt32) (init : σ)
   let ch ← Std.CloseableChannel.Sync.new (some channelCapacity)
   let stop ← IO.mkRef false
   let producer ← IO.asTask (prio := .dedicated) do
-    try produce h ch stop lastUse {} 0 finally ch.close
+    try produce { h } ch stop lastUse {} 0 finally ch.close
   let r ← consume ch stop step trace init
   match ← IO.wait producer with
   | .ok () => pure r
   | .error e => throw e
 
-partial def scanLoop {σ : Type} (h : IO.FS.Handle) (step : σ → List Lean.Name → σ)
-    (tables : IO.Ref Tables) (lastUse : IO.Ref (Array UInt32)) (lineNo : Nat) (st : σ) :
-    IO (Option σ) := do
-  let line ← h.getLine
-  if line.isEmpty then return some st
+partial def scanLoop {σ : Type} (r : Lines) (step : σ → List Lean.Name → σ)
+    (tables : Tables) (lastUse : Array UInt32) (lineNo : Nat) (st : σ) :
+    IO (Option (σ × Array UInt32)) := do
+  let some (line, r) ← r.next | return some (st, lastUse)
   let lineNo := lineNo + 1
-  let trimmed := line.trimAsciiEnd.toString
-  if trimmed.isEmpty then return ← scanLoop h step tables lastUse lineNo st
-  lastUse.modify fun a => noteRefs a trimmed.toUTF8 lineNo
-  let parsed ← tables.modifyGet fun t =>
-    match scanLine t trimmed with
-    | .ok (t, names) => (some names, t)
-    | .error _ => (none, {})
-  match parsed with
-  | none => return none
-  | some none => scanLoop h step tables lastUse lineNo st
-  | some (some names) => scanLoop h step tables lastUse lineNo (step st names)
+  if line.isEmpty then return ← scanLoop r step tables lastUse lineNo st
+  let lastUse := noteRefs lastUse line lineNo
+  match scanLine tables line with
+  | .error _ => return none
+  | .ok (tables, none) => scanLoop r step tables lastUse lineNo st
+  | .ok (tables, some names) => scanLoop r step tables lastUse lineNo (step st names)
 
 def scan {σ : Type} (h : IO.FS.Handle) (init : σ) (step : σ → List Lean.Name → σ) :
     IO (Option (σ × Array UInt32)) := do
-  let lastUse ← IO.mkRef (#[] : Array UInt32)
-  match ← scanLoop h step (← IO.mkRef ({} : Tables)) lastUse 0 init with
-  | none => return none
-  | some st => return some (st, ← lastUse.get)
+  scanLoop { h } step {} #[] 0 init
 
 def open? (args : List String) : IO (Option IO.FS.Handle) := do
   let some path ← (match args with

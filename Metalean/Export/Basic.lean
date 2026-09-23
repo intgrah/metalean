@@ -105,81 +105,165 @@ def Decl.name : Decl → Name
     c.name
   | .inductive types _ _ => (types.head?.map (·.name)).getD .anonymous
 
-def refPatterns : Array ByteArray :=
-  #["\"fn\":", "\"arg\":", "\"type\":", "\"body\":", "\"value\":", "\"struct\":", "\"rhs\":",
-      "\"expr\":"].map String.toUTF8
+def isDigit (c : UInt8) : Bool := 48 ≤ c && c ≤ 57
 
-def defPattern : ByteArray := "\"ie\":".toUTF8
+partial def skipWs (b : ByteArray) (i : Nat) : Nat :=
+  if h : i < b.size then
+    let c := b[i]
+    if c == 32 || c == 9 || c == 13 || c == 10 then skipWs b (i + 1) else i
+  else i
 
-def matchAt (b p : ByteArray) (i : Nat) : Bool := Id.run do
-  if i + p.size > b.size then return false
-  for j in [0 : p.size] do
-    if b[i + j]! != p[j]! then return false
-  return true
+partial def digits (b : ByteArray) (i n : Nat) : Nat × Nat :=
+  if h : i < b.size then
+    let c := b[i]
+    if isDigit c then digits b (i + 1) (n * 10 + (c - 48).toNat) else (n, i)
+  else (n, i)
 
-def digitsAt (b : ByteArray) (i : Nat) : Option (Nat × Nat) := Id.run do
-  let mut j := i
-  let mut n := 0
-  while j < b.size && 48 ≤ b[j]! && b[j]! ≤ 57 do
-    n := n * 10 + (b[j]!.toNat - 48)
-    j := j + 1
-  return if j = i then none else some (n, j)
+partial def stringEnd (b : ByteArray) (i : Nat) (escaped : Bool) : Option (Nat × Bool) :=
+  if h : i < b.size then
+    let c := b[i]
+    if c == 34 then some (i, escaped)
+    else if c == 92 then stringEnd b (i + 2) true
+    else stringEnd b (i + 1) escaped
+  else none
 
-def defIndex (b : ByteArray) : Option Nat := Id.run do
-  let mut i := 0
-  while i < b.size do
-    if matchAt b defPattern i then
-      return (digitsAt b (i + defPattern.size)).map (·.1)
-    i := i + 1
-  return none
+partial def spanIs (b : ByteArray) (s e : Nat) (lit : ByteArray) (k : Nat := 0) : Bool :=
+  if k = 0 && e - s != lit.size then false
+  else if h : k < lit.size then
+    b[s + k]! == lit[k] && spanIs b s e lit (k + 1)
+  else true
+
+partial def keyCode (b : ByteArray) (s e : Nat) (k : Nat := 0) (acc : UInt64 := 0) : UInt64 :=
+  if 8 < e - s then 0
+  else if h : s + k < e ∧ s + k < b.size then
+    keyCode b s e (k + 1) (acc ||| (b[s + k].toUInt64 <<< (8 * k).toUInt64))
+  else acc
+
+def code (key : String) : UInt64 :=
+  let b := key.toUTF8
+  keyCode b 0 b.size
+
+def refCodes : Array UInt64 :=
+  #["fn", "arg", "type", "body", "value", "struct", "rhs", "expr"].map code
+
+def defCode : UInt64 := code "ie"
 
 @[specialize]
-def foldRefs {σ : Type} (b : ByteArray) (init : σ) (f : σ → Nat → σ) : σ := Id.run do
-  let mut acc := init
-  let mut i := 0
-  while i < b.size do
-    let mut hit := 0
-    if b[i]! == 34 then
-      for p in refPatterns do
-        if matchAt b p i then
-          hit := p.size
-          break
-    if hit == 0 then
-      i := i + 1
-    else
-      match digitsAt b (i + hit) with
-      | some (n, j) => acc := f acc n; i := j
-      | none => i := i + hit
-  return acc
+partial def foldIds {σ : Type} (b : ByteArray) (f : σ → Bool → Nat → σ) (i : Nat) (acc : σ) : σ :=
+  if h : i < b.size then
+    if b[i] == 34 then
+      match stringEnd b (i + 1) false with
+      | none => acc
+      | some (j, _) =>
+        let k := skipWs b (j + 1)
+        if k < b.size && b[k]! == 58 then
+          let v := skipWs b (k + 1)
+          if v < b.size && isDigit b[v]! then
+            let (n, e) := digits b v 0
+            let c := keyCode b (i + 1) j
+            if c == defCode then foldIds b f e (f acc true n)
+            else if refCodes.contains c then foldIds b f e (f acc false n)
+            else foldIds b f e acc
+          else foldIds b f v acc
+        else foldIds b f (j + 1) acc
+    else foldIds b f (i + 1) acc
+  else acc
+
+def literalAt (b : ByteArray) (i : Nat) (lit : ByteArray) : Bool :=
+  i + lit.size ≤ b.size && spanIs b i (i + lit.size) lit
+
+def jsonString (b : ByteArray) (s e : Nat) : Option String :=
+  String.fromUTF8? (b.extract s e)
+
+mutual
+
+partial def jsonValue (b : ByteArray) (i : Nat) : Option (Json × Nat) :=
+  let i := skipWs b i
+  if h : i < b.size then
+    let c := b[i]
+    if c == 123 then jsonObject b (skipWs b (i + 1)) []
+    else if c == 91 then jsonArray b (skipWs b (i + 1)) #[]
+    else if c == 34 then do
+      let (e, escaped) ← stringEnd b (i + 1) false
+      if escaped then none
+      pure (.str (← jsonString b (i + 1) e), e + 1)
+    else if isDigit c then
+      let (n, e) := digits b i 0
+      if e < b.size && (b[e]! == 46 || b[e]! == 101 || b[e]! == 69) then none
+      else some ((n : Json), e)
+    else if literalAt b i "true".toUTF8 then some (.bool true, i + 4)
+    else if literalAt b i "false".toUTF8 then some (.bool false, i + 5)
+    else if literalAt b i "null".toUTF8 then some (.null, i + 4)
+    else none
+  else none
+
+partial def jsonObject (b : ByteArray) (i : Nat) (acc : List (String × Json)) :
+    Option (Json × Nat) := do
+  if acc.isEmpty && i < b.size && b[i]! == 125 then return (Json.mkObj [], i + 1)
+  unless i < b.size && b[i]! == 34 do none
+  let (e, escaped) ← stringEnd b (i + 1) false
+  if escaped then none
+  let key ← jsonString b (i + 1) e
+  let k := skipWs b (e + 1)
+  unless k < b.size && b[k]! == 58 do none
+  let (v, j) ← jsonValue b (k + 1)
+  let acc := (key, v) :: acc
+  let j := skipWs b j
+  if j < b.size && b[j]! == 44 then jsonObject b (skipWs b (j + 1)) acc
+  else if j < b.size && b[j]! == 125 then some (Json.mkObj acc.reverse, j + 1)
+  else none
+
+partial def jsonArray (b : ByteArray) (i : Nat) (acc : Array Json) : Option (Json × Nat) := do
+  if acc.isEmpty && i < b.size && b[i]! == 93 then return (.arr #[], i + 1)
+  let (v, j) ← jsonValue b i
+  let acc := acc.push v
+  let j := skipWs b j
+  if j < b.size && b[j]! == 44 then jsonArray b (skipWs b (j + 1)) acc
+  else if j < b.size && b[j]! == 93 then some (.arr acc, j + 1)
+  else none
+
+end
+
+def parseJson (b : ByteArray) : Except String Json :=
+  match jsonValue b 0 with
+  | some (j, e) => if skipWs b e = b.size then pure j else fallback
+  | none => fallback
+where
+  fallback : Except String Json := do
+    let some line := String.fromUTF8? b | throw "utf8"
+    Json.parse line
+
+def put {α : Type} (a : Array (Option α)) (i : Nat) (v : α) : Array (Option α) :=
+  if i < a.size then a.set! i (some v) else put (a.push none) i v
+termination_by i + 1 - a.size
 
 structure Tables where
-  names : Std.HashMap Nat Name := ∅
-  levels : Std.HashMap Nat Level := ∅
-  exprs : Std.HashMap Nat Expr := ∅
+  names : Array (Option Name) := #[]
+  levels : Array (Option Level) := #[]
+  exprs : Array (Option Expr) := #[]
 
 namespace Tables
 
+def getName? (t : Tables) (i : Nat) : Option Name :=
+  if i = 0 then some .anonymous else t.names[i]?.join
+
+def getLevel? (t : Tables) (i : Nat) : Option Level :=
+  if i = 0 then some .zero else t.levels[i]?.join
+
+def getExpr? (t : Tables) (i : Nat) : Option Expr :=
+  t.exprs[i]?.join
+
 def name? (t : Tables) (j : Json) : Except String Name := do
-  let i ← j.getNat?
-  if i = 0 then pure .anonymous
-  else
-    match t.names.get? i with
-    | some n => pure n
-    | none => throw "name"
+  let some n := t.getName? (← j.getNat?) | throw "name"
+  pure n
 
 def level? (t : Tables) (j : Json) : Except String Level := do
-  let i ← j.getNat?
-  if i = 0 then pure .zero
-  else
-    match t.levels.get? i with
-    | some l => pure l
-    | none => throw "level"
+  let some l := t.getLevel? (← j.getNat?) | throw "level"
+  pure l
 
 def expr? (t : Tables) (j : Json) : Except String Expr := do
-  let i ← j.getNat?
-  match t.exprs.get? i with
-  | some e => pure e
-  | none => throw "expr"
+  let some e := t.getExpr? (← j.getNat?) | throw "expr"
+  pure e
 
 def nameAt (t : Tables) (o : Json) (key : String) : Except String Name := do
   t.name? (← o.getObjVal? key)
@@ -222,7 +306,7 @@ def parseName (t : Tables) (j : Json) : Except String Tables := do
     | "num" => Name.num pre <$> natAt o "i"
     | _ => throw "name"
   have ⟨names, levels, exprs⟩ := t
-  pure ⟨names.insert i n, levels, exprs⟩
+  pure ⟨put names i n, levels, exprs⟩
 
 def parseLevel (t : Tables) (j : Json) : Except String Tables := do
   let (i, key, o) ← payload "il" j
@@ -233,7 +317,7 @@ def parseLevel (t : Tables) (j : Json) : Except String Tables := do
     | "param" => Level.param <$> t.name? o
     | _ => throw "level"
   have ⟨names, levels, exprs⟩ := t
-  pure ⟨names, levels.insert i l, exprs⟩
+  pure ⟨names, put levels i l, exprs⟩
 
 def parseExpr (t : Tables) (j : Json) : Except String Tables := do
   let (i, key, o) ← payload "ie" j
@@ -255,7 +339,7 @@ def parseExpr (t : Tables) (j : Json) : Except String Tables := do
     | "mdata" => t.exprAt o "expr"
     | _ => throw "expr"
   have ⟨names, levels, exprs⟩ := t
-  pure ⟨names, levels, exprs.insert i e⟩
+  pure ⟨names, levels, put exprs i e⟩
 
 def parseConstant (t : Tables) (o : Json) : Except String ConstantDecl := do
   pure {
@@ -330,22 +414,198 @@ def growTo (a : Array UInt32) (n : Nat) : Array UInt32 :=
 termination_by n - a.size
 
 def noteRefs (lastUse : Array UInt32) (b : ByteArray) (lineNo : Nat) : Array UInt32 :=
-  let lastUse := match defIndex b with
-    | some i => (growTo lastUse (i + 1)).set! i lineNo.toUInt32
-    | none => lastUse
-  foldRefs b lastUse fun a i => if i < a.size then a.set! i lineNo.toUInt32 else a
+  foldIds b (fun a isDef i =>
+    if isDef then (growTo a (i + 1)).set! i lineNo.toUInt32
+    else if i < a.size then a.set! i lineNo.toUInt32 else a) 0 lastUse
 
-def evict (exprs : Std.HashMap Nat Expr) (lastUse : Array UInt32) (b : ByteArray) (lineNo : Nat) :
-    Std.HashMap Nat Expr :=
-  let dead (i : Nat) : Bool := lastUse[i]? == some lineNo.toUInt32
-  let exprs := match defIndex b with
-    | some i => if dead i then exprs.erase i else exprs
-    | none => exprs
-  foldRefs b exprs fun m i => if dead i then m.erase i else m
+def evictId (lastUse : Array UInt32) (lineNo : Nat) (exprs : Array (Option Expr)) (i : Nat) :
+    Array (Option Expr) :=
+  if lastUse[i]? == some lineNo.toUInt32 && i < exprs.size then exprs.set! i none else exprs
 
-def parseLine (t : Tables) (lastUse : Array UInt32) (lineNo : Nat) (line : String) :
+def evict (exprs : Array (Option Expr)) (lastUse : Array UInt32) (b : ByteArray) (lineNo : Nat) :
+    Array (Option Expr) :=
+  foldIds b (fun m _ i => evictId lastUse lineNo m i) 0 exprs
+
+def fieldCodes : Array UInt64 :=
+  #["pre", "i", "name", "fn", "arg", "type", "body", "value", "idx", "struct", "typeName",
+    "expr"].map code
+
+def exprFields : List Nat := [3, 4, 5, 6, 7, 9, 11]
+
+
+partial def numArray (b : ByteArray) (i : Nat) (acc : Array Nat) : Option (Array Nat × Nat) :=
+  if acc.isEmpty && i < b.size && b[i]! == 93 then some (acc, i + 1)
+  else if i < b.size && isDigit b[i]! then
+    let (n, j) := digits b i 0
+    let j := skipWs b j
+    if j < b.size && b[j]! == 44 then numArray b (skipWs b (j + 1)) (acc.push n)
+    else if j < b.size && b[j]! == 93 then some (acc.push n, j + 1)
+    else none
+  else none
+
+def usCode : UInt64 := code "us"
+def strCode : UInt64 := code "str"
+def numCode : UInt64 := code "num"
+def succCode : UInt64 := code "succ"
+def maxCode : UInt64 := code "max"
+def imaxCode : UInt64 := code "imax"
+def paramCode : UInt64 := code "param"
+def bvarCode : UInt64 := code "bvar"
+def sortCode : UInt64 := code "sort"
+def constCode : UInt64 := code "const"
+def appCode : UInt64 := code "app"
+def lamCode : UInt64 := code "lam"
+def forallCode : UInt64 := code "forallE"
+def letCode : UInt64 := code "letE"
+def projCode : UInt64 := code "proj"
+def mdataCode : UInt64 := code "mdata"
+
+structure Fields where
+  nums : Array (Option Nat) := .replicate fieldCodes.size none
+  str : Option String := none
+  us : Array Nat := #[]
+
+def Fields.get? (f : Fields) (k : Nat) : Option Nat := f.nums[k]?.join
+
+partial def fieldsObject (b : ByteArray) (i : Nat) (f : Fields) : Option (Fields × Nat) := do
+  if i < b.size && b[i]! == 125 then return (f, i + 1)
+  unless i < b.size && b[i]! == 34 do none
+  let (e, escaped) ← stringEnd b (i + 1) false
+  if escaped then none
+  let k := skipWs b (e + 1)
+  unless k < b.size && b[k]! == 58 do none
+  let v := skipWs b (k + 1)
+  let c := keyCode b (i + 1) e
+  let (f, j) ←
+    if v < b.size && isDigit b[v]! then
+      let (n, j) := digits b v 0
+      match fieldCodes.idxOf? c with
+      | some x => pure ({ f with nums := f.nums.set! x (some n) }, j)
+      | none => pure (f, j)
+    else if c == usCode && v < b.size && b[v]! == 91 then do
+      let (us, j) ← numArray b (skipWs b (v + 1)) #[]
+      pure ({ f with us }, j)
+    else if c == strCode && v < b.size && b[v]! == 34 then do
+      let (se, escaped) ← stringEnd b (v + 1) false
+      if escaped then none
+      pure ({ f with str := some (← jsonString b (v + 1) se) }, se + 1)
+    else do
+      let (_, j) ← jsonValue b v
+      pure (f, j)
+  let j := skipWs b j
+  if j < b.size && b[j]! == 44 then fieldsObject b (skipWs b (j + 1)) f
+  else if j < b.size && b[j]! == 125 then some (f, j + 1)
+  else none
+
+inductive Item where
+  | name (n : Name)
+  | level (l : Level)
+  | expr (e : Expr) (refs : List Nat)
+
+def fastPayload (t : Tables) (b : ByteArray) (s e v : Nat) : Option (Item × Nat) := do
+  let c := keyCode b s e
+  let num : Option (Nat × Nat) :=
+    if v < b.size && isDigit b[v]! then some (digits b v 0) else none
+  let obj : Option (Fields × Nat) :=
+    if v < b.size && b[v]! == 123 then fieldsObject b (skipWs b (v + 1)) {} else none
+  let pair : Option (Nat × Nat × Nat) := do
+    unless v < b.size && b[v]! == 91 do none
+    let (#[a, c], j) ← numArray b (skipWs b (v + 1)) #[] | none
+    pure (a, c, j)
+  let exprItem (x : Expr) (f : Fields) (j : Nat) : Item × Nat :=
+    (.expr x (exprFields.filterMap f.get?), j)
+  if c == strCode then
+    let (f, j) ← obj
+    pure (.name (.str (← t.getName? (← f.get? 0)) (← f.str)), j)
+  else if c == numCode then
+    let (f, j) ← obj
+    pure (.name (.num (← t.getName? (← f.get? 0)) (← f.get? 1)), j)
+  else if c == succCode then
+    let (n, j) ← num
+    pure (.level (.succ (← t.getLevel? n)), j)
+  else if c == maxCode then
+    let (a, c, j) ← pair
+    pure (.level (.max (← t.getLevel? a) (← t.getLevel? c)), j)
+  else if c == imaxCode then
+    let (a, c, j) ← pair
+    pure (.level (.imax (← t.getLevel? a) (← t.getLevel? c)), j)
+  else if c == paramCode then
+    let (n, j) ← num
+    pure (.level (.param (← t.getName? n)), j)
+  else if c == bvarCode then
+    let (n, j) ← num
+    pure (.expr (.bvar n) [], j)
+  else if c == sortCode then
+    let (n, j) ← num
+    pure (.expr (.sort (← t.getLevel? n)) [], j)
+  else if c == constCode then
+    let (f, j) ← obj
+    pure (.expr (.const (← t.getName? (← f.get? 2)) (← f.us.toList.mapM t.getLevel?)) [], j)
+  else if c == appCode then
+    let (f, j) ← obj
+    pure (exprItem (.app (← t.getExpr? (← f.get? 3)) (← t.getExpr? (← f.get? 4))) f j)
+  else if c == lamCode then
+    let (f, j) ← obj
+    pure (exprItem (.lam (← t.getExpr? (← f.get? 5)) (← t.getExpr? (← f.get? 6))) f j)
+  else if c == forallCode then
+    let (f, j) ← obj
+    pure (exprItem (.forallE (← t.getExpr? (← f.get? 5)) (← t.getExpr? (← f.get? 6))) f j)
+  else if c == letCode then
+    let (f, j) ← obj
+    pure (exprItem (.letE (← t.getExpr? (← f.get? 5)) (← t.getExpr? (← f.get? 7))
+      (← t.getExpr? (← f.get? 6))) f j)
+  else if c == projCode then
+    let (f, j) ← obj
+    pure (exprItem (.proj (← t.getName? (← f.get? 10)) (← f.get? 8)
+      (← t.getExpr? (← f.get? 9))) f j)
+  else if c == mdataCode then
+    let (f, j) ← obj
+    pure (exprItem (← t.getExpr? (← f.get? 11)) f j)
+  else none
+
+def idCodes : Array UInt64 := #["in", "il", "ie"].map code
+
+partial def fastItem (t : Tables) (b : ByteArray) (i : Nat) (id : Option (Nat × Nat))
+    (item : Option Item) : Option (Nat × Nat × Item) := do
+  unless i < b.size && b[i]! == 34 do none
+  let (e, escaped) ← stringEnd b (i + 1) false
+  if escaped then none
+  let k := skipWs b (e + 1)
+  unless k < b.size && b[k]! == 58 do none
+  let v := skipWs b (k + 1)
+  let (id, item, j) ←
+    if let some tag := idCodes.idxOf? (keyCode b (i + 1) e) then do
+      unless v < b.size && isDigit b[v]! do none
+      let (n, j) := digits b v 0
+      pure (some (tag, n), item, j)
+    else do
+      let (x, j) ← fastPayload t b (i + 1) e v
+      pure (id, some x, j)
+  let j := skipWs b j
+  if j < b.size && b[j]! == 44 then fastItem t b (skipWs b (j + 1)) id item
+  else if j < b.size && b[j]! == 125 && skipWs b (j + 1) = b.size then
+    match id, item with
+    | some (tag, n), some x => some (tag, n, x)
+    | _, _ => none
+  else none
+
+def fastLine (t : Tables) (b : ByteArray) : Option (Nat × Nat × Item) := do
+  unless 0 < b.size && b[0]! == 123 do none
+  fastItem t b (skipWs b 1) none none
+
+def Tables.add (t : Tables) (lastUse : Array UInt32) (lineNo : Nat) :
+    Nat × Nat × Item → Except String Tables
+  | (0, i, .name n) => have ⟨names, levels, exprs⟩ := t; pure ⟨put names i n, levels, exprs⟩
+  | (1, i, .level l) => have ⟨names, levels, exprs⟩ := t; pure ⟨names, put levels i l, exprs⟩
+  | (2, i, .expr x refs) =>
+    have ⟨names, levels, exprs⟩ := t
+    pure ⟨names, levels, (i :: refs).foldl (evictId lastUse lineNo) (put exprs i x)⟩
+  | _ => throw "id"
+
+def parseLine (t : Tables) (lastUse : Array UInt32) (lineNo : Nat) (line : ByteArray) :
     Except String (Tables × Option Decl) := do
-  let j ← Json.parse line
+  if let some x := fastLine t line then return (← t.add lastUse lineNo x, none)
+  let j ← parseJson line
   let kvs ← j.getObj?
   if kvs.contains "in" then pure (← parseName t j, none)
   else if kvs.contains "il" then pure (← parseLevel t j, none)
@@ -354,7 +614,7 @@ def parseLine (t : Tables) (lastUse : Array UInt32) (lineNo : Nat) (line : Strin
       if kvs.contains "ie" then pure (← parseExpr t j, none)
       else pure (t, ← parseDecl t j)
     have ⟨names, levels, exprs⟩ := t
-    pure (⟨names, levels, evict exprs lastUse line.toUTF8 lineNo⟩, d)
+    pure (⟨names, levels, evict exprs lastUse line lineNo⟩, d)
 
 def scanDecl (t : Tables) (j : Json) : Except String (Option (List Name)) := do
   let [(key, o)] := (← j.getObj?).toList | throw "declaration"
@@ -369,11 +629,20 @@ def scanDecl (t : Tables) (j : Json) : Except String (Option (List Name)) := do
   | "meta" => pure none
   | _ => throw "declaration"
 
-def scanLine (t : Tables) (line : String) : Except String (Tables × Option (List Name)) := do
-  let interesting := ["{\"in\"", "{\"str\"", "{\"num\"", "{\"def\"", "{\"thm\"", "{\"axiom\"",
-    "{\"opaque\"", "{\"quot\"", "{\"inductive\"", "{\"meta\""]
-  unless interesting.any (fun p => line.startsWith p) do return (t, none)
-  let j ← Json.parse line
+def scanCodes : Array UInt64 :=
+  #["in", "str", "num", "def", "thm", "axiom", "opaque", "quot", "meta"].map code
+
+def inductiveKey : ByteArray := "inductive".toUTF8
+
+def firstKey? (b : ByteArray) : Option (Nat × Nat) := do
+  unless 1 < b.size && b[0]! == 123 && b[1]! == 34 do none
+  let (e, _) ← stringEnd b 2 false
+  pure (2, e)
+
+def scanLine (t : Tables) (line : ByteArray) : Except String (Tables × Option (List Name)) := do
+  let some (s, e) := firstKey? line | return (t, none)
+  unless scanCodes.contains (keyCode line s e) || spanIs line s e inductiveKey do return (t, none)
+  let j ← parseJson line
   let kvs ← j.getObj?
   if kvs.contains "in" then pure (← parseName t j, none)
   else pure (t, ← scanDecl t j)
