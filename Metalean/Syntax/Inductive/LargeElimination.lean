@@ -73,8 +73,8 @@ theorem RecAllowed.largeElim {l : Level ℓ} {ν : Param ℓ → Nat} (h : I.Rec
   · exact (hl rfl).elim
   · exact hlarge
 
-theorem RecAllowed.instL (h : I.RecAllowed u) (levelSubst : Param ℓ → Level ℓ') :
-    I.RecAllowed (u.inst levelSubst) := by
+theorem RecAllowed.instL (h : I.RecAllowed u) (ls : Param ℓ → Level ℓ') :
+    I.RecAllowed (u.inst ls) := by
   rcases h with rfl | h
   · exact .inl rfl
   · exact .inr h

@@ -59,34 +59,34 @@ def eval : RawLevel ℓ → Nat
   | 0 => rfl
   | n + 1 => congrArg (· + 1) (eval_ofNat n)
 
-variable (levelSubst : Param ℓ → RawLevel ℓ₁) in
+variable (ls : Param ℓ → RawLevel ℓ₁) in
 def inst : RawLevel ℓ → RawLevel ℓ₁
   | zero => zero
   | succ u => succ u.inst
   | max u₁ u₂ => max u₁.inst u₂.inst
   | imax u₁ u₂ => imax u₁.inst u₂.inst
-  | param p => levelSubst p
+  | param p => ls p
 
-@[simp] theorem inst_zero (levelSubst : Param ℓ → RawLevel ℓ₁) : (zero : RawLevel ℓ).inst levelSubst = zero := rfl
+@[simp] theorem inst_zero (ls : Param ℓ → RawLevel ℓ₁) : (zero : RawLevel ℓ).inst ls = zero := rfl
 
-@[simp] theorem inst_succ (levelSubst : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
-    l.succ.inst levelSubst = (l.inst levelSubst).succ := rfl
+@[simp] theorem inst_succ (ls : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
+    l.succ.inst ls = (l.inst ls).succ := rfl
 
-@[simp] theorem inst_max (levelSubst : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
-    (l₁.max l₂).inst levelSubst = (l₁.inst levelSubst).max (l₂.inst levelSubst) := rfl
+@[simp] theorem inst_max (ls : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
+    (l₁.max l₂).inst ls = (l₁.inst ls).max (l₂.inst ls) := rfl
 
-@[simp] theorem inst_imax (levelSubst : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
-    (l₁.imax l₂).inst levelSubst = (l₁.inst levelSubst).imax (l₂.inst levelSubst) := rfl
+@[simp] theorem inst_imax (ls : Param ℓ → RawLevel ℓ₁) (l₁ l₂ : RawLevel ℓ) :
+    (l₁.imax l₂).inst ls = (l₁.inst ls).imax (l₂.inst ls) := rfl
 
-@[simp] theorem inst_param (levelSubst : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p).inst levelSubst = levelSubst p := rfl
+@[simp] theorem inst_param (ls : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p).inst ls = ls p := rfl
 
 @[simp] theorem inst_id (l : RawLevel ℓ) : l.inst param = l := by
   induction l <;> simp [*]
 
-@[simp] theorem inst_inst (levelSubst₁ : Param ℓ → RawLevel ℓ₁)
-    (levelSubst₂ : Param ℓ₁ → RawLevel ℓ₂) (l : RawLevel ℓ) :
-    (l.inst levelSubst₁).inst levelSubst₂ =
-      l.inst fun p => (levelSubst₁ p).inst levelSubst₂ := by
+@[simp] theorem inst_inst (ls₁ : Param ℓ → RawLevel ℓ₁)
+    (ls₂ : Param ℓ₁ → RawLevel ℓ₂) (l : RawLevel ℓ) :
+    (l.inst ls₁).inst ls₂ =
+      l.inst fun p => (ls₁ p).inst ls₂ := by
   induction l <;> simp [*]
 
 end RawLevel

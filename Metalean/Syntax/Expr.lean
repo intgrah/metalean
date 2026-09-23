@@ -212,8 +212,8 @@ def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
   | n + 1 => by rw [wkClosed, map_wk, map_wkClosed pre e, wkClosed]
 
 @[simp] theorem map_instL (pre : ζ₁ ⟶ ζ₂)
-    (levelSubst : Param ℓ → Level ℓ') (e : Expr ζ₁ ℓ n) :
-    (e.instL levelSubst).map pre = (e.map pre).instL levelSubst := by
+    (ls : Param ℓ → Level ℓ') (e : Expr ζ₁ ℓ n) :
+    (e.instL ls).map pre = (e.map pre).instL ls := by
   induction e <;> simp [instL, map, *]
 
 end Expr
@@ -499,32 +499,32 @@ theorem eq_var_of_isVar (e : Expr ζ ℓ n) (v : Fin n)
     (e.map pre).isVar = e.isVar := by
   cases e <;> rfl
 
-@[simp] theorem instL_rename (levelSubst : Param ℓ → Level ℓ') (ρ : Ren m n)
+@[simp] theorem instL_rename (ls : Param ℓ → Level ℓ') (ρ : Ren m n)
     (e : Expr ζ ℓ m) :
-    (e.rename ρ).instL levelSubst = (e.instL levelSubst).rename ρ := by
+    (e.rename ρ).instL ls = (e.instL ls).rename ρ := by
   induction e generalizing n <;> simp [rename, instL, *]
 
-@[simp] theorem instL_wkFrom (levelSubst : Param ℓ → Level ℓ') (cut : Nat)
+@[simp] theorem instL_wkFrom (ls : Param ℓ → Level ℓ') (cut : Nat)
     (e : Expr ζ ℓ n) :
-    (e.wkFrom cut).instL levelSubst = (e.instL levelSubst).wkFrom cut :=
-  instL_rename levelSubst (Ren.wkFrom cut) e
+    (e.wkFrom cut).instL ls = (e.instL ls).wkFrom cut :=
+  instL_rename ls (Ren.wkFrom cut) e
 
-@[simp] theorem instL_wk (levelSubst : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) :
-    e.wk.instL levelSubst = (e.instL levelSubst).wk :=
-  instL_wkFrom levelSubst n e
+@[simp] theorem instL_wk (ls : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) :
+    e.wk.instL ls = (e.instL ls).wk :=
+  instL_wkFrom ls n e
 
-@[simp] theorem instL_wkClosed (levelSubst : Param ℓ → Level ℓ') (e : Expr ζ ℓ 0) :
-    {n : Nat} → e.wkClosed (n := n).instL levelSubst = (e.instL levelSubst).wkClosed (n := n)
+@[simp] theorem instL_wkClosed (ls : Param ℓ → Level ℓ') (e : Expr ζ ℓ 0) :
+    {n : Nat} → e.wkClosed (n := n).instL ls = (e.instL ls).wkClosed (n := n)
   | 0 => rfl
   | n + 1 => by
-      rw [wkClosed, instL_wk, instL_wkClosed levelSubst e, wkClosed]
+      rw [wkClosed, instL_wk, instL_wkClosed ls e, wkClosed]
 
 end Expr
 
 namespace Subst
 
-def instL (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) : Subst ζ ℓ' m n :=
-  fun v => (σ v).instL levelSubst
+def instL (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) : Subst ζ ℓ' m n :=
+  fun v => (σ v).instL ls
 
 @[simp] theorem instL_append {a b : Nat} (ls : Param ℓ → Level ℓ')
     (σ₁ : Subst ζ ℓ a n) (σ₂ : Subst ζ ℓ b n) :
@@ -532,39 +532,39 @@ def instL (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) : Subs
       Fin.append (fun i => (σ₁ i).instL ls) fun i => (σ₂ i).instL ls :=
   Fin.append_comp σ₁ σ₂ fun e => e.instL ls
 
-@[simp] theorem instL_id (levelSubst : Param ℓ → Level ℓ') :
-    instL levelSubst (id : Subst ζ ℓ n n) = id :=
+@[simp] theorem instL_id (ls : Param ℓ → Level ℓ') :
+    instL ls (id : Subst ζ ℓ n n) = id :=
   rfl
 
-@[simp] theorem instL_lift (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) :
-    instL levelSubst σ.lift = (instL levelSubst σ).lift := by
+@[simp] theorem instL_lift (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) :
+    instL ls σ.lift = (instL ls σ).lift := by
   funext v
   simp [instL, lift, Expr.wk, Expr.wkFrom]
   split
   · simp
   · rfl
 
-@[simp] theorem instL_liftN (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) (k : Nat) :
-    instL levelSubst (σ.liftN k) = (instL levelSubst σ).liftN k := by
+@[simp] theorem instL_liftN (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) (k : Nat) :
+    instL ls (σ.liftN k) = (instL ls σ).liftN k := by
   induction k <;> simp_all!
 
-@[simp] theorem instL_extend (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
+@[simp] theorem instL_extend (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
     (e : Expr ζ ℓ n) :
-    instL levelSubst (σ.extend e) = (instL levelSubst σ).extend (e.instL levelSubst) :=
-  Fin.comp_snoc (Expr.instL levelSubst) σ e
+    instL ls (σ.extend e) = (instL ls σ).extend (e.instL ls) :=
+  Fin.comp_snoc (Expr.instL ls) σ e
 
 end Subst
 
 namespace Expr
 
-@[simp] theorem instL_subst (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
+@[simp] theorem instL_subst (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
     (e : Expr ζ ℓ m) :
-    (e.subst σ).instL levelSubst = (e.instL levelSubst).subst (Subst.instL levelSubst σ) := by
+    (e.subst σ).instL ls = (e.instL ls).subst (Subst.instL ls σ) := by
   induction e generalizing n <;> simp [subst, instL, Subst.instL, *]
 
-@[simp] theorem instL_inst (levelSubst : Param ℓ → Level ℓ') (e' : Expr ζ ℓ (n + 1))
+@[simp] theorem instL_inst (ls : Param ℓ → Level ℓ') (e' : Expr ζ ℓ (n + 1))
     (e : Expr ζ ℓ n) :
-    (e'.inst e).instL levelSubst = (e'.instL levelSubst).inst (e.instL levelSubst) := by
+    (e'.inst e).instL ls = (e'.instL ls).inst (e.instL ls) := by
   rw [inst, instL_subst, inst, Subst.instL_extend]
   congr 1
 
@@ -574,18 +574,18 @@ attribute [local instance] Level.category in
     (e.instL ls₁).instL ls₂ = e.instL fun p => (ls₁ p).inst ls₂ :=
   ((levelFunctor ζ n).map_comp_apply ls₁ ls₂ e).symm
 
-@[simp] theorem wkN_instL (levelSubst : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) (k : Nat) :
-    (e.wkN k).instL levelSubst = (e.instL levelSubst).wkN k := by
+@[simp] theorem wkN_instL (ls : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) (k : Nat) :
+    (e.wkN k).instL ls = (e.instL ls).wkN k := by
   induction k <;> simp_all!
 
-@[simp] theorem instL_boundVars (levelSubst : Param ℓ → Level ℓ')
+@[simp] theorem instL_boundVars (ls : Param ℓ → Level ℓ')
     (ambient count suffix : Nat) (i : Fin count) :
-    (boundVars (ζ := ζ) (ℓ := ℓ) ambient count suffix i).instL levelSubst =
+    (boundVars (ζ := ζ) (ℓ := ℓ) ambient count suffix i).instL ls =
       boundVars (ζ := ζ) (ℓ := ℓ') ambient count suffix i := rfl
 
-@[simp] theorem instL_applyBound (levelSubst : Param ℓ → Level ℓ')
+@[simp] theorem instL_applyBound (ls : Param ℓ → Level ℓ')
     (η : Expr ζ ℓ n) (k : Nat) :
-    (η.applyBound k).instL levelSubst = (η.instL levelSubst).applyBound k := by
+    (η.applyBound k).instL ls = (η.instL ls).applyBound k := by
   induction k <;> simp_all!
 
 attribute [local instance] Level.category in

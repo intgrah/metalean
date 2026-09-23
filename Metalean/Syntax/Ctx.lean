@@ -298,9 +298,9 @@ theorem ext {a k : Nat} (Δ₁ Δ₂ : Ctx ζ ℓ a (a + k))
       simp!
     · simp! [h, ih]
 
-@[simp] theorem entry_instL (levelSubst : Param ℓ → Level ℓ')
+@[simp] theorem entry_instL (ls : Param ℓ → Level ℓ')
     (Γ : Ctx ζ ℓ a b) (ha : a ≤ p) (hp : p < b) :
-    (Γ.entry ha hp).instL levelSubst = (Γ.instL levelSubst).entry ha hp := by
+    (Γ.entry ha hp).instL ls = (Γ.instL ls).entry ha hp := by
   induction Γ with
   | nil => omega
   | @snoc b Γ t ih =>
@@ -341,45 +341,45 @@ theorem entry_append_right (Γ : Ctx ζ ℓ a b)
     · simp! [h]
       exact ih (by omega)
 
-theorem get_instL (levelSubst : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ 0 n) (v : Var n) :
-    (Γ.get v).instL levelSubst = (Γ.instL levelSubst).get v := by
+theorem get_instL (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ 0 n) (v : Var n) :
+    (Γ.get v).instL ls = (Γ.instL ls).get v := by
   induction Γ with
   | nil => exact Fin.elim0 v
   | @snoc n Γ t ih =>
     simp! [instL]
     split
-    · exact Expr.instL_wk levelSubst t
-    · exact (Expr.instL_wk levelSubst _).trans (congrArg Expr.wk (ih _))
+    · exact Expr.instL_wk ls t
+    · exact (Expr.instL_wk ls _).trans (congrArg Expr.wk (ih _))
 
-@[simp] theorem instL_instL (levelSubst₁ : Param ℓ → Level ℓ')
-    (levelSubst₂ : Param ℓ' → Level k)
+@[simp] theorem instL_instL (ls₁ : Param ℓ → Level ℓ')
+    (ls₂ : Param ℓ' → Level k)
     (Γ : Ctx ζ ℓ a b) :
-    (Γ.instL levelSubst₁).instL levelSubst₂ =
-      Γ.instL fun p => (levelSubst₁ p).inst levelSubst₂ :=
-  ((levelFunctor ζ a b).map_comp_apply levelSubst₁ levelSubst₂ Γ).symm
+    (Γ.instL ls₁).instL ls₂ =
+      Γ.instL fun p => (ls₁ p).inst ls₂ :=
+  ((levelFunctor ζ a b).map_comp_apply ls₁ ls₂ Γ).symm
 
-@[simp] theorem instL_substN (levelSubst : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
+@[simp] theorem instL_substN (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n)
     {k : Nat} (Δ : Ctx ζ ℓ m (m + k)) :
-    (Δ.substN σ k).instL levelSubst =
-      (Δ.instL levelSubst).substN (Subst.instL levelSubst σ) k := by
+    (Δ.substN σ k).instL ls =
+      (Δ.instL ls).substN (Subst.instL ls σ) k := by
   induction Δ using Tele.addInduction with
   | nil => rfl
   | snoc k Δ t ih => exact congrArg₂ Tele.snoc ih (by simp)
 
-@[simp] theorem pi_instL (levelSubst : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
+@[simp] theorem pi_instL (ls : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
     (e : Expr ζ ℓ b) :
-    (Δ.pi e).instL levelSubst = (Δ.instL levelSubst).pi (e.instL levelSubst) :=
-  ((piLevelHom ζ a b).naturality_apply levelSubst ⟨Δ, e⟩).symm
+    (Δ.pi e).instL ls = (Δ.instL ls).pi (e.instL ls) :=
+  ((piLevelHom ζ a b).naturality_apply ls ⟨Δ, e⟩).symm
 
-@[simp] theorem lam_instL (levelSubst : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
+@[simp] theorem lam_instL (ls : Param ℓ → Level ℓ') (Δ : Ctx ζ ℓ a b)
     (e : Expr ζ ℓ b) :
-    (Δ.lam e).instL levelSubst = (Δ.instL levelSubst).lam (e.instL levelSubst) :=
-  ((lamLevelHom ζ a b).naturality_apply levelSubst ⟨Δ, e⟩).symm
+    (Δ.lam e).instL ls = (Δ.instL ls).lam (e.instL ls) :=
+  ((lamLevelHom ζ a b).naturality_apply ls ⟨Δ, e⟩).symm
 
-@[simp] theorem instL_append (levelSubst : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ a b)
+@[simp] theorem instL_append (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ ℓ a b)
     (Δ : Ctx ζ ℓ b k) :
-    instL levelSubst (Γ ++ Δ) = Γ.instL levelSubst ++ Δ.instL levelSubst :=
-  @Functor.map_comp _ (Tele.category _) _ (Tele.category _) (Tele.mapFunctor fun n => ((Expr.family n).obj ζ).map levelSubst) _ _ _ Γ Δ
+    instL ls (Γ ++ Δ) = Γ.instL ls ++ Δ.instL ls :=
+  @Functor.map_comp _ (Tele.category _) _ (Tele.category _) (Tele.mapFunctor fun n => ((Expr.family n).obj ζ).map ls) _ _ _ Γ Δ
 
 @[simp] theorem instL_param (Γ : Ctx ζ ℓ a b) : Γ.instL Level.param = Γ :=
   (levelFunctor ζ a b).map_id_apply ℓ Γ

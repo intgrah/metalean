@@ -16,9 +16,9 @@ namespace Metalean
 
 variable {ζ : Sigs} {E : Env ζ} {ℓ ℓ' n : Nat} {Γ : Ctx ζ ℓ 0 n} {e e₁ e₂ t : Expr ζ ℓ n}
 
-theorem Defeq.instLevel (levelSubst : Param ℓ → Level ℓ') :
+theorem Defeq.instLevel (ls : Param ℓ → Level ℓ') :
     E[Γ] ⊢ e₁ ≡ e₂ : t →
-    E[Γ.instL levelSubst] ⊢ e₁.instL levelSubst ≡ e₂.instL levelSubst : t.instL levelSubst := by
+    E[Γ.instL ls] ⊢ e₁.instL ls ≡ e₂.instL ls : t.instL ls := by
   intro d
   -- Lol
   induction_cases d with c =>
@@ -34,14 +34,14 @@ theorem Defeq.instLevel (levelSubst : Param ℓ → Level ℓ') :
     apply c <;> solve_by_elim -constructor -symm -exfalso
       [-c, Inductive.RecAllowed.instL]
 
-theorem CtxWF.instLevel (levelSubst : Param ℓ → Level ℓ') :
+theorem CtxWF.instLevel (ls : Param ℓ → Level ℓ') :
     E[Γ] ⊢ ok →
-    E[Γ.instL levelSubst] ⊢ ok := by
+    E[Γ.instL ls] ⊢ ok := by
   intro hΓ
   induction hΓ with
   | nil => exact .nil
   | snoc _ ht ih =>
       have ⟨u, ht⟩ := ht
-      exact .snoc ih ⟨u.inst levelSubst, ht.instLevel levelSubst⟩
+      exact .snoc ih ⟨u.inst ls, ht.instLevel ls⟩
 
 end Metalean

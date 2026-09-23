@@ -37,8 +37,8 @@ theorem natCtxSem (hη : ζ.lookup L.nat = some ⟨.inductive Literals.Nat.sig, 
 def natSubst {ℓ n : Nat} (x y : Expr ζ ℓ n) : Subst ζ ℓ 2 n :=
   (Subst.extend (fun v => v.elim0) x).extend y
 
-theorem natCtx'_instL {ℓ : Nat} (levelSubst : Param 0 → Level ℓ) :
-    Ctx.instL levelSubst (natCtx' ηNat) = natCtx' ηNat := by
+theorem natCtx'_instL {ℓ : Nat} (ls : Param 0 → Level ℓ) :
+    (natCtx' ηNat).instL ls = natCtx' ηNat := by
   simp only [natCtx', Ctx.instL, Tele.map_snoc, Tele.map_nil]
   rw [Literals.natType_instL, Literals.natType_instL]
 

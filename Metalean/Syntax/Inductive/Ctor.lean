@@ -20,7 +20,7 @@ variable {ζ₁ ζ₂ : Sigs} {ℓ ℓ' n nparams nsorts : Nat}
   (η : Head ζ₁ (.inductive ι))
   (ls : Fin ι.nlevels → Level ℓ)
   (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
-  (levelSubst : Param ℓ → Level ℓ')
+  (ls' : Param ℓ → Level ℓ')
 
 namespace CtorSig
 
@@ -57,21 +57,21 @@ def fieldRecursive (csig : CtorSig nsorts) :
   simp! [fieldRecursive]
 
 @[simp] theorem fieldParams_instL {ι : IndSig} (csig : CtorSig ι.nsorts)
-    (ps : Fin ι.nparams → Expr ζ₁ ℓ n) (levelSubst : Param ℓ → Level ℓ')
+    (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (i : Fin ι.nparams) :
-    (csig.fieldParams ps i).instL levelSubst =
-      csig.fieldParams (fun i => (ps i).instL levelSubst) i := by
+    (csig.fieldParams ps i).instL ls' =
+      csig.fieldParams (fun i => (ps i).instL ls') i := by
   simp [fieldParams]
 
 @[simp] theorem fieldOrdinary_instL (csig : CtorSig nsorts)
-    (levelSubst : Param ℓ → Level ℓ') (i : Fin csig.nfields) :
-    (csig.fieldOrdinary (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL levelSubst =
+    (i : Fin csig.nfields) :
+    (csig.fieldOrdinary (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL ls' =
       csig.fieldOrdinary i := by
   simp [fieldOrdinary, Expr.instL]
 
 @[simp] theorem fieldRecursive_instL (csig : CtorSig nsorts)
-    (levelSubst : Param ℓ → Level ℓ') (i : Fin csig.nrecFields) :
-    (csig.fieldRecursive (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL levelSubst =
+    (i : Fin csig.nrecFields) :
+    (csig.fieldRecursive (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL ls' =
       csig.fieldRecursive i := by
   simp! [fieldRecursive]
 
@@ -145,20 +145,20 @@ def recursiveFieldExpr
 
 @[simp] theorem ordinaryFieldExpr_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
-    (field : Fin csig.nfields) (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.ordinaryFieldExpr ls ps fds field).instL levelSubst =
-      ctor.ordinaryFieldExpr (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun i => (fds i).instL levelSubst) field := by
+    (field : Fin csig.nfields) :
+    (ctor.ordinaryFieldExpr ls ps fds field).instL ls' =
+      ctor.ordinaryFieldExpr (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun i => (fds i).instL ls') field := by
   simp [ordinaryFieldExpr]
 
 @[simp] theorem recursiveFieldExpr_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
-    (field : Fin csig.nrecFields) (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.recursiveFieldExpr η ls ps fds field).instL levelSubst =
-      ctor.recursiveFieldExpr η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun i => (fds i).instL levelSubst) field := by
+    (field : Fin csig.nrecFields) :
+    (ctor.recursiveFieldExpr η ls ps fds field).instL ls' =
+      ctor.recursiveFieldExpr η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun i => (fds i).instL ls') field := by
   simp [recursiveFieldExpr]
 
 theorem recursiveFieldExpr_eq
@@ -199,11 +199,11 @@ def targetIndex
 
 @[simp] theorem targetIndex_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
-    (i : Fin (ι.nindices s)) (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.targetIndex ls ps fds i).instL levelSubst =
-      ctor.targetIndex (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun i => (fds i).instL levelSubst) i := by
+    (i : Fin (ι.nindices s)) :
+    (ctor.targetIndex ls ps fds i).instL ls' =
+      ctor.targetIndex (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun i => (fds i).instL ls') i := by
   simp [targetIndex]
 
 def ordinaryFieldTeleAux
@@ -284,35 +284,33 @@ def fieldTele
       ((ctor.recursiveFieldTeleAux_map pre η ls _ _ _ _).trans (by simp)))
 
 @[simp] theorem ordinaryFieldTeleAux_instL
-    (count : Nat) (hcount : count ≤ csig.nfields)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.ordinaryFieldTeleAux η ls ps count hcount).instL levelSubst =
-      ctor.ordinaryFieldTeleAux η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) count hcount := by
+    (count : Nat) (hcount : count ≤ csig.nfields) :
+    (ctor.ordinaryFieldTeleAux η ls ps count hcount).instL ls' =
+      ctor.ordinaryFieldTeleAux η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') count hcount := by
   simp [ordinaryFieldTeleAux]
   rfl
 
 @[simp] theorem ordinaryFieldTele_instL :
-    (ctor.ordinaryFieldTele η ls ps).instL levelSubst =
-      ctor.ordinaryFieldTele η (fun i => (ls i).inst levelSubst)
-        fun i => (ps i).instL levelSubst :=
-  ctor.ordinaryFieldTeleAux_instL η ls ps _ _ levelSubst
+    (ctor.ordinaryFieldTele η ls ps).instL ls' =
+      ctor.ordinaryFieldTele η (fun i => (ls i).inst ls')
+        fun i => (ps i).instL ls' :=
+  ctor.ordinaryFieldTeleAux_instL η ls ps ls' _ _
 
 @[simp] theorem recursiveFieldTeleAux_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
-    (count : Nat) (hcount : count ≤ csig.nrecFields)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.recursiveFieldTeleAux η ls ps fds count hcount).instL levelSubst =
-      ctor.recursiveFieldTeleAux η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) (fun i => (fds i).instL levelSubst)
+    (count : Nat) (hcount : count ≤ csig.nrecFields) :
+    (ctor.recursiveFieldTeleAux η ls ps fds count hcount).instL ls' =
+      ctor.recursiveFieldTeleAux η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') (fun i => (fds i).instL ls')
         count hcount := by
   simp [recursiveFieldTeleAux]
 
 @[simp] theorem fieldTele_instL
     (stop : Fin (csig.nrecFields + 1) := ⟨csig.nrecFields, Nat.lt_succ_self _⟩) :
-    (ctor.fieldTele η ls ps stop).instL levelSubst =
-      ctor.fieldTele η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) stop := by
+    (ctor.fieldTele η ls ps stop).instL ls' =
+      ctor.fieldTele η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') stop := by
   simp [fieldTele]
 
 theorem targetIndex_boundVars

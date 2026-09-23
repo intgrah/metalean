@@ -28,7 +28,7 @@ variable (recFd : RecField ζ₁ ι nfields arity target)
   (mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ₁ ℓ n)
   (fieldSubst : Subst ζ₁ ℓ (ι.nparams + nfields) n)
   (r : Expr ζ₁ ℓ n)
-  (levelSubst : Param ℓ → Level ℓ')
+  (ls' : Param ℓ → Level ℓ')
 
 namespace RecField
 
@@ -55,12 +55,12 @@ def iotaIH : Expr ζ₁ ℓ n :=
   rfl
 
 @[simp] theorem iotaIH_instL :
-    (recFd.iotaIH η ls l ps ms mins fieldSubst r).instL levelSubst =
-      recFd.iotaIH η (fun i => (ls i).inst levelSubst) (l.inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (fun s ctor => (mins s ctor).instL levelSubst)
-        (Subst.instL levelSubst fieldSubst) (r.instL levelSubst) := by
+    (recFd.iotaIH η ls l ps ms mins fieldSubst r).instL ls' =
+      recFd.iotaIH η (fun i => (ls i).inst ls') (l.inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls')
+        (fun s ctor => (mins s ctor).instL ls')
+        (Subst.instL ls' fieldSubst) (r.instL ls') := by
   simp! [iotaIH]
 
 end RecField
@@ -90,14 +90,14 @@ def iotaIH
 @[simp] theorem iotaIH_instL
     (fds : Fin csig.nfields → Expr ζ₁ ℓ n)
     (recFds : Fin csig.nrecFields → Expr ζ₁ ℓ n)
-    (f : Fin csig.nrecFields) (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.iotaIH η ls l ps ms mins fds recFds f).instL levelSubst =
-      ctor.iotaIH η (fun i => (ls i).inst levelSubst) (l.inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (fun s c => (mins s c).instL levelSubst)
-        (fun i => (fds i).instL levelSubst)
-        (fun i => (recFds i).instL levelSubst) f := by
+    (f : Fin csig.nrecFields) :
+    (ctor.iotaIH η ls l ps ms mins fds recFds f).instL ls' =
+      ctor.iotaIH η (fun i => (ls i).inst ls') (l.inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls')
+        (fun s c => (mins s c).instL ls')
+        (fun i => (fds i).instL ls')
+        (fun i => (recFds i).instL ls') f := by
   simp [iotaIH]
 
 end Ctor
@@ -129,15 +129,14 @@ theorem iotaIHs_map
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fds : Fin (ι.ctors s c).nfields → Expr ζ₁ ℓ n)
     (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n)
-    (f : Fin (ι.ctors s c).nrecFields)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.iotaIHs η ls l ps ms mins s c fds recFds f).instL levelSubst =
-      I.iotaIHs η (fun i => (ls i).inst levelSubst) (l.inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (fun s c => (mins s c).instL levelSubst) s c
-        (fun i => (fds i).instL levelSubst)
-        (fun i => (recFds i).instL levelSubst) f := by
+    (f : Fin (ι.ctors s c).nrecFields) :
+    (I.iotaIHs η ls l ps ms mins s c fds recFds f).instL ls' =
+      I.iotaIHs η (fun i => (ls i).inst ls') (l.inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls')
+        (fun s c => (mins s c).instL ls') s c
+        (fun i => (fds i).instL ls')
+        (fun i => (recFds i).instL ls') f := by
   simp [iotaIHs]
 
 def iotaLhs
@@ -164,15 +163,14 @@ def iotaLhs
 @[simp] theorem iotaLhs_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fds : Fin (ι.ctors s c).nfields → Expr ζ₁ ℓ n)
-    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.iotaLhs η ls l ps ms mins s c fds recFds).instL levelSubst =
-      I.iotaLhs η (fun i => (ls i).inst levelSubst) (l.inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (fun s c => (mins s c).instL levelSubst) s c
-        (fun i => (fds i).instL levelSubst)
-        fun i => (recFds i).instL levelSubst := by
+    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n) :
+    (I.iotaLhs η ls l ps ms mins s c fds recFds).instL ls' =
+      I.iotaLhs η (fun i => (ls i).inst ls') (l.inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls')
+        (fun s c => (mins s c).instL ls') s c
+        (fun i => (fds i).instL ls')
+        fun i => (recFds i).instL ls' := by
   simp! [iotaLhs]
 
 def iotaRhs
@@ -199,15 +197,14 @@ def iotaRhs
 @[simp] theorem iotaRhs_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fds : Fin (ι.ctors s c).nfields → Expr ζ₁ ℓ n)
-    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.iotaRhs η ls l ps ms mins s c fds recFds).instL levelSubst =
-      I.iotaRhs η (fun i => (ls i).inst levelSubst) (l.inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (fun s c => (mins s c).instL levelSubst) s c
-        (fun i => (fds i).instL levelSubst)
-        fun i => (recFds i).instL levelSubst := by
+    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n) :
+    (I.iotaRhs η ls l ps ms mins s c fds recFds).instL ls' =
+      I.iotaRhs η (fun i => (ls i).inst ls') (l.inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls')
+        (fun s c => (mins s c).instL ls') s c
+        (fun i => (fds i).instL ls')
+        fun i => (recFds i).instL ls' := by
   simp [iotaRhs]
 
 def iotaType
@@ -232,14 +229,13 @@ def iotaType
 @[simp] theorem iotaType_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (fds : Fin (ι.ctors s c).nfields → Expr ζ₁ ℓ n)
-    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.iotaType η ls ps ms s c fds recFds).instL levelSubst =
-      I.iotaType η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) s c
-        (fun i => (fds i).instL levelSubst)
-        fun i => (recFds i).instL levelSubst := by
+    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₁ ℓ n) :
+    (I.iotaType η ls ps ms s c fds recFds).instL ls' =
+      I.iotaType η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') s c
+        (fun i => (fds i).instL ls')
+        fun i => (recFds i).instL ls' := by
   simp! [iotaType]
 
 end Inductive

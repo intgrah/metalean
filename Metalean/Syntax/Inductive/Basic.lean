@@ -148,20 +148,20 @@ def indexType
 @[simp] theorem paramType_instL (I : Inductive ζ₁ ι)
     (ls : Fin ι.nlevels → Level ℓ)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
-    (f : Fin ι.nparams) (levelSubst : Param ℓ → Level ℓ') :
-    (I.paramType ls ps f).instL levelSubst =
-      I.paramType (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) f := by
+    (f : Fin ι.nparams) (ls' : Param ℓ → Level ℓ') :
+    (I.paramType ls ps f).instL ls' =
+      I.paramType (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') f := by
   simp [paramType]
   rfl
 
 @[simp] theorem indexType_instL
     (is : Fin (ι.nindices s) → Expr ζ₁ ℓ n)
-    (f : Fin (ι.nindices s)) (levelSubst : Param ℓ → Level ℓ') :
-    (I.indexType ls s ps is f).instL levelSubst =
-      I.indexType (fun i => (ls i).inst levelSubst) s
-        (fun i => (ps i).instL levelSubst)
-        (fun i => (is i).instL levelSubst) f := by
+    (f : Fin (ι.nindices s)) (ls' : Param ℓ → Level ℓ') :
+    (I.indexType ls s ps is f).instL ls' =
+      I.indexType (fun i => (ls i).inst ls') s
+        (fun i => (ps i).instL ls')
+        (fun i => (is i).instL ls') f := by
   simp [indexType]
 
 def indexTele (I : Inductive ζ₁ ι)
@@ -182,10 +182,10 @@ def indexTele (I : Inductive ζ₁ ι)
 @[simp] theorem indexTele_instL (I : Inductive ζ₁ ι)
     (ls : Fin ι.nlevels → Level ℓ) (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.indexTele ls s ps).instL levelSubst =
-      I.indexTele (fun i => (ls i).inst levelSubst) s
-        fun i => (ps i).instL levelSubst := by
+    (ls' : Param ℓ → Level ℓ') :
+    (I.indexTele ls s ps).instL ls' =
+      I.indexTele (fun i => (ls i).inst ls') s
+        fun i => (ps i).instL ls' := by
   simp [indexTele]
   rfl
 

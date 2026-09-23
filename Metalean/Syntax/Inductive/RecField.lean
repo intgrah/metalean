@@ -23,7 +23,7 @@ variable (fd : RecField ζ₁ ι nfields arity target)
   (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
   (σ : Subst ζ₁ ℓ (ι.nparams + nfields) n)
   (fieldSubst : Subst ζ₁ ℓ (ι.nparams + nfields) n)
-  (levelSubst : Param ℓ → Level ℓ')
+  (ls' : Param ℓ → Level ℓ')
 
 namespace RecField
 
@@ -80,21 +80,21 @@ theorem instantiatedType_of_arity_eq_zero
   · exact instantiatedTelescope_map pre fd ls σ
 
 @[simp] theorem instantiatedTelescope_instL :
-    (fd.instantiatedTelescope ls fieldSubst).instL levelSubst =
-      fd.instantiatedTelescope (fun i => (ls i).inst levelSubst)
-        (Subst.instL levelSubst fieldSubst) := by
+    (fd.instantiatedTelescope ls fieldSubst).instL ls' =
+      fd.instantiatedTelescope (fun i => (ls i).inst ls')
+        (fieldSubst.instL ls') := by
   simp [instantiatedTelescope]
 
 @[simp] theorem instantiatedIndices_instL (i : Fin (ι.nindices target)) :
-    (fd.instantiatedIndices ls fieldSubst i).instL levelSubst =
-      fd.instantiatedIndices (fun p => (ls p).inst levelSubst)
-        (Subst.instL levelSubst fieldSubst) i := by
+    (fd.instantiatedIndices ls fieldSubst i).instL ls' =
+      fd.instantiatedIndices (fun p => (ls p).inst ls')
+        (fieldSubst.instL ls') i := by
   simp [instantiatedIndices]
 
 @[simp] theorem instantiatedType_instL :
-    (fd.instantiatedType η ls ps fieldSubst).instL levelSubst =
-      fd.instantiatedType η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) (Subst.instL levelSubst fieldSubst) := by
+    (fd.instantiatedType η ls ps fieldSubst).instL ls' =
+      fd.instantiatedType η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') (fieldSubst.instL ls') := by
   simp [instantiatedType, Expr.instL]
 
 end RecField

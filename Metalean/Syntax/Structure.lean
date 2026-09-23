@@ -75,15 +75,15 @@ def projTypeWith (I : Inductive ζ₁ ι) {n : Nat}
   simp [projTypeWith, Inductive.map, Ctor.map, Field.map]
 
 @[simp] theorem projTypeWith_instL
-    (levelSubst : Param ℓ → Level ℓ')
+    (ls' : Param ℓ → Level ℓ')
     (ls : Fin ι.nlevels → Level ℓ)
     (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (f : Fin (ι.ctors s c).nfields)
     (previous : Fin f.val → Expr ζ₁ ℓ n) :
-    (projTypeWith I ls ps f previous).instL levelSubst =
-      projTypeWith I (fun level => (ls level).inst levelSubst)
-        (fun param => (ps param).instL levelSubst) f
-        fun prior => (previous prior).instL levelSubst := by
+    (projTypeWith I ls ps f previous).instL ls' =
+      projTypeWith I (fun level => (ls level).inst ls')
+        (fun param => (ps param).instL ls') f
+        fun prior => (previous prior).instL ls' := by
   simp [projTypeWith]
 
 def projection {n : Nat} (h : I.IsStructure s c)
@@ -146,7 +146,7 @@ def rebuildTerm (h : I.IsStructure s c)
 
 variable (h : I.IsStructure s c)
   (pre : ζ₁ ⟶ ζ₂)
-  (levelSubst : Param ℓ → Level ℓ')
+  (ls' : Param ℓ → Level ℓ')
   (η : Head ζ₁ (.inductive ι))
   (ls : Fin ι.nlevels → Level ℓ)
   (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
@@ -240,9 +240,9 @@ theorem projection_map :
   · exact funext h.no_recursive.elim
 
 theorem projection_instL :
-    (h.projection η ls ps f maj).map (Expr.instL levelSubst) (Expr.instL levelSubst) =
-      h.projection η (fun level => (ls level).inst levelSubst)
-        (fun param => (ps param).instL levelSubst) f (maj.instL levelSubst) := by
+    (h.projection η ls ps f maj).map (Expr.instL ls') (Expr.instL ls') =
+      h.projection η (fun level => (ls level).inst ls')
+        (fun param => (ps param).instL ls') f (maj.instL ls') := by
   fun_induction h.projection η ls ps f maj with
   | case1 η ls ps f maj type u ms cases ihMajor ihMotive =>
     have ihMajorTerm := fun previous => congrArg Prod.snd (ihMajor previous)
@@ -270,25 +270,25 @@ theorem projection_instL :
       · exact funext h.no_indices.elim
 
 @[simp] theorem projType_instL :
-    (h.projType η ls ps f maj).instL levelSubst =
-      h.projType η (fun level => (ls level).inst levelSubst)
-        (fun param => (ps param).instL levelSubst) f (maj.instL levelSubst) :=
-  congrArg Prod.fst (h.projection_instL levelSubst η ls ps f maj)
+    (h.projType η ls ps f maj).instL ls' =
+      h.projType η (fun level => (ls level).inst ls')
+        (fun param => (ps param).instL ls') f (maj.instL ls') :=
+  congrArg Prod.fst (h.projection_instL ls' η ls ps f maj)
 
 @[simp] theorem projTerm_instL :
-    (h.projTerm η ls ps f maj).instL levelSubst =
-      h.projTerm η (fun level => (ls level).inst levelSubst)
-        (fun param => (ps param).instL levelSubst) f (maj.instL levelSubst) :=
-  congrArg Prod.snd (h.projection_instL levelSubst η ls ps f maj)
+    (h.projTerm η ls ps f maj).instL ls' =
+      h.projTerm η (fun level => (ls level).inst ls')
+        (fun param => (ps param).instL ls') f (maj.instL ls') :=
+  congrArg Prod.snd (h.projection_instL ls' η ls ps f maj)
 
 @[simp] theorem rebuildTerm_instL :
-    (h.rebuildTerm η ls ps maj).instL levelSubst =
-      h.rebuildTerm η (fun level => (ls level).inst levelSubst)
-        (fun param => (ps param).instL levelSubst) (maj.instL levelSubst) := by
+    (h.rebuildTerm η ls ps maj).instL ls' =
+      h.rebuildTerm η (fun level => (ls level).inst ls')
+        (fun param => (ps param).instL ls') (maj.instL ls') := by
   simp only [rebuildTerm, Expr.instL]
   congr 1
   · funext f
-    exact h.projTerm_instL levelSubst η ls ps f maj
+    exact h.projTerm_instL ls' η ls ps f maj
   · exact funext h.no_recursive.elim
 
 theorem ordinaryLevel_eq_zero_of_eval_zero

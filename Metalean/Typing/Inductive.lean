@@ -40,18 +40,18 @@ theorem TeleWF.mono {P Q : Level ℓ → Prop} (hPQ : ∀ {u}, P u → Q u) (hΔ
     exact .snoc ih ⟨u, hPQ hu, ht⟩
 
 theorem TeleWF.instLevel {P : Level ℓ → Prop}
-    {ℓ' : Nat} {Q : Level ℓ' → Prop} (levelSubst : Param ℓ → Level ℓ')
-    (hPQ : ∀ {u}, P u → Q (u.inst levelSubst)) (hΔ : TeleWF E P Γ Δ) :
-    TeleWF E Q (Γ.instL levelSubst) (Δ.instL levelSubst) := by
+    {ℓ' : Nat} {Q : Level ℓ' → Prop} (ls : Param ℓ → Level ℓ')
+    (hPQ : ∀ {u}, P u → Q (u.inst ls)) (hΔ : TeleWF E P Γ Δ) :
+    TeleWF E Q (Γ.instL ls) (Δ.instL ls) := by
   induction hΔ with
   | nil => exact .nil
   | @snoc b Δ t _ ht ih =>
     have ⟨u, hu, ht⟩ := ht
-    refine .snoc ih ⟨u.inst levelSubst, hPQ hu, ?_⟩
-    have ht := ht.instLevel levelSubst
+    refine .snoc ih ⟨u.inst ls, hPQ hu, ?_⟩
+    have ht := ht.instLevel ls
     rw [Ctx.instL_append] at ht
-    change E[Ctx.instL levelSubst Γ ++ Ctx.instL levelSubst Δ] ⊢
-      Expr.instL levelSubst t : .sort (u.inst levelSubst)
+    change E[Ctx.instL ls Γ ++ Ctx.instL ls Δ] ⊢
+      Expr.instL ls t : .sort (u.inst ls)
     simpa [Expr.instL] using ht
 
 theorem TeleWF.get_instL_subst_congr {ℓ' : Nat} {P : Level ℓ' → Prop}
@@ -123,11 +123,11 @@ theorem Inductive.paramSubstEq :
   exact hps v
 
 theorem Inductive.IdxWF.instLevel {ℓ' : Nat} (h : I.IdxWF E Γ s ls ps is)
-    (levelSubst : Param ℓ → Level ℓ') :
-    I.IdxWF E (Γ.instL levelSubst) s (fun i => (ls i).inst levelSubst)
-      (fun i => (ps i).instL levelSubst) fun i => (is i).instL levelSubst := by
+    (ls' : Param ℓ → Level ℓ') :
+    I.IdxWF E (Γ.instL ls') s (fun i => (ls i).inst ls')
+      (fun i => (ps i).instL ls') fun i => (is i).instL ls' := by
   intro i
-  simpa using (h i).instLevel levelSubst
+  simpa using (h i).instLevel ls'
 
 theorem Inductive.IdxWF.map (pre : E.as ⟶ E₂.as) (h : I.IdxWF E Γ s ls ps is) :
     (I.map pre.sigs).IdxWF E₂ (Γ.map pre.sigs) s ls

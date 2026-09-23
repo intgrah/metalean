@@ -27,7 +27,7 @@ variable (recFd : RecField ζ₁ ι nfields arity target)
   (ms : Fin ι.nsorts → Expr ζ₁ ℓ n)
   (fieldSubst : Subst ζ₁ ℓ (ι.nparams + nfields) n)
   (r : Expr ζ₁ ℓ n)
-  (levelSubst : Param ℓ → Level ℓ')
+  (ls' : Param ℓ → Level ℓ')
 
 namespace Inductive
 
@@ -47,13 +47,12 @@ def motiveResult (motive : Expr ζ₁ ℓ n)
 attribute [local instance] Level.category in
 @[simp] theorem motiveResult_instL
     (motive : Expr ζ₁ ℓ n)
-    (is : Fin k → Expr ζ₁ ℓ n) (maj : Expr ζ₁ ℓ n)
-    (levelSubst : Param ℓ → Level ℓ') :
-    (motiveResult motive is maj).instL levelSubst =
-      motiveResult (motive.instL levelSubst) (fun i => (is i).instL levelSubst)
-        (maj.instL levelSubst) :=
-  congrArg (Expr.app · (maj.instL levelSubst))
-    ((Expr.appLevelHom.finFold k).naturality_apply levelSubst ⟨motive, is⟩).symm
+    (is : Fin k → Expr ζ₁ ℓ n) (maj : Expr ζ₁ ℓ n) :
+    (motiveResult motive is maj).instL ls' =
+      motiveResult (motive.instL ls') (fun i => (is i).instL ls')
+        (maj.instL ls') :=
+  congrArg (Expr.app · (maj.instL ls'))
+    ((Expr.appLevelHom.finFold k).naturality_apply ls' ⟨motive, is⟩).symm
 
 end Inductive
 
@@ -76,10 +75,10 @@ def ihType : Expr ζ₁ ℓ n :=
   · exact instantiatedTelescope_map pre recFd ls fieldSubst
 
 @[simp] theorem ihType_instL :
-    (recFd.ihType ls ms fieldSubst r).instL levelSubst =
-      recFd.ihType (fun i => (ls i).inst levelSubst)
-        (fun s => (ms s).instL levelSubst)
-        (Subst.instL levelSubst fieldSubst) (r.instL levelSubst) := by
+    (recFd.ihType ls ms fieldSubst r).instL ls' =
+      recFd.ihType (fun i => (ls i).inst ls')
+        (fun s => (ms s).instL ls')
+        (fieldSubst.instL ls') (r.instL ls') := by
   unfold ihType instantiatedTelescope instantiatedIndices
   simp
 
@@ -110,11 +109,11 @@ def ihType
   simp [ihType, ihTypeWith, map]
 
 @[simp] theorem ihType_instL
-    (f : Fin csig.nrecFields) (levelSubst : Param ℓ → Level ℓ') :
-    (ctor.ihType ls ps ms f).instL levelSubst =
-      ctor.ihType (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) f := by
+    (f : Fin csig.nrecFields) :
+    (ctor.ihType ls ps ms f).instL ls' =
+      ctor.ihType (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') f := by
   simp [ihType, ihTypeWith]
 
 def ihTele :
@@ -130,10 +129,10 @@ def ihTele :
   simp [ihTele]
 
 @[simp] theorem ihTele_instL :
-    (ctor.ihTele ls ps ms).instL levelSubst =
-      ctor.ihTele (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) := by
+    (ctor.ihTele ls ps ms).instL ls' =
+      ctor.ihTele (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') := by
   simp [ihTele]
 
 end Ctor
@@ -151,21 +150,21 @@ def motiveType (l : Level ℓ)
   (I.motiveTele η ls ps s).pi (.sort l)
 
 @[simp] theorem motiveTele_instL
-    (s : Fin ι.nsorts) (levelSubst : Param ℓ → Level ℓ') :
-    (I.motiveTele η ls ps s).instL levelSubst =
-      I.motiveTele η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) s := by
+    (s : Fin ι.nsorts) :
+    (I.motiveTele η ls ps s).instL ls' =
+      I.motiveTele η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') s := by
   unfold motiveTele
-  change ((I.indexTele ls s ps).instL levelSubst).snoc
+  change ((I.indexTele ls s ps).instL ls').snoc
       ((Expr.ind η s ls (fun i => (ps i).wkN (ι.nindices s))
-        fun index => Expr.var ⟨n + index.val, by omega⟩).instL levelSubst) = _
+        fun index => Expr.var ⟨n + index.val, by omega⟩).instL ls') = _
   simp!
 
 @[simp] theorem motiveType_instL
-    (l : Level ℓ) (s : Fin ι.nsorts) (levelSubst : Param ℓ → Level ℓ') :
-    (I.motiveType η ls ps l s).instL levelSubst =
-      I.motiveType η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst) (l.inst levelSubst) s := by
+    (l : Level ℓ) (s : Fin ι.nsorts) :
+    (I.motiveType η ls ps l s).instL ls' =
+      I.motiveType η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls') (l.inst ls') s := by
   simp! [motiveType]
 
 @[simp] theorem motiveTele_map (s : Fin ι.nsorts) :
@@ -193,12 +192,11 @@ def caseTele (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
       $(Ctor.fieldTele_map _ pre η ls ps)
       $(Ctor.ihTele_map _ pre ls ps ms))
 
-@[simp] theorem caseTele_instL (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.caseTele η ls ps ms s c).instL levelSubst =
-      I.caseTele η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) s c := by
+@[simp] theorem caseTele_instL (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    (I.caseTele η ls ps ms s c).instL ls' =
+      I.caseTele η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') s c := by
   simp [caseTele]
 
 end Inductive
@@ -239,21 +237,21 @@ def caseRecursive (csig : CtorSig nsorts) :
   simp [caseRecursive]
 
 @[simp] theorem caseParams_instL {ι : IndSig} (csig : CtorSig ι.nsorts)
-    (ps : Fin ι.nparams → Expr ζ₁ ℓ n) (levelSubst : Param ℓ → Level ℓ')
+    (ps : Fin ι.nparams → Expr ζ₁ ℓ n)
     (i : Fin ι.nparams) :
-    (csig.caseParams ps i).instL levelSubst =
-      csig.caseParams (fun i => (ps i).instL levelSubst) i := by
+    (csig.caseParams ps i).instL ls' =
+      csig.caseParams (fun i => (ps i).instL ls') i := by
   simp [caseParams]
 
 @[simp] theorem caseOrdinary_instL (csig : CtorSig nsorts)
-    (levelSubst : Param ℓ → Level ℓ') (i : Fin csig.nfields) :
-    (csig.caseOrdinary (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL levelSubst =
+    (i : Fin csig.nfields) :
+    (csig.caseOrdinary (ζ₁ := ζ₁) (n := n) i).instL ls' =
       csig.caseOrdinary i := by
   simp [caseOrdinary]
 
 @[simp] theorem caseRecursive_instL (csig : CtorSig nsorts)
-    (levelSubst : Param ℓ → Level ℓ') (i : Fin csig.nrecFields) :
-    (csig.caseRecursive (ζ₁ := ζ₁) (ℓ := ℓ) (n := n) i).instL levelSubst =
+    (i : Fin csig.nrecFields) :
+    (csig.caseRecursive (ζ₁ := ζ₁) (n := n) i).instL ls' =
       csig.caseRecursive i := by
   simp [caseRecursive]
 
@@ -280,12 +278,11 @@ def caseType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
   simp!
 
 @[simp] theorem caseType_instL
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.caseType η ls ps ms s c).instL levelSubst =
-      I.caseType η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) s c := by
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    (I.caseType η ls ps ms s c).instL ls' =
+      I.caseType η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') s c := by
   simp! [caseType]
 
 def caseFnType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) : Expr ζ₁ ℓ n :=
@@ -301,12 +298,11 @@ def caseFnType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) : Expr ζ₁ ℓ n :=
     (congrArg₂ Ctx.pi (I.caseType_map pre η ls ps ms s c)
       (I.caseTele_map pre η ls ps ms s c))
 
-@[simp] theorem caseFnType_instL (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (levelSubst : Param ℓ → Level ℓ') :
-    (I.caseFnType η ls ps ms s c).instL levelSubst =
-      I.caseFnType η (fun i => (ls i).inst levelSubst)
-        (fun i => (ps i).instL levelSubst)
-        (fun s => (ms s).instL levelSubst) s c := by
+@[simp] theorem caseFnType_instL (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    (I.caseFnType η ls ps ms s c).instL ls' =
+      I.caseFnType η (fun i => (ls i).inst ls')
+        (fun i => (ps i).instL ls')
+        (fun s => (ms s).instL ls') s c := by
   simp [caseFnType]
 
 def motiveBinders : Ctx ζ₁ ℓ ι.nparams (ι.nparams + ι.nsorts) :=
@@ -366,24 +362,23 @@ def recrTele (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) (l : Level 
     · exact I.indexTele_map pre ls s _
   · simp!
 
-@[simp] theorem motiveBinders_instL (levelSubst : Param ℓ → Level ℓ') :
-    (I.motiveBinders η ls l).instL levelSubst =
-      I.motiveBinders η (fun level => (ls level).inst levelSubst)
-        (l.inst levelSubst) := by
+@[simp] theorem motiveBinders_instL :
+    (I.motiveBinders η ls l).instL ls' =
+      I.motiveBinders η (fun level => (ls level).inst ls')
+        (l.inst ls') := by
   simp! [motiveBinders]
 
-@[simp] theorem caseBinders_instL (levelSubst : Param ℓ → Level ℓ') :
-    (I.caseBinders η ls).instL levelSubst =
-      I.caseBinders η fun level => (ls level).inst levelSubst := by
+@[simp] theorem caseBinders_instL :
+    (I.caseBinders η ls).instL ls' =
+      I.caseBinders η fun level => (ls level).inst ls' := by
   simp! [caseBinders]
 
 @[simp] theorem recrTele_instL
-    (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ)
-    (l : Level ℓ) (levelSubst : Param ℓ → Level ℓ') :
-    (I.recrTele η s ls l).instL levelSubst =
-      I.recrTele η s (fun level => (ls level).inst levelSubst)
-        (l.inst levelSubst) := by
-  change (Ctx.instL levelSubst _).snoc _ = _
+    (s : Fin ι.nsorts) (l : Level ℓ) :
+    (I.recrTele η s ls l).instL ls' =
+      I.recrTele η s (fun level => (ls level).inst ls')
+        (l.inst ls') := by
+  change (Ctx.instL ls' _).snoc _ = _
   congr 1 <;> simp!
 
 end Inductive

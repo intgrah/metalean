@@ -116,28 +116,28 @@ def StrongTeleModel.append (base : StrongTeleModel E₁ ε₁ ν Γ)
       (extension.bounded.mono (Nat.le_max_right _ _))⟩
   realizes := base.realizes.append extension.realizes
 
-theorem Realizes.mapInst {Δ : Ctx ζ₁ ℓ₁ n m} {levelSubst : Param ℓ₁ → Level ℓ}
+theorem Realizes.mapInst {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
     {reach : Set (Slots n)} {Δsem : SemTele n m}
-    (h : Realizes ε₁ ν reach (Ctx.instL levelSubst Δ) Δsem)
+    (h : Realizes ε₁ ν reach (Ctx.instL ls Δ) Δsem)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν reach (Ctx.instL levelSubst (Δ.map pre.sigs)) Δsem :=
+    Realizes ε₂ ν reach (Ctx.instL ls (Δ.map pre.sigs)) Δsem :=
   (congrArg (fun Δ => Realizes ε₂ ν _ Δ _)
-    (Ctx.map_instL pre.sigs levelSubst Δ)).mp (h.map pre hatoms)
+    (Ctx.map_instL pre.sigs ls Δ)).mp (h.map pre hatoms)
 
 theorem StrongTeleModel.realizes_mapInst
-    {Γ : Ctx ζ₁ ℓ₁ 0 n} {levelSubst : Param ℓ₁ → Level ℓ}
-    (model : StrongTeleModel E₁ ε₁ ν (Ctx.instL levelSubst Γ))
+    {Γ : Ctx ζ₁ ℓ₁ 0 n} {ls : Param ℓ₁ → Level ℓ}
+    (model : StrongTeleModel E₁ ε₁ ν (Ctx.instL ls Γ))
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν Set.univ (Ctx.instL levelSubst (Γ.map pre.sigs)) model.sem :=
+    Realizes ε₂ ν Set.univ (Ctx.instL ls (Γ.map pre.sigs)) model.sem :=
   model.realizes.mapInst pre hatoms
 
 theorem StrongTeleExtension.realizes_mapInst
-    {Γ : Ctx ζ₁ ℓ₁ 0 n} {Δ : Ctx ζ₁ ℓ₁ n m} {levelSubst : Param ℓ₁ → Level ℓ}
-    {base : StrongTeleModel E₁ ε₁ ν (Ctx.instL levelSubst Γ)}
-    (extension : StrongTeleExtension E₁ ε₁ ν base (Ctx.instL levelSubst Δ) bound)
+    {Γ : Ctx ζ₁ ℓ₁ 0 n} {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
+    {base : StrongTeleModel E₁ ε₁ ν (Ctx.instL ls Γ)}
+    (extension : StrongTeleExtension E₁ ε₁ ν base (Ctx.instL ls Δ) bound)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
     Realizes ε₂ ν (Reachable Set.univ base.sem)
-      (Ctx.instL levelSubst (Δ.map pre.sigs)) extension.sem :=
+      (Ctx.instL ls (Δ.map pre.sigs)) extension.sem :=
   extension.realizes.mapInst pre hatoms
 
 inductive CtorCode.Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet) (ν : Param ℓ → Nat) (block : ZFSet)

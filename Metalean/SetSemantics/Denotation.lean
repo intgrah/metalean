@@ -138,9 +138,9 @@ notation:max ε:max "[" γ "]⟦" e "⟧" => denote ε ![] γ e
   induction e <;> simp! [*]
 
 @[simp] theorem denote_instL {ℓ' n : Nat} (ε : Atom ζ ℓ' → ZFSet)
-    (ν : Param ℓ' → Nat) (levelSubst : Param ℓ → Level ℓ') (γ : Fin n → ZFSet) (e : Expr ζ ℓ n) :
-    ε[ν; γ]⟦e.instL levelSubst⟧ =
-      (ε ∘ Atom.instL levelSubst)[Level.eval ν ∘ levelSubst; γ]⟦e⟧ := by
+    (ν : Param ℓ' → Nat) (ls : Param ℓ → Level ℓ') (γ : Fin n → ZFSet) (e : Expr ζ ℓ n) :
+    ε[ν; γ]⟦e.instL ls⟧ =
+      (ε ∘ Atom.instL ls)[Level.eval ν ∘ ls; γ]⟦e⟧ := by
   induction e <;> simp! [Level.eval_inst, *]
 
 private theorem denote_snoc_lift {m n : Nat} (γ : Fin n → ZFSet) (ρ : Ren m n) (x : ZFSet) :

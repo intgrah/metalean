@@ -66,11 +66,11 @@ theorem apps_append (e : Expr ζ ℓ n) (args₁ : Fin k → Expr ζ ℓ n)
       (η.map pre).apps fun i => (args i).map pre :=
   (appHom.finFold k).naturality_apply pre ⟨η, args⟩ |>.symm
 
-@[simp] theorem instL_apps (levelSubst : Param ℓ → Level ℓ')
+@[simp] theorem instL_apps (ls : Param ℓ → Level ℓ')
     (η : Expr ζ ℓ n) (args : Fin k → Expr ζ ℓ n) :
-    (η.apps args).instL levelSubst =
-      (η.instL levelSubst).apps fun i => (args i).instL levelSubst :=
-  (appLevelHom.finFold k).naturality_apply levelSubst ⟨η, args⟩ |>.symm
+    (η.apps args).instL ls =
+      (η.instL ls).apps fun i => (args i).instL ls :=
+  (appLevelHom.finFold k).naturality_apply ls ⟨η, args⟩ |>.symm
 
 def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :=
   args.foldl .app η
@@ -81,11 +81,11 @@ def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :
       (η.map pre).appList (args.map (Expr.map pre)) :=
   appHom.listFold.naturality_apply pre ⟨η, args⟩ |>.symm
 
-@[simp] theorem instL_appList (levelSubst : Param ℓ → Level ℓ')
+@[simp] theorem instL_appList (ls : Param ℓ → Level ℓ')
     (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) :
-    (η.appList args).instL levelSubst =
-      (η.instL levelSubst).appList (args.map (Expr.instL levelSubst)) :=
-  appLevelHom.listFold.naturality_apply levelSubst ⟨η, args⟩ |>.symm
+    (η.appList args).instL ls =
+      (η.instL ls).appList (args.map (Expr.instL ls)) :=
+  appLevelHom.listFold.naturality_apply ls ⟨η, args⟩ |>.symm
 
 theorem applyBound_eq_apps (e : Expr ζ ℓ n) (k : Nat) :
     e.applyBound k = (e.wkN k).apps fun i : Fin k => .var (Fin.natAdd n i) := by
