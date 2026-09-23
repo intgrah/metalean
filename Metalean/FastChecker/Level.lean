@@ -36,6 +36,9 @@ def inst (us : Array FLevel) : FLevel → FLevel
   | imax l₁ l₂ => imax (l₁.inst us) (l₂.inst us)
   | param p => us[p]?.getD (param p)
 
+instance : InstLevel (Array FLevel) FLevel FLevel where
+  inst := inst
+
 def toRaw (ℓ : Nat) : FLevel → Option (RawLevel ℓ)
   | .zero => some .zero
   | .succ l => (l.toRaw ℓ).map .succ

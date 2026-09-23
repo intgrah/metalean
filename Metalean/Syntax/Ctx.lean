@@ -115,6 +115,9 @@ abbrev snoc : Ctx ζ ℓ a b → Expr ζ ℓ b → Ctx ζ ℓ a (b + 1) :=
 def instL (ls : Param ℓ → Level ℓ') : Ctx ζ ℓ a b → Ctx ζ ℓ' a b :=
   Tele.map fun _ => Expr.instL ls
 
+instance : InstLevel (Param ℓ → Level ℓ') (Ctx ζ ℓ a b) (Ctx ζ ℓ' a b) where
+  inst := instL
+
 @[simp] theorem map_instL (pre : ζ₁ ⟶ ζ₂)
     (ls : Param ℓ → Level ℓ') (Γ : Ctx ζ₁ ℓ a b) :
     (Γ.instL ls).map pre = (Γ.map pre).instL ls := by

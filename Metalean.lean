@@ -51,6 +51,7 @@ public import Metalean.Frontend.Rename
 public import Metalean.Frontend.Table
 public import Metalean.Frontend.Translate
 public import Metalean.Grind
+public import Metalean.Level.Inst
 public import Metalean.Level.Quot.Basic
 public import Metalean.Level.Quot.Nat
 public import Metalean.Level.Quot.Order

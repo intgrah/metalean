@@ -417,6 +417,9 @@ termination_by fe => (sizeOf fe, 0)
 
 end
 
+instance : InstLevel (Array FLevel) FExpr FExpr where
+  inst := FExpr.instL
+
 theorem instAt_of_closed (a : FExpr) (d : Nat) {fe : FExpr}
     (h : fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange) :
     instAt a d fe = fe := by

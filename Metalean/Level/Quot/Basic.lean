@@ -101,6 +101,9 @@ def inst (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) : Level ℓ₁ :=
     rw [eval_instRaw, eval_instRaw]
     exact h.eval _
 
+instance : InstLevel (Param ℓ → Level ℓ₁) (Level ℓ) (Level ℓ₁) where
+  inst := inst
+
 theorem mk_inst (σ : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
     ⟦l.inst σ⟧ = Level.inst (⟦σ ·⟧) ⟦l⟧ := by
   induction l with

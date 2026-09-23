@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Mathlib.Data.Fin.VecNotation
+public import Metalean.Level.Inst
 public import Metalean.Level.Quot.Nat
 
 @[expose] public section
@@ -66,6 +66,9 @@ def inst : RawLevel ℓ → RawLevel ℓ₁
   | max u₁ u₂ => max u₁.inst u₂.inst
   | imax u₁ u₂ => imax u₁.inst u₂.inst
   | param p => ls p
+
+instance : InstLevel (Param ℓ → RawLevel ℓ₁) (RawLevel ℓ) (RawLevel ℓ₁) where
+  inst := inst
 
 @[simp] theorem inst_zero (ls : Param ℓ → RawLevel ℓ₁) : (zero : RawLevel ℓ).inst ls = zero := rfl
 

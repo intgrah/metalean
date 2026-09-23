@@ -216,6 +216,9 @@ def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
     (e.instL ls).map pre = (e.map pre).instL ls := by
   induction e <;> simp [instL, map, *]
 
+instance : InstLevel (Param ℓ → Level ℓ') (Expr ζ ℓ n) (Expr ζ ℓ' n) where
+  inst ls e := e.instL ls
+
 end Expr
 
 abbrev Subst (ζ : Sigs) (ℓ m n : Nat) : Type := Var m → Expr ζ ℓ n
