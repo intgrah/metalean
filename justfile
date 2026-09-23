@@ -16,7 +16,7 @@ slow file: build
     .lake/build/bin/metalean slow {{file}}
 
 trace file: build
-    .lake/build/bin/metalean fast --lines {{file}}
+    .lake/build/bin/metalean fast --verbose {{file}}
 
 filter input output: build-filter
     {{filter_bin}} {{input}} {{output}}

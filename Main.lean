@@ -85,7 +85,7 @@ def Scan.literals (sc : Scan) : FastChecker.Literals where
 
 def options (p : Parsed) : Export.Options where
   input := p.positionalArg! "input" |>.as! String
-  lines := p.hasFlag "lines"
+  verbose := p.hasFlag "verbose"
 
 def runFast (p : Parsed) : IO UInt32 := do
   let opts := options p
@@ -106,7 +106,7 @@ def fastCmd : Cmd := `[Cli|
   "Check a lean4export NDJSON file with the fast checker."
 
   FLAGS:
-    lines; "Print the line number and name of each declaration as it is checked."
+    verbose; "Print the line number, name and time taken to check each declaration."
 
   ARGS:
     input : String; "The NDJSON export to check."
@@ -117,7 +117,7 @@ def slowCmd : Cmd := `[Cli|
   "Check a lean4export NDJSON file with the slow checker."
 
   FLAGS:
-    lines; "Print the line number and name of each declaration as it is checked."
+    verbose; "Print the line number, name and time taken to check each declaration."
 
   ARGS:
     input : String; "The NDJSON export to check."
