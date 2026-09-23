@@ -125,17 +125,17 @@ def scan {σ : Type} (h : IO.FS.Handle) (init : σ) (step : σ → List Lean.Nam
     IO (Option (σ × Array UInt32)) := do
   scanLoop { h } step {} #[] 0 init
 
-def open? (args : List String) : IO (Option IO.FS.Handle) := do
-  let some path ← (match args with
-      | [p] => pure (some p)
-      | _ => IO.getEnv "IN")
-    | return none
+structure Options where
+  input : String
+  lines : Bool := false
+
+def open? (path : String) : IO (Option IO.FS.Handle) := do
   try pure (some (← IO.FS.Handle.mk path .read)) catch _ => pure none
 
-def run {σ : Type} (args : List String) (lastUse : Array UInt32) (init : σ)
+def run {σ : Type} (opts : Options) (lastUse : Array UInt32) (init : σ)
     (step : σ → Decl → Except Failure σ) : IO UInt32 := do
-  let some h ← open? args | return 3
-  match ← fold h lastUse init step (← IO.getEnv "METALEAN_TRACE").isSome with
+  let some h ← open? opts.input | return 3
+  match ← fold h lastUse init step opts.lines with
   | .ok _ => return 0
   | .error f =>
     println! "{repr f}"

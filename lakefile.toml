@@ -22,7 +22,3 @@ name = "mathlib"
 [[lean_exe]]
 name = "metalean"
 root = "Main"
-
-[[lean_exe]]
-name = "metalean-fast"
-root = "MainFast"
