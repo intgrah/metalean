@@ -9,14 +9,14 @@ build:
 build-filter:
     cargo build --release --manifest-path scripts/filter/Cargo.toml
 
-fast file: build
-    .lake/build/bin/metalean fast {{file}}
+fast file:
+    .lake/build/bin/metalean fast {{ file }}
 
-slow file: build
-    .lake/build/bin/metalean slow {{file}}
+slow file:
+    .lake/build/bin/metalean slow {{ file }}
 
-trace file: build
-    .lake/build/bin/metalean fast --verbose {{file}}
+trace file:
+    .lake/build/bin/metalean fast --verbose {{ file }}
 
-filter input output: build-filter
-    {{filter_bin}} {{input}} {{output}}
+filter input output:
+    {{ filter_bin }} {{ input }} {{ output }}
