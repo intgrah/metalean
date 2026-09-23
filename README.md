@@ -10,14 +10,14 @@ We support mutual inductive types (but not nested inductive types), η laws for 
 
 ### Soundness
 
-As in [DIWM (2026)](https://arxiv.org/pdf/2607.13662), we use semantics in the language of domain theory to avoid talking about normal forms, since Lean is non-normalising. We then internalise the domains into a natural model of the type theory. This gives adequacy of the model without appealing to a logical relation explicitly, but "categorifying" the logical relation (or so I hear).
+As in [DIWN (2026)](https://arxiv.org/pdf/2607.13662), we use semantics in the language of domain theory to avoid talking about normal forms, since Lean is non-normalising. We prove adequacy of the model without appealing to a logical relation explicitly, but "categorifying" the logical relation via a technique that looks very much like Artin gluing over the Yoneda embedding (to be explored: the connection of categorical gluing to normalisation proofs). The technique is sufficient to deal with the gnarly "K-like reduction" that Lean has, where the eliminator for equality may reduce under a neutral proof of equality.
 
-Consequences include the elusive "definitional inversion", consisting of injectivity of type constructors (on the diagonal) and no-confusion (on the off-diagonal), uniqueness of typing, uniqueness of sorts, subject reduction.
+Consequences include the elusive "definitional inversion", consisting of injectivity of type constructors (on the diagonal) and no-confusion (on the off-diagonal), uniqueness of typing, uniqueness of sorts, subject reduction, which are the same consequences as DIWN, but extended to work with Lean's type theory.
 
 ### Consistency
 
-As in [Carneiro (2019)](https://github.com/digama0/lean-type-theory/releases), we take a naive (obvious) translation into ZFC Set theory with an axiom assuming the nth inaccessible cardinal exists for all ordinal n below omega, thus constructing Grothendieck universes.
-Furthermore we show that the type theoretic notions of propositional extensionality, quotient types, and the axiom of choice, have a model.
+As in [Carneiro (2019)](https://github.com/digama0/lean-type-theory/releases), we take a naive (obvious) translation into ZFC Set theory with an axiom assuming the nth inaccessible cardinal exists for all ordinal n below omega, thus constructing Grothendieck universes that denote `Type u`. Grothendieck universes provide the necessary closure under the usual type formers. The `Prop` universe is denoted as `{{{}}, {}}`, containing a generic true proposition (with a canonical proof) and a generic false proposition. Inductive types are denoted by fixed point constructions. We show that the type theoretic notions of propositional extensionality, quotient types, and the axiom of choice, have a model.
+
 From soundness of the model, we obtain consistency. The precise statement of consistency, defines a barebones environment containing the bare minimum of (`Eq`, `Iff`, `Nonempty`, `propext`, `Quot.sound`, `Classical.choice`). Assuming that no further additions to the environment are _axioms_, we have that `∀ P : Prop, P` is uninhabited.
 
 ## Object language
@@ -48,5 +48,13 @@ Typing [(Defs.lean)](Metalean/Typing/Defs.lean)
 
 - No nested inductives (yet).
 - No unsafe or partial definitions.
-- Inductive/quotient type formers, constructors and recursors are primitive term formers. This results in subtly supporting function η in more cases than what official Lean checks for, since when these are partially applied, the translator inserts function bindings.
+- Inductive/quotient type formers, constructors and recursors are primitive term formers that carry their subterms, instead of being opaque constants that only denote the heads of these (example: `Nat.rec.{u}` is a constant in its own right, in the official typechecker. Here, it always comes with baggage, i.e. `Nat.rec.{}). This results in subtly supporting function η in more cases than what official Lean checks for, since when these are partially applied, the translator inserts function bindings.
 - Since recursive fields in an inductive type constructor cannot be depended on in a meaningful way (since it would violate positivity), we consider all recursive fields to be effectively declared as coming last. This is justifiable, since we are merely weakening the context in which they are available. It means that the frontend must permute the fields sometimes, and remember that it permuted them.
+
+## Acknowledgements
+
+I would like to thank the Lean4lean project, as a huge inspiration.
+
+## Use of AI
+
+Proofs were assisted by Claude Opus 5 and Fable 5. I take full responsibility for the proofs.
