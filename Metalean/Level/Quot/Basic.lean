@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.RawLevel.Decide
+public import Metalean.Level.Raw.Decide
 public import Mathlib.CategoryTheory.Types.Basic
 import Metalean.Meta.DeriveFunctor
 

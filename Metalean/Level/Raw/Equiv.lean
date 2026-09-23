@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.RawLevel.Basic
+public import Metalean.Level.Raw.Basic
 
 public section
 

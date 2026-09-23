@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Syntax.Inductive.Basic
-public import Metalean.Level.Order
+public import Metalean.Level.Quot.Order
 import Metalean.Meta.Judgement
 
 @[expose] public section

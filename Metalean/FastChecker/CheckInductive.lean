@@ -7,7 +7,7 @@ module
 
 public import Metalean.FastChecker.Infer
 public import Metalean.FastChecker.WF
-public import Metalean.Level.Order
+public import Metalean.Level.Quot.Order
 public import Metalean.Typing.Inductive
 import Metalean.Typing.Env
 import Metalean.Typing.Telescope

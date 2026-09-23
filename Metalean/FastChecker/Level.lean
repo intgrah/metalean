@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Level.Basic
-public import Metalean.RawLevel.Basic
+public import Metalean.Level.Quot.Basic
+public import Metalean.Level.Raw.Basic
 import Metalean.Meta.Judgement
 
 @[expose] public section

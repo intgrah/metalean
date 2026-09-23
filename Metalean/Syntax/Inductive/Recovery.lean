@@ -7,7 +7,7 @@ module
 
 public import Metalean.Syntax.Inductive.Ctor
 public import Metalean.Syntax.Inductive.LargeElimination
-public import Metalean.Level.Relevance
+public import Metalean.Level.Quot.Relevance
 
 /-! # Idk
 Hard to even explain what this code is doing

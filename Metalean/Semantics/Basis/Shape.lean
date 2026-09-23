@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Level.Relevance
+public import Metalean.Level.Quot.Relevance
 public import Metalean.TypeTheory.Syntactic.Pi.Type
 
 @[expose] public section

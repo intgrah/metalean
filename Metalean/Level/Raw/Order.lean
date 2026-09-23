@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.RawLevel.Equiv
+public import Metalean.Level.Raw.Equiv
 
 public section
 

@@ -7,7 +7,7 @@ module
 
 public import Metalean.Syntax.Sig
 public import Metalean.Syntax.Ren
-public import Metalean.Level.Basic
+public import Metalean.Level.Quot.Basic
 public import Mathlib.CategoryTheory.Whiskering
 public import Mathlib.CategoryTheory.Pi.Basic
 public import Metalean.CategoryTheory.RelativeMonad

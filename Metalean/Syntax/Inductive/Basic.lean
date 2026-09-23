@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Syntax.Ctx
-public import Metalean.Level.Order
+public import Metalean.Level.Quot.Order
 import Metalean.Meta.DeriveFunctor
 
 @[expose] public section

@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.Level.Nat
+public import Metalean.Level.Quot.Nat
 public import Metalean.SetTheory.ZFC.Aczel
 public import Metalean.SetTheory.ZFC.Universe.Sort
 

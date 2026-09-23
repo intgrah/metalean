@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.RawLevel.Order
+public import Metalean.Level.Raw.Order
 import Metalean.Data.List
 
 /-!

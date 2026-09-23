@@ -6,8 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.FastChecker.Level
-public import Metalean.Level.Basic
-public import Metalean.RawLevel.Normalize
+public import Metalean.Level.Quot.Basic
+public import Metalean.Level.Raw.Normalize
 public import Metalean.Control
 public import Metalean.Frontend.Failure
 

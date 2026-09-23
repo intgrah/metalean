@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Syntax.Expr
-public import Metalean.Level.Basic
+public import Metalean.Level.Quot.Basic
 
 @[expose] public section
 

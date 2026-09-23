@@ -8,7 +8,7 @@ module
 public import Metalean.Syntax.Eq
 public import Metalean.Typing.Env.Defs
 public import Metalean.Typing.Quot
-import Metalean.Level.Order
+import Metalean.Level.Quot.Order
 import Metalean.Typing.Substitution
 import Mathlib.Tactic.FinCases
 

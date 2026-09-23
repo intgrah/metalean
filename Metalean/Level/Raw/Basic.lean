@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Mathlib.Data.Fin.VecNotation
-public import Metalean.Level.Nat
+public import Metalean.Level.Quot.Nat
 
 @[expose] public section
 
