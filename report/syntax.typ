@@ -16,7 +16,6 @@
 #let where = kw("where")
 #let end = kw("end")
 #let initQuot(eq) = $kw("init_quot")(#eq)$
-#let letE = kw("let")
 
 #let inductives(..sorts) = {
   let multi = sorts.pos().len() > 1
@@ -38,7 +37,7 @@
 #let forallE(x, t, e) = $forall #x : #t. #e$
 #let lam(x, t, e) = $lambda #x : #t. #e$
 #let app(..es) = es.pos().join($thin$)
-#let letE(x, t, v, e) = $letE #x : #t := #v\; #e$
+#let letE(x, t, v, e) = $kw("let") #x : #t := #v\; #e$
 
 #let nsort = $n_"sort"$
 #let nctor = $n_"ctor"$
@@ -47,13 +46,10 @@
 #let ctor(I, s, c, ls, ps, fs, rs) = $#I _"ctor"^(#s, #c)#univs(ls)#args(ps, fs, rs)$
 #let recr(I, s, ls, lmu, ps, mus, ms, idxs, e) = $#I _"rec"^#s#univs(ls, lmu)#args(ps, mus, ms, idxs, e)$
 
-#let mk = "mk"
-#let lift = "lift"
-#let ind = "ind"
 #let quot(l, alpha, r) = $Q#univs(l)#tuple(alpha, r)$
-#let quotMk(l, alpha, r, a) = $Q_mk#univs(l)#tuple(alpha, r, a)$
-#let quotLift(la, lb, alpha, r, beta, f, h, a) = $Q_lift#univs($#la, #lb$)#tuple(alpha, r, beta, f, h, a)$
-#let quotInd(l, alpha, r, beta, f, a) = $Q_ind#univs(l)#tuple(alpha, r, beta, f, a)$
+#let quotMk(l, alpha, r, a) = $Q_"mk"#univs(l)#tuple(alpha, r, a)$
+#let quotLift(la, lb, alpha, r, beta, f, h, a) = $Q_"lift"#univs($#la, #lb$)#tuple(alpha, r, beta, f, h, a)$
+#let quotInd(l, alpha, r, beta, f, a) = $Q_"ind"#univs(l)#tuple(alpha, r, beta, f, a)$
 
 #let Level = "Level"
 #let imax = "imax"
@@ -163,7 +159,7 @@ In Lean, every mutual inductive block comes with some universe variables ${overl
     $intro : (x : alpha) -> (forall y : alpha. app(r, y, x) -> Acc.{u}(alpha, r, y)) -> Acc.{u}(alpha, r, x)$,
   ))
 
-  Here, the recursive field is accompanied by a telescope $(y : alpha) -> (h : r y x) -> -$.
+  Here, the recursive field is accompanied by a telescope $(y : alpha) -> app(r, y, x) -> -$.
 ]
 
 Each constructor $I_"ctor"^(s,c)$ has three components.
@@ -191,7 +187,7 @@ Why did we require that $t$ is in $beta$-normal form? consider the following ind
     $mk : (x : #N) -> app((lam(x, #N, Nat)), x) -> #N$,
   ))
 
-  $#N$ occurs negatively, but it does not occur negatively in a _useful_ way, which is evident once the $beta$-redex is reduced. It follows that, if $x$ occurs in $t$, not in $beta$-normal form, $b$-normalising $t$ deletes $x$, showing that $x$ was never really useful in the first place.
+  $#N$ occurs negatively, but it does not occur negatively in a _useful_ way, which is evident once the $beta$-redex is reduced. It follows that, if $x$ occurs in $t$, not in $beta$-normal form, $beta$-normalising $t$ deletes $x$, showing that $x$ was never really useful in the first place.
 ]
 
 Despite this fact, Lean allows non-recursive and recursive fields to be interleaved. For simplicity, our syntax does _not_ allow interleaving, and outright _disallows_ recursive fields to be depended on. To be able to consume the same input as Lean, we perform a frontend translation that sifts all recursive fields to the end, thereby weakening the contexts in which their types were defined in.
@@ -778,7 +774,7 @@ The _target indices_ $overline(i)^(s,c)$ give the indices at which the construct
 ]
 
 #proof[
-  By #smallcaps[pf-irrel], $x equiv ctor(I, s, c, overline(l), overline(p), overline(a), overline(r))$, so by #smallcaps[ind-elim] the recursor on $x$ is equal to the recursor on the constructor, which is equal to $"rhs"^(s,c)$ by subject reduction for $iota$.
+  By #smallcaps[proof-irrel], $x equiv ctor(I, s, c, overline(l), overline(p), overline(a), overline(r))$, so by #smallcaps[ind-elim] the recursor on $x$ is equal to the recursor on the constructor, which is equal to $"rhs"^(s,c)$ by subject reduction for $iota$.
 ]
 
 #proposition("Unit-like eta")[
