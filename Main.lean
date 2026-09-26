@@ -24,23 +24,28 @@ def options (p : Parsed) : Export.Options where
 def runFast (p : Parsed) : IO UInt32 := do
   let opts := options p
   let some h ← Export.open? opts.input | return 3
-  let some (_, lastUse) ← Export.scan h () (fun st _ => st)
+  let lines ← if opts.verbose then Export.countLines h else pure 0
+  let some h ← Export.open? opts.input | return 3
+  let some (decls, lastUse) ← Export.scan h 0 (fun n _ => n + 1) opts.verbose lines
     | return (Frontend.Failure.reject .parse).exitCode
-  Export.run opts lastUse Checker.Fast.FState.initial Checker.Fast.step
+  Export.run opts lastUse decls Checker.Fast.FState.initial Checker.Fast.step
 
 def runSlow (p : Parsed) : IO UInt32 := do
   let opts := options p
   let some h ← Export.open? opts.input | return 3
-  let some (_, lastUse) ← Export.scan h () (fun st _ => st)
+  let lines ← if opts.verbose then Export.countLines h else pure 0
+  let some h ← Export.open? opts.input | return 3
+  let some (decls, lastUse) ← Export.scan h 0 (fun n _ => n + 1) opts.verbose lines
     | return (Frontend.Failure.reject .parse).exitCode
-  Export.run opts lastUse Checker.Slow.State.initial fun st d => Checker.Slow.step st d
+  Export.run opts lastUse decls Checker.Slow.State.initial fun st d => Checker.Slow.step st d
 
 def fastCmd : Cmd := `[Cli|
   fast VIA runFast;
   "Check a lean4export NDJSON file with the fast checker."
 
   FLAGS:
-    verbose; "Print the line number, name and time taken to check each declaration."
+    verbose; "Print lines parsed out of total, then each declaration's number out of total, name
+      and time taken to check it."
 
   ARGS:
     input : String; "The NDJSON export to check."
@@ -51,7 +56,7 @@ def slowCmd : Cmd := `[Cli|
   "Check a lean4export NDJSON file with the slow checker."
 
   FLAGS:
-    verbose; "Print the line number, name and time taken to check each declaration."
+    verbose; "Print line numbers, declaration numbers, name and time taken."
 
   ARGS:
     input : String; "The NDJSON export to check."

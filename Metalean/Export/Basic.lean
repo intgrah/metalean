@@ -619,11 +619,7 @@ def parseLine (t : Tables) (lastUse : Array UInt32) (lineNo : Nat) (line : ByteA
 def scanDecl (t : Tables) (j : Json) : Except String (Option (List Name)) := do
   let [(key, o)] := (← j.getObj?).toList | throw "declaration"
   match key with
-  | "axiom" | "def" | "thm" | "opaque" => do pure (some [← t.nameAt o "name"])
-  | "quot" => do
-    match ← parseQuotKind o with
-    | .type => pure (some [← t.nameAt o "name"])
-    | _ => pure none
+  | "axiom" | "def" | "thm" | "opaque" | "quot" => do pure (some [← t.nameAt o "name"])
   | "inductive" => do
     pure (some (← (← arrayAt o "types").mapM fun ty => t.nameAt ty "name"))
   | "meta" => pure none
