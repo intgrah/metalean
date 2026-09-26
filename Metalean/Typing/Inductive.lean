@@ -212,10 +212,10 @@ theorem RecFieldWF.instantiatedIndices {fd : RecField ζ ι nfields arity s} (h 
   have hi := (his i).substitution hσLift
   have hpsEq :
       (fun p : Fin ι.nparams =>
-        (Expr.var ⟨p.val, by omega⟩ : Expr ζ ℓ _).subst (σ.liftN arity)) =
+        σ.liftN arity ⟨p.val, by omega⟩) =
         fun p => (ps p).wkN arity := by
     funext p
-    rw [Expr.subst, show (⟨p.val, by omega⟩ :
+    rw [show (⟨p.val, by omega⟩ :
       Fin (ι.nparams + nfields + arity)) =
         (p.castAdd nfields).castAdd arity by ext; rfl,
       Subst.liftN_castAdd, hσparams]
@@ -371,9 +371,7 @@ theorem CtorWF.targetIndex (h : CtorWF E I ctor) (i : Fin (ι.nindices s)) :
   intro hσ
   have hpsEq :
       (fun p : Fin ι.nparams =>
-        ((Expr.var ⟨p.val, by omega⟩ :
-          Expr ζ ℓ (ι.nparams + csig.nfields))).subst
-            (Fin.append ps fds)) = ps :=
+        Fin.append ps fds ⟨p.val, by omega⟩) = ps :=
     funext (Fin.append_left ps fds)
   simpa [Ctor.targetIndex, hpsEq] using
     ((h.targetIndices i).instLevel ls).substitution hσ
@@ -402,9 +400,7 @@ theorem CtorWF.targetIndex_congr (h : CtorWF E I ctor)
   have hσ := Ctor.forall_ordinarySubst le_rfl hps hfields
   have hpsEq :
       (fun p : Fin ι.nparams =>
-        ((Expr.var ⟨p.val, by omega⟩ :
-          Expr ζ ℓ (ι.nparams + csig.nfields))).subst
-            (Fin.append ps₁ fds₁)) = ps₁ :=
+        Fin.append ps₁ fds₁ ⟨p.val, by omega⟩) = ps₁ :=
     funext (Fin.append_left ps₁ fds₁)
   simpa [Ctor.targetIndex, hpsEq] using
     hsource.substitution_congr hσ ((h.targetIndices i).instLevel ls)
@@ -885,13 +881,10 @@ theorem RecFieldWF.ihType_congr (h : RecFieldWF E I Δ fd) (hB : InductiveWF E I
     simpa using SubstEq.liftN hteleL hσ
   have hpsEq :
       (fun p : Fin ι.nparams =>
-        (Expr.var ⟨p.val, by omega⟩ :
-          Expr ζ ℓ (ι.nparams + nfields + arity)).subst (σ₁.liftN arity)) =
+        σ₁.liftN arity ⟨p.val, by omega⟩) =
         fun p => (ps₁ p).wkN arity := by
     funext p
-    change (Expr.var ⟨p.val, by omega⟩ :
-      Expr ζ ℓ (ι.nparams + nfields + arity)).subst (σ₁.liftN arity) = _
-    rw [Expr.subst, show (⟨p.val, by omega⟩ :
+    rw [show (⟨p.val, by omega⟩ :
       Fin (ι.nparams + nfields + arity)) =
         (p.castAdd nfields).castAdd arity by ext; rfl,
       Subst.liftN_castAdd, hσparams]
@@ -1500,7 +1493,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
           recFds (previous.castLE f.isLt.le)) := by
     intro f
     rw [Ctor.recursiveFieldTele, Ctor.recursiveFieldTeleAux, Ctx.entry_ofTypes,
-      Expr.wkN_subst_id_append]
+      Expr.wkN_subst_append, Expr.subst_id]
     exact hrecFields f
   have hB' := Ctx.pi_applyFamily (P := fun _ => True) hΓ hΔrecWF htB hxsB hA
   rw [Expr.subst_subst, Subst.liftN_comp_append, Subst.comp_id, Ctx.pi_subst] at hB'

@@ -261,7 +261,6 @@ def caseType (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
         (fun s => (ms s).map pre) s c := by
   simp [caseType]
   congr 2
-  simp!
 
 @[simp] theorem caseType_instL
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :

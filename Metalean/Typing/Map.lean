@@ -23,7 +23,7 @@ theorem Defeq.map (pre : E₁.as ⟶ E₂.as) :
     E₁[Γ] ⊢ e₁ ≡ e₂ : t →
     E₂[Γ.map pre.sigs] ⊢ e₁.map pre.sigs ≡ e₂.map pre.sigs : t.map pre.sigs := by
   intro h
-  induction h with simp -failIfUnchanged [Expr.map] at *
+  induction h with simp -failIfUnchanged [Expr.map, Fin.fun_vecCons, Fin.const_fin_one] at *
   | var _ ih =>
     rw [← Ctx.get_map] at ih ⊢
     exact .var ih

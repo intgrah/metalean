@@ -118,6 +118,14 @@ macro_rules | `(#$i:num) => `(Expr.var ⟨$i, by decide⟩)
 
 namespace Expr
 
+@[match_pattern] def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :=
+  args.foldl .app η
+
+@[simp] theorem appList_nil (η : Expr ζ ℓ n) : η.appList [] = η := rfl
+
+@[simp] theorem appList_cons (η a : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) :
+    η.appList (a :: args) = (η.app a).appList args := rfl
+
 abbrev prop : Expr ζ ℓ n := .sort .zero
 
 /-- `∀ P : Prop, P` -/
@@ -185,6 +193,15 @@ def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
 
 @[simp] theorem wkClosed_sort (l : Level ℓ) :
     (.sort l : Expr ζ ℓ 0).wkClosed (n := n) = .sort l := by
+  induction n <;> simp_all! [wk, wkFrom]
+
+@[simp] theorem wkClosed_const {kind : ConstKind} {nlevels : Nat} (η : Head ζ (.const kind nlevels))
+    (us : Fin nlevels → Level ℓ) :
+    (.const η us : Expr ζ ℓ 0).wkClosed (n := n) = .const η us := by
+  induction n <;> simp_all! [wk, wkFrom]
+
+@[simp] theorem wkClosed_app (f a : Expr ζ ℓ 0) :
+    (f.app a).wkClosed (n := n) = f.wkClosed.app a.wkClosed := by
   induction n <;> simp_all! [wk, wkFrom]
 
 @[simp] theorem map_rename (pre : ζ₁ ⟶ ζ₂) (ρ : Ren m n)
@@ -322,6 +339,11 @@ def extend (σ : Subst ζ ℓ m n) (value : Expr ζ ℓ n) : Subst ζ ℓ (m + 1
 @[simp] theorem extend_last (σ : Subst ζ ℓ m n) (value : Expr ζ ℓ n) :
     σ.extend value (Fin.last m) = value := by
   simp [extend]
+
+theorem extend_apply (σ : Subst ζ ℓ m n) (value : Expr ζ ℓ n) (v : Var (m + 1)) :
+    σ.extend value v = if h : v.val < m then σ ⟨v.val, h⟩ else value := by
+  simp only [extend, Fin.snoc]
+  split <;> rfl
 
 def liftN (σ : Subst ζ ℓ m n) : (k : Nat) → Subst ζ ℓ (m + k) (n + k)
   | 0 => σ
@@ -467,7 +489,7 @@ end CtorSig
 
 namespace Expr
 
-def subst {n m : Nat} (σ : Subst ζ ℓ m n) : Expr ζ ℓ m → Expr ζ ℓ n
+@[simp] def subst {n m : Nat} (σ : Subst ζ ℓ m n) : Expr ζ ℓ m → Expr ζ ℓ n
   | .var v => σ v
   | .sort u => .sort u
   | .const η ls => .const η ls
@@ -687,7 +709,7 @@ end Expr
     σ.comp Subst.id = σ :=
   funext fun v => Expr.subst_id (σ v)
 
-theorem Expr.wk_subst_lift (σ : Subst ζ ℓ m n) (e : Expr ζ ℓ m) :
+@[simp] theorem Expr.wk_subst_lift (σ : Subst ζ ℓ m n) (e : Expr ζ ℓ m) :
     e.wk.subst σ.lift = (e.subst σ).wk := by
   rw [Expr.wk, Expr.wkFrom, Expr.rename_subst, Expr.wk, Expr.wkFrom, Expr.subst_rename]
   congr 1

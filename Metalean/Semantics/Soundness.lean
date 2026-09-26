@@ -213,32 +213,32 @@ theorem EnvWF.rawSound (hE : EnvWF E₂) (pre : E₁.as ⟶ E₂.as) :
       (fun f => (pf f).toRawTyped) (fun f => (prf f).toRawTyped) hIota prhs.toRawTyped)
   | quotDF _ _ ihα ihr =>
     have pr := ihr hΔ hR
-    simp only [Quot.relType_map] at pr
+    simp only [Expr.map, Expr.map_wk] at pr
     exact RawJudgment.quotDF (ihα hΔ hR) pr
   | quotMkDF _ _ _ ihα ihr iha =>
     have pr := ihr hΔ hR
-    simp only [Quot.relType_map] at pr
+    simp only [Expr.map, Expr.map_wk] at pr
     exact RawJudgment.quotMkDF (ihα hΔ hR) pr (iha hΔ hR)
   | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
     have pr := ihr hΔ hR
     have pf := ihf hΔ hR
     have ph := ihh hΔ hR
-    simp only [Expr.map, Expr.map_wk, Quot.relType_map, Quot.compatType_map,
-      ← dsimp% Entry.eqHeadNatTrans.naturality_apply,
+    simp only [Expr.map, Expr.map_wk, Expr.appList_cons, Expr.appList_nil, Fin.fun_vecCons,
+      Fin.fun_vecEmpty, ← dsimp% Entry.eqHeadNatTrans.naturality_apply,
       ← dsimp% (Env.lookup _).naturality_apply pre] at pr pf ph
     exact RawJudgment.quotLiftDF (ihα hΔ hR) pr (ihβ hΔ hR) pf ph (iha hΔ hR)
   | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha ihresult =>
     have pr := ihr hΔ hR
     have pβ := ihβ hΔ hR
     have pf := ihf hΔ hR
-    simp only [Quot.relType_map, Quot.minorType_map] at pr pβ pf
+    simp only [Expr.map, Expr.map_wk] at pr pβ pf
     exact RawJudgment.quotIndDF (ihα hΔ hR) pr pβ pf (iha hΔ hR) (ihresult hΔ hR)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha _ ihrhs =>
     have pr := ihr hΔ hR
     have pf := ihf hΔ hR
     have ph := ihh hΔ hR
-    simp only [Expr.map, Expr.map_wk, Quot.relType_map, Quot.compatType_map,
-      ← dsimp% Entry.eqHeadNatTrans.naturality_apply,
+    simp only [Expr.map, Expr.map_wk, Expr.appList_cons, Expr.appList_nil, Fin.fun_vecCons,
+      Fin.fun_vecEmpty, ← dsimp% Entry.eqHeadNatTrans.naturality_apply,
       ← dsimp% (Env.lookup _).naturality_apply pre] at pr pf ph
     exact RawJudgment.quotIota (ihα hΔ hR) pr (ihβ hΔ hR) pf ph (iha hΔ hR)
       (ihrhs hΔ hR)

@@ -71,7 +71,7 @@ partial def drain (ch : Std.CloseableChannel.Sync Parsed) : IO Unit := do
   | some _ => drain ch
 
 partial def consume {σ : Type} (ch : Std.CloseableChannel.Sync Parsed) (stop : IO.Ref Bool)
-    (step : σ → Decl → Except Failure σ) (verbose : Bool) (st : σ) : IO (Except Failure σ) := do
+    (step : σ → Decl → EIO Failure σ) (verbose : Bool) (st : σ) : IO (Except Failure σ) := do
   match ← ch.recv with
   | none => return .ok st
   | some (.error lineNo) =>
@@ -87,7 +87,7 @@ partial def consume {σ : Type} (ch : Std.CloseableChannel.Sync Parsed) (stop : 
         let ns := (← IO.monoNanosNow) - start
         let micros := toString (ns / 1000 % 1000)
         IO.eprintln s!" {ns / 1000000}.{"".pushn '0' (3 - micros.length)}{micros}ms"
-    match step st d with
+    match ← (step st d).toBaseIO with
     | .error f =>
       elapsed
       IO.eprintln s!"line {lineNo}: {repr f}"
@@ -99,7 +99,7 @@ partial def consume {σ : Type} (ch : Std.CloseableChannel.Sync Parsed) (stop : 
       consume ch stop step verbose st
 
 def fold {σ : Type} (h : IO.FS.Handle) (lastUse : Array UInt32) (init : σ)
-    (step : σ → Decl → Except Failure σ) (verbose : Bool := false) :
+    (step : σ → Decl → EIO Failure σ) (verbose : Bool := false) :
     IO (Except Failure σ) := do
   let ch ← Std.CloseableChannel.Sync.new (some channelCapacity)
   let stop ← IO.mkRef false
@@ -134,7 +134,7 @@ def open? (path : String) : IO (Option IO.FS.Handle) := do
   try pure (some (← IO.FS.Handle.mk path .read)) catch _ => pure none
 
 def run {σ : Type} (opts : Options) (lastUse : Array UInt32) (init : σ)
-    (step : σ → Decl → Except Failure σ) : IO UInt32 := do
+    (step : σ → Decl → EIO Failure σ) : IO UInt32 := do
   let some h ← open? opts.input | return 3
   match ← fold h lastUse init step opts.verbose with
   | .ok _ => return 0

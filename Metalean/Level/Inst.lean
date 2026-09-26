@@ -32,6 +32,15 @@ theorem inst_tuple {n : Nat} [InstLevel σ α β]
 @[simp] theorem inst_apply {n : Nat} [InstLevel σ α β]
     (ls : σ) (a : Fin n → α) (i : Fin n) : a{ls} i = (a i){ls} := rfl
 
+@[simp] theorem inst_vecEmpty [InstLevel σ α β] (ls : σ) :
+    (Matrix.vecEmpty : Fin 0 → α){ls} = Matrix.vecEmpty :=
+  funext nofun
+
+@[simp] theorem inst_vecCons {n : Nat} [InstLevel σ α β] (ls : σ) (a : α) (v : Fin n → α) :
+    (Matrix.vecCons a v){ls} = Matrix.vecCons a{ls} v{ls} := by
+  funext i
+  refine Fin.cases ?_ (fun _ => ?_) i <;> simp
+
 instance [InstLevel σ α β] : InstLevel σ (List α) (List β) where
   inst ls xs := xs.map (·{ls})
 

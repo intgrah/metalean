@@ -60,7 +60,7 @@ theorem rawInterpret_app_subst (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
       (hsupport σ₃ name hy).imp_right (Nonempty.map fun s =>
         Raw.ContextSection.cartesianLift ht σ₁ (by simpa using s))
   rw [← Tm.map_label he σ₁, ← Functor.map_comp_apply] at htarget
-  rw [Expr.subst_app, rawInterpret_app, rawInterpret_app, RawFamily.application_value, ihf, iha]
+  rw [Expr.subst, rawInterpret_app, rawInterpret_app, RawFamily.application_value, ihf, iha]
   exact htarget.trans (RawFamily.rawApplication_eq_of_sections ht he _ F X hsupport).symm
 
 end Metalean.CoherentShape

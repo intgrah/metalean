@@ -113,7 +113,7 @@ theorem var (Γ₁ : CtxCat E ℓ) (v : Var Γ₁.as.len) : HasSubstitution Γ�
 
 theorem sort (Γ₁ : CtxCat E ℓ) (u : Level ℓ) : HasSubstitution Γ₁ (.sort u) := by
   intro Γ₂ Γ₃ σ₁ σ₂ ρ₁ ρ₂ hσ₁ hρ
-  simp only [Expr.subst_sort, rawInterpret_sort, RawFamily.sort_value]
+  simp only [Expr.subst, rawInterpret_sort, RawFamily.sort_value]
 
 end HasSubstitution
 

@@ -178,7 +178,7 @@ def quotSoundType : Expr ζ 1 0 :=
     .forallE (.forallE #0 (.forallE #0 .prop)) <|
       .forallE #0 <|
         .forallE #0 <|
-          .forallE (.app (.app #1 #2) #3) <|
+          .forallE (.appList #1 [#2, #3]) <|
             Quot.eqApp ηeq (.param ⟨0, by decide⟩)
               (.quot ηquot (.param ⟨0, by decide⟩) #0 r)
               (.quotMk ηquot (.param ⟨0, by decide⟩) #0 r #2)
@@ -195,13 +195,13 @@ theorem quotSoundType_isType (heq : (E.get ηeq).block = Eq.block) :
   have hb₁ : E[Γ₁] ⊢ #3 : #0 := .var hα₁
   have hcod : E[Γ₁.snoc #0] ⊢ .forallE #0 .prop : .sort (.imax l .one) :=
     .forallEDF (.var .sortDF) .sortDF .sortDF
-  have hrel : E[Γ₁] ⊢ .app (.app #1 #2) #3 : .prop :=
+  have hrel : E[Γ₁] ⊢ (.appList #1 [#2, #3]) : .prop :=
     .appDF (t' := .prop) hα₁ .sortDF
       (by
         simpa [Expr.inst, Expr.subst, Subst.extend, Subst.id] using
           Defeq.appDF hα₁ hcod hr₁ ha₁ (hcod.inst_congr ha₁))
       hb₁ .sortDF
-  let Γ₂ := Γ₁.snoc (.app (.app #1 #2) #3)
+  let Γ₂ := Γ₁.snoc (.appList #1 [#2, #3])
   have hα₂ : E[Γ₂] ⊢ #0 : .sort l := .var .sortDF
   have hr₂ : E[Γ₂] ⊢ #1 : Quot.relType #0 :=
     .var (Quot.relType_congr hα₂)

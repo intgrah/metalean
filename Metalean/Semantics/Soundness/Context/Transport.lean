@@ -176,7 +176,7 @@ theorem RawTeleProperties.var {m : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ �
           ⟨CtxWF.varLast (T.as.wf.snoc ⟨_, ht⟩), pt.wk ht, .var _ _, .varLast ht pt.subst⟩)
     | cast i =>
       have p := (SemanticHom.projection ht).typed (ih hΔ.init pΔ.init i hi)
-      simpa [T, CtxCat.extendTele, CtxCat.projectionRaw, Expr.subst_wk, Expr.var_wk] using p
+      simpa [T, CtxCat.extendTele, CtxCat.projectionRaw, Subst.wk, Expr.subst_wk] using p
 
 theorem RawInterpretationProperties.wkN {k : Nat} {P : Level ℓ → Prop}
     (Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)) (hΔ : TeleWF E P Γ₁.as.ctx Δ)

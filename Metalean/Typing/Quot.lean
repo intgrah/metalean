@@ -48,7 +48,7 @@ theorem Quot.minorType_isType :
   intro hα hr hβ
   have hαwk : E[Γ.snoc α] ⊢ α.wk : .sort l := hα.wk α
   have hrwk : E[Γ.snoc α] ⊢ r.wk : Quot.relType α.wk := by
-    simpa [Expr.wk] using hr.wk α
+    simpa [Expr.wk, Quot.relType] using hr.wk α
   have hvar : E[Γ.snoc α] ⊢ .var (Fin.last n) : α.wk := by
     have := Defeq.var (Γ := Γ.snoc α) (v := Fin.last n) (by rw [Ctx.get_last]; exact hαwk)
     rwa [Ctx.get_last] at this
@@ -68,9 +68,8 @@ theorem Quot.eqApp_typed {ηeq : Head ζ (.inductive Eq.sig)}
     E[Γ] ⊢ e₂ : α →
     E[Γ] ⊢ Quot.eqApp ηeq l α e₁ e₂ : .prop := by
   intro hα h₁ h₂
-  have h := Defeq.indDF (E := E) (Γ := Γ) (η := ηeq) (s := ⟨0, by decide⟩)
-    (ls := fun _ => l) (ps₁ := fun i => if i.val = 0 then α else e₁)
-    (ps₂ := fun i => if i.val = 0 then α else e₁) (is₁ := fun _ => e₂) (is₂ := fun _ => e₂)
+  have h := Defeq.indDF (E := E) (Γ := Γ) (η := ηeq) (s := 0)
+    (ls := ![l]) (ps₁ := ![α, e₁]) (ps₂ := ![α, e₁]) (is₁ := ![e₂]) (is₂ := ![e₂])
     (fun
       | ⟨0, _⟩ => by simpa! [hEq, Inductive.paramType] using hα
       | ⟨1, _⟩ => by simpa! [hEq, Inductive.paramType] using h₁)
@@ -103,7 +102,7 @@ theorem Quot.compatType_isType {ηeq : Head ζ (.inductive Eq.sig)}
       (by rw [Ctx.get_last]; exact hα₂)
     rwa [Ctx.get_last] at this
   have hr₂ : E[(Γ.snoc α).snoc α.wk] ⊢ r.wk.wk : Quot.relType α.wk.wk := by
-    simpa [Expr.wk] using (hr.wk α).wk α.wk
+    simpa [Expr.wk, Quot.relType] using (hr.wk α).wk α.wk
   have hcod : E[((Γ.snoc α).snoc α.wk).snoc α.wk.wk] ⊢
       Expr.forallE α.wk.wk.wk .prop : .sort (.imax u .one) :=
     .forallEDF (hα₂.wk _) .sortDF .sortDF

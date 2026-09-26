@@ -52,4 +52,9 @@ def Failure.exitCode : Failure → UInt32
   | .decline _ => 2
   | .internal => 3
 
+instance : MonadLift (Except Failure) (EIO Failure) where
+  monadLift
+    | .ok a => pure a
+    | .error f => throw f
+
 end Metalean.Frontend

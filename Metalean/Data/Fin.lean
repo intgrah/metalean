@@ -18,6 +18,18 @@ namespace Fin
 theorem emptyFun {α : Sort u} (f g : Fin 0 → α) : f = g :=
   funext nofun
 
+theorem fun_vecEmpty {α : Type u} {β : Type v} (f : α → β) :
+    (fun i => f (Matrix.vecEmpty i)) = Matrix.vecEmpty := funext nofun
+
+theorem const_fin_one {α : Type u} (a : α) : (fun _ : Fin 1 => a) = ![a] :=
+  funext fun i => by rw [Fin.fin_one_eq_zero i]; rfl
+
+theorem fun_vecCons {α : Type u} {β : Type v} {n : Nat} (f : α → β) (a : α)
+    (v : Fin n → α) :
+    (fun i => f (Matrix.vecCons a v i)) = Matrix.vecCons (f a) fun i => f (v i) := by
+  funext i
+  refine Fin.cases ?_ (fun _ => ?_) i <;> simp
+
 @[elab_as_elim] def lastInduction
   {motive : {n : Nat} → Fin n → Sort u}
     (last : ∀ n, motive (last n))

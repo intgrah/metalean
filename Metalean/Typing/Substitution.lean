@@ -41,7 +41,8 @@ private theorem substOf
     E[Γ₂] ⊢ e₁.subst σ ≡ e₂.subst σ : t.subst σ := by
   intro h
   induction h generalizing m Γ₂ with
-    try simp! [Expr.inst_subst, Expr.wk_subst_lift] at *
+    try simp! [Expr.inst_subst, Expr.wk_subst_lift, Fin.fun_vecCons, Fin.fun_vecEmpty,
+      Fin.const_fin_one] at *
   | var _ ih =>
     cases image hσ _ with
     | typed d => exact d

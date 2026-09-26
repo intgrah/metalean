@@ -74,7 +74,7 @@ theorem RawTyped.apps {k m : Nat} {P : Level ℓ → Prop}
     have hb := hbody.substitution (σ₁.lift ⟨_, ht⟩).typed
     simp only [RawCtx.Hom.snoc_subst] at pr
     dsimp only [RawCtx.Hom.lift] at pb hb
-    rw [Expr.subst_forallE] at pinit
+    rw [Expr.subst] at pinit
     have pa := pinit.app (ht.substitution σ₁.typed) hb pb parg
       (by simpa [RawCtx.Hom.lift, Expr.inst_subst_lift] using pr)
     simp only [Expr.apps_last, Fin.natAdd_castSucc, Fin.natAdd_last, RawCtx.Hom.snoc_subst,

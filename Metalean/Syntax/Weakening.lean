@@ -311,7 +311,7 @@ end Ctx
   funext v
   cases v using Fin.lastCases <;> simp [Subst.rename, Subst.precomp, Subst.id, Expr.rename]
 
-theorem Expr.var_wk {ℓ n : Nat} (v : Var n) : (Expr.var v : Expr ζ ℓ n).wk = .var v.castSucc := by
+@[simp] theorem Expr.var_wk {ℓ n : Nat} (v : Var n) : (Expr.var v : Expr ζ ℓ n).wk = .var v.castSucc := by
   simp [Expr.wk, Expr.wkFrom, Expr.rename]
 
 end Metalean

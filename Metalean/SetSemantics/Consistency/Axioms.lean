@@ -113,13 +113,7 @@ theorem propextValue_mem {ε : Atom ζ 0 → ZFSet.{u}}
   have htype : ε[![]]⟦(propextType ηeq ηiff){ls}⟧ =
       [zf|(a₁ a₂ : $(S_ 0)) → $(ε <| .ind ηiff 0 ![] ![a₁, a₂] ![]) →
         $(ε <| .ind ηeq 0 (fun _ => .succ .zero) ![S_ 0, a₁] ![a₂])] := by
-    simp! [propextType]
-    refine Aczel.pi_congr fun a₁ ha₁ => ?_
-    refine Aczel.pi_congr fun a₂ ha₂ => ?_
-    congr 1
-    · congr 2 <;> funext i <;> fin_cases i <;> rfl
-    · funext witness
-      congr 2 <;> funext i <;> fin_cases i <;> rfl
+    simp! [propextType, Fin.fun_vecCons, Fin.fun_vecEmpty, Fin.const_fin_one]
   rw [htype]
   refine lam_mem_pi fun a ha => lam_mem_pi fun b hb => lam_mem_pi fun witness hwitness => ?_
   obtain rfl := hiff.sound ha hb hwitness

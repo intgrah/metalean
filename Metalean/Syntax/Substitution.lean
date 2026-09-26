@@ -31,9 +31,6 @@ variable (σ : Subst ζ ℓ m n)
   letI := Subst.category ζ ℓ
   Expr.appSubstHom.listFold.naturality_apply σ ⟨e, args⟩ |>.symm
 
-@[simp] theorem Expr.subst_app (f e : Expr ζ ℓ m) :
-    (f.app e).subst σ = (f.subst σ).app (e.subst σ) := rfl
-
 @[simp] theorem Expr.inst_app (f e : Expr ζ ℓ (n + 1)) (value : Expr ζ ℓ n) :
     (f.app e).inst value = (f.inst value).app (e.inst value) := rfl
 
@@ -42,17 +39,6 @@ variable (σ : Subst ζ ℓ m n)
       (e.subst σ).apps fun i => (args i).subst σ :=
   letI := Subst.category ζ ℓ
   (Expr.appSubstHom.finFold k).naturality_apply σ ⟨e, args⟩ |>.symm
-
-@[simp] theorem Expr.subst_forallE (t : Expr ζ ℓ m) (t' : Expr ζ ℓ (m + 1)) :
-    (t.forallE t').subst σ =
-      (t.subst σ).forallE (t'.subst σ.lift) := rfl
-
-@[simp] theorem Expr.subst_sort (l : Level ℓ) :
-    (Expr.sort l : Expr ζ ℓ m).subst σ = .sort l := rfl
-
-@[simp] theorem Expr.subst_quot (η : Head ζ .quot) (l : Level ℓ) (α r : Expr ζ ℓ m) :
-    (Expr.quot η l α r).subst σ =
-      .quot η l (α.subst σ) (r.subst σ) := rfl
 
 @[simp] theorem Expr.inst_wk (e₁ e₂ : Expr ζ ℓ n) : e₁.wk.inst e₂ = e₁ := by
   change (e₁.wkFrom n).subst _ = e₁
@@ -95,11 +81,6 @@ theorem Expr.inst_subst (σ : Subst ζ ℓ n p) (t' : Expr ζ ℓ (n + 1)) (e : 
     funext v
     simp [Subst.precomp, Ren.wkN]
   rw [hσ]
-
-@[simp] theorem Expr.wkN_subst_id_append (e : Expr ζ ℓ n)
-    (xs : Fin k → Expr ζ ℓ n) :
-    (e.wkN k).subst (Fin.append Subst.id xs) = e := by
-  rw [Expr.wkN_subst_append, Expr.subst_id]
 
 theorem Expr.subst_closed (e : Expr ζ ℓ 0) (σ : Subst ζ ℓ 0 n) :
     e.subst σ = e.wkClosed (n := n) := by
@@ -820,7 +801,7 @@ theorem Ctor.forall_caseSubst {ctor : Ctor ζ ι s csig} {η : Head ζ (.inducti
       simp only [Ctx.get_append, Fin.append_left, Expr.wkN_subst_append]
       cases v using Fin.addCases with
       | left v =>
-        simp only [Ctx.get_append, Expr.wkN_subst_id_append, Fin.append_left]
+        simp only [Ctx.get_append, Expr.wkN_subst_append, Expr.subst_id, Fin.append_left]
         exact hΓ v
       | right f =>
         rw [Ctx.get_subst _ _ _ (n + f.val) (by omega) rfl,
@@ -869,50 +850,9 @@ theorem Inductive.indexType_eq_get_subst (s : Fin ι.nsorts)
         fun i => (recFds i).subst σ := by
   simp [iotaType, Expr.subst]
 
-@[simp] theorem Quot.compatType_subst
-    (eqHead : Head ζ (.inductive Eq.sig)) (l : Level ℓ)
-    (α r β f : Expr ζ ℓ m) (σ : Subst ζ ℓ m n) :
-    (compatType eqHead l α r β f).subst σ =
-      compatType eqHead l (α.subst σ) (r.subst σ)
-        (β.subst σ) (f.subst σ) := by
-  simp! [compatType, eqApp, Expr.wk_subst_lift, Subst.lift, Fin.last]
-  constructor
-  · simp [Expr.wk]
-  · constructor
-    · funext i
-      split
-      · simp [Expr.wk_subst_lift]
-      · simp [Expr.wk_subst_lift]
-        change (σ.liftN 3) ⟨m, by omega⟩ = _
-        exact Subst.liftN_var σ ⟨0, by omega⟩
-    · simp [Expr.wk]
-
-@[simp] theorem Quot.minorQuotMk_subst (η : Head ζ .quot) (l : Level ℓ)
-    (α r : Expr ζ ℓ m) (σ : Subst ζ ℓ m n) :
-    (minorQuotMk η l α r).subst σ.lift =
-      minorQuotMk η l (α.subst σ) (r.subst σ) := by
-  simp! [minorQuotMk, Expr.wk_subst_lift]
-
 @[simp] theorem Quot.minorQuotMk_inst (η : Head ζ .quot) (l : Level ℓ) (α r a : Expr ζ ℓ m) :
     (minorQuotMk η l α r).inst a = .quotMk η l α r a := by
-  simp [minorQuotMk, Expr.inst, Expr.subst, Expr.wk_subst_extend]
-
-@[simp] theorem Quot.minorType_subst (η : Head ζ .quot) (l : Level ℓ)
-    (α r β : Expr ζ ℓ m) (σ : Subst ζ ℓ m n) :
-    (minorType η l α r β).subst σ =
-      minorType η l (α.subst σ) (r.subst σ) (β.subst σ) := by
-  simp [minorType, Expr.wk_subst_lift]
-
-@[simp] theorem Quot.relType_subst (α : Expr ζ ℓ m)
-    (σ : Subst ζ ℓ m n) :
-    (relType α).subst σ = relType (α.subst σ) := by
-  simp [relType, Expr.wk_subst_lift]
-
-@[simp] theorem Quot.motiveType_subst (η : Head ζ .quot) (l : Level ℓ)
-    (α r : Expr ζ ℓ m) (σ : Subst ζ ℓ m n) :
-    (motiveType η l α r).subst σ =
-      motiveType η l (α.subst σ) (r.subst σ) := by
-  simp [motiveType]
+  simp [Expr.inst, Expr.subst, Expr.wk_subst_extend]
 
 theorem Expr.inst_wkFrom_last (t' : Expr ζ ℓ (n + 1)) :
     (t'.wkFrom n).inst (.var (Fin.last n)) = t' := by

@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Export.Basic
+public import Metalean.Frontend.Failure
 
 @[expose] public section
 
@@ -22,5 +23,15 @@ inductive Binding where
 deriving DecidableEq, Repr
 
 abbrev Table := Std.HashMap Name Binding
+
+def Table.const (t : Table) (name : Name) : Except Failure Nat :=
+  match t.get? name with
+  | some (.const pos) => pure pos
+  | _ => throw (.reject (.unknownName name))
+
+def Table.ind (t : Table) (name : Name) : Except Failure Nat :=
+  match t.get? name with
+  | some (.ind pos 0) => pure pos
+  | _ => throw (.reject (.unknownName name))
 
 end Metalean.Frontend

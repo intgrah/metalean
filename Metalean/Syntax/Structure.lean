@@ -12,7 +12,9 @@ import Metalean.Meta.DeriveFunctor
 
 @[expose] public section
 
-namespace Metalean.Inductive
+namespace Metalean
+
+namespace Inductive
 
 open CategoryTheory
 
@@ -151,7 +153,7 @@ variable (h : I.IsStructure s c)
   (maj : Expr ζ₁ ℓ n)
 
 def projectionMotives : Fin ι.nsorts → Expr ζ₁ ℓ n := fun other => by
-  obtain hs := h.sort_unique other
+  have hs := h.sort_unique other
   subst other
   let previous : Fin f.val →
       Expr ζ₁ ℓ (n + ι.nindices s + 1) := fun previous =>
@@ -201,14 +203,14 @@ theorem projection_map :
       · funext other
         have hs := h.sort_unique other
         subst other
-        simp [ms, ihMotiveTerm, Expr.map]
+        simp [ms, ihMotiveTerm]
       · funext other otherCtor
         have hs := h.sort_unique other
         subst other
         have hc := h.ctor_unique otherCtor
         subst otherCtor
         simp only [cases]
-        simp [ms, ihMotiveTerm, Expr.map]
+        simp [ms, ihMotiveTerm]
       · exact funext h.no_indices.elim
 
 @[simp] theorem projType_map :
@@ -311,9 +313,9 @@ theorem ordinaryLevel_eq_zero_of_eval_zero
 
 end IsStructure
 
-end Metalean.Inductive
+end Inductive
 
-namespace Metalean.Env.IsStructure
+namespace Env.IsStructure
 
 open CategoryTheory
 
@@ -340,4 +342,6 @@ variable {ℓ n : Nat} {ι : IndSig} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
   intro h'
   rfl
 
-end Metalean.Env.IsStructure
+end Env.IsStructure
+
+end Metalean

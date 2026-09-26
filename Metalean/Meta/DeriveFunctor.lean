@@ -250,9 +250,10 @@ def deriveMap (info : InductiveVal) (name : Name) (param : Nat) (source : Expr)
             let body := (← instantiateMVars (mkAppN body #[target, f])).replaceFVar recur
               (mkConst name levels)
             let attr ← `(attr| implicit_reducible)
+            let simpAttr : Attribute := { name := `simp, stx := ← `(attr| simp) }
             let value ← addDefinition info name mapType
               (← mkLambdaFVars (outer ++ rest |>.push x) body)
-              (if info.isRec then #[] else
+              (if info.isRec then #[simpAttr] else
                 #[{ name := `implicit_reducible, stx := attr }]) info.isRec
             maps.add name .global
             return value
@@ -397,7 +398,8 @@ def deriveTransport (info : InductiveVal) (name : Name) (param : Nat) (source : 
             | none =>
               let some (_, simplified) := (← simpGoal goal simps).1 | pure []
               simplified.apply ctor
-          premises.forM fun premise => liftM (carry simps premise)
+          premises.forM fun premise => do
+            unless ← premise.isAssigned do carry simps premise
         addDecl (.thmDecl {
           name
           levelParams := info.levelParams

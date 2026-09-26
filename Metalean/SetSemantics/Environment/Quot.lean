@@ -91,15 +91,9 @@ private theorem denote_compatType {ε : Atom ζ₁ 0 → ZFSet.{v}}
       ε (.ind η ⟨0, by decide⟩ (fun _ => l) ![b, x] ![y]) = equality b x y) :
     ε[γ]⟦Quot.compatType η l α r β f⟧ =
       quotientCompat equality ε[γ]⟦α⟧ ε[γ]⟦r⟧ ε[γ]⟦β⟧ ε[γ]⟦f⟧ := by
-  have heq (b x y : ZFSet) :
-      ε (.ind η 0 (fun _ => l) (fun i => if i = 0 then b else x) fun _ => y) =
-        equality b x y := by
-    convert hequality b x y using 1
-    congr 2
-    · exact funext <| Fin.cases rfl <| Fin.cases rfl fun i => Fin.elim0 i
-    · exact funext fun i => Fin.eq_zero i ▸ rfl
-  simp! [Quot.compatType, quotientCompat, Quot.eqApp, heq,
-    Fin.snoc, Fin.last, apply_ite]
+  have heq (b x y : ZFSet) : ε (.ind η 0 ![l] ![b, x] ![y]) = equality b x y := by
+    simpa [Fin.const_fin_one] using hequality b x y
+  simp! [quotientCompat, heq, Fin.fun_vecCons, Fin.fun_vecEmpty, Fin.const_fin_one]
 
 private theorem denote_compatType_map {η : Head ζ₁ .quot}
     {pre : E₁.as ⟶ E₂.as} (hatoms : AtomsMap pre.sigs ε₁ ε₂)

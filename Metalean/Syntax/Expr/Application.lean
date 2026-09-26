@@ -71,9 +71,6 @@ theorem apps_append (e : Expr ζ ℓ n) (args₁ : Fin k → Expr ζ ℓ n)
     (η.apps args){ls} = η{ls}.apps args{ls} :=
   (appLevelHom.finFold k).naturality_apply ls ⟨η, args⟩ |>.symm
 
-def appList (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) : Expr ζ ℓ n :=
-  args.foldl .app η
-
 @[simp] theorem map_appList (pre : ζ₁ ⟶ ζ₂)
     (η : Expr ζ₁ ℓ n) (args : List (Expr ζ₁ ℓ n)) :
     (η.appList args).map pre =

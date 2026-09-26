@@ -239,7 +239,7 @@ theorem recoveredField_eq_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel 
         τ (fun v => (pσ v).term) (fun v => (pσ v).fixed)).typed
         (hsound.ordinaryTypeJudgment η hB hblock s c ls f (hctx _ _)).toRawTyped
       have hz : (((E₂.get η).block.ctors s c).ordinary f).level{ls} = .zero := by simpa using hf
-      rw [Expr.subst_sort, hz] at hp
+      rw [Expr.subst, hz] at hp
       have hsrt := hp.fixed hp.typed σ ρ hρ
       rw [rawInterpret_sort] at hsrt
       exact (((pf f).fixed (pf f).typed σ ρ hρ).symm.trans
