@@ -57,6 +57,7 @@ public import Metalean.Checker.Fast.Operations
 public import Metalean.Checker.Fast.Quot
 public import Metalean.Checker.Fast.Reduce
 public import Metalean.Checker.Fast.Spec
+public import Metalean.Checker.Fast.StrLit
 public import Metalean.Checker.Fast.Translate
 public import Metalean.Checker.Fast.WF
 public import Metalean.Checker.Fast.Whnf

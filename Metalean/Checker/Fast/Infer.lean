@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Checker.Fast.Reduce
+public import Metalean.Checker.Fast.StrLit
 import Metalean.Checker.Slow.Eta
 public import Metalean.Metatheory.Unique
 public import Metalean.Typing.Structure
@@ -481,7 +482,6 @@ partial def inferCore (G : FCtx) :
         have hB := (hS.wf.entryWF η₀).block
         have hctor := hB.ctors ⟨s, hs⟩ ⟨c, hc⟩
         have ⟨eps, hepsD, hepsT⟩ := TypedSpec.fixArgs hS hps'
-          (fts := fun p => I.paramType ls ps p.val (by omega))
           (fun e p => (E.get η₀).block.paramType (⟦ls' ·⟧) e p) hps''
           (fun e he p => hI.paramType hls hls' ⟨hps', he⟩ p)
           (fun e p h => Inductive.paramType_isType hB p h)
@@ -496,8 +496,6 @@ partial def inferCore (G : FCtx) :
           (fun f => hfdsT f)
         have hfdsA : ArgsDenote ⟨_, _⟩ fds _ := ⟨hfds', hefdsD⟩
         have ⟨erec, herecD, herecT⟩ := TypedSpec.fixArgs hS hrecFds'
-          (fts := fun r => ctor.recursiveFieldExpr pos ls ps fds G.size
-            ((ι.ctors ⟨s, hs⟩ ⟨c, hc⟩).recursiveTarget r).val r.val (hrecLt r))
           (fun _ r => ((E.get η₀).block.ctors ⟨s, hs⟩ ⟨c, hc⟩).recursiveFieldExpr η₀
             (⟦ls' ·⟧) eps efds r)
           hrecFds''
@@ -684,11 +682,22 @@ partial def inferCore (G : FCtx) :
     pure ⟨FExpr.nat p, fun {_ _ _ _ _} _ (.natLit hη) =>
       ⟨_, _, .natLit hη, .nat hη, Expr.natLit_typed _ num⟩⟩
   | .strLit P str => do
-    let ⟨ft, h⟩ ← infer G (FExpr.strLitExpand P str)
-    pure ⟨ft, fun {_ _ _ _ _} hS hden => by
-      have ⟨_, _, hd, htd, hty⟩ := h hS hden.ofStrLit
-      obtain rfl := hd.unique hden.ofStrLit (FExpr.strLitExpand_noProj P str)
-      exact ⟨_, _, hden, htd, hty⟩⟩
+    let ⟨tOfNat, hOfNat⟩ ← infer G (.const P.ofNat #[])
+    let ⟨tOfList, hOfList⟩ ← infer G (.const P.ofList #[])
+    match tOfList, hOfList with
+    | .forallE dom cod, hOfList =>
+      match hList : F[P.list]?, hChar : F[P.char]? with
+      | some (.inductive ιList IList), some (.inductive ιChar IChar) =>
+        let some ⟨hcod⟩ := cod.noProj | throw (.decline .literal)
+        let ⟨h⟩ ← guardProofOr (ιList = List.sig ∧ IList = FList.raw ∧ ιChar = Char.sig ∧
+          IChar.level = .succ .zero ∧ tOfNat = .forallE (FExpr.nat P.nat) (FExpr.char P.char) ∧
+          dom = FExpr.listChar P ∧ cod.data.looseBVarRange.toNat = 0 ∧ cod.fvarRange ≤ G.size)
+          (.decline .literal)
+        pure ⟨cod, by
+          obtain ⟨rfl, rfl, rfl, hl, rfl, rfl, hc, hr⟩ := h
+          exact InferSpec.strLit hOfNat hOfList hList hChar hl hcod hc hr⟩
+      | _, _ => throw (.decline .literal)
+    | _, _ => throw (.decline .literal)
 
 partial def inferOnly (G : FCtx) (fe : FExpr) :
     CheckM F ℓ {ft : FExpr // InferOnlySpec F ℓ G fe ft} := do
@@ -840,9 +849,6 @@ partial def inferOnlyCore (G : FCtx) :
           exact ⟨_, hd, (Defeq.retype hS.wf hS.ctxWF hP.symm hty₂).right⟩⟩
       | _ => throw (.reject .shape)
     | _ => throw (.reject .shape)
-  | .strLit P str => do
-    let ⟨ft, h⟩ ← inferOnly G (FExpr.strLitExpand P str)
-    pure ⟨ft, fun {_ _ _ _ _ _} hS hden he => h hS hden.ofStrLit he⟩
   | fe => do
     let ⟨ft, h⟩ ← inferCore G fe
     pure ⟨ft, h.toOnly⟩

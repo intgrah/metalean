@@ -21,31 +21,25 @@ def options (p : Parsed) : Export.Options where
   input := p.positionalArg! "input" |>.as! String
   verbose := p.hasFlag "verbose"
 
-def runFast (p : Parsed) : IO UInt32 := do
-  let opts := options p
-  let some h ← Export.open? opts.input | return 3
-  let lines ← if opts.verbose then Export.countLines h else pure 0
-  let some h ← Export.open? opts.input | return 3
-  let some (decls, lastUse) ← Export.scan h 0 (fun n _ => n + 1) opts.verbose lines
-    | return (Frontend.Failure.reject .parse).exitCode
-  Export.run opts lastUse decls Checker.Fast.FState.initial Checker.Fast.step
+def runFast (p : Parsed) : IO UInt32 :=
+  Export.run (options p) fun ds => do
+    let mut st := Checker.Fast.FState.initial
+    for d in ds do
+      st ← d.check (Checker.Fast.step st d.decl)
 
-def runSlow (p : Parsed) : IO UInt32 := do
-  let opts := options p
-  let some h ← Export.open? opts.input | return 3
-  let lines ← if opts.verbose then Export.countLines h else pure 0
-  let some h ← Export.open? opts.input | return 3
-  let some (decls, lastUse) ← Export.scan h 0 (fun n _ => n + 1) opts.verbose lines
-    | return (Frontend.Failure.reject .parse).exitCode
-  Export.run opts lastUse decls Checker.Slow.State.initial fun st d => Checker.Slow.step st d
+def runSlow (p : Parsed) : IO UInt32 :=
+  Export.run (options p) fun ds => do
+    let mut st := Checker.Slow.State.initial
+    for d in ds do
+      st ← d.check (.ofExcept (Checker.Slow.step st d.decl))
 
 def fastCmd : Cmd := `[Cli|
   fast VIA runFast;
   "Check a lean4export NDJSON file with the fast checker."
 
   FLAGS:
-    verbose; "Print lines parsed out of total, then each declaration's number out of total, name
-      and time taken to check it."
+    verbose; "Print scanning progress, then each declaration's number out of total, name and time
+      taken to check it."
 
   ARGS:
     input : String; "The NDJSON export to check."
@@ -56,7 +50,8 @@ def slowCmd : Cmd := `[Cli|
   "Check a lean4export NDJSON file with the slow checker."
 
   FLAGS:
-    verbose; "Print line numbers, declaration numbers, name and time taken."
+    verbose; "Print scanning progress, then each declaration's number out of total, name and time
+      taken to check it."
 
   ARGS:
     input : String; "The NDJSON export to check."
