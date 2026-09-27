@@ -18,6 +18,7 @@ open Frontend (Failure)
 structure Options where
   input : System.FilePath
   verbose : Bool := false
+  jobs : Nat := 8
 
 structure LineFailure where
   line : Nat
@@ -93,6 +94,7 @@ def scan (lines : Lines) (verbose : Bool) : DriverM Scan := do
   return ⟨decls, lastUse⟩
 
 structure Declaration where
+  index : Nat
   line : Nat
   decl : Decl
 
@@ -104,13 +106,15 @@ def Declaration.check {α : Type} (d : Declaration) (act : EIO Failure α) : Dri
 def produce (lines : Lines) (lastUse : Array UInt32)
     (channel : Std.CloseableChannel.Sync Declaration) : DriverM Unit := do
   let mut tables : Tables := {}
+  let mut index := 0
   for line in lines do
     match parseLine tables lastUse line.number line.bytes with
     | .error _ => throw ⟨line.number, .reject .parse⟩
     | .ok (t, decl) =>
       tables := t
       if let some decl := decl then
-        if (← (channel.send ⟨line.number, decl⟩).toBaseIO) matches .error .closed then break
+        index := index + 1
+        if (← (channel.send ⟨index, line.number, decl⟩).toBaseIO) matches .error .closed then break
 
 def close (channel : Std.CloseableChannel.Sync Declaration) : IO Unit := do
   match ← channel.close.toBaseIO with
@@ -122,9 +126,34 @@ def shutdown (channel : Std.CloseableChannel.Sync Declaration) : IO Unit := do
   for _ in channel do
     pure ()
 
+structure Pool where
+  queue : Std.CloseableChannel.Sync (BaseIO Unit)
+
+def Pool.start (workers : Nat) : BaseIO Pool := do
+  let queue : Std.CloseableChannel.Sync (BaseIO Unit) ← Std.CloseableChannel.Sync.new (some workers)
+  for _ in [0:workers] do
+    discard <| IO.asTask (prio := .dedicated) do
+      for job in queue do
+        job
+  pure ⟨queue⟩
+
+def Pool.submit {α : Type} [Nonempty α] (p : Pool) (act : BaseIO α) :
+    BaseIO (Task (Option α)) := do
+  let promise ← IO.Promise.new
+  discard (p.queue.send (do promise.resolve (← act))).toBaseIO
+  pure promise.result?
+
+def Pool.shutdown (p : Pool) : IO Unit := do
+  match ← p.queue.close.toBaseIO with
+  | .ok () | .error .alreadyClosed => pure ()
+  | .error e => throw (.userError s!"{e}")
+  for _ in p.queue do
+    pure ()
+
 structure Declarations where
   total : Nat
   verbose : Bool
+  pool : Pool
   channel : Std.CloseableChannel.Sync Declaration
 
 def millis (ns : Nat) : String :=
@@ -132,21 +161,11 @@ def millis (ns : Nat) : String :=
   s!"{ns / 1000000}.{"".pushn '0' (3 - micros.length)}{micros}ms"
 
 instance : ForIn DriverM Declarations Declaration where
-  forIn ds init f := do
-    let mut b := init
-    let mut count := 0
-    for d in ds.channel do
-      count := count + 1
-      if ds.verbose then IO.eprint s!"{count}/{ds.total} {d.decl.name}"
-      let start ← IO.monoNanosNow
-      let step ← tryFinally (f d b) do
-        if ds.verbose then IO.eprintln s!" {millis ((← IO.monoNanosNow) - start)}"
-      match step with
-      | .done b' =>
-        b := b'
-        break
-      | .yield b' => b := b'
-    return b
+  forIn ds init f := forIn ds.channel init f
+
+def Declarations.log (ds : Declarations) (d : Declaration) (start : Nat) : IO Unit := do
+  if ds.verbose then
+    IO.eprint s!"{d.index}/{ds.total} {d.decl.name} {millis ((← IO.monoNanosNow) - start)}\n"
 
 def pipeline (opts : Options) (check : Declarations → DriverM Unit) : DriverM Unit := do
   let handle ← IO.FS.Handle.mk opts.input .read
@@ -156,7 +175,10 @@ def pipeline (opts : Options) (check : Declarations → DriverM Unit) : DriverM 
   let channel ← Std.CloseableChannel.Sync.new (some 1024)
   let producer ← IO.asTask (prio := .dedicated) do
     try (produce lines s.lastUse channel).run finally close channel
-  let checked : Except LineFailure Unit ← (check ⟨s.decls, opts.verbose, channel⟩ |>.run : IO _)
+  let pool ← Pool.start (max opts.jobs 1)
+  let checked : Except LineFailure Unit ←
+    (check ⟨s.decls, opts.verbose, pool, channel⟩ |>.run : IO _)
+  pool.shutdown
   shutdown channel
   let parsed : Except LineFailure Unit ← (IO.ofExcept (← IO.wait producer) : IO _)
   match parsed, checked with

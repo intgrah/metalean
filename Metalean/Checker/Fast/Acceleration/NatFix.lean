@@ -316,7 +316,7 @@ structure FixSpec (pos : Nat) (G B : FExpr) : Prop where
   opLamBeta : (opLamBeta C pos).Spec F
   step : (step C G B).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check (beq : Nat) : EIO Failure (PLift (Spec F C beq)) := do
   let ⟨goStep⟩ ← (goStep C).check F hints

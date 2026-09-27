@@ -44,7 +44,7 @@ end FExpr
 
 namespace Decide.Inductive.Le
 
-variable (F : FEnv) (hints : Array Export.Hints) (C : Consts)
+variable (F : FEnv) (hints : PArray Export.Hints) (C : Consts)
 
 @[fexpr_unfold]
 def decideBool (P β yes no : FExpr) : FExpr :=
@@ -213,7 +213,7 @@ theorem Spec.decLe (h : Spec F C q) (hd : Dite.Spec F C) (hn : NatSpec F C.Nat_)
 
 end Le
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def verifyDecLe (D : Decide.LeConsts) (t : Table) (ble : BoolOp F Nat.ble) :
     EIO Failure (PLift (DecLe F D)) := do

@@ -49,7 +49,7 @@ structure Spec : Prop where
   step : (step p pos).Spec F
   congr : (congr p pos).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check : EIO Failure (PLift (Spec p pos F)) := do
   let ⟨base⟩ ← (base p pos).check F hints

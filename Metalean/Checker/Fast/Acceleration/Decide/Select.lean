@@ -16,7 +16,7 @@ namespace Metalean.Checker.Fast.Decide
 
 open Frontend (Failure Table)
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def verifyDecLe (D : LeConsts) (t : Table) (ble : BoolOp F Nat.ble) :
     EIO Failure (PLift (DecLe F D)) :=

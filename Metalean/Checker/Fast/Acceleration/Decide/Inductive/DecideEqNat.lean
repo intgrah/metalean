@@ -21,7 +21,7 @@ namespace Decide.Inductive.DecideEqNat
 
 structure Consts extends toEqNat : EqNat.Consts, toDecideConsts : Decide.DecideConsts
 
-variable (F : FEnv) (hints : Array Export.Hints) (D : Decide.DecideConsts)
+variable (F : FEnv) (hints : PArray Export.Hints) (D : Decide.DecideConsts)
 
 def congr : Schema :=
   schema% (P : prop) (d : FExpr.Decidable D P) ⊢ FExpr.Decidable.decide D P d : bool D.Bool_
@@ -65,7 +65,7 @@ theorem Spec.decideEqNat {C : Consts} (h : Spec F C.toDecideConsts)
 
 end DecideEqNat
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def verifyDecideEqNat (D : Decide.DecideConsts) (t : Table) (beq : BoolOp F Nat.beq) :
     EIO Failure (PLift (DecideEqNat F D)) := do

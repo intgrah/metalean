@@ -67,7 +67,7 @@ end FExpr
 
 namespace Fuel
 
-variable (F : FEnv) (C : Consts) (hints : Array Export.Hints)
+variable (F : FEnv) (C : Consts) (hints : PArray Export.Hints)
 
 def ltCongr : Schema :=
   schema% (x : nat C.Nat_) (fuel : nat C.Nat_) ⊢ FExpr.Nat.le C (succ C.Nat_ x) fuel : prop

@@ -45,7 +45,7 @@ end FExpr
 
 namespace Decide.Inductive.EqNat
 
-variable (F : FEnv) (hints : Array Export.Hints) (C : Consts)
+variable (F : FEnv) (hints : PArray Export.Hints) (C : Consts)
 
 @[fexpr_unfold]
 def decEqMatch (P β yes no : FExpr) : FExpr :=
@@ -206,7 +206,7 @@ theorem Spec.decEqNat (h : Spec F C) (hd : Dite.Spec F C) (hn : NatSpec F C.Nat_
 
 end EqNat
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def verifyDecEqNat (D : Decide.EqNatConsts) (t : Table) (beq : BoolOp F Nat.beq) :
     EIO Failure (PLift (DecEqNat F D)) := do

@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.Checker.Fast.FCtx
+public import Metalean.Data.PArray
 public import Metalean.Syntax.Eq
 public import Metalean.Syntax.Env
 import Metalean.Meta.DeriveFunctor
@@ -58,7 +59,7 @@ def FEntry.constType? : FEntry → Option (Nat × FExpr)
   | .axiom nlevels ft | .opaque nlevels ft | .def nlevels ft _ => some (nlevels, ft)
   | .inductive _ _ | .quot _ => none
 
-abbrev FEnv := Array FEntry
+abbrev FEnv := PArray FEntry
 
 variable {ℓ : Nat}
 
@@ -137,7 +138,7 @@ judgement FEntry.Denotes (E : Σ ζ, Env ζ) :
 judgement FEnv.Denotes : (F : FEnv) → {ζ : Sigs} → (E : Env ζ) → Prop where
 
   ──────────────────── nil
-  Denotes #[] .nil
+  Denotes ∅ .nil
 
   Denotes F E
   FEntry.Denotes ⟨ζ, E⟩ fentry entry
@@ -151,7 +152,7 @@ theorem FEnv.Denotes.size {F : FEnv} {E : Env ζ} :
     F.size = ζ.length := by
   intro h
   induction h with
-  | nil => rfl
+  | nil => simp [Sigs.length]
   | snoc _ _ ih => simp [Sigs.length, ih]
 
 theorem FEnv.Denotes.get {F : FEnv} {E : Env ζ} {pos : Nat} {fentry : FEntry}
@@ -163,7 +164,7 @@ theorem FEnv.Denotes.get {F : FEnv} {E : Env ζ} {pos : Nat} {fentry : FEntry}
   induction h with
   | nil => simp at hfe
   | @snoc F ζ E fentry₀ entry hE he ih =>
-    rw [Array.getElem?_push] at hfe
+    rw [PArray.getElem?_push] at hfe
     by_cases hpos : pos = F.size
     · simp only [hpos, ↓reduceIte, Option.some.injEq] at hfe
       subst hfe

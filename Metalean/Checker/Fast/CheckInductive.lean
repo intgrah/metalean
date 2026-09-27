@@ -19,7 +19,7 @@ namespace Metalean.Checker.Fast
 
 open Frontend (Failure)
 
-variable {ζ : Sigs} (F : FEnv) (ℓ : Nat) (hints : Array Export.Hints)
+variable {ζ : Sigs} (F : FEnv) (ℓ : Nat) (hints : PArray Export.Hints)
   (accel : Accel F)
 
 def TeleWFSpec (G : FCtx) (P : Level ℓ → Prop) (ts : FCtx) : Prop :=

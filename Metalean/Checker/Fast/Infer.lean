@@ -21,7 +21,7 @@ open Frontend (Failure)
 
 section
 
-variable (F : FEnv) (ℓ : Nat) (hints : Array Export.Hints)
+variable (F : FEnv) (ℓ : Nat) (hints : PArray Export.Hints)
   (accel : Accel F)
 
 include hints accel
@@ -1144,7 +1144,7 @@ partial def isDefEqStuck (G : FCtx) (fe₁ fe₂ : FExpr) :
   if let some h ← tryLazyDeltaProj G fe₁ fe₂ then return h
   let ⟨fe₃, hr₁⟩ ← whnfCore G false fe₁
   let ⟨fe₄, hr₂⟩ ← whnfCore G false fe₂
-  if !(fe₃ == fe₁ && fe₄ == fe₂) then
+  if !(FExpr.ptrEq fe₃ fe₁ && FExpr.ptrEq fe₄ fe₂) then
     let ⟨h⟩ ← isDefEq G fe₃ fe₄
     return ⟨h.ofRedSpec hr₁ hr₂⟩
   isDefEqCore G fe₁ fe₂ <|> isDefEqStruct G fe₁ fe₂ <|> isDefEqUnitLike G fe₁ fe₂

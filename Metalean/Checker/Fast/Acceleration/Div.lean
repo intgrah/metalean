@@ -25,7 +25,7 @@ instance : CoeOut Consts Fuel.Consts := ⟨Consts.toFuel⟩
 def Consts.resolve (t : Table) : Except Failure Consts := do
   pure { toFuel := ← Fuel.Consts.resolve t, Nat_div_go := ← t.const ``Nat.div.go }
 
-variable (F : FEnv) (C : Consts) (hints : Array Export.Hints)
+variable (F : FEnv) (C : Consts) (hints : PArray Export.Hints)
 
 def fuelRec (pos : Nat) : Fuel.Rec where
   pos := C.Nat_div_go

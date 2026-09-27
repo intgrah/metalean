@@ -21,9 +21,9 @@ theorem FEnv.Denotes.pushInv {F F₀ : FEnv} {fe : FEntry} {ζ : Sigs} {E : Env 
     (h : FEnv.Denotes F E) (heq : F = F₀.push fe) :
     ∃ (ζ₀ : Sigs) (E₀ : Env ζ₀) (_ : Env.Prefix E₀ E), FEnv.Denotes F₀ E₀ := by
   induction h with
-  | nil => exact absurd (congrArg Array.size heq) (by simp)
+  | nil => exact absurd (congrArg PArray.size heq) (by simp)
   | @snoc F₁ ζ₁ E₁ fe₁ entry h₁ _ _ =>
-    have hfes : F₁ = F₀ := by simpa using congrArg Array.pop heq
+    have hfes : F₁ = F₀ := (PArray.push_inj heq).1
     exact ⟨ζ₁, E₁, .step .refl, hfes ▸ h₁⟩
 
 theorem FEnv.Denotes.restrict {F : FEnv} {ζ₀ : Sigs} {E₀ : Env ζ₀} {E : Env ζ}
@@ -36,12 +36,12 @@ theorem FEnv.Denotes.restrict {F : FEnv} {ζ₀ : Sigs} {E₀ : Env ζ₀} {E : 
 
 theorem FEnv.lt_size_of_getElem? {F : FEnv} {pos : Nat} {fe : FEntry} (h : F[pos]? = some fe) :
     pos < F.size :=
-  (Array.getElem?_eq_some_iff.mp h).1
+  PArray.lt_size_of_getElem? h
 
 theorem FEnv.getElem?_push_of_getElem? {F : FEnv} {pos : Nat} {fe fe₀ : FEntry}
     (h : F[pos]? = some fe₀) :
     (F.push fe)[pos]? = some fe₀ := by
-  simp [Array.getElem?_push, Nat.ne_of_lt (FEnv.lt_size_of_getElem? h), h]
+  simp [PArray.getElem?_push, Nat.ne_of_lt (FEnv.lt_size_of_getElem? h), h]
 
 theorem NatOpSpec.push {nat pos : Nat} {f : Nat → Nat → Nat} (h : NatOpSpec F nat pos f)
     (fe : FEntry) :

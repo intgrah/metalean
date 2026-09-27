@@ -39,7 +39,7 @@ structure Spec : Prop where
   step : (step p pred pos).Spec F
   opCongr : (LiteralRec.opCongr p pos).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check : EIO Failure (PLift (Spec p pred pos F)) := do
   let ⟨predSpec⟩ ← Pred.check p pred F hints
@@ -63,7 +63,7 @@ theorem Spec.eval (h : Spec p pred pos F) (hF : FEnv.Denotes F E) (hE : EnvWF E)
 
 end Sub
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 /-- `Nat.sub` at `pos` -/
 def verifySub (t : Table) (pos : Nat) : EIO Failure (NatOp F Nat.sub) := do

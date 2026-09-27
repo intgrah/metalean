@@ -782,12 +782,6 @@ def decEq (a b : FExpr) : Decidable (a = b) :=
 def ptrEq (fe₁ fe₂ : FExpr) : Bool :=
   unsafe _root_.ptrEq fe₁ fe₂
 
-def ptrEqArrayElems (fes₁ fes₂ : Array FExpr) : Bool :=
-  fes₁.size == fes₂.size && (Fin.foldl fes₁.size (fun acc i => acc && unsafe _root_.ptrEq fes₁[i] (fes₂[i.val]!)) true)
-
-def ptrEqArray (fes₁ fes₂ : Array FExpr) : Bool :=
-  unsafe _root_.ptrEq fes₁ fes₂
-
 instance : DecidableEq FExpr := decEq
 
 instance : Hashable FExpr := ⟨fun e => e.data.hash⟩

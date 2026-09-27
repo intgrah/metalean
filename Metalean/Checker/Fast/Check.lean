@@ -75,7 +75,7 @@ theorem noProj : raw.NoProj where
 
 end FEq
 
-variable (F : FEnv) (hints : Array Export.Hints) (accel : Accel F)
+variable (F : FEnv) (hints : PArray Export.Hints) (accel : Accel F)
 
 def EntryWFSpec (fe : FEntry) : Prop :=
   ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃entry₀ : Entry ζ fe.sig⦄,

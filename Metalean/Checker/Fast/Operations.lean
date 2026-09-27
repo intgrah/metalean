@@ -52,8 +52,13 @@ mutual
 
 @[specialize] unsafe def replaceArray (pre : Nat → FExpr → Option FExpr) (off : Nat) (xs : Array FExpr) :
     ReplaceM (Array FExpr) := do
-  let ys ← xs.mapM (replaceCached pre off)
-  return if FExpr.ptrEqArrayElems xs ys then xs else ys
+  let mut ys := Array.mkEmpty xs.size
+  let mut changed := false
+  for x in xs do
+    let y ← replaceCached pre off x
+    changed := changed || !_root_.ptrEq x y
+    ys := ys.push y
+  return if changed then ys else xs
 
 @[specialize] unsafe def replaceCoreShared (pre : Nat → FExpr → Option FExpr) (off : Nat) (fe : FExpr) :
     ReplaceM FExpr := do
@@ -61,12 +66,12 @@ mutual
   | .ind pos s ls ps is =>
     let ps' ← replaceArray pre off ps
     let is' ← replaceArray pre off is
-    if FExpr.ptrEqArray ps ps' && FExpr.ptrEqArray is is' then pure fe else pure (.ind pos s ls ps' is')
+    if _root_.ptrEq ps ps' && _root_.ptrEq is is' then pure fe else pure (.ind pos s ls ps' is')
   | .ctor pos s c ls ps fds recFds =>
     let ps' ← replaceArray pre off ps
     let fds' ← replaceArray pre off fds
     let recFds' ← replaceArray pre off recFds
-    if FExpr.ptrEqArray ps ps' && FExpr.ptrEqArray fds fds' && FExpr.ptrEqArray recFds recFds' then pure fe
+    if _root_.ptrEq ps ps' && _root_.ptrEq fds fds' && _root_.ptrEq recFds recFds' then pure fe
     else pure (.ctor pos s c ls ps' fds' recFds')
   | .recr pos s ls l ps ms mins is maj =>
     let ps' ← replaceArray pre off ps
@@ -74,18 +79,19 @@ mutual
     let mins' ← replaceArray pre off mins
     let is' ← replaceArray pre off is
     let maj' ← replaceCached pre off maj
-    if FExpr.ptrEqArray ps ps' && FExpr.ptrEqArray ms ms' && FExpr.ptrEqArray mins mins' && FExpr.ptrEqArray is is'
-        && ptrEq maj maj' then pure fe
+    if _root_.ptrEq ps ps' && _root_.ptrEq ms ms' && _root_.ptrEq mins mins' && _root_.ptrEq is is'
+        && _root_.ptrEq maj maj' then pure fe
     else pure (.recr pos s ls l ps' ms' mins' is' maj')
   | .quot pos l α r =>
     let α' ← replaceCached pre off α
     let r' ← replaceCached pre off r
-    if ptrEq α α' && ptrEq r r' then pure fe else pure (.quot pos l α' r')
+    if _root_.ptrEq α α' && _root_.ptrEq r r' then pure fe else pure (.quot pos l α' r')
   | .quotMk pos l α r y =>
     let α' ← replaceCached pre off α
     let r' ← replaceCached pre off r
     let y' ← replaceCached pre off y
-    if ptrEq α α' && ptrEq r r' && ptrEq y y' then pure fe else pure (.quotMk pos l α' r' y')
+    if _root_.ptrEq α α' && _root_.ptrEq r r' && _root_.ptrEq y y' then pure fe
+    else pure (.quotMk pos l α' r' y')
   | .quotLift pos l₁ l₂ α r β f h y =>
     let α' ← replaceCached pre off α
     let r' ← replaceCached pre off r
@@ -93,8 +99,8 @@ mutual
     let f' ← replaceCached pre off f
     let h' ← replaceCached pre off h
     let y' ← replaceCached pre off y
-    if ptrEq α α' && ptrEq r r' && ptrEq β β' && ptrEq f f' && ptrEq h h'
-        && ptrEq y y' then pure fe
+    if _root_.ptrEq α α' && _root_.ptrEq r r' && _root_.ptrEq β β' && _root_.ptrEq f f'
+        && _root_.ptrEq h h' && _root_.ptrEq y y' then pure fe
     else pure (.quotLift pos l₁ l₂ α' r' β' f' h' y')
   | .quotInd pos l α r β f y =>
     let α' ← replaceCached pre off α
@@ -102,28 +108,30 @@ mutual
     let β' ← replaceCached pre off β
     let f' ← replaceCached pre off f
     let y' ← replaceCached pre off y
-    if ptrEq α α' && ptrEq r r' && ptrEq β β' && ptrEq f f' && ptrEq y y' then pure fe
+    if _root_.ptrEq α α' && _root_.ptrEq r r' && _root_.ptrEq β β' && _root_.ptrEq f f'
+        && _root_.ptrEq y y' then pure fe
     else pure (.quotInd pos l α' r' β' f' y')
   | .proj pos s idx y =>
     let y' ← replaceCached pre off y
-    if ptrEq y y' then pure fe else pure (.proj pos s idx y')
+    if _root_.ptrEq y y' then pure fe else pure (.proj pos s idx y')
   | .app f y =>
     let f' ← replaceCached pre off f
     let y' ← replaceCached pre off y
-    if ptrEq f f' && ptrEq y y' then pure fe else pure (.app f' y')
+    if _root_.ptrEq f f' && _root_.ptrEq y y' then pure fe else pure (.app f' y')
   | .lam t b =>
     let t' ← replaceCached pre off t
     let b' ← replaceCached pre (off + 1) b
-    if ptrEq t t' && ptrEq b b' then pure fe else pure (.lam t' b')
+    if _root_.ptrEq t t' && _root_.ptrEq b b' then pure fe else pure (.lam t' b')
   | .forallE t b =>
     let t' ← replaceCached pre off t
     let b' ← replaceCached pre (off + 1) b
-    if ptrEq t t' && ptrEq b b' then pure fe else pure (.forallE t' b')
+    if _root_.ptrEq t t' && _root_.ptrEq b b' then pure fe else pure (.forallE t' b')
   | .letE t v b =>
     let t' ← replaceCached pre off t
     let v' ← replaceCached pre off v
     let b' ← replaceCached pre (off + 1) b
-    if ptrEq t t' && ptrEq v v' && ptrEq b b' then pure fe else pure (.letE t' v' b')
+    if _root_.ptrEq t t' && _root_.ptrEq v v' && _root_.ptrEq b b' then pure fe
+    else pure (.letE t' v' b')
   | _ => pure fe
 
 end

@@ -47,7 +47,7 @@ end FExpr
 
 namespace Decide.Structure
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 namespace Dite
 

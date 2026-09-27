@@ -39,7 +39,7 @@ structure Spec : Prop where
   opCongr : (LiteralRec.opCongr p pos).Spec F
   divCongr : (LiteralRec.opCongr p div).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check : EIO Failure (PLift (Spec p div pos F)) := do
   let ⟨base⟩ ← (base p pos).check F hints
@@ -68,7 +68,7 @@ theorem Spec.eval (h : Spec p div pos F) (hF : FEnv.Denotes F E) (hE : EnvWF E)
 
 end ShiftRight
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 /-- `Nat.shiftRight` at `pos` -/
 def verifyShiftRight (pos : Nat) (div : NatOp F Nat.div) :

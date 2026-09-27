@@ -45,7 +45,7 @@ end FExpr
 
 namespace Mod
 
-variable (F : FEnv) (C : Consts) (hints : Array Export.Hints)
+variable (F : FEnv) (C : Consts) (hints : PArray Export.Hints)
 
 def fuelRec : Fuel.Rec where
   pos := C.Nat_modCore_go

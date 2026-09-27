@@ -24,7 +24,7 @@ protected def FExpr.Decidable.ofBool (D : Decide.Consts) (v : Bool) (p h : FExpr
 
 namespace Decide.Inductive
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def decidableProof (d : FExpr) : EIO Failure FExpr := do
   let ⟨r, _⟩ ← (whnf F 0 hints {} #[] d).eval

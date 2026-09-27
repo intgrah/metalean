@@ -114,7 +114,7 @@ def functional : Except Failure FExpr :=
   | some (.def 0 _ (.appList (.const _ _) [_, _, _, G])) => pure G
   | _ => throw .internal
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check (pos mod : Nat) : EIO Failure ((G : FExpr) × PLift (Spec F C pos mod G)) := do
   let G ← functional F C

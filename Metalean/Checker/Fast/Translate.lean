@@ -151,7 +151,7 @@ def recrTerm (ι : IndSig) (fI : FInductive) (pos s : Nat) (hs : s < fI.indices.
   pure (FExpr.lamTele 0 tele
     (.recr pos s us l ps ms (Array.ofFn mins) (FExpr.fvars casesEnd ni) (.fvar (casesEnd + ni))))
 
-variable (F : FEnv) (table : Table) (lps : List Name) (hints : Array Export.Hints)
+variable (F : FEnv) (table : Table) (lps : List Name) (hints : PArray Export.Hints)
   (accel : Accel F)
 
 def whnfOf (G : FCtx) (t : FExpr) : CheckM F lps.length FExpr := do

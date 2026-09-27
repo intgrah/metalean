@@ -19,7 +19,7 @@ open Frontend (Failure Table)
 
 namespace Decide.Inductive.EqBool
 
-variable (F : FEnv) (hints : Array Export.Hints) (D : Decide.EqBoolConsts)
+variable (F : FEnv) (hints : PArray Export.Hints) (D : Decide.EqBoolConsts)
   (β γ : Bool)
 
 def proofType (q : FExpr) : Schema :=
@@ -62,7 +62,7 @@ def check : EIO Failure (PLift (Reduces F D
 
 end EqBool
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 def verifyDecEqBool (D : Decide.EqBoolConsts) (_ : Table) :
     EIO Failure (PLift (DecEqBool F D)) :=

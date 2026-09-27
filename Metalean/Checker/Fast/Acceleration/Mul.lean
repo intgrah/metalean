@@ -37,7 +37,7 @@ structure Spec : Prop where
   opCongr : (LiteralRec.opCongr p pos).Spec F
   addCongr : (LiteralRec.opCongr p add).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check : EIO Failure (PLift (Spec p add pos F)) := do
   let ⟨base⟩ ← (base p pos).check F hints
@@ -66,7 +66,7 @@ theorem Spec.eval (h : Spec p add pos F) (hF : FEnv.Denotes F E) (hE : EnvWF E)
 
 end Mul
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 /-- `Nat.mul` at `pos` -/
 def verifyMul (pos : Nat) (add : NatOp F Nat.add) :

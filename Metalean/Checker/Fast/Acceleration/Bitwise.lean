@@ -217,7 +217,7 @@ def functional : Except Failure FExpr :=
   | some (.def 0 _ (.lam t (.appList (.const _ _) [_, _, _, G]))) => pure (.lam t G)
   | _ => throw .internal
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check (pos mod div add : Nat) (f : FExpr) (fl : Bool → Bool → Bool) :
     EIO Failure ((fn : FExpr) × PLift (Spec F C pos mod div add fn f fl)) := do
@@ -367,7 +367,7 @@ def verify (f : FExpr) (fl : Bool → Bool → Bool) (hd : Decide.DecEqNat F C)
       (h.bodyEval hfix hF hE hn hd hdb hde hmod hdiv hadd)⟩
 
 @[no_expose]
-def verifyLand (C : LandConsts) (hints : Array Export.Hints) (hd : Decide.DecEqNat F C)
+def verifyLand (C : LandConsts) (hints : PArray Export.Hints) (hd : Decide.DecEqNat F C)
     (hdb : Decide.DecEqBool F C) (hde : Decide.DecideEqNat F C) (pos : Nat)
     (beq : BoolOp F Nat.beq) (mod : NatOp F Nat.mod) (div : NatOp F Nat.div)
     (add : NatOp F Nat.add) :
@@ -375,7 +375,7 @@ def verifyLand (C : LandConsts) (hints : Array Export.Hints) (hd : Decide.DecEqN
   verify F C hints (FExpr.Bool.and C) and hd hdb hde pos beq mod div add
 
 @[no_expose]
-def verifyLor (C : LorConsts) (hints : Array Export.Hints) (hd : Decide.DecEqNat F C)
+def verifyLor (C : LorConsts) (hints : PArray Export.Hints) (hd : Decide.DecEqNat F C)
     (hdb : Decide.DecEqBool F C) (hde : Decide.DecideEqNat F C) (pos : Nat)
     (beq : BoolOp F Nat.beq) (mod : NatOp F Nat.mod) (div : NatOp F Nat.div)
     (add : NatOp F Nat.add) :
@@ -383,7 +383,7 @@ def verifyLor (C : LorConsts) (hints : Array Export.Hints) (hd : Decide.DecEqNat
   verify F C hints (FExpr.Bool.or C) or hd hdb hde pos beq mod div add
 
 @[no_expose]
-def verifyXor (C : XorConsts) (hints : Array Export.Hints) (hd : Decide.DecEqNat F C)
+def verifyXor (C : XorConsts) (hints : PArray Export.Hints) (hd : Decide.DecEqNat F C)
     (hdb : Decide.DecEqBool F C) (hde : Decide.DecideEqNat F C) (pos : Nat)
     (beq : BoolOp F Nat.beq) (mod : NatOp F Nat.mod) (div : NatOp F Nat.div)
     (add : NatOp F Nat.add) :

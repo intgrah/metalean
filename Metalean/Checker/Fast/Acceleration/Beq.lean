@@ -48,7 +48,7 @@ structure Spec : Prop where
   succSucc : (succSucc p b pos).Spec F
   opCongr : (LiteralRec.boolOpCongr p b pos).Spec F
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def check : EIO Failure (PLift (Spec p b pos F)) := do
   let ⟨zeroZero⟩ ← (zeroZero p b pos).check F hints
@@ -95,7 +95,7 @@ theorem Spec.eval (h : Spec p b pos F) (hF : FEnv.Denotes F E) (hE : EnvWF E)
 
 end Beq
 
-variable (F : FEnv) (hints : Array Export.Hints)
+variable (F : FEnv) (hints : PArray Export.Hints)
 
 /-- `Nat.beq` at `pos` -/
 def verifyBeq (t : Table) (pos : Nat) :

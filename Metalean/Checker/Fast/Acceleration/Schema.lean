@@ -164,7 +164,7 @@ def CtxSpec (Δ : FCtx) : Prop :=
   EnvWF E →
   ∃ (n : Nat) (Γ₀ : Ctx ζ 0 0 n), Sem F Δ E Γ₀
 
-variable (hints : Array Export.Hints)
+variable (hints : PArray Export.Hints)
 
 def checkCtx (Δ : FCtx) : EIO Failure (PLift (CtxSpec F Δ)) :=
   if h : Δ.size = 0 then

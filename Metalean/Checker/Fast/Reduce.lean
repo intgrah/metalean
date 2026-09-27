@@ -33,7 +33,7 @@ def Hints.compare : Export.Hints → Export.Hints → Ordering
   | .abbrev, _ => .lt
   | _, .abbrev => .gt
 
-variable (F : FEnv) (ℓ : Nat) (hints : Array Export.Hints)
+variable (F : FEnv) (ℓ : Nat) (hints : PArray Export.Hints)
   (accel : Accel F) (n : Nat)
 
 def accelOp (pos : Nat) : Bool :=
@@ -150,7 +150,7 @@ def succForm (G : FCtx) : (fe₁ : FExpr) → Option {fe₂ : FExpr // RedSpec F
 def isDelta : FExpr → Option (Nat × Export.Hints)
   | .const pos ls =>
     match F[pos]? with
-    | some (.def nlevels _ _) => if ls.size = nlevels then some (pos, hints.getD pos .opaque) else none
+    | some (.def nlevels _ _) => if ls.size = nlevels then some (pos, hints[pos]?.getD .opaque) else none
     | _ => none
   | .app f _ => isDelta f
   | _ => none

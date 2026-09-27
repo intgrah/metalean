@@ -27,7 +27,7 @@ open Frontend (Failure Table)
 
 open Lean (Name)
 
-variable (F : FEnv) (hints : Array Export.Hints) (table : Table)
+variable (F : FEnv) (hints : PArray Export.Hints) (table : Table)
 
 def warnUnverified (name : Name) (f : Failure) : EIO Failure Unit :=
   EIO.adapt (fun _ => .internal) <| IO.eprintln
