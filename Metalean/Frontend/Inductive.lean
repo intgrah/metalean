@@ -167,13 +167,13 @@ structure BlockResult (ζ : Sigs) where
   ctorNames : List (List Name)
   metaOrders : List (List (List Nat))
 
-variable (E : Env ζ) (table : Table) (lps : List Name) (project : Projector ζ)
+variable (leanElim : Bool) (E : Env ζ) (table : Table) (lps : List Name) (project : Projector ζ)
 
 def buildClosed : (rev : List Export.Expr) → Except Failure (Ctx ζ lps.length 0 rev.length)
   | [] => pure #t[]
   | t :: rest => do
     let Γ ← buildClosed rest
-    let t' ← translate E table lps project Γ (Scope.id rest.length) t
+    let t' ← translate leanElim E table lps project Γ (Scope.id rest.length) t
     pure (Γ.snoc t')
 
 def buildFrom {m : Nat} (base : Ctx ζ lps.length 0 m) (ρ : Scope m) :
@@ -181,7 +181,7 @@ def buildFrom {m : Nat} (base : Ctx ζ lps.length 0 m) (ρ : Scope m) :
   | [] => pure #t[]
   | t :: rest => do
     let Γ ← buildFrom base ρ rest
-    let t' ← translate E table lps project (base ++ Γ) (ρ.pushN rest.length) t
+    let t' ← translate leanElim E table lps project (base ++ Γ) (ρ.pushN rest.length) t
     pure (Γ.snoc t')
 
 def preRecField (nparams : Nat) (sd : Fin nsorts → SortData nsorts) (ords : List OrdField)
@@ -189,8 +189,8 @@ def preRecField (nparams : Nat) (sd : Fin nsorts → SortData nsorts) (ords : Li
     Except Failure (Metalean.RecField ζ (indSigOf lps.length nparams nsorts sd) nfields
       rf.bindersRev.length rf.target) := do
   let ρ := fieldScope ords nparams rf.leanPos (nparams + nfields)
-  let telescope ← buildFrom E table lps project Γ ρ rf.bindersRev
-  let is ← rf.indices.mapM (translate E table lps project (Γ ++ telescope) (ρ.pushN rf.bindersRev.length))
+  let telescope ← buildFrom leanElim E table lps project Γ ρ rf.bindersRev
+  let is ← rf.indices.mapM (translate leanElim E table lps project (Γ ++ telescope) (ρ.pushN rf.bindersRev.length))
   pure ⟨telescope, ← tupleOf (sd rf.target).indicesRev.length is⟩
 
 def ordinaryFields (nparams : Nat) (params : Ctx ζ lps.length 0 nparams)
@@ -201,7 +201,7 @@ def ordinaryFields (nparams : Nat) (params : Ctx ζ lps.length 0 nparams)
   | count + 1 => fun h => do
     let Δ ← ordinaryFields nparams params shape count (by omega)
     let field := shape.ords[count]'(by omega)
-    let t ← translate E table lps project (params ++ Δ)
+    let t ← translate leanElim E table lps project (params ++ Δ)
       (fieldScope shape.ords nparams field.leanPos (nparams + count)) field.type
     pure (Δ.snoc t)
 
@@ -209,7 +209,7 @@ def preCtorOf (nparams : Nat) (params : Ctx ζ lps.length 0 nparams)
     (sd : Fin nsorts → SortData nsorts) (s : Fin nsorts)
     (shape : CtorShape nsorts) :
     Except Failure (PreCtorDecl ζ (indSigOf lps.length nparams nsorts sd) s shape.toSig) := do
-  let fields ← ordinaryFields E table lps project nparams params shape shape.ords.length le_rfl
+  let fields ← ordinaryFields leanElim E table lps project nparams params shape shape.ords.length le_rfl
   let ordinary := fun f : Fin shape.ords.length =>
     fields.entry (p := nparams + f.val) (by omega) (by omega)
   let recursive : (r : Fin shape.recs.length) →
@@ -217,14 +217,14 @@ def preCtorOf (nparams : Nat) (params : Ctx ζ lps.length 0 nparams)
         (shape.recs[r.val]'r.isLt).bindersRev.length
         (shape.recs[r.val]'r.isLt).target ←
     Fin.mapM fun r =>
-      preRecField E table lps project nparams sd shape.ords shape.ords.length (params ++ fields)
+      preRecField leanElim E table lps project nparams sd shape.ords shape.ords.length (params ++ fields)
         (shape.recs[r.val]'r.isLt)
-  let tis ← shape.resultIndices.mapM (translate E table lps project (params ++ fields)
+  let tis ← shape.resultIndices.mapM (translate leanElim E table lps project (params ++ fields)
     (fieldScope shape.ords nparams (shape.ords.length + shape.recs.length) (nparams + shape.ords.length)))
   let targetIndices ← tupleOf (sd s).indicesRev.length tis
   pure { ordinary, recursive, targetIndices }
 
-def analyzeBlock (E : Env ζ) (table : Table) (project : Projector ζ) (types : List Export.InductiveType)
+def analyzeBlock (leanElim : Bool) (E : Env ζ) (table : Table) (project : Projector ζ) (types : List Export.InductiveType)
     (ctors : List Export.Constructor) (recNames : List Name) (defs : Export.Definitions := ∅) :
     Except Failure (BlockResult ζ) := do
   if hpos : 0 < types.length then
@@ -256,12 +256,12 @@ def analyzeBlock (E : Env ζ) (table : Table) (project : Projector ζ) (types : 
     let levels ← Fin.mapM fun s : Fin types.length => translateLevel lps (sd s).level
     let level := levels ⟨0, hpos⟩
     if ∃ s, levels s ≠ level then throw (.reject .shape)
-    let params ← buildClosed E table lps project paramBindersRev
+    let params ← buildClosed leanElim E table lps project paramBindersRev
     let indices ← Fin.mapM fun s : Fin types.length =>
-      buildFrom E table lps project params (Scope.id paramBindersRev.length) (sd s).indicesRev
+      buildFrom leanElim E table lps project params (Scope.id paramBindersRev.length) (sd s).indicesRev
     let preCtors ← Fin.mapM fun s : Fin types.length =>
       Fin.mapM fun c : Fin (sd s).shapes.length =>
-        preCtorOf E table lps project paramBindersRev.length params sd s ((sd s).shapes[c.val]'c.isLt)
+        preCtorOf leanElim E table lps project paramBindersRev.length params sd s ((sd s).shapes[c.val]'c.isLt)
     pure {
       ι := indSigOf lps.length paramBindersRev.length types.length sd
       pre := { params, indices, level, ctors := preCtors }

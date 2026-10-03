@@ -259,7 +259,7 @@ theorem iotaRuleSound
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ 0 n}
     {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₂ 0 n}
-    (hallowed : (E₂.get η).block.RecAllowed l) :
+    (hallowed : (E₂.get η).block.RecAllowed ls l) :
     EnvWF E₁ →
     (∀ param, ε₂[γ] ⊨ ps param ≡ ps param :
       (E₂.get η).block.paramType ls ps param) →
@@ -310,7 +310,7 @@ theorem iotaRuleSound
   have hvps : (ε₂[γ]⟦ps ·⟧) = RecSlots.paramsOf outer := (RecSlots.paramsOf_args ..).symm
   rw [hvps] at hfieldsReach hrecFieldsMem hargs htarget hmajEntry
   have hleaf := model.recLeaf_iota hdecl hsourceRule hE hB s l
-    ((I.recAllowed_map pre.sigs l).mp hallowed) outer houter c hargs htarget hmajEntry
+    ((I.recAllowed_map pre.sigs ls l).mp hallowed) outer houter c hargs htarget hmajEntry
   have hlhsDen : ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ = _ :=
     (show ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ =
       model.recLeaf s l outer by rw [Inductive.iotaLhs, Expr.denote, hrecr]).trans hleaf

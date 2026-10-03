@@ -80,7 +80,7 @@ partial def infer (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[Γ] �
           (fun f => ((hi.ctors s c).recursiveFieldExpr_congr hi.params rfl f hps hfds).choose_spec)
           ((hE.entryWF η).ctorType s c hps hfds))⟩
   | .recr η s ls l ps ms mins is maj => do
-    let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed l) (.reject .recursorLevel)
+    let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed ls l) (.reject .recursorLevel)
     let ⟨hps⟩ ← Fin.sequenceM fun p =>
       checkAgainst hE hΓ (ps p) ((E.get η).block.paramType ls ps p)
     let ⟨hms⟩ ← Fin.sequenceM fun t =>
@@ -443,7 +443,7 @@ partial def isDefEqCore (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[
   | .recr η s ls l ps ms mins is maj, .recr η₁ s₁ ls₁ l₁ ps₁ ms₁ mins₁ is₁ maj₁ => fun he _ => do
     let ⟨rfl, rfl⟩ ← η.indDecEq? η₁
     let ⟨rfl⟩ ← guardProofOr (s = s₁) (.reject .notDefEq)
-    let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed l) (.reject .recursorLevel)
+    let ⟨hrec⟩ ← guardProofOr ((E.get η).block.RecAllowed ls l) (.reject .recursorLevel)
     let ⟨hps⟩ ← Fin.sequenceM fun p =>
       isDefEqAt hE hΓ ((E.get η).block.paramType ls ps p) (ps p) (ps₁ p)
     let ⟨hms⟩ ← Fin.sequenceM fun t =>

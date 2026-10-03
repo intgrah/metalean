@@ -17,13 +17,15 @@ open Lean (Name)
 open Frontend
 
 structure State where
+  leanElim : Bool
   {ζ : Sigs}
   env : Env ζ
   wf : EnvWF env
   table : Table := ∅
   definitions : Export.Definitions := ∅
 
-def State.initial : State where
+def State.initial (leanElim : Bool) : State where
+  leanElim
   env := .nil
   wf := .nil
 
@@ -39,6 +41,7 @@ def bind (st : State) (name : Name) (b : Binding) : Except Failure Table := do
 
 def extend (st : State) {sig : Sig} (entry : Entry st.ζ sig)
     (hwf : EntryWF st.env entry) : State where
+  leanElim := st.leanElim
   ζ := st.ζ.snoc sig
   env := st.env.snoc entry
   wf := st.wf.snoc hwf
@@ -47,7 +50,7 @@ def extend (st : State) {sig : Sig} (entry : Entry st.ζ sig)
 
 def translateClosed (st : State) (lps : List Name) (e : Export.Expr) :
     Except Failure (Expr st.ζ lps.length 0) :=
-  translate st.env st.table lps (project st.env st.table) .nil Scope.empty e
+  translate st.leanElim st.env st.table lps (project st.env st.table) .nil Scope.empty e
 
 def stepAxiom (st : State) (c : Export.ConstantDecl) : Except Failure State := do
   checkLevelParams c.levelParams
@@ -95,7 +98,7 @@ def stepInductive (st : State) (types : List Export.InductiveType)
     (ctors : List Export.Constructor) (recNames : List Name) : Except Failure State := do
   let sortNames := types.map (·.name)
   let result ←
-    match analyzeBlock st.env st.table (project st.env st.table) types ctors recNames
+    match analyzeBlock st.leanElim st.env st.table (project st.env st.table) types ctors recNames
       st.definitions with
     | .error (.reject (.unknownName n)) =>
       if sortNames.contains n then throw (.reject .positivity)

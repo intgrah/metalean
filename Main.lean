@@ -23,11 +23,11 @@ def options (p : Parsed) : Export.Options where
   jobs := p.flag? "jobs" |>.map (·.as! Nat) |>.getD 8
 
 def runFast (p : Parsed) : IO UInt32 :=
-  Export.run (options p) (discard ∘ Checker.Fast.check)
+  Export.run (options p) (discard ∘ Checker.Fast.check (p.hasFlag "lean-elim"))
 
 def runSlow (p : Parsed) : IO UInt32 :=
   Export.run (options p) fun ds => do
-    let mut st := Checker.Slow.State.initial
+    let mut st := Checker.Slow.State.initial (p.hasFlag "lean-elim")
     for d in ds do
       let start ← IO.monoNanosNow
       st ← d.check (.ofExcept (Checker.Slow.step st d.decl))
@@ -40,6 +40,7 @@ def fastCmd : Cmd := `[Cli|
   FLAGS:
     v, verbose; "Print scanning progress, then each declaration's number out of total, name and time
       taken to check it, as each check completes."
+    "lean-elim"; "Use more conservative large elimination criteria implemented by Lean"
     j, jobs : Nat; "The number of worker threads checking declarations (default 8)."
 
   ARGS:
@@ -53,6 +54,7 @@ def slowCmd : Cmd := `[Cli|
   FLAGS:
     v, verbose; "Print scanning progress, then each declaration's number out of total, name and time
       taken to check it."
+    "lean-elim"; "Use more conservative large elimination criteria implemented by Lean"
 
   ARGS:
     input : String; "The NDJSON export to check."

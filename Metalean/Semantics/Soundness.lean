@@ -114,7 +114,7 @@ theorem EnvWF.rawSound (hE : EnvWF E₂) (pre : E₁.as ⟶ E₂.as) :
     simp only [Inductive.paramType_map, Inductive.indexType_map, Inductive.motiveType_map,
       Inductive.caseFnType_map, ← hlookup η] at pps pms pmins pis pmaj
     have hB := (hE.entryWF (η.map pre.sigs)).block
-    have ha : (E₂.get (η.map pre.sigs)).block.RecAllowed l := by simpa [hlookup η] using hallowed
+    have ha : (E₂.get (η.map pre.sigs)).block.RecAllowed ls l := by simpa [hlookup η] using hallowed
     exact RawJudgment.recrDF hsound hI hb
       (RecTyping.left hB ha (fun p => (pps p).syntactic) (fun s => (pms s).syntactic)
         (fun s c => (pmins s c).syntactic) (fun i => (pis i).syntactic) pmaj.syntactic)

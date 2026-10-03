@@ -68,7 +68,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
         Fin (ι.nctors s) → Expr ζ₂ 0 n}
       {is₁ is₂ : Fin (ι.nindices s) → Expr ζ₂ 0 n}
       {maj₁ maj₂ : Expr ζ₂ 0 n}
-      (hallowed : (E₂.get (η.map pre.sigs)).block.RecAllowed l)
+      (hallowed : (E₂.get (η.map pre.sigs)).block.RecAllowed ls l)
       (hps : ∀ param, ε₂[γ] ⊨ ps₁ param ≡ ps₂ param :
         (E₂.get (η.map pre.sigs)).block.paramType ls ps₁ param)
       (hms : ∀ s, ε₂[γ] ⊨ ms₁ s ≡ ms₂ s :
@@ -95,7 +95,7 @@ structure Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSe
       {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
       {fds : Fin (ι.ctors s c).nfields → Expr ζ₂ 0 n}
       {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ₂ 0 n}
-      (hallowed : (E₂.get (η.map pre.sigs)).block.RecAllowed l)
+      (hallowed : (E₂.get (η.map pre.sigs)).block.RecAllowed ls l)
       (hps : ∀ param, ε₂[γ] ⊨ ps param ≡ ps param :
         (E₂.get (η.map pre.sigs)).block.paramType ls ps param)
       (hms : ∀ s, ε₂[γ] ⊨ ms s ≡ ms s :

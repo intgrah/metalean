@@ -46,7 +46,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
   recr {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
       {s ls l ps₁ ps₂ ms₁ ms₂ mins₁ mins₂ is₁ is₂ maj₁ maj₂} :
     EnvWF E →
-    (E.get η).block.RecAllowed l →
+    (E.get η).block.RecAllowed ls l →
     (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
     (∀ s, ε[ν; γ] ⊨ ms₁ s ≡ ms₂ s : (E.get η).block.motiveType η ls ps₁ l s) →
     (∀ s c, ε[ν; γ] ⊨ mins₁ s c ≡ mins₂ s c : (E.get η).block.caseFnType η ls ps₁ ms₁ s c) →
@@ -96,7 +96,7 @@ structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ
     ε[ν; γ] ⊨ .quotLift η l₁ l₂ α r β f h (.quotMk η l₁ α r a) ≡ .app f a : β
   iota {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)} {ls l ps ms mins s c fds recFds} :
     EnvWF E →
-    (E.get η).block.RecAllowed l →
+    (E.get η).block.RecAllowed ls l →
     (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : (E.get η).block.paramType ls ps p) →
     (∀ s, ε[ν; γ] ⊨ ms s ≡ ms s : (E.get η).block.motiveType η ls ps l s) →
     (∀ s c, ε[ν; γ] ⊨ mins s c ≡ mins s c : (E.get η).block.caseFnType η ls ps ms s c) →

@@ -517,7 +517,7 @@ partial def inferCore (G : FCtx) :
   | .recr pos s ls l ps ms mins is maj =>
     match hfe : F[pos]? with
     | some (.inductive ι I) => do
-      let ⟨hrec⟩ ← guardProofOr (I.recAllowed l = true) (.reject .recursorLevel)
+      let ⟨hrec⟩ ← I.checkRecAllowed ℓ ls l
       let ⟨hs⟩ ← guardProofOr (s < ι.nsorts) (.reject .shape)
       let ⟨hIi⟩ ← guardProofOr (I.indices.size = ι.nsorts) (.reject .shape)
       let ⟨hIc⟩ ← guardProofOr (I.ctors.size = ι.nsorts) (.reject .shape)
@@ -618,7 +618,7 @@ partial def inferCore (G : FCtx) :
         exact ⟨.recr η₀ ⟨s, hs⟩ _ _ eps ems
             (fun t c => emins (Fin.encodeSigma ι.nctors ⟨t, c⟩)) eis _, _,
           .recr hls hps' hms' hmins' his' hη rfl hls' hl hepsD hemsD hminsD heisD hmajD, hresD,
-          .recrDF (hI.recAllowed hrec hl) hepsT hemsT hminsT' heisT hmaj' hres'⟩⟩
+          .recrDF (hrec hls hI hls' hl) hepsT hemsT hminsT' heisT hmaj' hres'⟩⟩
     | _ => throw (.reject .shape)
   | .quot pos l α r => do
     let ⟨hα⟩ ← checkTyped G α (.sort l)

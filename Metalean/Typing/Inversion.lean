@@ -198,7 +198,7 @@ theorem recr_inv :
         Fin (ι.nctors s) → Expr ζ ℓ n)
       (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n)
       (maj₁ : Expr ζ ℓ n),
-      (E.get η).block.RecAllowed l ∧
+      (E.get η).block.RecAllowed ls l ∧
       (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
         (E.get η).block.paramType ls ps₁ p) ∧
       (∀ s, E[Γ] ⊢ ms₁ s ≡ ms₂ s :
@@ -225,7 +225,7 @@ theorem recr_inv :
           Fin (ι.nctors s) → Expr ζ ℓ n)
         (is₁ : Fin (ι.nindices s) → Expr ζ ℓ n)
         (maj₁ : Expr ζ ℓ n),
-        (E.get η).block.RecAllowed l ∧
+        (E.get η).block.RecAllowed ls l ∧
         (∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p :
           (E.get η).block.paramType ls ps₁ p) ∧
         (∀ s, E[Γ] ⊢ ms₁ s ≡ ms₂ s :

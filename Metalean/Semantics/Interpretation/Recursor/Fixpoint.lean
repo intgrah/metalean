@@ -87,7 +87,7 @@ section Step
 
 variable (D : CodeAssignment E ℓ)
   (interp : (Γ₁ : CtxCat E ℓ) → (e : Expr ζ ℓ Γ₁.as.len) → e.headRank < η.rank → RawFamily Γ₁)
-  (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ)
+  (hd : RecDecl E η ls l)
 
 theorem ihSubst_headRank_lt (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields)
     (v : Fin (ι.recrEnd ((ι.ctors s c).recursiveTarget f))) :
@@ -95,13 +95,13 @@ theorem ihSubst_headRank_lt (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin
       (fun p => ((ι.ctors s c).fieldParams (fun p => .var (RecrBinder.param p).resolve) p).wkN
         ((ι.ctors s c).recursiveArity f))
       (fun t => (Expr.var (RecrBinder.motive t).resolve).subst
-        (CtxCat.ctorFieldTargetHom (RecTyping.generic hd ls s).toIndData s c f).subst)
+        (CtxCat.ctorFieldTargetHom (RecTyping.generic hd s).toIndData s c f).subst)
       (fun t c₁ => (Expr.var (RecrBinder.case t c₁).resolve).subst
-        (CtxCat.ctorFieldTargetHom (RecTyping.generic hd ls s).toIndData s c f).subst)
-      (fieldIndices (RecTyping.generic hd ls s).toIndData s c f)
-      (appliedMajor (RecTyping.generic hd ls s).toIndData s c f) v).headRank < η.rank := by
-  have hσ (w : Var (CtxCat.recr hd ls s).as.len) :
-      ((CtxCat.ctorFieldTargetHom (RecTyping.generic hd ls s).toIndData s c f).subst w).headRank ≤
+        (CtxCat.ctorFieldTargetHom (RecTyping.generic hd s).toIndData s c f).subst)
+      (fieldIndices (RecTyping.generic hd s).toIndData s c f)
+      (appliedMajor (RecTyping.generic hd s).toIndData s c f) v).headRank < η.rank := by
+  have hσ (w : Var (CtxCat.recr hd s).as.len) :
+      ((CtxCat.ctorFieldTargetHom (RecTyping.generic hd s).toIndData s c f).subst w).headRank ≤
         η.rank - 1 := by
     simp [CtxCat.ctorFieldTargetHom, CtxCat.ctorFieldsProjection, RawCtx.Hom.teleProjection,
       Expr.headRank]
@@ -115,49 +115,49 @@ theorem ihSubst_headRank_lt (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin
     (Head.lt_rank_of_le (by simp [appliedMajor, CtorSig.fieldRecursive, Expr.headRank])) v
 
 noncomputable def recursorHyp (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (f : Fin (ι.ctors s c).nrecFields) : RawFamily (CtxCat.recr hd ls s) :=
-  RawFamily.ctxLam D interp (CtxCat.recr hd ls s) _
-    (((RecTyping.generic hd ls s).block.ctors s c).fieldTele rfl (CtxCat.recr hd ls s).as.wf
-      (RecTyping.generic hd ls s).param)
-    (fieldTele_headRank_lt (CtxCat.recr hd ls s) (fun p => .var (RecrBinder.param p).resolve)
+    (f : Fin (ι.ctors s c).nrecFields) : RawFamily (CtxCat.recr hd s) :=
+  RawFamily.ctxLam D interp (CtxCat.recr hd s) _
+    (((RecTyping.generic hd s).block.ctors s c).fieldTele rfl (CtxCat.recr hd s).as.wf
+      (RecTyping.generic hd s).param)
+    (fieldTele_headRank_lt (CtxCat.recr hd s) (fun p => .var (RecrBinder.param p).resolve)
       (fun _ => Expr.headRank_var_le _) s c)
-    (RawFamily.ctxLam D interp (CtxCat.ctorFields (RecTyping.generic hd ls s).toIndData s c) _
-      (fieldTelescope_wf (RecTyping.generic hd ls s).toIndData s c f)
-      (fieldTelescope_headRank_lt (RecTyping.generic hd ls s).toIndData (fun _ => Expr.headRank_var_le _) s c f)
+    (RawFamily.ctxLam D interp (CtxCat.ctorFields (RecTyping.generic hd s).toIndData s c) _
+      (fieldTelescope_wf (RecTyping.generic hd s).toIndData s c f)
+      (fieldTelescope_headRank_lt (RecTyping.generic hd s).toIndData (fun _ => Expr.headRank_var_le _) s c f)
       (RawFamily.closedApps (V ((ι.ctors s c).recursiveTarget f))
-        (fun v => Tm.label (CtxCat.ctorFieldTarget (RecTyping.generic hd ls s).toIndData s c f).as
-          (((RecTyping.generic hd ls s).toRecData.ihTyping s c f).recrHom.typed v))
-        fun v => interp _ _ (ihSubst_headRank_lt hd ls s c f v)))
+        (fun v => Tm.label (CtxCat.ctorFieldTarget (RecTyping.generic hd s).toIndData s c f).as
+          (((RecTyping.generic hd s).toRecData.ihTyping s c f).recrHom.typed v))
+        fun v => interp _ _ (ihSubst_headRank_lt hd s c f v)))
 
 noncomputable def recursorPayload (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) :
-    RawFamily (CtxCat.recr hd ls s) :=
-  (rawRecCaseFamily (RecTyping.generic hd ls s).toRecData
+    RawFamily (CtxCat.recr hd s) :=
+  (rawRecCaseFamily (RecTyping.generic hd s).toRecData
       (fun c => RawFamily.lookup (Var.db (RecrBinder.case (s := s) s c).resolve))
-      (recursorHyp D interp hd ls V s)).apply
-    (recoverMajor (RecTyping.generic hd ls s).toRecData s (𝟙 _)
-      (fun i => Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.index i).resolve)
+      (recursorHyp D interp hd V s)).apply
+    (recoverMajor (RecTyping.generic hd s).toRecData s (𝟙 _)
+      (fun i => Tm.varLabel (CtxCat.recr hd s) (RecrBinder.index i).resolve)
       (fun i => RawFamily.lookup (Var.db (RecrBinder.index i).resolve))
       (RawFamily.lookup (Var.db (RecrBinder.major (s := s)).resolve)))
-    (Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.major (s := s)).resolve)
+    (Tm.varLabel (CtxCat.recr hd s) (RecrBinder.major (s := s)).resolve)
 
 noncomputable def recursorBody (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) :
-    RawFamily (CtxCat.recr hd ls s) :=
-  RawFamily.decode D (Tm.label (CtxCat.recr hd ls s).as ((RecTyping.generic hd ls s).typed))
-    (interp (CtxCat.recr hd ls s) (ι.recrBody s) (recrBody_headRank_lt η s))
-    (recursorPayload D interp hd ls V s)
+    RawFamily (CtxCat.recr hd s) :=
+  RawFamily.decode D (Tm.label (CtxCat.recr hd s).as ((RecTyping.generic hd s).typed))
+    (interp (CtxCat.recr hd s) (ι.recrBody s) (recrBody_headRank_lt η s))
+    (recursorPayload D interp hd V s)
 
 theorem recursorHyp_mono {V₁ V₂ : RecApprox E ℓ ι} (hV : V₁ ≤ V₂) (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields) :
-    recursorHyp D interp hd ls V₁ s c f ≤ recursorHyp D interp hd ls V₂ s c f :=
+    recursorHyp D interp hd V₁ s c f ≤ recursorHyp D interp hd V₂ s c f :=
   RawFamily.ctxLam_mono (RawFamily.ctxLam_mono (RawFamily.closedApps_mono (hV _) _ _))
 
 theorem recursorBody_mono {V₁ V₂ : RecApprox E ℓ ι} (hV : V₁ ≤ V₂) (s : Fin ι.nsorts) :
-    recursorBody D interp hd ls V₁ s ≤ recursorBody D interp hd ls V₂ s :=
+    recursorBody D interp hd V₁ s ≤ recursorBody D interp hd V₂ s :=
   RawFamily.decode_mono_right D _ _
-    (RawActionFamily.apply_mono (rawRecCaseFamily_mono _ _ (recursorHyp_mono D interp hd ls hV s)) _ _)
+    (RawActionFamily.apply_mono (rawRecCaseFamily_mono _ _ (recursorHyp_mono D interp hd hV s)) _ _)
 
 theorem recursorBody_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).IsFinitary) {V : RecApprox E ℓ ι}
-    (hV : ∀ t, (V t).IsFinitary) (s : Fin ι.nsorts) : (recursorBody D interp hd ls V s).IsFinitary :=
+    (hV : ∀ t, (V t).IsFinitary) (s : Fin ι.nsorts) : (recursorBody D interp hd V s).IsFinitary :=
   RawFamily.IsFinitary.decode D (hinterp _ _ _)
     (RawActionFamily.IsFinitary.apply
       (rawRecCaseFamily_isFinitary _ (fun _ => RawFamily.lookup_isFinitary _) fun _ _ =>
@@ -169,33 +169,33 @@ theorem recursorBody_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).I
 
 noncomputable def recursorStep : RecApprox E ℓ ι →o RecApprox E ℓ ι where
   toFun V s := RawFamily.ctxLam D interp (CtxCat.nil E ℓ) _ hd.block.recrTele (recrTele_headRank_lt η ls s)
-    (recursorBody D interp hd ls V s)
-  monotone' _ _ hV s := RawFamily.ctxLam_mono (recursorBody_mono D interp hd ls hV s)
+    (recursorBody D interp hd V s)
+  monotone' _ _ hV s := RawFamily.ctxLam_mono (recursorBody_mono D interp hd hV s)
 
 noncomputable def recursorWith : RecApprox E ℓ ι :=
-  OrderHom.lfp (recursorStep D interp hd ls)
+  OrderHom.lfp (recursorStep D interp hd)
 
 theorem recursorWith_unfold :
-    recursorStep D interp hd ls (recursorWith D interp hd ls) = recursorWith D interp hd ls :=
+    recursorStep D interp hd (recursorWith D interp hd) = recursorWith D interp hd :=
   OrderHom.map_lfp _
 
 theorem recursorWith_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).IsFinitary) (s : Fin ι.nsorts) :
-    (recursorWith D interp hd ls s).IsFinitary :=
-  OrderHom.lfp_induction (p := fun V => ∀ t, (V t).IsFinitary) (recursorStep D interp hd ls)
+    (recursorWith D interp hd s).IsFinitary :=
+  OrderHom.lfp_induction (p := fun V => ∀ t, (V t).IsFinitary) (recursorStep D interp hd)
     (fun _ hV _ t => RawFamily.IsFinitary.ctxLam (hb := recrTele_headRank_lt η ls t) hinterp
-      (recursorBody_isFinitary D interp hd ls hinterp hV t))
+      (recursorBody_isFinitary D interp hd hinterp hV t))
     (fun _ hS t => RawFamily.IsFinitary.iSup fun V => hS V.1 V.2 t) s
 
 theorem recursorStep_ωScottContinuous :
-    OmegaCompletePartialOrder.ωScottContinuous (recursorStep D interp hd ls) := by
+    OmegaCompletePartialOrder.ωScottContinuous (recursorStep D interp hd) := by
   refine OmegaCompletePartialOrder.ωScottContinuous.of_map_ωSup_of_orderHom fun C => ?_
-  change recursorStep D interp hd ls (⨆ n, C n) = ⨆ n, recursorStep D interp hd ls (C n)
-  refine le_antisymm (fun s => ?_) (iSup_le fun n => (recursorStep D interp hd ls).monotone (le_iSup C n))
+  change recursorStep D interp hd (⨆ n, C n) = ⨆ n, recursorStep D interp hd (C n)
+  refine le_antisymm (fun s => ?_) (iSup_le fun n => (recursorStep D interp hd).monotone (le_iSup C n))
   rw [RecApprox.iSup_apply]
   refine (RawFamily.ctxLam_mono ?_).trans (RawFamily.ctxLam_iSup_le fun _ _ hab =>
-    recursorBody_mono D interp hd ls (C.monotone hab) s)
+    recursorBody_mono D interp hd (C.monotone hab) s)
   have hle (c : Fin (ι.nctors s)) (f : Fin (ι.ctors s c).nrecFields) :
-      recursorHyp D interp hd ls (⨆ n, C n) s c f ≤ ⨆ n, recursorHyp D interp hd ls (C n) s c f := by
+      recursorHyp D interp hd (⨆ n, C n) s c f ≤ ⨆ n, recursorHyp D interp hd (C n) s c f := by
     refine (RawFamily.ctxLam_mono ((RawFamily.ctxLam_mono ?_).trans (RawFamily.ctxLam_iSup_le
       fun _ _ hab => RawFamily.closedApps_mono (C.monotone hab _) _ _))).trans
       (RawFamily.ctxLam_iSup_le fun _ _ hab => RawFamily.ctxLam_mono
@@ -203,10 +203,10 @@ theorem recursorStep_ωScottContinuous :
     rw [RecApprox.iSup_apply]
     exact RawFamily.closedApps_iSup_le _ _ _
   refine le_trans ?_ (RawFamily.decode_apply_iSup_le D _ _
-    (fun n => rawRecCaseFamily (RecTyping.generic hd ls s).toRecData _ (recursorHyp D interp hd ls (C n) s))
+    (fun n => rawRecCaseFamily (RecTyping.generic hd s).toRecData _ (recursorHyp D interp hd (C n) s))
     _ _)
   exact RawFamily.decode_mono_right D _ _ (RawActionFamily.apply_mono (rawRecCaseFamily_le_iSup _ _ hle
-    (fun c f _ _ hab => recursorHyp_mono D interp hd ls (C.monotone hab) s c f)) _ _)
+    (fun c f _ _ hab => recursorHyp_mono D interp hd (C.monotone hab) s c f)) _ _)
 
 end Step
 

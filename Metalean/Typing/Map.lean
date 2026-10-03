@@ -49,7 +49,7 @@ theorem Defeq.map (pre : E₁.as ⟶ E₂.as) :
     simpa [Env.get_map, Inductive.map] using d
   | recrDF hallowed _ _ _ _ _ _ ihps ihms ihmins
       ihis ihmaj ihresult =>
-    have hallowed' := (Inductive.recAllowed_map _ pre.sigs _).mpr hallowed
+    have hallowed' := (Inductive.recAllowed_map _ pre.sigs _ _).mpr hallowed
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map pre] at hallowed'
     have hps := by simpa using ihps
     have hms := by simpa using ihms
@@ -81,7 +81,7 @@ theorem Defeq.map (pre : E₁.as ⟶ E₂.as) :
   | proofIrrel _ _ _ ihp ihh ihh' => exact .proofIrrel ihp ihh ihh'
   | iota hallowed _ _ _ _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields
       ihtype ihlhs ihrhs =>
-    have hallowed' := (Inductive.recAllowed_map _ pre.sigs _).mpr hallowed
+    have hallowed' := (Inductive.recAllowed_map _ pre.sigs _ _).mpr hallowed
     rw [← dsimp% (Entry.blockNatTrans _).naturality_apply, ← Env.get_map pre] at hallowed'
     have hps := by simpa using ihps
     have hms := by simpa using ihms

@@ -28,7 +28,7 @@ structure IsStructure (I : Inductive ζ₁ ι)
   ctor_unique : ∀ c', c' = c
   no_indices : IsEmpty (Fin (ι.nindices s))
   no_recursive : IsEmpty (Fin (ι.ctors s c).nrecFields)
-  sortLargeElim : I.SortLargeElim s
+  largeElim : I.LargeElim
 
 namespace IsStructure
 
@@ -40,14 +40,11 @@ theorem map (h : I.IsStructure s c) (pre : ζ₁ ⟶ ζ₂) :
   ctor_unique := h.ctor_unique
   no_indices := h.no_indices
   no_recursive := h.no_recursive
-  sortLargeElim := (I.sortLargeElim_map pre s).mpr h.sortLargeElim
+  largeElim := (I.largeElim_map pre).mpr h.largeElim
 
-theorem largeElim (h : I.IsStructure s c) : I.LargeElim :=
-  fun other => h.sort_unique other ▸ h.sortLargeElim
-
-theorem recAllowed (h : I.IsStructure s c) (l : Level ℓ) :
-    I.RecAllowed l :=
-  .inr h.largeElim
+theorem recAllowed (h : I.IsStructure s c) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    I.RecAllowed ls l :=
+  h.largeElim.recAllowed ls l
 
 def indices (h : I.IsStructure s c) {α : Sort _} : Fin (ι.nindices s) → α :=
   h.no_indices.elim
@@ -306,10 +303,14 @@ theorem ordinaryLevel_eq_zero_of_eval_zero
     {ν : Param ℓ → Nat} {c : Fin (ι.nctors s)} (h : I.IsStructure s c) (ls : Fin ι.nlevels → Level ℓ)
     (hzero : I.level{ls}.eval ν = 0) (f : Fin (ι.ctors s c).nfields) :
     ((I.ctors s c).ordinary f).level = .zero := by
-  have hel := (h.sortLargeElim.singleton_of_eval_zero ls hzero c).2.ordinary f
-  rcases hel with hu | ⟨i, _⟩
-  · exact hu
-  · exact h.no_indices.elim i
+  rcases h.largeElim with hsub | hlevel
+  · rcases (hsub.eligible s c).ordinary f with hu | ⟨i, _⟩
+    · exact hu
+    · exact h.no_indices.elim i
+  · have hpositive : 1 ≤ I.level{ls}.eval ν := by
+      rw [Level.eval_inst]
+      exact hlevel fun p => (ls p).eval ν
+    omega
 
 end IsStructure
 

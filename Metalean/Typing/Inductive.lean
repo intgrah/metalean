@@ -909,7 +909,7 @@ theorem RecFieldWF.ihType_congr (h : RecFieldWF E I Δ fd) (hB : InductiveWF E I
 
 theorem RecFieldWF.iotaIH (h : RecFieldWF E I Δ fd) (hB : InductiveWF E I)
     (hhead : (E.get η).block = I)
-    (hallowed : I.RecAllowed l)
+    (hallowed : I.RecAllowed ls l)
     (hσparams : ∀ p, σ (p.castAdd nfields) = ps p) :
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : I.paramType ls ps p) →
@@ -1335,7 +1335,7 @@ theorem Inductive.iotaLhs_hasType
     {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
       Expr ζ ℓ n}
     (hctor : CtorWF E (E.get η).block ((E.get η).block.ctors s c))
-    (hallowed : (E.get η).block.RecAllowed l) :
+    (hallowed : (E.get η).block.RecAllowed ls l) :
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     (∀ s, E[Γ] ⊢ ms s : (E.get η).block.motiveType η ls ps l s) →
@@ -1363,7 +1363,7 @@ theorem Inductive.iotaLhs_hasType
 
 theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : InductiveWF E (E.get η).block)
     {mins : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) → Expr ζ ℓ n}
-    (hallowed : (E.get η).block.RecAllowed l) :
+    (hallowed : (E.get η).block.RecAllowed ls l) :
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
     (∀ s, E[Γ] ⊢ ms s : (E.get η).block.motiveType η ls ps l s) →

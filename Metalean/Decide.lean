@@ -37,15 +37,10 @@ instance LevelOK.instDecidable (l : Level ι.nlevels) : Decidable (I.LevelOK l) 
   unfold Inductive.LevelOK
   infer_instance
 
-instance SortLargeElim.instDecidablePred : DecidablePred I.SortLargeElim := fun s =>
+instance Subsingleton.instDecidable : Decidable I.Subsingleton :=
   decidable_of_iff
-    (Level.one ≤ I.level ∨
-      ι.nsorts = 1 ∧ (∀ c c' : Fin (ι.nctors s), c = c') ∧
-        ∀ c, (I.ctors s c).Eligible I.level)
-    ⟨fun h => h.elim .large fun h => .subsingleton h.1 h.2.1 h.2.2, fun h => by
-      cases h with
-      | large hlevel => exact .inl hlevel
-      | subsingleton hsorts hunique heligible => exact .inr ⟨hsorts, hunique, heligible⟩⟩
+    ((∀ s, ∀ c c' : Fin (ι.nctors s), c = c') ∧ ∀ s c, (I.ctors s c).Eligible I.level)
+    ⟨fun h => .intro h.1 h.2, fun h => ⟨h.unique, h.eligible⟩⟩
 
 instance LargeElim.instDecidable : Decidable I.LargeElim := by
   unfold LargeElim
@@ -56,12 +51,13 @@ instance IsStructure.instDecidable (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
   decidable_of_iff
     ((∀ other : Fin ι.nsorts, other = s) ∧ (∀ other : Fin (ι.nctors s), other = c) ∧
       (∀ _ : Fin (ι.nindices s), False) ∧ (∀ _ : Fin (ι.ctors s c).nrecFields, False) ∧
-      I.SortLargeElim s)
+      I.LargeElim)
     ⟨fun ⟨hs, hc, hi, hf, hl⟩ => ⟨hs, hc, ⟨hi⟩, ⟨hf⟩, hl⟩,
       fun h => ⟨h.sort_unique, h.ctor_unique, h.no_indices.elim, h.no_recursive.elim,
-        h.sortLargeElim⟩⟩
+        h.largeElim⟩⟩
 
-instance RecAllowed.instDecidable {ℓ : Nat} (l : Level ℓ) : Decidable (I.RecAllowed l) := by
+instance RecAllowed.instDecidable {ℓ : Nat} (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    Decidable (I.RecAllowed ls l) := by
   unfold Inductive.RecAllowed
   infer_instance
 

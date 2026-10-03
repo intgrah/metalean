@@ -79,7 +79,7 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
   E[Γ] ⊢ .ctor η s c ls ps₁ fds₁ recFds₁ ≡ .ctor η s c ls ps₂ fds₂ recFds₂ :
     .ind η s ls ps₁ (((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁)
 
-  (E.get η).block.RecAllowed l
+  (E.get η).block.RecAllowed ls l
   ∀ p, E[Γ] ⊢ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p
   ∀ s, E[Γ] ⊢ ms₁ s ≡ ms₂ s : (E.get η).block.motiveType η ls ps₁ l s
   ∀ s c, E[Γ] ⊢ mins₁ s c ≡ mins₂ s c : (E.get η).block.caseFnType η ls ps₁ ms₁ s c
@@ -158,7 +158,7 @@ judgement Defeq (E : Env ζ) {ℓ : Nat} :
   ──────────────────── proofIrrel {n} {Γ : Ctx ζ ℓ 0 n} {p h₁ h₂}
   E[Γ] ⊢ h₁ ≡ h₂ : p
 
-  (E.get η).block.RecAllowed u
+  (E.get η).block.RecAllowed ls u
   ∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p
   ∀ s, E[Γ] ⊢ ms s : (E.get η).block.motiveType η ls ps u s
   ∀ s c, E[Γ] ⊢ mins s c : (E.get η).block.caseFnType η ls ps ms s c

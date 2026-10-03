@@ -385,7 +385,7 @@ theorem projTerm_denotes_field
       exact congrArg (sortKey s.val)
         (congrArg encode (funext hstruct.no_indices.elim))
     have hiota := model.recLeaf_iota hdecl hrule hE hB s u
-      ((I.recAllowed_map total.sigs u).mp (hstruct.recAllowed u))
+      ((I.recAllowed_map total.sigs ls u).mp (hstruct.recAllowed ls u))
       (RecSlots.args vps vms vminsVal vis ε₂[γ₁]⟦maj₁⟧) hreach c
       (by simpa using hargs)
       (by simpa [RecSlots.indicesOfSlots] using hkey)

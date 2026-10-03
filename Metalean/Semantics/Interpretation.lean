@@ -48,7 +48,7 @@ noncomputable def rawInterpret (Γ₁ : CtxCat E ℓ) : Expr ζ ℓ Γ₁.as.len
       | false => ⊥
       | true =>
         ⨆ h : RecTyping Γ₁ η s ls l ps ms mins is maj,
-          RawFamily.closedApps (recursorWith D (fun Γ' e _ => rawInterpret Γ' e) h.toRecDecl ls s)
+          RawFamily.closedApps (recursorWith D (fun Γ' e _ => rawInterpret Γ' e) h.toRecDecl s)
             (fun v => Tm.label Γ₁.as (h.recrHom.typed v))
             fun v => rawInterpret Γ₁ (Inductive.recrSubst ps ms mins is maj v)
   | .quot η u α r => ⨆ h : QuotTyping Γ₁ u α r, RawFamily.quot (h.code η)
@@ -204,9 +204,9 @@ theorem rawInterpret_ctor_typed {ι : IndSig} {η : Head ζ (.inductive ι)} {s 
   rw [rawInterpret, hrel]
   exact RawFamily.iSup_eq h fun _ => rfl
 
-noncomputable abbrev recursor {ι : IndSig} {η : Head ζ (.inductive ι)} {l : Level ℓ}
-    (hd : RecDecl E η l) (ls : Fin ι.nlevels → Level ℓ) : RecApprox E ℓ ι :=
-  recursorWith D (fun Γ₁ e _ => rawInterpret D Γ₁ e) hd ls
+noncomputable abbrev recursor {ι : IndSig} {η : Head ζ (.inductive ι)} {ls : Fin ι.nlevels → Level ℓ}
+    {l : Level ℓ} (hd : RecDecl E η ls l) : RecApprox E ℓ ι :=
+  recursorWith D (fun Γ₁ e _ => rawInterpret D Γ₁ e) hd
 
 theorem rawInterpret_recr {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
     {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ} {ps : Fin ι.nparams → Expr ζ ℓ Γ₁.as.len}
@@ -215,7 +215,7 @@ theorem rawInterpret_recr {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin 
     {is : Fin (ι.nindices s) → Expr ζ ℓ Γ₁.as.len} {maj : Expr ζ ℓ Γ₁.as.len}
     (h : RecTyping Γ₁ η s ls l ps ms mins is maj) (hrel : l.rel = true) :
     rawInterpret D Γ₁ (.recr η s ls l ps ms mins is maj) =
-      RawFamily.closedApps (recursor D h.toRecDecl ls s) (fun v => Tm.label Γ₁.as (h.recrHom.typed v))
+      RawFamily.closedApps (recursor D h.toRecDecl s) (fun v => Tm.label Γ₁.as (h.recrHom.typed v))
         fun v => rawInterpret D Γ₁ (Inductive.recrSubst ps ms mins is maj v) := by
   rw [rawInterpret, hrel]
   exact RawFamily.iSup_eq h fun _ => rfl
@@ -284,7 +284,7 @@ theorem rawInterpret_isFinitary (t : Expr ζ ℓ Γ₁.as.len) :
     exact RawFamily.IsFinitary.iSup fun h => RawFamily.IsFinitary.ctor _ _ ih
   | case10 _ _ _ _ _ _ _ _ _ _ _ _ ihinterp ihargs =>
     exact RawFamily.IsFinitary.iSup fun h =>
-      RawFamily.IsFinitary.closedApps (recursorWith_isFinitary D _ _ _ ihinterp _) _ (ihargs h)
+      RawFamily.IsFinitary.closedApps (recursorWith_isFinitary D _ _ ihinterp _) _ (ihargs h)
   | case11 => exact RawFamily.IsFinitary.iSup fun h => RawFamily.quot_isFinitary (h.code _)
   | case13 _ _ _ _ _ _ _ ih =>
     exact RawFamily.IsFinitary.iSup fun ha => RawFamily.IsFinitary.quotMk _ _ ih
