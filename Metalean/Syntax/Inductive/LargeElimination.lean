@@ -64,20 +64,57 @@ judgement SortLargeElim (I : Inductive ζ ι) (s : Fin ι.nsorts) : Prop where
 def LargeElim (I : Inductive ζ ι) : Prop :=
   ∀ s, I.SortLargeElim s
 
-def RecAllowed (I : Inductive ζ ι) (l : Level ℓ) : Prop :=
-  l = .zero ∨ I.LargeElim
+inductive Subsingleton (I : Inductive ζ ι) : Prop where
+  | intro :
+    (∀ s, ∀ c c' : Fin (ι.nctors s), c = c') →
+    (∀ s c, (I.ctors s c).Eligible I.level) →
+    Subsingleton I
 
-theorem RecAllowed.largeElim {l : Level ℓ} {ν : Param ℓ → Nat} (h : I.RecAllowed l)
-    (hl : l.eval ν ≠ 0) : I.LargeElim := by
-  rcases h with rfl | hlarge
-  · exact (hl rfl).elim
-  · exact hlarge
+def RecAllowed (I : Inductive ζ ι) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) : Prop :=
+  I.Subsingleton ∨ l ≤ Level.imax l I.level{ls}
 
-theorem RecAllowed.instL (h : I.RecAllowed u) (ls : Param ℓ → Level ℓ') :
-    I.RecAllowed u{ls} := by
-  rcases h with rfl | h
-  · exact .inl rfl
-  · exact .inr h
+theorem Subsingleton.singleton (h : I.Subsingleton) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    ι.nctors s = 1 ∧ (I.ctors s c).Eligible I.level := by
+  have ⟨hunique, heligible⟩ := h
+  refine ⟨Nat.le_antisymm ?_ (Nat.zero_lt_of_lt c.isLt), heligible s c⟩
+  by_contra hlt
+  have h01 : (⟨0, by omega⟩ : Fin (ι.nctors s)) = ⟨1, by omega⟩ := hunique s _ _
+  simp at h01
+
+theorem RecAllowed.subsingleton {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
+    (h : I.RecAllowed ls l) (hl : l.eval ν ≠ 0) (hI : I.level{ls}.eval ν = 0) :
+    I.Subsingleton := by
+  rcases h with h | h
+  · exact h
+  · exact (hl ((Level.le_imax_iff.mp h) ν hI)).elim
+
+theorem RecAllowed.zero (ls : Fin ι.nlevels → Level ℓ) : I.RecAllowed ls .zero :=
+  .inr fun ν => by simp
+
+theorem LargeElim.recAllowed (h : I.LargeElim) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    I.RecAllowed ls l := by
+  by_cases hlevel : Level.one ≤ I.level
+  · refine .inr (Level.le_imax_iff.mpr fun ν hzero => ?_)
+    have hpos := hlevel fun p => (ls p).eval ν
+    rw [Level.eval_inst] at hzero
+    simp [Function.comp_def] at hpos hzero
+    omega
+  · refine .inl ⟨fun s c c' => ?_, fun s c => ?_⟩
+    · cases h s with
+      | large hl => exact (hlevel hl).elim
+      | subsingleton _ hunique _ => exact hunique c c'
+    · cases h s with
+      | large hl => exact (hlevel hl).elim
+      | subsingleton _ _ heligible => exact heligible c
+
+theorem RecAllowed.instL {ls : Fin ι.nlevels → Level ℓ} (h : I.RecAllowed ls u)
+    (ls' : Param ℓ → Level ℓ') : I.RecAllowed ls{ls'} u{ls'} := by
+  rcases h with h | h
+  · exact .inl h
+  · refine .inr (Level.le_imax_iff.mpr fun ν hzero => ?_)
+    have key := (Level.le_imax_iff.mp h) (Level.eval ν ∘ ls')
+    simp only [Level.eval_inst, Function.comp_def, InstLevel.inst_tuple] at hzero key ⊢
+    exact key hzero
 
 @[simp] theorem sortLargeElim_map (I : Inductive ζ₁ ι)
     (pre : ζ₁ ⟶ ζ₂) (s : Fin ι.nsorts) :
@@ -101,10 +138,16 @@ theorem RecAllowed.instL (h : I.RecAllowed u) (ls : Param ℓ → Level ℓ') :
   · exact (I.sortLargeElim_map pre s).mp (h s)
   · exact (I.sortLargeElim_map pre s).mpr (h s)
 
+@[simp] theorem subsingleton_map (I : Inductive ζ₁ ι) (pre : ζ₁ ⟶ ζ₂) :
+    (I.map pre).Subsingleton ↔ I.Subsingleton := by
+  constructor <;> intro ⟨hunique, heligible⟩
+  · exact ⟨hunique, fun s c => ((I.ctors s c).eligible_map pre I.level).mp (heligible s c)⟩
+  · exact ⟨hunique, fun s c => ((I.ctors s c).eligible_map pre I.level).mpr (heligible s c)⟩
+
 @[simp] theorem recAllowed_map (I : Inductive ζ₁ ι)
-    (pre : ζ₁ ⟶ ζ₂) (l : Level ℓ) :
-    (I.map pre).RecAllowed l ↔ I.RecAllowed l := by
-  simp [RecAllowed]
+    (pre : ζ₁ ⟶ ζ₂) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    (I.map pre).RecAllowed ls l ↔ I.RecAllowed ls l :=
+  or_congr (I.subsingleton_map pre) Iff.rfl
 
 namespace SortLargeElim
 

@@ -60,7 +60,7 @@ def tuple (es : List (Expr ζ ℓ n)) (k : Nat) (h : k ≤ es.length) : Fin k �
 abbrev Projector (ζ : Sigs) :=
   ∀ {ℓ n : Nat}, Ctx ζ ℓ 0 n → Name → Nat → Expr ζ ℓ n → Except Failure (Expr ζ ℓ n)
 
-variable (E : Env ζ) (table : Table) (lps : List Name) (project : Projector ζ)
+variable (leanElim : Bool) (E : Env ζ) (table : Table) (lps : List Name) (project : Projector ζ)
 
 def translateConst (lps : List Name) {n : Nat} (pos : Nat) (us : List Export.Level)
     (args : List (Expr ζ lps.length n)) : Except Failure (Expr ζ lps.length n) := do
@@ -231,7 +231,7 @@ def saturate {n : Nat} (arity : Nat) (args : List (Expr ζ ℓ n))
   else
     pure ((← eta ()).wkClosed.appList args)
 
-def translateSpecial (E : Env ζ) (lps : List Name) {n : Nat}
+def translateSpecial (leanElim : Bool) (E : Env ζ) (lps : List Name) {n : Nat}
     (us : List Export.Level) (args : List (Expr ζ lps.length n)) :
     Binding → Except Failure (Expr ζ lps.length n)
   | .const _ => throw .internal
@@ -286,8 +286,9 @@ def translateSpecial (E : Env ζ) (lps : List Name) {n : Nat}
     let I := (E.get η).block
     if hs : s < ι.nsorts then
       let s : Fin ι.nsorts := ⟨s, hs⟩
+      let large := if leanElim then decide I.LargeElim else us.length == ι.nlevels + 1
       let (l, rest) ←
-        if I.LargeElim then
+        if large then
           match us with
           | u :: rest => do pure (← translateLevel lps u, rest)
           | [] => throw (.reject .arity)
@@ -323,7 +324,7 @@ partial def translateWith {n : Nat} (Γ : Ctx ζ lps.length 0 n) (ρ : Scope n)
     match table.get? name with
     | none => throw (.reject (.unknownName name))
     | some (.const pos) => translateConst lps pos us args
-    | some binding => translateSpecial E lps us args binding
+    | some binding => translateSpecial leanElim E lps us args binding
   | .app fn arg => do
     let arg ← translateWith Γ ρ [] arg
     translateWith Γ ρ (arg :: args) fn
@@ -344,6 +345,6 @@ partial def translateWith {n : Nat} (Γ : Ctx ζ lps.length 0 n) (ρ : Scope n)
 
 def translate {n : Nat} (Γ : Ctx ζ lps.length 0 n) (ρ : Scope n) (e : Export.Expr) :
     Except Failure (Expr ζ lps.length n) :=
-  translateWith E table lps project Γ ρ [] e
+  translateWith leanElim E table lps project Γ ρ [] e
 
 end Metalean.Frontend

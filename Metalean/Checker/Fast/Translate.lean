@@ -151,7 +151,7 @@ def recrTerm (ι : IndSig) (fI : FInductive) (pos s : Nat) (hs : s < fI.indices.
   pure (FExpr.lamTele 0 tele
     (.recr pos s us l ps ms (Array.ofFn mins) (FExpr.fvars casesEnd ni) (.fvar (casesEnd + ni))))
 
-variable (F : FEnv) (table : Table) (lps : List Name) (hints : PArray Export.Hints)
+variable (leanElim : Bool) (F : FEnv) (table : Table) (lps : List Name) (hints : PArray Export.Hints)
   (accel : Accel F)
 
 def whnfOf (G : FCtx) (t : FExpr) : CheckM F lps.length FExpr := do
@@ -486,8 +486,9 @@ def translateSpecial {n k : Nat} (us : List Export.Level)
     | some (.inductive ι fI) => do
       let ⟨hs⟩ ← guardProofOr (s < ι.nsorts) (.reject .shape)
       let ⟨hs'⟩ ← guardProofOr (s < fI.indices.size) .internal
+      let large := if leanElim then fI.largeElim else us.length == ι.nlevels + 1
       let (l, rest) ←
-        if fI.largeElim then
+        if large then
           match us with
           | u :: rest => do pure (← translateLevel lps u, rest)
           | [] => throw (.reject .arity)
@@ -624,7 +625,7 @@ partial def translateCore {n k : Nat} (G : LocalScope) (ρ : Scope n)
     match table.get? name with
     | none => throw (.reject (.unknownName name))
     | some (.const pos) => return applyArgs F (← translateConst F lps pos us) args
-    | some binding => translateSpecial F lps us args binding
+    | some binding => translateSpecial leanElim F lps us args binding
   | .app fn arg => do
     let arg ← translateWith G ρ [] arg
     translateWith G ρ (arg :: args) fn
@@ -668,16 +669,16 @@ end
 
 def translate {n : Nat} (G : FCtx) (ρ : Scope n) (e : Export.Expr) :
     EIO Failure (Witnessed F lps.length n 0) :=
-  (translateWith F table lps hints accel (k := 0) (.ofCtx G) ρ [] e).run' {}
+  (translateWith leanElim F table lps hints accel (k := 0) (.ofCtx G) ρ [] e).run' {}
 
 def translateClosed (e : Export.Expr) : EIO Failure (Witnessed F lps.length 0 0) :=
-  translate F table lps hints accel #[] Scope.empty e
+  translate leanElim F table lps hints accel #[] Scope.empty e
 
 def translateClosedPair (e₁ e₂ : Export.Expr) :
     EIO Failure (Witnessed F lps.length 0 0 × Witnessed F lps.length 0 0) :=
   (do
-    let w₁ ← translateWith F table lps hints accel (k := 0) (.ofCtx #[]) Scope.empty [] e₁
-    let w₂ ← translateWith F table lps hints accel (k := 0) (.ofCtx #[]) Scope.empty [] e₂
+    let w₁ ← translateWith leanElim F table lps hints accel (k := 0) (.ofCtx #[]) Scope.empty [] e₁
+    let w₂ ← translateWith leanElim F table lps hints accel (k := 0) (.ofCtx #[]) Scope.empty [] e₂
     pure (w₁, w₂)).run' {}
 
 structure FPreCtor where
@@ -718,7 +719,7 @@ def buildFrom {n : Nat} (G : FCtx) (ρ : Scope n) :
   | [] => pure ⟨#[], rfl, fun j hj => absurd hj (by simp)⟩
   | t :: rest => do
     let ⟨Δ, hsize, hΔ⟩ ← buildFrom G ρ rest
-    let ⟨t', ht'⟩ ← translate F table lps hints accel (n := n + rest.length) (G ++ Δ)
+    let ⟨t', ht'⟩ ← translate leanElim F table lps hints accel (n := n + rest.length) (G ++ Δ)
       (ρ.pushN rest.length) t
     pure ⟨Δ.push t', by simp [hsize], teleWF_push F hΔ (hsize ▸ ht')⟩
 
@@ -736,10 +737,10 @@ def preRecField {nsorts : Nat} (nparams : Nat) (sd : Fin nsorts → Frontend.Sor
     EIO Failure {ffd : FRecField // RecFieldPieces F lps.length nparams nfields
       rf.bindersRev.length (sd rf.target).indicesRev.length ffd} := do
   let ρ := Frontend.fieldScope ords nparams rf.leanPos (nparams + nfields)
-  let ⟨tele, hteleSize, hteleWF⟩ ← buildFrom F table lps hints accel (n := nparams + nfields) G ρ
+  let ⟨tele, hteleSize, hteleWF⟩ ← buildFrom leanElim F table lps hints accel (n := nparams + nfields) G ρ
     rf.bindersRev
   let is ← rf.indices.mapM fun i =>
-    translate F table lps hints accel (n := nparams + nfields + rf.bindersRev.length) (G ++ tele)
+    translate leanElim F table lps hints accel (n := nparams + nfields + rf.bindersRev.length) (G ++ tele)
       (ρ.pushN rf.bindersRev.length) i
   let ⟨hisSize⟩ ← guardProofOr (is.length = (sd rf.target).indicesRev.length)
     (Failure.reject .arity)
@@ -756,20 +757,20 @@ def ordinaryFields {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
   | count + 1 => fun h => do
     let ⟨Δ, hsize, hΔ⟩ ← ordinaryFields nparams params shape count (by omega)
     let field := shape.ords[count]
-    let ⟨t, ht⟩ ← translate F table lps hints accel (n := nparams + count) (params ++ Δ)
+    let ⟨t, ht⟩ ← translate leanElim F table lps hints accel (n := nparams + count) (params ++ Δ)
       (Frontend.fieldScope shape.ords nparams field.leanPos (nparams + count)) field.type
     pure ⟨Δ.push t, by simp [hsize], teleWF_push F hΔ (hsize ▸ ht)⟩
 
 def preCtorOf {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
     (sd : Fin nsorts → Frontend.SortData nsorts) (s : Fin nsorts) (shape : Frontend.CtorShape nsorts) :
     EIO Failure FPreCtor := do
-  let ⟨fields, _, _⟩ ← ordinaryFields F table lps hints accel nparams params shape
+  let ⟨fields, _, _⟩ ← ordinaryFields leanElim F table lps hints accel nparams params shape
     shape.ords.length le_rfl
   let recursive ← shape.recs.mapM fun rf => do
-    pure (← preRecField F table lps hints accel nparams sd shape.ords shape.ords.length
+    pure (← preRecField leanElim F table lps hints accel nparams sd shape.ords shape.ords.length
       (params ++ fields) rf).val
   let tis ← shape.resultIndices.mapM fun i => do
-    pure (← translate F table lps hints accel (params ++ fields)
+    pure (← translate leanElim F table lps hints accel (params ++ fields)
       (Frontend.fieldScope shape.ords nparams (shape.ords.length + shape.recs.length)
         (nparams + shape.ords.length)) i).val
   unless tis.length = (sd s).indicesRev.length do throw (.reject .arity)
@@ -826,13 +827,13 @@ def analyzeBlock (types : List Export.InductiveType) (ctors : List Export.Constr
       | throw (.reject .unknownLevelParam)
     if ∃ s, (rawLevels s).normalize ≠ (rawLevels ⟨0, hpos⟩).normalize then throw (.reject .shape)
     let nparams := paramBindersRev.length
-    let ⟨params, hparamsSize, hparamsWF⟩ ← buildFrom F table lps hints accel #[] Scope.empty
+    let ⟨params, hparamsSize, hparamsWF⟩ ← buildFrom leanElim F table lps hints accel #[] Scope.empty
       paramBindersRev
     let indices ← Fin.mapM fun s : Fin types.length => do
-      pure (← buildFrom F table lps hints accel params (Scope.id nparams) (sd s).indicesRev).val
+      pure (← buildFrom leanElim F table lps hints accel params (Scope.id nparams) (sd s).indicesRev).val
     let preCtors ← Fin.mapM fun s : Fin types.length =>
       Fin.mapM fun c : Fin (sd s).shapes.length =>
-        preCtorOf F table lps hints accel nparams params sd s ((sd s).shapes[c.val]'c.isLt)
+        preCtorOf leanElim F table lps hints accel nparams params sd s ((sd s).shapes[c.val]'c.isLt)
     pure {
       ι := indSigOf lps.length nparams types.length sd
       pre := {

@@ -54,6 +54,7 @@ inductive Change (F : FEnv) where
   | add (a : Addition F)
 
 structure FState where
+  leanElim : Bool
   F : FEnv
   hints : PArray Export.Hints
   accel : Accel F
@@ -63,7 +64,8 @@ structure FState where
   /-- Soundness of the typechecker -/
   denotes : (∀ o ∈ pending, o.P) → ∃ (ζ : Sigs) (E : Env ζ), EnvWF E ∧ FEnv.Denotes F E
 
-def FState.initial : FState where
+def FState.initial (leanElim : Bool) : FState where
+  leanElim
   F := ∅
   hints := ∅
   accel := {}
@@ -82,11 +84,12 @@ theorem FEnv.denotes_push {F : FEnv} {fe : FEntry}
     ⟨_, E.snoc entry, hE.snoc hwf', .snoc hF hden⟩
 
 def FState.apply : (st : FState) → Change st.F → FState
-  | ⟨F, hints, accel, table, definitions, pending, denotes⟩, .bind name b =>
-    ⟨F, hints, accel, table.insert name b, definitions, pending, denotes⟩
-  | ⟨F, hints, accel, table, definitions, pending, denotes⟩,
+  | ⟨leanElim, F, hints, accel, table, definitions, pending, denotes⟩, .bind name b =>
+    ⟨leanElim, F, hints, accel, table.insert name b, definitions, pending, denotes⟩
+  | ⟨leanElim, F, hints, accel, table, definitions, pending, denotes⟩,
     .add ⟨bindings, definition, fe, hint, hex, wf⟩ =>
-    { F := F.push fe
+    { leanElim
+      F := F.push fe
       hints := hints.push hint
       accel := accel.push fe
       table := bindings.foldl (fun t (name, b) => t.insert name b) table
@@ -119,7 +122,7 @@ def FState.checkFresh (st : FState) (names : List Name) : Except Failure Unit :=
 def stepAxiom (st : FState) (ds : Declarations) (d : Declaration) (c : Export.ConstantDecl) :
     EIO Failure (Change st.F) := do
   checkLevelParams c.levelParams
-  let ⟨ft, ht⟩ ← translateClosed st.F st.table c.levelParams st.hints st.accel c.type
+  let ⟨ft, ht⟩ ← translateClosed st.leanElim st.F st.table c.levelParams st.hints st.accel c.type
   st.checkFresh [c.name]
   let wf ← later ds d (checkAxiom st.F st.hints st.accel c.levelParams.length ft).eval
   pure (.add ⟨[(c.name, .const st.F.size)], none, _, .opaque, EntryWF.axiom ht, wf⟩)
@@ -128,7 +131,7 @@ def stepDef (st : FState) (ds : Declarations) (d : Declaration) (c : Export.Cons
     (value : Export.Expr) (hints : Export.Hints) : EIO Failure (Change st.F) := do
   checkLevelParams c.levelParams
   let (⟨ft, ht⟩, ⟨v, hv⟩) ←
-    translateClosedPair st.F st.table c.levelParams st.hints st.accel c.type value
+    translateClosedPair st.leanElim st.F st.table c.levelParams st.hints st.accel c.type value
   st.checkFresh [c.name]
   let wf ← later ds d (checkDef st.F st.hints st.accel c.levelParams.length ft v).eval
   pure (.add ⟨[(c.name, .const st.F.size)], some (c.name, c.levelParams, value), _, hints,
@@ -138,7 +141,7 @@ def stepOpaque (st : FState) (ds : Declarations) (d : Declaration) (c : Export.C
     (value : Export.Expr) : EIO Failure (Change st.F) := do
   checkLevelParams c.levelParams
   let (⟨ft, ht⟩, ⟨v, _⟩) ←
-    translateClosedPair st.F st.table c.levelParams st.hints st.accel c.type value
+    translateClosedPair st.leanElim st.F st.table c.levelParams st.hints st.accel c.type value
   st.checkFresh [c.name]
   let wf ← later ds d (checkOpaque st.F st.hints st.accel c.levelParams.length ft v).eval
   pure (.add ⟨[(c.name, .const st.F.size)], none, _, .opaque, EntryWF.opaque ht, wf⟩)
@@ -147,7 +150,7 @@ def stepTheorem (st : FState) (ds : Declarations) (d : Declaration) (c : Export.
     (value : Export.Expr) : EIO Failure (Change st.F) := do
   checkLevelParams c.levelParams
   let (⟨ft, ht⟩, ⟨v, hv⟩) ←
-    translateClosedPair st.F st.table c.levelParams st.hints st.accel c.type value
+    translateClosedPair st.leanElim st.F st.table c.levelParams st.hints st.accel c.type value
   st.checkFresh [c.name]
   let wf ← later ds d (checkTheorem st.F st.hints st.accel c.levelParams.length ft v).eval
   pure (.add ⟨[(c.name, .const st.F.size)], none, _, .opaque, EntryWF.def ht hv, wf⟩)
@@ -169,7 +172,7 @@ def stepInductive (st : FState) (ds : Declarations) (d : Declaration)
     EIO Failure (Change st.F) := do
   let sortNames := types.map (·.name)
   let result ←
-    tryCatch (analyzeBlock st.F st.table st.hints st.accel types ctors recNames st.definitions)
+    tryCatch (analyzeBlock st.leanElim st.F st.table st.hints st.accel types ctors recNames st.definitions)
       fun
         | .reject (.unknownName n) =>
           if sortNames.contains n then throw (.reject .positivity)
@@ -224,10 +227,10 @@ def awaitFrom (pending : Array Pending) (front : Nat) : DriverM Unit := do
   for p in pending[front:] do
     discard p.result
 
-def check (ds : Declarations) :
+def check (leanElim : Bool) (ds : Declarations) :
     DriverM {F : FEnv // ∃ (ζ : Sigs) (E : Env ζ), EnvWF E ∧ FEnv.Denotes F E} :=
   tryFinally (m := DriverM) (do
-    let mut st := FState.initial
+    let mut st := FState.initial leanElim
     let mut front := 0
     for d in ds do
       match ← (change st ds d).toBaseIO with

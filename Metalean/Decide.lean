@@ -61,7 +61,13 @@ instance IsStructure.instDecidable (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
       fun h => ⟨h.sort_unique, h.ctor_unique, h.no_indices.elim, h.no_recursive.elim,
         h.sortLargeElim⟩⟩
 
-instance RecAllowed.instDecidable {ℓ : Nat} (l : Level ℓ) : Decidable (I.RecAllowed l) := by
+instance Subsingleton.instDecidable : Decidable I.Subsingleton :=
+  decidable_of_iff
+    ((∀ s, ∀ c c' : Fin (ι.nctors s), c = c') ∧ ∀ s c, (I.ctors s c).Eligible I.level)
+    ⟨fun h => ⟨h.1, h.2⟩, fun ⟨hunique, heligible⟩ => ⟨hunique, heligible⟩⟩
+
+instance RecAllowed.instDecidable {ℓ : Nat} (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    Decidable (I.RecAllowed ls l) := by
   unfold Inductive.RecAllowed
   infer_instance
 

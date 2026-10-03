@@ -367,7 +367,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
     (fun p => @(pps p).fixed) (fun t => @(pms t).fixed) (fun t c => @(pmins t c).fixed)
     (fun i => (pis i).fixed) @pmaj.fixed
   let hd := hr.toRecDecl
-  let gen := RecTyping.generic hd ls s
+  let gen := RecTyping.generic hd s
   let σ' := σ₁ ≫ RawCtx.toCtx.map hr.recrHom
   let ρ' := RawValuation.pushFin (fun _ => ⊥) fun v =>
     (rawInterpret (piLimit E₂ ℓ) Γ₁ (Inductive.recrSubst ps ms mins
@@ -381,13 +381,13 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
   have hmins (t : Fin ι.nsorts) (c₁ : Fin (ι.nctors t)) :
       (Expr.var (RecrBinder.case (s := s) t c₁).resolve).subst hr.recrHom.subst = mins t c₁ := by
     simp [RecTyping.recrHom, Expr.subst]
-  have ppsG := fun p => hsound.genericTyped hB hblock hd ls s (.param p)
-  have pmsG := fun t => hsound.genericTyped hB hblock hd ls s (.motive t)
-  have pminsG := fun t c => hsound.genericTyped hB hblock hd ls s (.case t c)
-  have hRG := RawTeleProperties.append .nil (hsound.recrTeleProperties hB hblock hd ls s)
+  have ppsG := fun p => hsound.genericTyped hB hblock hd s (.param p)
+  have pmsG := fun t => hsound.genericTyped hB hblock hd s (.motive t)
+  have pminsG := fun t c => hsound.genericTyped hB hblock hd s (.case t c)
+  have hRG := RawTeleProperties.append .nil (hsound.recrTeleProperties hB hblock hd s)
   have pfieldG := (hsound.fieldTeleProperties hB hblock s c gen.toIndData ppsG).1
   have hadmRecr := hsound.recrHom_admissible hB hblock hr pargs fargs σ₁ ρ₁ hρ
-  have hsubRecr := SemanticSubstitution.ofHom (CtxCat.recr hd ls s).as.wf hr.recrHom σ₁ ρ₁
+  have hsubRecr := SemanticSubstitution.ofHom (CtxCat.recr hd s).as.wf hr.recrHom σ₁ ρ₁
     (fun v => (pargs v).subst) hρ
   have ⟨hsubF, hadmF⟩ := inst.fields_admissible gen.toIndData hr.recrHom hps pfieldG pf prf σ₁ ρ' ρ₁
     hsubRecr hadmRecr hρ
@@ -408,7 +408,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
         · exact (pf _).term.subst
       | right f => simpa [CtorInstance.fieldsHom, CtorInstance.fieldsSubst] using (prf f).term.subst
     admissible _ τ ρ hρ := ⟨_, inst.fields_admissible gen.toIndData hr.recrHom hps pfieldG pf prf
-      τ _ ρ (SemanticSubstitution.ofHom (CtxCat.recr hd ls s).as.wf hr.recrHom τ ρ
+      τ _ ρ (SemanticSubstitution.ofHom (CtxCat.recr hd s).as.wf hr.recrHom τ ρ
         (fun v => (pargs v).subst) hρ) (hsound.recrHom_admissible hB hblock hr pargs fargs τ ρ hρ) hρ⟩ }
   have pih f : RawTyped Γ₁ (inst.ih l ms mins f)
       (((E₂.get η).block.ctors s c).ihTypeWith ls ms ps inst.fds inst.recFds f) := by
@@ -416,19 +416,19 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       ← inst.ihType_fieldsSubst gen.toRecData hr.recrHom hps hms f]
     exact hfields.typed (hsound.genericIHProperties hB hblock gen.toRecData hRG ppsG pmsG pminsG s c f)
   have hcase (f : Fin (ι.ctors s c).nrecFields) :
-      rawApps ((recursorHyp (piLimit E₂ ℓ) (fun Γ₁ e _ => rawInterpret (piLimit E₂ ℓ) Γ₁ e) hd ls
-          (recursor (piLimit E₂ ℓ) hd ls) s c f).app _ σ'.op ρ')
+      rawApps ((recursorHyp (piLimit E₂ ℓ) (fun Γ₁ e _ => rawInterpret (piLimit E₂ ℓ) Γ₁ e) hd
+          (recursor (piLimit E₂ ℓ) hd) s c f).app _ σ'.op ρ')
         (fun i => (Tm E₂ ℓ).map σ₁.op (inst.typed.names i)) xs =
       (rawInterpret (piLimit E₂ ℓ) Γ₁ (inst.ih l ms mins f)).app _ σ₁.op ρ₁ := by
     have hproj : inst.fieldsHom gen.toIndData hr.recrHom hps ≫
-        RawCtx.Hom.teleProjection ((gen.block.ctors s c).fieldTele rfl (CtxCat.recr hd ls s).as.wf gen.param) =
+        RawCtx.Hom.teleProjection ((gen.block.ctors s c).fieldTele rfl (CtxCat.recr hd s).as.wf gen.param) =
           hr.recrHom :=
       RawCtx.Hom.ext (funext fun v => inst.fieldsSubst_base gen.toIndData hr.recrHom v)
     have pe := (hsound.genericIHProperties hB hblock gen.toRecData hRG ppsG pmsG pminsG s c f).term
-    rw [recursorHyp_eq (piLimit E₂ ℓ) hd hrel ls s c f]
+    rw [recursorHyp_eq (piLimit E₂ ℓ) hd hrel s c f]
     have hβ := RawFamily.ctxLam_openBeta _ (k := (CtorHead.mk η s c).arity)
       (by simp only [CtorHead.arity, CtorHead.sig]; omega) _ pfieldG
-      (fieldTele_headRank_lt (CtxCat.recr hd ls s) (fun p => .var (RecrBinder.param p).resolve)
+      (fieldTele_headRank_lt (CtxCat.recr hd s) (fun p => .var (RecrBinder.param p).resolve)
         (fun _ => Expr.headRank_var_le _) s c) _ (rawInterpret_isFinitary _ _ _)
       pe.ideal (σ₁ ≫ RawCtx.toCtx.map (inst.fieldsHom gen.toIndData hr.recrHom hps)) ρ' xs hadmF
     simp only [Category.assoc, ← RawCtx.toCtx.map_comp, hproj] at hβ
@@ -443,12 +443,12 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
   have hname (hstruct : (E₂.get η).block.IsStructure s c) :
       ((inst.section gen.toRecData hr.recrHom hps).pullback σ₁).ProjectsFrom hstruct
         ((Tm E₂ ℓ).map σ'.op
-          (Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.major (s := s)).resolve)) := by
+          (Tm.varLabel (CtxCat.recr hd s) (RecrBinder.major (s := s)).resolve)) := by
     have hA := hstruct.indType gen.param
     have hi : (fun i => (Expr.var (RecrBinder.index (s := s) i).resolve :
-        Expr ζ₂ ℓ (CtxCat.recr hd ls s).as.len)) = hstruct.indices :=
+        Expr ζ₂ ℓ (CtxCat.recr hd s).as.len)) = hstruct.indices :=
       funext hstruct.no_indices.elim
-    have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
+    have hvar : E₂[(CtxCat.recr hd s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
         .ind η s ls (fun p => .var (RecrBinder.param p).resolve) hstruct.indices := by
       have hm := gen.major
       rwa [hi] at hm
@@ -479,8 +479,8 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
             Tm.proj_ctor_label hstruct h.block ls ps h.param inst.fds hmaj inst.typed.ordinary f
     exact heq ▸ (show sect.ProjectsFrom hstruct _ from ⟨msect, rfl⟩)
 
-  have hX : (recoverMajor gen.toRecData s (𝟙 (CtxCat.recr hd ls s))
-      (fun i => Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.index i).resolve)
+  have hX : (recoverMajor gen.toRecData s (𝟙 (CtxCat.recr hd s))
+      (fun i => Tm.varLabel (CtxCat.recr hd s) (RecrBinder.index i).resolve)
       (fun i => RawFamily.lookup (Var.db (RecrBinder.index i).resolve))
       (RawFamily.lookup (Var.db (RecrBinder.major (s := s)).resolve))).app _ σ'.op ρ' =
       RawValue.ctor ⟨η, s, c⟩ ((inst.section gen.toRecData hr.recrHom hps).pullback σ₁).names xs := by
@@ -493,11 +493,11 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       rfl
     · have hz : (E₂.get η).block.level{ls} = .zero := by simpa using hcar
       have hnames : (fun i => (Tm E₂ ℓ).map σ'.op
-          (Tm.varLabel (CtxCat.recr hd ls s) (RecrBinder.index (s := s) i).resolve)) =
+          (Tm.varLabel (CtxCat.recr hd s) (RecrBinder.index (s := s) i).resolve)) =
           fun i => (Tm E₂ ℓ).map σ₁.op (Tm.label Γ₁.as (hr.index i)) := by
         funext i
         rw [op_comp, Functor.map_comp_apply,
-          ← Tm.label_eq_var (hsound.genericTyped hB hblock hd ls s (.index i)).typed rfl, Tm.map_label]
+          ← Tm.label_eq_var (hsound.genericTyped hB hblock hd s (.index i)).typed rfl, Tm.map_label]
         congr 2 <;> simp [Expr.subst, RecTyping.recrHom, Inductive.recrBinderType]
       have hvals : (fun i => ρ' (Var.db (RecrBinder.index (s := s) i).resolve)) =
           fun i => (rawInterpret (piLimit E₂ ℓ) Γ₁ (((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)).app _ σ₁.op ρ₁ := by
@@ -513,8 +513,8 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       refine (congrArg₂ (proofConstructor gen.toRecData s σ') hnames hvals).trans ?_
       rw [proofConstructor_instance inst hr.recrHom hps hr.index gen.toRecData hrel hz σ₁,
         recoveredField_eq_instance hsound hB hblock h hrel hz inst pps pf prf σ₁ ρ₁ hρ]
-  have hpayload : (recursorPayload (piLimit E₂ ℓ) (fun Γ₁ e _ => rawInterpret (piLimit E₂ ℓ) Γ₁ e) hd ls
-      (recursor (piLimit E₂ ℓ) hd ls) s).app _ σ'.op ρ' =
+  have hpayload : (recursorPayload (piLimit E₂ ℓ) (fun Γ₁ e _ => rawInterpret (piLimit E₂ ℓ) Γ₁ e) hd
+      (recursor (piLimit E₂ ℓ) hd) s).app _ σ'.op ρ' =
       (rawInterpret (piLimit E₂ ℓ) Γ₁ ((E₂.get η).block.iotaRhs η ls l ps ms mins s c inst.fds inst.recFds)).app _
         σ₁.op ρ₁ := by
     unfold recursorPayload

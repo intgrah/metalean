@@ -263,7 +263,7 @@ theorem projection_spec {n : Nat} {Γ : Ctx ζ ℓ 0 n} {ps : Fin ι.nparams →
   have hterm : E[Γ] ⊢ h.projTerm η ls ps f maj :
       h.projType η ls ps f maj := by
     rw [h.projTerm_eq_recr]
-    exact .defeqDF hresult (.recrDF (by simpa using h.recAllowed u)
+    exact .defeqDF hresult (.recrDF (by simpa using h.recAllowed ls u)
       (fun p => (hps p).left) (fun target => (hms target).left)
       (fun target targetCtor => (hmins target targetCtor).left)
       h.no_indices.elim hmaj.left hresultTy)
@@ -304,7 +304,7 @@ theorem projection_spec {n : Nat} {Γ : Ctx ζ ℓ 0 n} {ps : Fin ι.nparams →
       Expr.apps_eq_self_of_zero hnr, Expr.apps_eq_self_of_zero hnr]
     simpa [Expr.boundVars, Expr.subst] using happly
   have htypeToOrd := htypeIota.trans (hiotaType hΓ hps hmaj hfields)
-  have hiota := Defeq.iota (by simpa using h.recAllowed u) hps hms hmins
+  have hiota := Defeq.iota (by simpa using h.recAllowed ls u) hps hms hmins
     (fun current => by simpa [projTypeWith] using hfields current)
     h.no_recursive.elim htypeToOrd.left hlhs
     (.defeqDF htypeToOrd.symm hrhsEq.left)

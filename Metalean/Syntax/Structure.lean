@@ -45,9 +45,9 @@ theorem map (h : I.IsStructure s c) (pre : ζ₁ ⟶ ζ₂) :
 theorem largeElim (h : I.IsStructure s c) : I.LargeElim :=
   fun other => h.sort_unique other ▸ h.sortLargeElim
 
-theorem recAllowed (h : I.IsStructure s c) (l : Level ℓ) :
-    I.RecAllowed l :=
-  .inr h.largeElim
+theorem recAllowed (h : I.IsStructure s c) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
+    I.RecAllowed ls l :=
+  h.largeElim.recAllowed ls l
 
 def indices (h : I.IsStructure s c) {α : Sort _} : Fin (ι.nindices s) → α :=
   h.no_indices.elim

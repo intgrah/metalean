@@ -46,7 +46,7 @@ theorem RecTyping.structure_projection (hs : (E₂.get η).block.IsStructure s c
   have hp := hs.projection_spec hB Γ₁.as.wf hps hmaj f
   exact {
     block := hB
-    allowed := hs.recAllowed _
+    allowed := hs.recAllowed _ _
     param := hps
     motive := hp.motive
     case := fun other ctor => by
@@ -109,16 +109,16 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : Inductiv
             hs.no_recursive.elim)
           fun i => RawValue.proj ⟨η, s, c⟩ i ((rawInterpret (piLimit E₂ ℓ) Γ₁ maj).app _ σ.op ρ)) := by
   let hd := h.toRecDecl
-  let gen := RecTyping.generic hd ls s
+  let gen := RecTyping.generic hd s
   have hA := hs.indType gen.param
-  have hvar : E₂[(CtxCat.recr hd ls s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
+  have hvar : E₂[(CtxCat.recr hd s).as.ctx] ⊢ .var (RecrBinder.major (s := s)).resolve :
       .ind η s ls (fun p => .var (RecrBinder.param p).resolve) hs.indices := by
     have hm := gen.major
     rwa [show (fun i => (Expr.var (RecrBinder.index (s := s) i).resolve :
-      Expr ζ₂ ℓ (CtxCat.recr hd ls s).as.len)) = hs.indices from funext hs.no_indices.elim] at hm
+      Expr ζ₂ ℓ (CtxCat.recr hd s).as.len)) = hs.indices from funext hs.no_indices.elim] at hm
   let msect : Raw.ContextSection hA (σ ≫ RawCtx.toCtx.map h.recrHom)
       ((Tm E₂ ℓ).map (σ ≫ RawCtx.toCtx.map h.recrHom).op
-        (Tm.label (CtxCat.recr hd ls s).as hvar)) :=
+        (Tm.label (CtxCat.recr hd s).as hvar)) :=
     (Raw.ContextSection.ofTerm hA hvar).pullbackId (σ ≫ RawCtx.toCtx.map h.recrHom)
   let sect := CtorSection.ofMajor (h := gen.toRecData) hs msect
   have hp : sect.ProjectsFrom hs _ := ⟨msect, rfl⟩

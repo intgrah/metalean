@@ -5,6 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
+public import Metalean.Checker.Fast.CheckLevel
 public import Metalean.Checker.Fast.FEnv
 public import Metalean.Frontend.Failure
 public import Metalean.Syntax.Inductive.Iota
@@ -149,8 +150,9 @@ def FInductive.sortLargeElim (fI : FInductive) (row : Array FCtor) : Bool :=
 def FInductive.largeElim (fI : FInductive) : Bool :=
   fI.ctors.all fI.sortLargeElim
 
-def FInductive.recAllowed (fI : FInductive) (l : FLevel) : Bool :=
-  l == .zero || fI.largeElim
+def FInductive.subsingleton (fI : FInductive) : Bool :=
+  fI.ctors.all fun row =>
+    row.size ≤ 1 && row.all fun fctor => fctor.eligible fI.params.size fI.level
 
 def FInductive.isStructure (fI : FInductive) (s c : Nat) : Bool :=
   fI.ctors.size == 1 &&
@@ -644,18 +646,52 @@ theorem FInductive.Denotes.largeElim (h : fI.largeElim = true) :
     I.LargeElim := fun hI s =>
   hI.sortLargeElim s (Array.all_eq_true.mp h s.val (hI.ctorsLt s))
 
-theorem FInductive.Denotes.recAllowed {fl : FLevel} {l : RawLevel ℓ}
-    (h : fI.recAllowed fl = true) :
+theorem FInductive.Denotes.subsingleton (h : fI.subsingleton = true) :
     FInductive.Denotes E fI I →
-    FLevel.Denotes fl l →
-    I.RecAllowed ⟦l⟧ := by
-  intro hI hl
-  simp only [FInductive.recAllowed, Bool.or_eq_true, beq_iff_eq] at h
-  rcases h with rfl | h
-  · left
-    rw [hl.eq_zero]
-    rfl
-  · exact .inr (hI.largeElim h)
+    I.Subsingleton := by
+  intro hI
+  have ⟨level, hlevel, hlevel'⟩ := hI.level
+  simp only [FInductive.subsingleton, Array.all_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+  refine ⟨fun s c c' => Fin.ext ?_, fun s c => ?_⟩
+  · have := hI.ctorsRow s
+    have := (h s.val (hI.ctorsLt s)).1
+    have := c.isLt
+    have := c'.isLt
+    omega
+  · exact (hI.ctors s c).eligible hlevel' ((h s.val (hI.ctorsLt s)).2 c.val (hI.ctorLt s c))
+      hI.paramsSize hlevel
+
+def RecAllowedSpec (ℓ : Nat) (fI : FInductive) (us : Array FLevel) (l : FLevel) : Prop :=
+  ∀ {E : Σ ζ, Env ζ} {ι : IndSig} {I : Inductive E.1 ι} {us' : Fin ι.nlevels → RawLevel ℓ}
+    {l' : RawLevel ℓ} (hus : us.size = ι.nlevels),
+  FInductive.Denotes E fI I →
+  (∀ i, FLevel.Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (us' i)) →
+  FLevel.Denotes l l' →
+  I.RecAllowed (⟦us' ·⟧) ⟦l'⟧
+
+def FInductive.checkRecAllowed (ℓ : Nat) (fI : FInductive) (us : Array FLevel) (l : FLevel) :
+    Except Failure (PLift (RecAllowedSpec ℓ fI us l)) := do
+  if hsubsingleton : fI.subsingleton = true then
+    return ⟨fun _ hI _ _ => .inl (hI.subsingleton hsubsingleton)⟩
+  if hzero : l = .zero then
+    return ⟨fun _ _ _ hl => by
+      subst hzero
+      rw [hl.eq_zero]
+      exact Inductive.RecAllowed.zero _⟩
+  if hlarge : fI.level.isNotZero = true then
+    return ⟨fun _ hI _ _ => by
+      have ⟨level, hlevel, hlevel'⟩ := hI.level
+      refine Inductive.LargeElim.recAllowed (fun _ => .large fun ν => ?_) _ _
+      rw [← hlevel']
+      exact hlevel.one_le_of_isNotZero hlarge ν⟩
+  let ⟨l', hl'⟩ ← checkLevel ℓ l
+  let ⟨u', hu'⟩ ← checkLevel ℓ fI.level{us}
+  let ⟨hle⟩ ← guardProofOr ((⟦l'⟧ : Level ℓ) ≤ Level.imax ⟦l'⟧ ⟦u'⟧) (.reject .recursorLevel)
+  pure ⟨fun hus hI hus' hl => by
+    have ⟨level, hlevel, hlevel'⟩ := hI.level
+    refine .inr ?_
+    rw [← hl'.unique hl, ← hlevel', ← Level.mk_inst, (hlevel.inst hus hus').unique hu']
+    exact hle⟩
 
 theorem FInductive.Denotes.isStructure (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (h : fI.isStructure s.val c.val = true) :

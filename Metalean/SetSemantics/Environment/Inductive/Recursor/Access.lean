@@ -35,7 +35,7 @@ noncomputable def largeAccessRel (vps : Slots ι.nparams) : ZFSet :=
     (blockPredecessorRel (model.toModel.block vps) vps model.toModel.codes)
 
 theorem large_target_separates
-    (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
+    (hsubsingleton : I.Subsingleton)
     (vps : Slots ι.nparams)
     {s₁ s₂ : Fin ι.nsorts} {c₁ : Fin (ι.nctors s₁)} {c₂ : Fin (ι.nctors s₂)}
     {leftArgs rightArgs : ZFSet}
@@ -49,7 +49,7 @@ theorem large_target_separates
     rwa [← model.codeOf_targetIndex s₁ c₁ vps leftArgs,
       ← model.codeOf_targetIndex s₂ c₂ vps rightArgs]
   obtain rfl : s₁ = s₂ := Fin.ext (congrArg Prod.fst (sortKey_injective hsortKey))
-  have hone := (Inductive.SortLargeElim.singleton_of_eval_zero (hlarge s₁) ls hlevel c₁).1
+  have hone := (hsubsingleton.singleton s₁ c₁).1
   obtain rfl : c₁ = c₂ := Fin.ext (by omega)
   rfl
 
@@ -188,7 +188,7 @@ theorem large_argAgree
 theorem large_key_accessible
     (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
-    (hlarge : I.LargeElim) (hlevel : model.toModel.level = 0)
+    (hsubsingleton : I.Subsingleton)
     (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
     (entry : ZFSet) (hentry : entry ∈ model.toModel.block vps) :
@@ -222,9 +222,9 @@ theorem large_key_accessible
         (model.codeOf s₂ c₂).targetIndex vps edgeArgs := by
       rw [hrawCurrent, ← hcurrentEq, entry_eq, entry_eq, fst_pair, fst_pair] at hkeyRight
       exact hkeyRight.symm
-    cases model.large_target_separates hlarge hlevel vps htarget
+    cases model.large_target_separates hsubsingleton vps htarget
     have hagree := model.large_argAgree hdecl hrule hE hB
-      (Inductive.SortLargeElim.singleton_of_eval_zero (hlarge s₁) ls hlevel c₁).2
+      (hsubsingleton.singleton s₁ c₁).2
       vps hps approximation happroximation hargs (by simpa using hedgeArgs) htarget
     have ⟨recovered, hrecovered, hrecoveredKey⟩ :=
       (model.codeOf s₁ c₁).predecessor_key_recover

@@ -97,9 +97,10 @@ theorem RecData.recovery_eligible (hresult : l.rel = true)
     (herased : (E.get η).block.level{ls} = .zero)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     ι.nctors s = 1 ∧ ((E.get η).block.ctors s c).Eligible (E.get η).block.level := by
-  rcases h.allowed with hl | hlarge
-  · simp [hl] at hresult
-  · exact (hlarge s).singleton_of_eval_zero ls (congrArg (Level.eval fun _ => 0) herased) c
+  rcases h.allowed with hsubsingleton | hle
+  · exact hsubsingleton.singleton s c
+  · refine absurd (Level.ext fun ν => ?_) (by simpa using hresult)
+    simpa using Level.le_imax_iff.mp hle ν (by simp [herased])
 
 theorem proofConstructor_isDirected (hresult : l.rel = true)
     (herased : (E.get η).block.level{ls} = .zero)

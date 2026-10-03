@@ -30,6 +30,10 @@ theorem eval_le_of_imax_le {ν : Param ℓ → Nat} (h : l₁.imax l₂ ≤ l₂
     l₁.eval ν ≤ l₂.eval ν :=
   Nat.le_of_imax_le (by simpa using h ν) hl₂
 
+theorem le_imax_iff : l₁ ≤ l₁.imax l₂ ↔ ∀ ν, l₂.eval ν = 0 → l₁.eval ν = 0 := by
+  refine forall_congr' fun ν => ?_
+  by_cases h : l₂.eval ν = 0 <;> simp [Nat.imax, h]
+
 instance : DecidableLE (Level ℓ) := fun u v =>
   Quotient.recOnSubsingleton₂ u v fun a b =>
     decidable_of_iff (a ≤ b) Iff.rfl
