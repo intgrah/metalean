@@ -133,6 +133,28 @@ def get {ζ : Sigs} {sig : Sig} : Env ζ → Head ζ sig → Entry ζ sig
   | .snoc _ entry, .here => entry.map (.step .refl)
   | .snoc pre _, .there η => (pre.get η).map (.step .refl)
 
+def find {ζ : Sigs} {sig : Sig} : Env ζ → Head ζ sig → Σ ζ', Entry ζ' sig × (ζ' ⟶ ζ)
+  | .snoc _ entry, .here => ⟨_, entry, .step .refl⟩
+  | .snoc pre _, .there η =>
+    let ⟨_, entry, suffix⟩ := pre.find η
+    ⟨_, entry, .step suffix⟩
+
+def getImpl {ζ : Sigs} {sig : Sig} (E : Env ζ) (η : Head ζ sig) : Entry ζ sig :=
+  let ⟨_, entry, pre⟩ := E.find η
+  entry.map pre
+
+@[csimp] theorem get_eq_getImpl : @get = @getImpl := by
+  funext ζ sig E η
+  induction E with
+  | nil => cases η
+  | snoc E entry ih =>
+    cases η with
+    | here => rfl
+    | there η =>
+      change (E.get η).map _ = (E.find η).2.1.map (.step (E.find η).2.2)
+      rw [ih η]
+      exact ((Entry.functor sig).map_comp_apply (E.find η).2.2 (.step .refl) _).symm
+
 theorem get_map (pre : Prefix E₁ E₂) (η : Head ζ₁ sig) :
     E₂.get (η.map pre.sigs) = (E₁.get η).map pre.sigs := by
   induction pre with
