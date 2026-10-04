@@ -52,16 +52,20 @@ def mapM {m : Type u → Type v} [Applicative m] {k : Nat} {α : Fin k → Type 
       | ⟨0, _⟩ => a
       | ⟨j + 1, h⟩ => r ⟨j, Nat.lt_of_succ_lt_succ h⟩) <$> f 0 <*> mapM fun i => f i.succ
 
-def sequenceM {m : Type → Type v} [Monad m] {k : Nat} {P : Fin k → Prop}
-    (f : (i : Fin k) → m (PLift (P i))) : m (PLift (∀ i, P i)) :=
+def sequenceLtM {m : Type → Type v} [Monad m] {k : Nat} {P : Fin k → Prop}
+    (f : (i : Fin k) → (∀ j < i, P j) → m (PLift (P i))) : m (PLift (∀ i, P i)) :=
   go 0 (Nat.zero_le k) fun _ h => absurd h (Nat.not_lt_zero _)
 where
   go (j : Nat) (hj : j ≤ k) (acc : ∀ i : Fin k, i.val < j → P i) :
       m (PLift (∀ i, P i)) :=
     if hlt : j < k then do
-      let ⟨h⟩ ← f ⟨j, hlt⟩
+      let ⟨h⟩ ← f ⟨j, hlt⟩ fun i hi => acc i hi
       go (j + 1) hlt fun i hij =>
         if hi : i.val = j then (Fin.ext hi : i = ⟨j, hlt⟩) ▸ h else acc i (by omega)
     else pure ⟨fun i => acc i (by omega)⟩
+
+def sequenceM {m : Type → Type v} [Monad m] {k : Nat} {P : Fin k → Prop}
+    (f : (i : Fin k) → m (PLift (P i))) : m (PLift (∀ i, P i)) :=
+  sequenceLtM fun i _ => f i
 
 end Fin

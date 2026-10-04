@@ -38,8 +38,9 @@ def checkIdx (hE : EnvWF E) (I : Inductive ζ ι) {m : Nat}
     (ps : Fin ι.nparams → Expr ζ ι.nlevels m)
     (is : Fin (ι.nindices s) → Expr ζ ι.nlevels m) :
     Except Failure (PLift (I.IdxWF E Δ s ls ps is)) := do
-  let ⟨h⟩ ← Fin.sequenceM fun index =>
-    checkAgainst hE hΔ (is index) (I.indexType ls s ps is index)
+  let ⟨h⟩ ← Fin.sequenceM fun index => do
+    let ⟨l, ht⟩ ← checkIsType hE hΔ (I.indexType ls s ps is index)
+    checkAgainst hE hΔ (is index) (I.indexType ls s ps is index) ⟨l, ht⟩
   pure ⟨h⟩
 
 def checkRecField (hE : EnvWF E) (I : Inductive ζ ι) {s : Fin ι.nsorts}
@@ -62,7 +63,7 @@ def checkOrdField (hE : EnvWF E) (I : Inductive ζ ι) (hΓp : E[I.params] ⊢ o
       ((I.ctors s c).ordinary f))) := do
   let ⟨hΓf⟩ ← checkCtx hE hΓp ((I.ctors s c).ordinaryTeleAux f.val hle)
   let ⟨ht⟩ ← checkAgainst hE hΓf (((I.ctors s c).ordinary f).type)
-    (.sort ((I.ctors s c).ordinary f).level)
+    (.sort ((I.ctors s c).ordinary f).level) ⟨_, .sortDF⟩
   let ⟨hOK⟩ ← guardProofOr (I.LevelOK ((I.ctors s c).ordinary f).level) (.reject .fieldLevel)
   pure ⟨⟨ht, hOK⟩⟩
 

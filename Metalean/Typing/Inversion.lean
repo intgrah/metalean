@@ -617,4 +617,50 @@ theorem lam_inv :
     · exact ih (Or.inl he) hΓ
   | trans | proofIrrel | iota => rigid he
 
+section QuotTyped
+
+variable {t : Expr ζ ℓ n} {η : Head ζ .quot} {l l₁ l₂ : Level ℓ} {α r β f h a : Expr ζ ℓ n}
+
+theorem quotMk_typed :
+    E[Γ] ⊢ .quotMk η l α r a : t →
+    E[Γ] ⊢ α : .sort l ∧
+    E[Γ] ⊢ r : Quot.relType α ∧
+    E[Γ] ⊢ a : α := by
+  intro hq
+  have ⟨_, _, _, hα, hr, ha, _⟩ := hq.quotMk_prem
+  exact ⟨hα.right, (TypeEq.ofDefEq (Quot.relType_congr hα)).conv hr.right,
+    (TypeEq.ofDefEq hα).conv ha.right⟩
+
+theorem quotLift_typed :
+    E[Γ] ⊢ .quotLift η l₁ l₂ α r β f h a : t →
+    E[Γ] ⊢ α : .sort l₁ ∧
+    E[Γ] ⊢ r : Quot.relType α ∧
+    E[Γ] ⊢ β : .sort l₂ ∧
+    E[Γ] ⊢ f : .forallE α β.wk ∧
+    (∃ t₁, E[Γ] ⊢ h : t₁) ∧
+    E[Γ] ⊢ a : .quot η l₁ α r := by
+  intro hq
+  have ⟨α₁, _, _, _, _, _, hα, hr, hβ, hf, hh, ha, _⟩ := hq.quotLift_prem
+  have hβ₁ : E[Γ.snoc α₁] ⊢ _ ≡ β.wk : .sort l₂ := hβ.wk α₁
+  have hβ₂ : E[Γ.snoc α] ⊢ _ ≡ β.wk : .sort l₂ := hβ.wk α
+  exact ⟨hα.right, (TypeEq.ofDefEq (Quot.relType_congr hα)).conv hr.right, hβ.right,
+    (TypeEq.ofDefEq (.forallEDF hα hβ₁ hβ₂)).conv hf.right, ⟨_, hh.right⟩,
+    (TypeEq.ofDefEq (.quotDF hα hr)).conv ha.right⟩
+
+theorem quotInd_typed :
+    E[Γ] ⊢ .quotInd η l α r β f a : t →
+    E[Γ] ⊢ α : .sort l ∧
+    E[Γ] ⊢ r : Quot.relType α ∧
+    E[Γ] ⊢ β : Quot.motiveType η l α r ∧
+    (∃ t₁, E[Γ] ⊢ f : t₁) ∧
+    E[Γ] ⊢ a : .quot η l α r := by
+  intro hq
+  have ⟨_, _, _, _, _, hα, hr, hβ, hf, ha, _, _⟩ := hq.quotInd_prem
+  have hquot := Defeq.quotDF (η := η) hα hr
+  exact ⟨hα.right, (TypeEq.ofDefEq (Quot.relType_congr hα)).conv hr.right,
+    (TypeEq.ofDefEq (.forallEDF hquot .sortDF .sortDF)).conv hβ.right, ⟨_, hf.right⟩,
+    (TypeEq.ofDefEq hquot).conv ha.right⟩
+
+end QuotTyped
+
 end Metalean.Defeq

@@ -655,7 +655,7 @@ partial def inferCore (G : FCtx) :
           ⟨_, .forallEDF hα'T (hβ'T.wk _) (hβ'T.wk _)⟩
         have ⟨_, hh'D, hh'T⟩ := hh.at hS hhd
           (FExpr.Denotes.compatType hηeq hl₂ hα'D hr'D hβ'D hf'D)
-          (Quot.compatType_isType (hS.eqBlock _) hα'T hr'T hβ'T hf'T)
+          (Quot.compatType_isType (hS.wf.eqBlock _) hα'T hr'T hβ'T hf'T)
         have ⟨_, ha'D, ha'T⟩ := ha.at hS had (.quot hη hl₁ hα'D hr'D) ⟨_, .quotDF hα'T hr'T⟩
         exact ⟨_, _, .quotLift hη hl₁ hl₂ hα'D hr'D hβ'D hf'D hh'D ha'D, hβ'D,
           .quotLiftDF hα'T hr'T hβ'T hf'T hh'T ha'T⟩⟩
