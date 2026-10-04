@@ -137,6 +137,12 @@ theorem forallE :
 
 end
 
+theorem typed :
+    E[Γ] ⊢ e !: t →
+    (∃ t₁, E[Γ] ⊢ e : t₁) →
+    E[Γ] ⊢ e : t :=
+  fun hu ⟨_, h⟩ => (hu h).symm.conv h
+
 end UniqTyFrom
 
 open UniqTyFrom in

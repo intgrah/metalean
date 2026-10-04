@@ -535,14 +535,6 @@ theorem TypedSpec.at {G : FCtx} {fe ft : FExpr} {E : Env ζ} {n : Nat} {Γ : Ctx
   have ⟨_, htty⟩ := hty.regular
   exact ⟨_, hd, (TypeEq.ofDefEq (FExpr.Denotes.defeq hS.wf hS.ctxWF htd hT htty hTty)).conv hty⟩
 
-theorem Sem.eqBlock {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
-    (hS : Sem F G E Γ) (η : Head ζ .quot) :
-    (E.get (E.get η).eqHead).block = Eq.block := by
-  have h := hS.wf.entryWF η
-  generalize E.get η = entry at h
-  have .quot heq := h
-  exact heq
-
 theorem ForallSpec.refl {G : FCtx} (t b : FExpr) : ForallSpec F ℓ G (.forallE t b) t b :=
   fun {_ _ _ _ _} _ (.forallE ht hb) hty => ⟨_, _, ht, hb, hty.typeEq⟩
 

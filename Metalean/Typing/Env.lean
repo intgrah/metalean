@@ -105,6 +105,15 @@ theorem EnvWF.entryWF {sig : Sig} (η : Head ζ sig) :
     | here => exact hentry.map (.step .refl)
     | there η => exact (ih η).map (.step .refl)
 
+theorem EnvWF.eqBlock (η : Head ζ .quot) :
+    EnvWF E →
+    (E.get (E.get η).eqHead).block = Eq.block := by
+  intro hE
+  have hη := hE.entryWF η
+  generalize E.get η = entry at hη
+  have .quot heq := hη
+  exact heq
+
 theorem EnvWF.block_spec {ι : IndSig} {ζ₀ : Sigs} {E₀ : Env ζ₀} (hE : EnvWF E₀)
     (pre : E₀.as ⟶ E.as) (η : Head ζ₀ (.inductive ι)) :
     ∃ (ζ₂ : Sigs) (E₂ : Env ζ₂) (pre₂ : E₂.as ⟶ E₀.as) (I : Inductive ζ₂ ι),
@@ -161,5 +170,63 @@ theorem EnvWF.def_spec {ℓ' : Nat} {ζ₀ : Sigs} {E₀ : Env ζ₀} (hE : EnvW
       dsimp at hsigs hη
       rw [Category.assoc, ← hget, hsigs]
       exact congrArg E.get hη.symm
+
+namespace Defeq
+
+variable {t : Expr ζ ℓ n}
+variable {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
+  {c : Fin (ι.nctors s)} {ls : Fin ι.nlevels → Level ℓ} {l : Level ℓ}
+  {ps : Fin ι.nparams → Expr ζ ℓ n} {ms : Fin ι.nsorts → Expr ζ ℓ n}
+  {mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n}
+  {is : Fin (ι.nindices s) → Expr ζ ℓ n} {maj : Expr ζ ℓ n}
+  {fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n}
+  {recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n}
+
+theorem ind_typed :
+    EnvWF E →
+    E[Γ] ⊢ .ind η s ls ps is : t →
+    (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) ∧
+    ∀ i, E[Γ] ⊢ is i : (E.get η).block.indexType ls s ps is i := by
+  intro hE h
+  have ⟨_, _, hps, his, _⟩ := h.ind_inv
+  have hB := (hE.entryWF η).block
+  exact ⟨fun p => Inductive.paramType_conv hB p hps,
+    fun i => Inductive.indexType_conv hB i hps his⟩
+
+theorem ctor_typed :
+    EnvWF E →
+    E[Γ] ⊢ .ctor η s c ls ps fds recFds : t →
+    (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) ∧
+    (∀ f, E[Γ] ⊢ fds f : ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps fds f) ∧
+    ∀ f, E[Γ] ⊢ recFds f : ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps fds f := by
+  intro hE h
+  have ⟨_, _, _, hps, hfds, hrecFds, _, _⟩ := h.ctor_inv
+  have hB := (hE.entryWF η).block
+  refine ⟨fun p => Inductive.paramType_conv hB p hps, fun f => ?_, fun f => ?_⟩
+  · exact (TypeEq.ofDefEq ((hB.ctors s c).ordinaryFieldExpr_congr hB.params f hps
+      fun g _ => hfds g)).conv (hfds f).right
+  · have ⟨_, hrec⟩ := (hB.ctors s c).recursiveFieldExpr_congr hB.params rfl f hps hfds
+    exact (TypeEq.ofDefEq hrec).conv (hrecFds f).right
+
+theorem recr_typed :
+    EnvWF E →
+    E[Γ] ⊢ ok →
+    E[Γ] ⊢ .recr η s ls l ps ms mins is maj : t →
+    (E.get η).block.RecAllowed ls l ∧
+    (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) ∧
+    (∀ s₁, E[Γ] ⊢ ms s₁ : (E.get η).block.motiveType η ls ps l s₁) ∧
+    (∀ s₁ c₁, E[Γ] ⊢ mins s₁ c₁ : (E.get η).block.caseFnType η ls ps ms s₁ c₁) ∧
+    (∀ i, E[Γ] ⊢ is i : (E.get η).block.indexType ls s ps is i) ∧
+    E[Γ] ⊢ maj : .ind η s ls ps is := by
+  intro hE hΓ h
+  have ⟨_, _, _, _, _, hrec, hps, hms, hmins, his, hmaj, _, _⟩ := h.recr_inv
+  have hB := (hE.entryWF η).block
+  exact ⟨hrec, fun p => Inductive.paramType_conv hB p hps,
+    fun s₁ => (Inductive.motiveType_congr hB hΓ hps).conv (hms s₁).right,
+    fun s₁ c₁ => Inductive.caseFnType_conv hB hΓ hps hms (hmins s₁ c₁),
+    fun i => Inductive.indexType_conv hB i hps his,
+    (TypeEq.ofDefEq (.indDF hps his)).conv hmaj.right⟩
+
+end Defeq
 
 end Metalean
