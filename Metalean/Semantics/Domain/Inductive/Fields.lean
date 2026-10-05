@@ -63,7 +63,7 @@ theorem rank_ctorTypeGraph_le (a : Shape Γ₁) : a.ctorTypeGraph.rank ≤ a.ran
   cases a with
   | forallE label dom k names ins outs =>
     exact Nat.le_succ_of_le (le_max_right _ _)
-  | _ => simp [Graph.rank, ctorTypeGraph, Graph.nil]
+  | _ => simp! [Graph.rank, Graph.nil]
 
 theorem IsCoherent.ctorTypeDom {a : Shape Γ₁} (h : IsCoherent Γ₁ a) :
     IsCoherent Γ₁ a.ctorTypeDom := by
@@ -242,7 +242,7 @@ theorem domain (h : T.CofinalIn (·.1.rank < n)) : (ctorTypeDomIdeal T).CofinalI
     have ⟨b, hr, hb, hab⟩ := h σ a ha
     have hdom : b.1.ctorTypeDom.rank ≤ b.1.rank := by
       by_cases hbot : b.1.ctorTypeDom = .bot
-      · simp [hbot, Shape.rank]
+      · simp! [hbot]
       · exact (Shape.rank_ctorTypeDom_lt hbot).le
     ⟨b.ctorTypeDom, hdom.trans_lt hr, ⟨b, hb, le_rfl⟩, hya.trans (CoherentShape.ctorTypeDom_mono hab)⟩
 

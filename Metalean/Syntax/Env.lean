@@ -108,13 +108,13 @@ instance : SmallCategory (Σ ζ, Env ζ) where
     intro ⟨ζ₁, E₁⟩ ⟨ζ₂, E₂⟩ pre
     induction pre with
     | refl => rfl
-    | step pre ih => simp [Prefix.trans, ih]
+    | step pre ih => simp! [ih]
   comp_id _ := rfl
   assoc := by
     intro ⟨ζ₁, E₁⟩ ⟨ζ₂, E₂⟩ ⟨ζ₃, E₃⟩ ⟨ζ₄, E₄⟩ pre₁ pre₂ pre₃
     induction pre₃ with
     | refl => rfl
-    | step pre₃ ih => simp [Prefix.trans, ih]
+    | step pre₃ ih => simp! [ih]
 
 @[reducible] def forget : (Σ ζ, Env ζ) ⥤ Sigs where
   obj E := E.1

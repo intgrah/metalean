@@ -233,27 +233,27 @@ theorem map_cSup (arg : (Tm_ Γ₁) → Tm_ Γ₂)
       by_cases h : head = head'
       · subst h
         simp only [cSup, map]
-        split_ifs <;> simp_all [map]
-      · simp [cSup, map, h, map_cSupBot]
-    | _ => simp [cSup, map, map_cSupBot]
+        split_ifs <;> simp_all!
+      · simp! [h, map_cSupBot]
+    | _ => simp! [map_cSupBot]
   | struct head hstruct fields ih =>
     cases b with
     | struct head' hstruct' fields' =>
       by_cases h : head = head'
       · subst h
         simp only [cSup, map]
-        split_ifs <;> simp_all [map]
-      · simp [cSup, map, h, map_cSupBot]
-    | _ => simp [cSup, map, map_cSupBot]
+        split_ifs <;> simp_all!
+      · simp! [h, map_cSupBot]
+    | _ => simp! [map_cSupBot]
   | ind code ctorTypes ih =>
     cases b with
     | ind code' ctorTypes' =>
       by_cases h : code.toIndHead.nctors = code'.toIndHead.nctors
       · simp only [cSup, map, dite_eq_left h]
         exact congrArg _ (funext fun c => ih c _)
-      · simp [cSup, map, dite_eq_right h, map_cSupBot]
-    | _ => simp [cSup, map, map_cSupBot]
-  | quotMk _ _ _ ih => cases b <;> simp [cSup, map, ih, map_cSupBot]
+      · simp! [dite_eq_right h, map_cSupBot]
+    | _ => simp! [map_cSupBot]
+  | quotMk _ _ _ ih => cases b <;> simp! [ih, map_cSupBot]
   | _ =>
     cases b <;> simp_all only [cSup, map, map_cSupBot]
     all_goals congr 1 <;> funext i <;> refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;>

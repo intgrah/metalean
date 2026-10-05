@@ -56,9 +56,9 @@ theorem Expr.inst_subst (σ : Subst ζ ℓ n p) (t' : Expr ζ ℓ (n + 1)) (e : 
   congr 1
   funext v
   cases v using Fin.lastCases with
-  | last => simp [Subst.comp, Expr.subst]
+  | last => simp [Subst.comp]
   | cast v =>
-    simpa [Subst.comp, Subst.id, Expr.subst, Expr.inst] using
+    simpa [Subst.comp, Subst.id, Expr.inst] using
       (Expr.inst_wk (σ v) (e.subst σ)).symm
 
 @[simp] theorem Expr.wkN_subst (σ : Subst ζ ℓ n p) (e : Expr ζ ℓ n) (k : Nat) :
@@ -129,7 +129,7 @@ theorem Expr.wkClosed_subst (e : Expr ζ ℓ 0) (σ : Subst ζ ℓ m n) :
     (e.applyBound k).subst (σ.liftN k) = (e.subst σ).applyBound k := by
   induction k with
   | zero => rfl
-  | succ k ih => simp! [wk_subst_lift, ih, applyBound]
+  | succ k ih => simp! [ih]
 
 theorem Expr.boundVars_subst (count suffix : Nat) :
     (fun i => (Expr.boundVars m count suffix i).subst
@@ -244,7 +244,7 @@ theorem Ctx.get_subst (Γ : Ctx ζ ℓ 0 n) (σ : Subst ζ ℓ n m) (v : Var n)
     σ₁.lift.comp (σ₂.extend e) = (σ₁.comp σ₂).extend e := by
   funext v
   cases v using Fin.lastCases with
-  | last => simp [Subst.comp, Expr.subst]
+  | last => simp [Subst.comp]
   | cast v => simp [Subst.comp, Expr.wk_subst_extend]
 
 theorem Ctx.get_eq_entry_rename (Γ : Ctx ζ ℓ 0 n) (v : Var n) (p : Nat) (hp : p < n)
@@ -263,7 +263,7 @@ theorem Expr.inst_subst_lift (σ : Subst ζ ℓ n p) (e' : Expr ζ ℓ (n + 1)) 
     (σ₁.liftN k).comp (Fin.append σ₂ xs) =
       Fin.append (σ₁.comp σ₂) xs := by
   funext v
-  cases v using Fin.addCases <;> simp [Subst.comp, Expr.subst]
+  cases v using Fin.addCases <;> simp [Subst.comp]
 
 @[simp] theorem Ctx.substN₂_append (Γ : Ctx ζ ℓ m (m + a))
     (Δ : Ctx ζ ℓ (m + a) (m + a + b)) :
@@ -728,7 +728,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
       exact (ι.ctors s c).caseParams_subst ps σ param
     · funext fds
       exact (ι.ctors s c).caseOrdinary_subst σ fds
-  · simp [Expr.subst]
+  · simp
 
 @[simp] theorem Inductive.caseFnType_subst (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (σ : Subst ζ ℓ m n) :
@@ -788,15 +788,14 @@ theorem Ctor.forall_caseSubst {ctor : Ctor ζ ι s csig} {η : Head ζ (.inducti
   simp only [Ctor.fieldTele, ← Tele.append_assoc]
   cases v using Fin.addCases with
   | right f =>
-    simpa [CtorSig.caseSubst, Ctor.ihTele, Ctx.get_append_ofTypes,
-      Ctor.ihType, CtorSig.fieldParams, CtorSig.fieldOrdinary, CtorSig.fieldRecursive,
-      Expr.subst] using hih f
+    simpa [CtorSig.caseSubst, Ctor.ihTele,
+      Ctor.ihType, CtorSig.fieldParams, CtorSig.fieldOrdinary, CtorSig.fieldRecursive] using hih f
   | left v =>
     simp only [Ctx.get_append, CtorSig.caseSubst, Fin.append_left, Expr.wkN_subst_append]
     cases v using Fin.addCases with
     | right f =>
-      simpa [Ctor.recursiveFieldTele, Ctor.recursiveFieldTeleAux, Ctx.get_append_ofTypes,
-        Expr.boundVars, Expr.subst, Ctor.recursiveFieldExpr] using hrec f
+      simpa [Ctor.recursiveFieldTele, Ctor.recursiveFieldTeleAux,
+        Expr.boundVars, Ctor.recursiveFieldExpr] using hrec f
     | left v =>
       simp only [Ctx.get_append, Fin.append_left, Expr.wkN_subst_append]
       cases v using Fin.addCases with
@@ -807,7 +806,7 @@ theorem Ctor.forall_caseSubst {ctor : Ctor ζ ι s csig} {η : Head ζ (.inducti
         rw [Ctx.get_subst _ _ _ (n + f.val) (by omega) rfl,
           Ctx.entry_append_right Γ _ (by omega) (by simp) (by omega)]
         simpa [Ctor.ordinaryFieldTele, Ctor.ordinaryFieldExpr, Subst.liftN_eq_append,
-          Subst.comp, Expr.boundVars, Expr.subst] using hfds f
+          Subst.comp, Expr.boundVars] using hfds f
 
 theorem Inductive.indexType_eq_get_subst (s : Fin ι.nsorts)
     (ps : Fin ι.nparams → Expr ζ ℓ n) (is : Fin (ι.nindices s) → Expr ζ ℓ n)
@@ -848,11 +847,11 @@ theorem Inductive.indexType_eq_get_subst (s : Fin ι.nsorts)
         (fun s => (ms s).subst σ)
         s c (fun i => (fds i).subst σ)
         fun i => (recFds i).subst σ := by
-  simp [iotaType, Expr.subst]
+  simp [iotaType]
 
 @[simp] theorem Quot.minorQuotMk_inst (η : Head ζ .quot) (l : Level ℓ) (α r a : Expr ζ ℓ m) :
     (minorQuotMk η l α r).inst a = .quotMk η l α r a := by
-  simp [Expr.inst, Expr.subst, Expr.wk_subst_extend]
+  simp [Expr.inst, Expr.wk_subst_extend]
 
 theorem Expr.inst_wkFrom_last (t' : Expr ζ ℓ (n + 1)) :
     (t'.wkFrom n).inst (.var (Fin.last n)) = t' := by
@@ -872,7 +871,7 @@ theorem Subst.wkFrom_eq_lift_wk :
   funext v
   cases v using Fin.lastCases with
   | last => simp [Subst.wkFrom]
-  | cast v => simp [Subst.wkFrom, Subst.wk, Expr.var_wk]
+  | cast v => simp [Subst.wkFrom, Subst.wk]
 
 def Subst.Renames (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m) : Prop :=
   ∀ v, ∃ w, σ v = .var w ∧ Γ₂.get w = (Γ₁.get v).subst σ

@@ -195,9 +195,9 @@ theorem Tm.section_label (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
     Tm.map_label (.lamDF ht₁ ht₁' ht₁' he₁' he₁') σ]
   refine Eq.trans (Tm.label_eq ?_ ?_)
     (Tm.apply_label Γ₂.as htσ htσ' (.lamDF htσ htσ' htσ' heσ' heσ') harg).symm
-  · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
+  · simpa [Expr.inst_subst_lift] using
       TypeEq.ofDefEq (Defeq.inst_congr htσ' harg)
-  · simpa [RawCtx.Hom.snoc_subst, Expr.inst_subst_lift] using
+  · simpa [Expr.inst_subst_lift] using
       (Defeq.beta htσ htσ' heσ' harg (Defeq.inst_congr htσ' harg) (Defeq.inst_congr heσ' harg)).symm
 
 theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (ht₁' : E[Γ₁.as.ctx.snoc t₁] ⊢ t₁' : .sort v)
@@ -235,7 +235,7 @@ theorem HasFixedness.lam (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u) (ht₁' : 
       (heF' he₁' t.hom _ ((hρ.pullback σ₂).push_fixed_pullback ht₁ htI J hJ σ₃ t))
     symm
     rw [Tm.map_apply _ _ _ hguard hmguard σ₃]
-    simpa [op_comp, Functor.map_comp_apply] using Tm.section_label ht₁ ht₁' he₁' t
+    simpa [Functor.map_comp_apply] using Tm.section_label ht₁ ht₁' he₁' t
 
 namespace HasEquality
 

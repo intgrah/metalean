@@ -228,7 +228,7 @@ def ordinaryFieldTele : Ctx ζ₁ ℓ n (n + csig.nfields) :=
   | last count =>
     change (ctor.ordinaryFieldTeleAux η ls ps (count + 1) hcount).entry _ _ =
       (ctor.ordinary ⟨count, by omega⟩).type{ls}.subst (Subst.liftN ps count)
-    simp [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.substN]
+    simp! [ordinaryFieldTeleAux, Ctx.substN]
   | cast f ih =>
     simpa [ordinaryFieldTeleAux, ordinaryTeleAux, Ctx.substN] using ih (by omega)
 

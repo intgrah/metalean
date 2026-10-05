@@ -65,7 +65,7 @@ def quotMap (η : Head ζ .quot) (x : CoherentShape Γ₁) : CoherentShape Γ₁
 
 theorem quotMap_le (η : Head ζ .quot) (x : CoherentShape Γ₁) : quotMap η x ≤ x := by
   cases x with | mk x hx =>
-    cases x <;> simp [quotMap]
+    cases x <;> simp!
     split <;> simp
 
 theorem quotMap_mono (η : Head ζ .quot) {x y : CoherentShape Γ₁} (h : x ≤ y) :
@@ -86,12 +86,12 @@ theorem quotMap_mono (η : Head ζ .quot) {x y : CoherentShape Γ₁} (h : x ≤
   have ⟨x, hx⟩ := x
   cases x with
   | quotMk η' name value =>
-    by_cases h : η = η' <;> simp [quotMap, h]
+    by_cases h : η = η' <;> simp! [h]
   | _ => rfl
 
 @[simp] theorem quotMap_quotMkAtom (η : Head ζ .quot) (name : Tm_ Γ₁)
     (x : CoherentShape Γ₁) : quotMap η (quotMkAtom η name x) = quotMkAtom η name x := by
-  simp [quotMap, quotMkAtom]
+  simp! [quotMkAtom]
 
 theorem reindex_quotMap (η : Head ζ .quot) (σ : Γ₂ ⟶ Γ₁) (x : CoherentShape Γ₁) :
     reindex σ (quotMap η x) = quotMap η (reindex σ x) := by

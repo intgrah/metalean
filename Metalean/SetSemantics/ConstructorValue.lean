@@ -84,7 +84,7 @@ theorem forgetIhs_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
   induction Δ with
   | nil => rfl
   | snoc Δ domain ih =>
-    exact (ih (.arg domain rest)).trans (by simp [pack, values, SemTele.tail, CtorCode.forgetIhs])
+    exact (ih (.arg domain rest)).trans (by simp!)
 
 theorem tail_argMap (Δ : SemTele n b) (rest : CtorCode b) (graph : ZFSet)
     (γ : Slots n) (vargs : ZFSet) :
@@ -155,7 +155,7 @@ theorem predecessors_mem_block (code : CtorCode n) (γ : Slots n)
     (vargs : ZFSet) (hargs : vargs ∈ code.argSet block γ) :
     ∀ predecessor ∈ code.predecessors γ vargs, predecessor ∈ block := by
   induction code generalizing vargs with
-  | target => simp [predecessors]
+  | target => simp!
   | arg domain rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
     simpa! using ih (γ.snoc value) tail htail
@@ -228,7 +228,7 @@ theorem applyFields_packRecursive {level : Nat}
   | zero => rfl
   | succ count ih =>
     let f := fields 0
-    simp [Aczel.apps_succ, prependRecursive, packRecursive, applyFields]
+    simp! [Aczel.apps_succ]
     rw [eraseRecField_recoverRecField f.2.tele f.2.index block γ
       (values 0) (hvalues 0)]
     exact ih (Fin.tail fields) (Fin.tail values) (Fin.tail hvalues) [zf|minor $(values 0)]
@@ -248,7 +248,7 @@ theorem applyIhs_argMap_packRecursive {level : Nat}
   | zero => rfl
   | succ count ih =>
     let f := fields 0
-    simp [Aczel.apps_succ, prependRecursive, packRecursive, argMap, applyIhs]
+    simp! [Aczel.apps_succ]
     exact ih (Fin.tail fields) (Fin.tail values)
       [zf|minor $(recMap f.2.tele f.2.index graph γ
         (recoverRecField f.2.tele f.2.index block level γ (values 0)))]
@@ -293,10 +293,10 @@ theorem splitIhArgSet_prependRecursive
     let ihs : Fin (count + 1) → ZFSet := Fin.cons ihHead ihTail
     refine ⟨raw, ihs, Fin.cases hrawHead hrawTail, Fin.cases hihHead hihTail, ?_, ?_, ?_⟩
     · intro fn
-      simp [prependRecursive, applyFields, forgetIhs, Aczel.apps_succ]
+      simp! [Aczel.apps_succ]
       exact happlyFields _
     · intro fn
-      simp [prependRecursive, applyIhs, Aczel.apps_succ]
+      simp! [Aczel.apps_succ]
       exact happlyIhs _
     · intro tag build
       cases level with

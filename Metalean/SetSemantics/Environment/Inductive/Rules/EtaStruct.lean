@@ -179,7 +179,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     rw [hentry, Expr.denote_rename]
     rfl
   have hsorted : domain ∈ S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
-    simpa [domain, Ctx.get_instL, Expr.denote, Level.eval_inst] using
+    simpa! [domain, Ctx.get_instL, Level.eval_inst] using
       (soundness hdecl hrule hE (((hB.ctors s c).ordinaryTele_get f).instLevel ls) w
         (model.ordinarySemCtx s c vps hps w hw)).mem
   suffices htype : ε₂[γ]⟦Inductive.IsStructure.projTypeWith
@@ -280,7 +280,7 @@ theorem projTerm_denotes_field
       have ⟨hden, hty⟩ := hpsWk (k := 1) (Fin.snoc γ₁ z)
         (funext fun v => Fin.snoc_castSucc (α := fun _ => ZFSet) ..)
       have ⟨hmem, _⟩ := hbody (γ₂ := Fin.snoc γ₁ z) (ps₂ := fun param => (ps₁ param).wkN 1)
-        (maj₂ := .var (Fin.last m₁)) hden hty (by simpa [Expr.denote] using hz)
+        (maj₂ := .var (Fin.last m₁)) hden hty (by simpa! using hz)
       simpa [Expr.denote] using hmem
     let vms : Fin ι.nsorts → ZFSet :=
       fun _ => [zf|fun value : $(model.toModel.sortValue s vps vis) => $(op value)]

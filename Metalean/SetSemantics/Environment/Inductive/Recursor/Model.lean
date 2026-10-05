@@ -42,7 +42,7 @@ private theorem applyFields_zero_congr {n : Nat}
     obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
     simp at hfst ih
     subst hfst
-    simpa [applyFields] using ih _ hleftTail hrightTail
+    simpa! using ih _ hleftTail hrightTail
   | @recArg _ _ tele index _ _ _ _ ih =>
     obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
     obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
@@ -69,7 +69,7 @@ private theorem applyIhs_argMap_congr {n : Nat}
     obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
     simp only [fst_pair, snd_pair] at hfst ih
     subst hfst
-    simpa [argMap, applyIhs, fst_pair, snd_pair] using ih _ hleftTail hrightTail
+    simpa! using ih _ hleftTail hrightTail
   | @recArg _ _ tele index _ _ _ _ ih =>
     obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
     obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
@@ -275,7 +275,7 @@ theorem recLeaf_iota
   rw [recrState, show model.recrMajorOf s γ = entryValue (tagOf s c) vargs from by
     have h := model.propVal_recrMajorOf s l γ hγ
     rw [hmaj] at h
-    simpa only [propVal_of_ne_zero hlevel] using h]
+    simpa [propVal_of_ne_zero hlevel] using h]
   exact hiota
 
 theorem recLeaf_eq_recGraph_app

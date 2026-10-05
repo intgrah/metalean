@@ -88,7 +88,7 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         rw [Expr.denote_subst, Expr.denote_substLiftN, hbase final hfinal, hσ, ← Expr.map_instL]
         exact Expr.denote_map pre.sigs hatoms _ _]
       have h := hatom (Slots.pull project final) (Reachable.pull hfinal fun _ _ => rfl)
-      simpa [InstLevel.inst_apply, Slots.pull, Fin.addCases_right, leaf, recovered] using h
+      simpa [Slots.pull, leaf, recovered] using h
   rwa [SemTele.lam_applyAt (source.extension.sem.pull project arity)
     (fun final value => leaf (Slots.pull project final) value) γ recovered,
     SemTele.lamAt_pull] at hden

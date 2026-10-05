@@ -115,10 +115,10 @@ theorem toRaw_eq_of_denotes {ℓ : Nat} {l : FLevel} {l' : RawLevel ℓ} :
     Denotes l l' →
     toRaw ℓ l = some l'
   | .zero => rfl
-  | .succ h => by simp [toRaw, toRaw_eq_of_denotes h]
-  | .max h₁ h₂ => by simp [toRaw, toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
-  | .imax h₁ h₂ => by simp [toRaw, toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
-  | .param h => by simp [toRaw, h]
+  | .succ h => by simp! [toRaw_eq_of_denotes h]
+  | .max h₁ h₂ => by simp! [toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
+  | .imax h₁ h₂ => by simp! [toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
+  | .param h => by simp! [h]
 
 def isNotZero : FLevel → Bool
   | zero => false

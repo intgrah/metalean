@@ -104,7 +104,7 @@ private theorem denote_compatType_map {η : Head ζ₁ .quot}
     ε₂[γ]⟦Quot.compatType (E₂.get (η.map pre.sigs)).eqHead l α r β f⟧ =
       quotientCompat (equality l) ε₂[γ]⟦α⟧ ε₂[γ]⟦r⟧ ε₂[γ]⟦β⟧ ε₂[γ]⟦f⟧ :=
   denote_compatType γ α r β f fun b x y => by
-    simpa [Atom.map, dsimp% (Env.lookup .quot).naturality_apply pre η,
+    simpa! [dsimp% (Env.lookup .quot).naturality_apply pre η,
       dsimp% Entry.eqHeadNatTrans.naturality_apply] using
       (congrFun hatoms _).trans (hequality l b x y)
 
@@ -125,13 +125,13 @@ theorem ofValues (η : Head ζ₁ .quot)
   quotMkAtom := hquotMk
   quot {ζ₂} E₂ ε₂ pre hatoms _ γ l α α' r r' hα hr := by
     refine ⟨?_, ?_⟩
-    · simp [Expr.denote, hα.eq, hr.eq]
+    · simp! [hα.eq, hr.eq]
     · change (ε₂ ∘ Atom.map pre.sigs) (.quot η l _ _) ∈ _
       rw [hatoms, hquot]
       exact quotientCarrier_mem_sort hα.mem
   quotMk {ζ₂} E₂ ε₂ pre hatoms _ γ l α α' r r' a₁ a₂ hα hr ha := by
     refine ⟨?_, ?_⟩
-    · simp [Expr.denote, hα.eq, hr.eq, ha.eq]
+    · simp! [hα.eq, hr.eq, ha.eq]
     · change (ε₂ ∘ Atom.map pre.sigs) (.quotMk η l _ _ _) ∈
         (ε₂ ∘ Atom.map pre.sigs) (.quot η l _ _)
       rw [hatoms, hquotMk, hquot]
@@ -139,7 +139,7 @@ theorem ofValues (η : Head ζ₁ .quot)
   quotLift {ζ₂} E₂ ε₂ pre hatoms _ γ l₁ l₂ α α' r r' β β'
       f f' h h' a₁ a₂ hα hr hβ hf hh ha := by
     refine ⟨?_, ?_⟩
-    · simp [Expr.denote, hα.eq, hr.eq, hβ.eq, hf.eq, hh.eq, ha.eq]
+    · simp! [hα.eq, hr.eq, hβ.eq, hf.eq, hh.eq, ha.eq]
     · have hhmem := hh.mem
       rw [denote_compatType_map hatoms hequality γ l₂ α r β f] at hhmem
       have hcmem := ha.mem
@@ -148,11 +148,11 @@ theorem ofValues (η : Head ζ₁ .quot)
       change (ε₂ ∘ Atom.map pre.sigs) (.quotLift η l₁ l₂ _ _ _ _ _ _) ∈ _
       rw [hatoms, hquotLift]
       exact quotientLiftResult_mem (hseparates _) hα.mem hβ.mem
-        (by simpa [Expr.denote, quotientArrow] using hf.mem) hhmem hcmem
+        (by simpa! [quotientArrow] using hf.mem) hhmem hcmem
   quotInd {ζ₂} E₂ ε₂ pre hatoms _ γ l α α' r r' β β' f f' a₁ a₂
       hα hr hβ hf ha := by
     refine ⟨?_, ?_⟩
-    · simp [Expr.denote, hα.eq, hr.eq, hβ.eq, hf.eq, ha.eq]
+    · simp! [hα.eq, hr.eq, hβ.eq, hf.eq, ha.eq]
     · have hq a r : ε₂ (.quot (η.map pre.sigs) l a r) =
           quotientCarrier (l.eval ![]) a r := (congrFun hatoms _).trans (hquot l a r)
       have hmk a r x : ε₂ (.quotMk (η.map pre.sigs) l a r x) =
@@ -177,7 +177,7 @@ theorem ofValues (η : Head ζ₁ .quot)
           ((ε₂ ∘ Atom.map pre.sigs) (.quotMk η l₁ _ _ _))) = _
       rw [hatoms, hquotMk, hquotLift]
       exact quotientLiftResult_mk (hseparates _) hα.mem hβ.mem
-        (by simpa [Expr.denote, quotientArrow] using hf.mem) hhmem ha.mem
+        (by simpa! [quotientArrow] using hf.mem) hhmem ha.mem
     exact ⟨heq, heq.symm ▸ happ.mem⟩
 
 theorem map {η : Head ζ₁ .quot} (pre : E₁.as ⟶ E₂.as) :

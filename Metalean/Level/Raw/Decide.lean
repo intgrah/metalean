@@ -110,7 +110,7 @@ theorem le_evalMax {t : Sub ℓ} {S : List (Sub ℓ)} :
   unfold atLeast
   split
   · simp [*]
-  · simp [evalMax, eval]
+  · simp! [evalMax]
 
 theorem eval_const_le (G : Guard ℓ) (k : Nat) : eval ν (const G k) ≤ k := by
   simp only [eval]
@@ -129,7 +129,7 @@ theorem dominates_sound {t₁ t₂ : Sub ℓ} :
       · simp [h₁, Guard.sat_of_subset ν hsub h₁]
         exact hk
       · simp [h₁]
-    | var p₁ G₁ k₁ => simp [dominates]
+    | var p₁ G₁ k₁ => simp!
   | var p₂ G₂ k₂ =>
     cases t₁ with
     | const G₁ k₁ =>
@@ -160,7 +160,7 @@ theorem exists_dominator {S : List (Sub ℓ)} {t : Sub ℓ} :
   intro hnt h
   cases t with
   | const G k =>
-    have hk : k ≠ 0 := by simpa [nontrivial] using hnt
+    have hk : k ≠ 0 := by simpa! using hnt
     let ν : Param ℓ → Nat := fun p => if p ∈ G then 1 else 0
     have hmem (p : Param ℓ) : ν p ≠ 0 → p ∈ G := by
       simp only [ν]
@@ -169,7 +169,7 @@ theorem exists_dominator {S : List (Sub ℓ)} {t : Sub ℓ} :
       simp only [ν]
       split <;> omega
     have hsat : Guard.sat G ν = true := (Guard.sat_iff ν).mpr fun p hp => by simp [ν, hp]
-    have hval : eval ν (const G k) = k := by simp [eval, hsat]
+    have hval : eval ν (const G k) = k := by simp! [hsat]
     obtain hz | ⟨y, hy, hyle⟩ := List.le_foldr_max_iff (hval ▸ h ν)
     · exact absurd hz hk
     obtain ⟨t', ht', rfl⟩ := List.mem_map.mp hy
@@ -213,7 +213,7 @@ theorem exists_dominator {S : List (Sub ℓ)} {t : Sub ℓ} :
         split
         · omega
         · simp
-    have hval : eval ν (var p G k) = N + k := by simp only [eval, ite_eq_left hsat, hνp]
+    have hval : eval ν (var p G k) = N + k := by simp! [hsat, hνp]
     obtain hz | ⟨y, hy, hyle⟩ := List.le_foldr_max_iff (hval ▸ h ν)
     · omega
     obtain ⟨t', ht', rfl⟩ := List.mem_map.mp hy

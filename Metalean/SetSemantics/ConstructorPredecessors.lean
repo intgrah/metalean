@@ -69,14 +69,14 @@ theorem mem_predecessors_packRecursive
         (packRecursive block fields level γ values proof) := by
   induction f using Fin.succRecOn with
   | zero count =>
-    simp [prependRecursive, packRecursive, predecessors]
+    simp!
     left
     apply Reachable.mem_collect hfinal
       (fun current value => {pair ((fields 0).2.index current) value})
       (recoverRecField (fields 0).2.tele (fields 0).2.index block level γ (values 0))
     simp
   | succ count f ih =>
-    simp [prependRecursive, packRecursive, predecessors]
+    simp!
     right
     exact ih
       (fun current => fields current.succ)

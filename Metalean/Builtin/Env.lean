@@ -81,9 +81,9 @@ namespace Iff
   congr
   · funext f
     refine Fin.cases ?_ (fun f => ?_) f
-    · simp [Expr.map]
+    · simp
     · refine Fin.cases ?_ (fun i => Fin.elim0 i) f
-      simp [Expr.map]
+      simp
   · exact Subsingleton.elim _ _
   · exact Subsingleton.elim _ _
 
@@ -198,7 +198,7 @@ theorem quotSoundType_isType (heq : (E.get ηeq).block = Eq.block) :
   have hrel : E[Γ₁] ⊢ (.appList #1 [#2, #3]) : .prop :=
     .appDF (t' := .prop) hα₁ .sortDF
       (by
-        simpa [Expr.inst, Expr.subst, Subst.extend, Subst.id] using
+        simpa [Expr.inst, Subst.extend, Subst.id] using
           Defeq.appDF hα₁ hcod hr₁ ha₁ (hcod.inst_congr ha₁))
       hb₁ .sortDF
   let Γ₂ := Γ₁.snoc (.appList #1 [#2, #3])
@@ -311,8 +311,8 @@ abbrev env₆ : Env sigs₆ := .snoc env₅
   (.axiom (propextType Head.here.there.there.there.there Head.here.there.there))
 theorem wf₆ : EnvWF env₆ :=
   .snoc wf₅ (.axiom (propextType_isType
-    (by simp [Env.get, Entry.map, Entry.block])
-    (by simp [Env.get, Entry.map, Entry.block])))
+    (by simp! [Env.get, Entry.block])
+    (by simp! [Env.get, Entry.block])))
 
 abbrev sigs₇ : Sigs := sigs₆.snoc (.const .axiom 1)
 abbrev env₇ : Env sigs₇ := env₆.snoc (.axiom (classicalChoiceType Head.here.there.there))

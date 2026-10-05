@@ -96,7 +96,7 @@ decreasing_by
       (fun _ => Expr.measure_recr_index ..)
       (Expr.measure_recr_major ..) _
   all_goals try exact Expr.measure_inst ..
-  all_goals exact Expr.measure_lt (by simp [Expr.headRank]) (by simp [Expr.size, Expr.sizeWith, Var]; omega)
+  all_goals exact Expr.measure_lt (by simp!) (by simp [Expr.size, Expr.sizeWith, Var]; omega)
 
 variable {Γ₁ Γ₂ : CtxCat E ℓ} {nlevels : Nat} (l : Level ℓ)
 

@@ -177,7 +177,7 @@ theorem projHom_one_ordinary (hstruct : (E.get η).block.IsStructure s c)
   change (projSubst h s c hstruct (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f))).subst
     (Subst.id.extend maj) = _
   rw [projSubst_ordinary, projField]
-  simp [Expr.wk_subst_extend, Expr.subst]
+  simp [Expr.wk_subst_extend]
 
 theorem projHom_one_get_ordinary (hstruct : (E.get η).block.IsStructure s c)
     {maj : Expr ζ ℓ Γ₁.as.len} (hmaj : E[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hstruct.indices)
@@ -194,7 +194,7 @@ theorem projHom_one_get_ordinary (hstruct : (E.get η).block.IsStructure s c)
     (fun current => hstruct.projTerm η ls (fun p => (ps p).wk) current
       (.var (Fin.last Γ₁.as.len))) f).subst (Subst.id.extend maj) = _
   rw [← Inductive.IsStructure.projType_eq]
-  simp [Expr.wk_subst_extend, Expr.subst]
+  simp [Expr.wk_subst_extend]
 
 end Fields
 
@@ -356,13 +356,13 @@ theorem ordinaryFieldExpr_fieldsSubst (f : Fin (ι.ctors s c).nfields) :
     (((E.get η).block.ctors s c).ordinaryFieldExpr ls ((ι.ctors s c).fieldParams ps)
         (ι.ctors s c).fieldOrdinary f).subst (inst.fieldsSubst σ) =
       ((E.get η).block.ctors s c).ordinaryFieldExpr ls ps₂ inst.fds f := by
-  simp [fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary, Expr.subst, hps]
+  simp [fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary, hps]
 
 theorem recursiveFieldExpr_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
     (((E.get η).block.ctors s c).recursiveFieldExpr η ls ((ι.ctors s c).fieldParams ps)
         (ι.ctors s c).fieldOrdinary f).subst (inst.fieldsSubst σ) =
       ((E.get η).block.ctors s c).recursiveFieldExpr η ls ps₂ inst.fds f := by
-  simp [fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary, Expr.subst, hps]
+  simp [fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary, hps]
 
 def fieldsHom : Γ₂.as ⟶ (CtxCat.ctorFields h s c).as where
   subst := inst.fieldsSubst σ
@@ -438,7 +438,7 @@ theorem ih_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
       (fun t c₁ => ((mins t c₁).wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields) f).subst
       (inst.fieldsSubst σ) = inst.ih l ms₂ mins₂ f := by
   simp [ih, generic, fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary,
-    CtorSig.fieldRecursive, Expr.subst, hps, hms, hmins]
+    CtorSig.fieldRecursive, hps, hms, hmins]
 
 omit hmins in
 theorem ihType_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
@@ -448,7 +448,7 @@ theorem ihType_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
       (inst.fieldsSubst σ) =
       ((E.get η).block.ctors s c).ihTypeWith ls ms₂ ps₂ inst.fds inst.recFds f := by
   simp [generic, fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary,
-    CtorSig.fieldRecursive, Expr.subst, hps, hms]
+    CtorSig.fieldRecursive, hps, hms]
 
 theorem ihName_section (h₂ : RecData Γ₂ η ls l ps₂ ms₂ mins₂) (f : Fin (ι.ctors s c).nrecFields) :
     (inst.section h σ hps).ihName f = inst.ihName h₂ f := by

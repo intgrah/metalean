@@ -124,7 +124,7 @@ theorem recFieldsMem
     (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) hfieldsReach
   suffices heq : _ = model.recFieldSet s c f (ε₂[γ]⟦ps ·⟧)
       (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) from heq ▸ (hrecFields f).mem
-  simpa [recFieldSet, recCode, Inductive.map, Ctor.map, Expr.subst] using
+  simpa [recFieldSet, recCode, Inductive.map, Ctor.map] using
     (Expr.denote_subst γ (Fin.append ps fds) _).trans
       ((congrArg (fun δ => ε₂[δ]⟦_⟧)
         (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧)).trans hdomain)

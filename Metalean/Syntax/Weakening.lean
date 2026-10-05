@@ -47,7 +47,7 @@ theorem wkN_eq_subst (e : Expr ζ ℓ n) (k : Nat) :
 @[simp] theorem wkFrom_var (cut : Nat) (v : Var n) :
     (Expr.var v : Expr ζ ℓ n).wkFrom cut =
       if v.val < cut then .var v.castSucc else .var v.succ := by
-  simp [wkFrom, rename, Ren.wkFrom]
+  simp [wkFrom, Ren.wkFrom]
   split <;> rfl
 
 @[simp] theorem wkFrom_wkFrom (h : cut ≤ d) (e : Expr ζ ℓ n) :
@@ -119,19 +119,19 @@ namespace Expr
 @[simp] theorem wkFrom_lam (h : cut ≤ n) (t : Expr ζ ℓ n)
     (e' : Expr ζ ℓ (n + 1)) :
     (Expr.lam t e').wkFrom cut = Expr.lam (t.wkFrom cut) (e'.wkFrom cut) := by
-  simp [wkFrom, rename, Ren.wkFrom_lift cut h]
+  simp [wkFrom, Ren.wkFrom_lift cut h]
 
 @[simp] theorem wkFrom_forallE (h : cut ≤ n) (t : Expr ζ ℓ n)
     (e' : Expr ζ ℓ (n + 1)) :
     (Expr.forallE t e').wkFrom cut =
       Expr.forallE (t.wkFrom cut) (e'.wkFrom cut) := by
-  simp [wkFrom, rename, Ren.wkFrom_lift cut h]
+  simp [wkFrom, Ren.wkFrom_lift cut h]
 
 @[simp] theorem wkFrom_letE (h : cut ≤ n) (t v : Expr ζ ℓ n)
     (e' : Expr ζ ℓ (n + 1)) :
     (Expr.letE t v e').wkFrom cut =
       Expr.letE (t.wkFrom cut) (v.wkFrom cut) (e'.wkFrom cut) := by
-  simp [wkFrom, rename, Ren.wkFrom_lift cut h]
+  simp [wkFrom, Ren.wkFrom_lift cut h]
 
 @[simp] theorem wk_wkFrom (h : cut ≤ n) (e : Expr ζ ℓ n) :
     e.wk.wkFrom cut = (e.wkFrom cut).wk :=
@@ -244,7 +244,7 @@ namespace Ctx
 @[simp] theorem get_snoc (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n)
     (v : Var (n + 1)) (h : v.val ≠ n) :
     (Γ.snoc t).get v = (Γ.get (v.castLT (by omega))).wk := by
-  simp [get, h]
+  simp! [h]
 
 @[simp] theorem get_castSucc (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) (v : Var n) :
     (Γ.snoc t).get v.castSucc = (Γ.get v).wk := by
@@ -309,9 +309,9 @@ end Ctx
   simp [Expr.inst]
   congr 1
   funext v
-  cases v using Fin.lastCases <;> simp [Subst.rename, Subst.precomp, Subst.id, Expr.rename]
+  cases v using Fin.lastCases <;> simp [Subst.rename, Subst.precomp, Subst.id]
 
 @[simp] theorem Expr.var_wk {ℓ n : Nat} (v : Var n) : (Expr.var v : Expr ζ ℓ n).wk = .var v.castSucc := by
-  simp [Expr.wk, Expr.wkFrom, Expr.rename]
+  simp [Expr.wk, Expr.wkFrom]
 
 end Metalean

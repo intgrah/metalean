@@ -586,10 +586,9 @@ theorem FCtor.Denotes.ordinaryTele {ζ : Sigs} {E : Env ζ} {ι : IndSig} {s : F
     have hprev := hc.ordinaryTele f (by omega)
     have hpush : fctor.ordinaryTemplates (f + 1) =
         (fctor.ordinaryTemplates f).push (fctor.ordinary[f]'(by omega)).type := by
-      simp only [FCtor.ordinaryTemplates,
+      simp [FCtor.ordinaryTemplates, -Array.push_extract_getElem,
         Array.extract_succ_right (as := fctor.ordinary) (i := 0) (j := f)
-          (Nat.zero_lt_succ f) (by omega),
-        Array.map_push]
+          (Nat.zero_lt_succ f) (by omega)]
     rw [hpush]
     exact .snoc hprev (hc.ordinary ⟨f, by omega⟩).type
 

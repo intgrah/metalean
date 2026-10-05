@@ -112,8 +112,7 @@ def leanCaseType (fctor : FCtor) (pos t c : Nat) (us : Array FLevel) (ps ms : Ar
   let metaTys := fctor.ordinaryTys us ps n ++ fctor.recursiveTys pos us ps n target ++
     fctor.ihTys us ps n motive
   have hsize : metaTys.size = nf + nr + nr := by
-    simp only [metaTys, nf, nr, FCtor.ordinaryTys, FCtor.recursiveTys, FCtor.ihTys, Array.size_append,
-      Array.size_ofFn]
+    simp [metaTys, nf, nr, FCtor.ordinaryTys, FCtor.recursiveTys, FCtor.ihTys, Nat.add_assoc]
   let ren := FExpr.fvars 0 n ++
     (Array.ofFn fun m : Fin (nf + nr) => FExpr.fvar (n + (toLean m).val)) ++
     FExpr.fvars (n + nf + nr) nr

@@ -173,7 +173,7 @@ private theorem denote_snoc_lift {m n : Nat} (γ : Fin n → ZFSet) (ρ : Ren m 
 @[simp] theorem denote_wkClosed {n : Nat} (γ : Fin n → ZFSet) (e : Expr ζ ℓ 0) :
     ε[ν; γ]⟦e.wkClosed⟧ = ε[ν; ![]]⟦e⟧ := by
   induction n with
-  | zero => simp [wkClosed, Subsingleton.elim γ ![]]
+  | zero => simp! [Subsingleton.elim γ ![]]
   | succ n ih =>
     rw [wkClosed, ← Fin.snoc_init_self γ, denote_wk]
     exact ih _

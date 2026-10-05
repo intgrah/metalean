@@ -179,8 +179,7 @@ theorem projection_spec {n : Nat} {Γ : Ctx ζ ℓ 0 n} {ps : Fin ι.nparams →
       (by simpa [Expr.inst] using Defeq.sortDF)
       ((hsnoc hΔ hqs).substitution (SubstWF.inst hΔ ht.left))
     convert hb using 1
-    · simp only [Expr.inst, Expr.wk_subst_extend, projType_subst,
-        Expr.subst, Subst.extend_last, Expr.subst_id]
+    · simp [Expr.inst, Expr.wk_subst_extend]
     · simp [Expr.inst]
   have hiotaType {m : Nat} {Δ : Ctx ζ ℓ 0 m} {qs : Fin ι.nparams → Expr ζ ℓ m}
       {gds : Fin (ι.ctors s c).nfields → Expr ζ ℓ m} (hΔ : E[Δ] ⊢ ok)
@@ -302,7 +301,7 @@ theorem projection_spec {n : Nat} {Γ : Ctx ζ ℓ 0 n} {ps : Fin ι.nparams →
         simpa [projTypeWith] using hfields current) hbodyOrd
     rw [Inductive.iotaRhs, hminsDef, h.projectionCases_self,
       Expr.apps_eq_self_of_zero hnr, Expr.apps_eq_self_of_zero hnr]
-    simpa [Expr.boundVars, Expr.subst] using happly
+    simpa [Expr.boundVars] using happly
   have htypeToOrd := htypeIota.trans (hiotaType hΓ hps hmaj hfields)
   have hiota := Defeq.iota (by simpa using h.recAllowed ls u) hps hms hmins
     (fun current => by simpa [projTypeWith] using hfields current)
@@ -355,7 +354,7 @@ theorem projTerm_substCongr {m : Nat} {Δ : Ctx ζ ℓ 0 m}
     refine hβ.extend ?_
     rw [Expr.subst, h.indices_eq fun i => Expr.subst β₁ (h.indices i)]
     exact hmaj
-  simpa [Expr.wk_subst_extend, Expr.subst, Subst.extend_last] using
+  simpa [Expr.wk_subst_extend] using
     Defeq.substitution_congr hΓ' hξ (h.projTerm_generic hB f hΓ hps)
 
 theorem projTerm_congr :

@@ -134,11 +134,11 @@ theorem Inductive.forall_recrSubst
   obtain ⟨b, rfl⟩ := RecrBinder.resolve_surjective v
   rw [recrTele_get_subst]
   cases b with
-  | param p => simpa [recrBinderType] using hps p
-  | motive t => simpa [recrBinderType] using hms t
-  | case t c => simpa [recrBinderType] using hmins t c
-  | index i => simpa [recrBinderType] using his i
-  | major => simpa [recrBinderType] using hmaj
+  | param p => simpa! using hps p
+  | motive t => simpa! using hms t
+  | case t c => simpa! using hmins t c
+  | index i => simpa! using his i
+  | major => simpa! using hmaj
 
 @[elab_as_elim]
 theorem Inductive.forall_recrSubst_image {motive : Expr ζ ℓ n → Prop} (hps : ∀ p, motive (ps₁ p))

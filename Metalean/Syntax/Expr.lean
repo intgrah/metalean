@@ -174,7 +174,7 @@ theorem wkN_ind (η : Head ζ (.inductive ι))
     (Expr.ind η s ls ps is).wkN k =
       Expr.ind η s ls (fun i => (ps i).wkN k)
         fun i => (is i).wkN k := by
-  simp only [wkN_eq_rename, rename]
+  simp [wkN_eq_rename]
 
 @[simp] theorem var_wkN (i : Fin n) (count : Nat) :
     (Expr.var i : Expr ζ ℓ n).wkN count =
@@ -207,7 +207,7 @@ def wkClosed (e : Expr ζ ℓ 0) : {n : Nat} → Expr ζ ℓ n
 @[simp] theorem map_rename (pre : ζ₁ ⟶ ζ₂) (ρ : Ren m n)
     (e : Expr ζ₁ ℓ m) :
     (e.rename ρ).map pre = (e.map pre).rename ρ := by
-  induction e generalizing n <;> simp [rename, map, *]
+  induction e generalizing n <;> simp [*]
 
 @[simp] theorem map_wkFrom (pre : ζ₁ ⟶ ζ₂) (cut : Nat)
     (e : Expr ζ₁ ℓ n) :
@@ -307,7 +307,7 @@ instance : InstLevel (Param ℓ → Level ℓ') (Expr ζ ℓ n) (Expr ζ ℓ' n)
 @[simp] theorem map_instL (pre : ζ₁ ⟶ ζ₂)
     (ls : Param ℓ → Level ℓ') (e : Expr ζ₁ ℓ n) :
     e{ls}.map pre = (e.map pre){ls} := by
-  induction e <;> simp [map, funext_iff, *]
+  induction e <;> simp [funext_iff, *]
 
 end Expr
 
@@ -377,7 +377,7 @@ def precomp (σ : Subst ζ ℓ n k) (ρ : Ren m n) : Subst ζ ℓ m k :=
   by_cases h : v.val < m
   · simp [rename, lift, h, Expr.wk, Expr.wkFrom]
   · obtain rfl : v = Fin.last m := Fin.ext (by simp [Fin.last]; omega)
-    simp [rename, lift, Expr.rename]
+    simp [rename, lift]
 
 @[simp] theorem lift_vars (ρ : Ren m n) :
     Subst.lift (fun v => Expr.var (ρ v) : Subst ζ ℓ m n) =
@@ -386,7 +386,7 @@ def precomp (σ : Subst ζ ℓ n k) (ρ : Ren m n) : Subst ζ ℓ m k :=
   by_cases h : v.val < m
   · have hr := (ρ ⟨v.val, h⟩).isLt
     simp [Subst.lift, Ren.lift, Ren.wkFrom, h, hr,
-      Expr.wk, Expr.wkFrom, Expr.rename]
+      Expr.wk, Expr.wkFrom]
   · obtain rfl : v = Fin.last m := Fin.ext (by simp [Fin.last]; omega)
     simp [Subst.lift, Ren.lift]
 
@@ -435,7 +435,7 @@ def precomp (σ : Subst ζ ℓ n k) (ρ : Ren m n) : Subst ζ ℓ m k :=
     Subst.id (ζ := ζ) (ℓ := ℓ) (n := n).lift = Subst.id := by
   funext v
   by_cases h : v.val < n
-  · simp [Subst.lift, Subst.id, h, Expr.wk, Expr.wkFrom, Expr.rename,
+  · simp [Subst.lift, Subst.id, h, Expr.wk, Expr.wkFrom,
       Ren.wkFrom]
   · have hv : v = Fin.last n := Fin.ext (by simp [Fin.last]; omega)
     rw [hv]
@@ -523,30 +523,30 @@ namespace Expr
 @[simp] theorem subst_id (e : Expr ζ ℓ n) : e.subst Subst.id = e := by
   induction e with
   | var => rfl
-  | _ => simp [Expr.subst, *]
+  | _ => simp [*]
 
 @[simp] theorem subst_vars (ρ : Ren m n) (e : Expr ζ ℓ m) :
     e.subst (fun v => .var (ρ v)) = e.rename ρ := by
-  induction e generalizing n <;> simp [Expr.subst, Expr.rename, *]
+  induction e generalizing n <;> simp [*]
 
 @[simp] theorem subst_rename (ρ : Ren n k) (σ : Subst ζ ℓ m n)
     (e : Expr ζ ℓ m) :
     (e.subst σ).rename ρ = e.subst (σ.rename ρ) := by
   induction e generalizing n k <;>
-    simp [subst, rename, Subst.rename, *]
+    simp [Subst.rename, *]
 
 @[simp] theorem rename_subst (σ : Subst ζ ℓ n k) (ρ : Ren m n)
     (e : Expr ζ ℓ m) :
     (e.rename ρ).subst σ = e.subst (σ.precomp ρ) := by
   induction e generalizing n k <;>
-    simp [subst, rename, Subst.precomp, *]
+    simp [Subst.precomp, *]
 
 @[simp] theorem map_subst (pre : ζ₁ ⟶ ζ₂)
     (σ : Subst ζ₁ ℓ m n) (e : Expr ζ₁ ℓ m) :
     (e.subst σ).map pre =
       (e.map pre).subst (σ.map pre) := by
   induction e generalizing n <;>
-    simp [subst, map, Subst.map, *]
+    simp [Subst.map, *]
 
 def inst (e' : Expr ζ ℓ (n + 1)) (value : Expr ζ ℓ n) : Expr ζ ℓ n :=
   e'.subst (Subst.id.extend value)
@@ -588,7 +588,7 @@ def isVar : Expr ζ ℓ n → Option Nat
 theorem eq_var_of_isVar (e : Expr ζ ℓ n) (v : Fin n)
     (h : e.isVar = some v.val) :
     e = .var v := by
-  cases e <;> simp [isVar] at h
+  cases e <;> simp! at h
   rename_i actual
   congr 1
   exact Fin.ext h
@@ -600,7 +600,7 @@ theorem eq_var_of_isVar (e : Expr ζ ℓ n) (v : Fin n)
 @[simp] theorem instL_rename (ls : Param ℓ → Level ℓ') (ρ : Ren m n)
     (e : Expr ζ ℓ m) :
     (e.rename ρ){ls} = e{ls}.rename ρ := by
-  induction e generalizing n <;> simp [rename, funext_iff, *]
+  induction e generalizing n <;> simp [funext_iff, *]
 
 @[simp] theorem instL_wkFrom (ls : Param ℓ → Level ℓ') (cut : Nat)
     (e : Expr ζ ℓ n) :
@@ -695,7 +695,7 @@ attribute [local instance] Level.category in
 
 @[simp] theorem wkN_sort (u : Level ℓ) (k scope : Nat) :
     (Expr.sort u : Expr ζ ℓ scope).wkN k = .sort u := by
-  simp [wkN_eq_rename, rename]
+  simp [wkN_eq_rename]
 
 end Expr
 
@@ -720,10 +720,10 @@ end Expr
     σ₁.lift.comp σ₂.lift = (σ₁.comp σ₂).lift := by
   funext v
   by_cases h : v.val < m
-  · simp [Subst.lift, Subst.comp, h, Expr.wk_subst_lift]
+  · simp [Subst.lift, Subst.comp, h]
   · have hv : v = Fin.last m := Fin.ext (by simp [Fin.last]; omega)
     subst v
-    simp [Subst.lift, Subst.comp, Expr.subst]
+    simp [Subst.lift, Subst.comp]
 
 @[simp] theorem Subst.liftN_comp (σ₁ : Subst ζ ℓ m n) (σ₂ : Subst ζ ℓ n p) (k : Nat) :
     (σ₁.liftN k).comp (σ₂.liftN k) = (σ₁.comp σ₂).liftN k := by
@@ -734,7 +734,7 @@ end Expr
     (e.subst σ₁).subst σ₂ = e.subst (σ₁.comp σ₂) := by
   induction e generalizing n p with
   | var => rfl
-  | _ => simp [Expr.subst, *]
+  | _ => simp [*]
 
 namespace Expr
 

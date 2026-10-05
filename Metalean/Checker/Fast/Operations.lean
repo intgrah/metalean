@@ -465,7 +465,7 @@ theorem instManyAt_forallE (d : Nat) (as : List FExpr) (t b : FExpr) :
 theorem instAt_instManyAt (d : Nat) (as : List FExpr) (a b : FExpr) :
     instAt a d (instManyAt (d + 1) as b) = instManyAt d (as ++ [a]) b := by
   induction as generalizing b with
-  | nil => simp [instManyAt]
+  | nil => simp!
   | cons a' as ih =>
     simp only [instManyAt, List.cons_append, List.length_append, List.length_cons,
       List.length_nil]

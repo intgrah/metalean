@@ -85,7 +85,7 @@ theorem RawTyped.apps {k m : Nat} {P : Level ℓ → Prop}
         ← rawApplication_singleton]
       dsimp only [SourceAdmissible.eval, ΩLower.toIdeal]
       rw [hinit τ ρ hρ, rawApps_last]
-      simp [-Fin.castSucc_natAdd, Fin.natAdd_castSucc, Ctx.get_castSucc, Expr.wk_subst_extend]
+      simp [-Fin.castSucc_natAdd, Fin.natAdd_castSucc, Expr.wk_subst_extend]
 
 theorem RawTyped.applyBound {Γ₁ : CtxCat E ℓ} {k : Nat} {P : Level ℓ → Prop}
     {Δ : Ctx ζ ℓ Γ₁.as.len (Γ₁.as.len + k)} {e : Expr ζ ℓ Γ₁.as.len}

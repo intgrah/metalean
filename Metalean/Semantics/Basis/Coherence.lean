@@ -146,7 +146,7 @@ theorem Compatible.reindexHom_iff (σ₁ : Γ₂ ⟶ Γ₁) (a b : Shape Γ₁) 
     | ind _ _ =>
       refine and_congr ?_
         (forall_congr' fun c => forall_congr' fun c' => imp_congr Iff.rfl (ih c _ _))
-      simp! [reindexHom, map, IndCode.map]
+      simp! [reindexHom, IndCode.map]
     | _ => simp! [reindexHom, map, IndCode.map, QuotCode.map]
   | _ => cases b <;> simp! [reindexHom, map, IndCode.map, QuotCode.map, *]
 

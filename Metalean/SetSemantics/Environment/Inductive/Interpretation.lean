@@ -281,9 +281,9 @@ theorem RecursivePhaseRealizes.prepend
     CtorCode.Interprets ε₁ ν block level project reach (Ctx.pi t Δ)
       (CtorCode.prependRecursive count fields rest) := by
   induction hphase with
-  | nil => simpa [CtorCode.prependRecursive] using hrest
+  | nil => simpa! using hrest
   | cons hA htail ih =>
-    simpa [Ctx.pi, Tele.foldr_append, CtorCode.prependRecursive] using
+    simpa! [Ctx.pi, Tele.foldr_append] using
       CtorCode.Interprets.recArg hA (ih hrest)
 
 theorem RecursivePhaseRealizes.snoc {block : Dom base}
@@ -385,7 +385,7 @@ theorem Interprets.map
   ctorRealizes s c vps hps := by
     refine (congrArg (fun Δ => CtorCode.Interprets ε₂ ν _ _ _ _ (Ctx.pi _ Δ) _)
       ((I.ctors s c).fieldTele_map pre.sigs η ls fun p => .var p)).mp ?_
-    simpa [Inductive.map, Expr.map] using
+    simpa [Inductive.map] using
       (h.ctorRealizes s c vps hps).map pre hatoms
   ordinaryOf_castLE := h.ordinaryOf_castLE
   targetIndex_eq := h.targetIndex_eq

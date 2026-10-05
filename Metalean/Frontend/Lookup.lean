@@ -36,18 +36,18 @@ def lookup (p : Nat) : (ζ : Sigs) → Option (Σ sig : Sig, Head ζ sig)
 @[simp] theorem lookup_position (η : Head ζ sig) :
     ζ.lookup η.position = some ⟨sig, η⟩ := by
   induction η with
-  | here => simp [lookup, Head.position]
-  | there η ih => simp [lookup, Head.position, Nat.ne_of_lt η.position_lt, ih]
+  | here => simp!
+  | there η ih => simp! [Nat.ne_of_lt η.position_lt, ih]
 
 theorem position_of_lookup {p : Nat} {x : Σ sig, Head ζ sig} (h : ζ.lookup p = some x) :
     x.2.position = p := by
   induction ζ with
-  | nil => simp [lookup] at h
+  | nil => simp! at h
   | snoc ζ sig₁ ih =>
     unfold lookup at h
     split at h
     · cases h
-      simp [Head.position, *]
+      simp! [*]
     · obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp h
       exact ih hy
 

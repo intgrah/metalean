@@ -100,7 +100,7 @@ theorem CoherentShape.CtorInstance.recovery_index_name (h : IndData Γ₁ η ls 
         (Tm.label_eq_var ht he)).trans (inst.map_fieldsHom_fieldVar h σ₁ hps _))
   rw [← hmap]
   congr 1 <;> simp [CtorInstance.fieldsHom, CtorInstance.generic, CtorInstance.fieldsSubst,
-    Expr.boundVars, Expr.subst, hps, CtorSig.fieldParams]
+    Expr.boundVars, hps, CtorSig.fieldParams]
 
 include hps in
 theorem proofConstructor_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel : l.rel = true)
@@ -199,7 +199,7 @@ theorem RawSound.recursiveField_prop (h : IndData Γ₁ η ls ps) (fds : Fin (ι
       simp only [Inductive.paramType_wkN] at hp
       exact hp,
     fun i => ((h.block.ctors s c).recursive f).instantiatedIndices (fun p => Fin.append_left _ _ p) i
-      (by simpa only using hσ)⟩
+      (by simpa using hσ)⟩
   have hb : E₂[T.as.ctx] ⊢ .ind η ((ι.ctors s c).recursiveTarget f) ls
       (fun p => (ps p).wkN ((ι.ctors s c).recursiveArity f))
       ((((E₂.get η).block.ctors s c).recursive f).instantiatedIndices ls (Fin.append ps fds)) :
@@ -375,12 +375,12 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
       (.ctor η s c ls ps inst.fds inst.recFds) v)).app _ σ₁.op ρ₁
   let xs := fun i => (rawInterpret (piLimit E₂ ℓ) Γ₁ (Fin.append inst.fds inst.recFds i)).app _ σ₁.op ρ₁
   have hps (p : Fin ι.nparams) : (Expr.var (RecrBinder.param (s := s) p).resolve).subst hr.recrHom.subst = ps p := by
-    simp [RecTyping.recrHom, Expr.subst]
+    simp [RecTyping.recrHom]
   have hms (t : Fin ι.nsorts) : (Expr.var (RecrBinder.motive (s := s) t).resolve).subst hr.recrHom.subst = ms t := by
-    simp [RecTyping.recrHom, Expr.subst]
+    simp [RecTyping.recrHom]
   have hmins (t : Fin ι.nsorts) (c₁ : Fin (ι.nctors t)) :
       (Expr.var (RecrBinder.case (s := s) t c₁).resolve).subst hr.recrHom.subst = mins t c₁ := by
-    simp [RecTyping.recrHom, Expr.subst]
+    simp [RecTyping.recrHom]
   have ppsG := fun p => hsound.genericTyped hB hblock hd s (.param p)
   have pmsG := fun t => hsound.genericTyped hB hblock hd s (.motive t)
   have pminsG := fun t c => hsound.genericTyped hB hblock hd s (.case t c)
@@ -473,8 +473,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
         rw [op_comp, Functor.map_comp_apply, Tm.map_label]
         apply congrArg ((Tm E₂ ℓ).map σ₁.op)
         trans Tm.proj hstruct h.block ls ps h.param f (Tm.label Γ₁.as hmaj) rfl
-        · congr 1 <;> simp [RecTyping.recrHom, Expr.subst, hrec,
-            Inductive.IsStructure.projTerm_subst, Inductive.IsStructure.projType_subst]
+        · congr 1 <;> simp [RecTyping.recrHom, hrec]
         · simpa [CtorTyping.names] using
             Tm.proj_ctor_label hstruct h.block ls ps h.param inst.fds hmaj inst.typed.ordinary f
     exact heq ▸ (show sect.ProjectsFrom hstruct _ from ⟨msect, rfl⟩)
@@ -498,7 +497,7 @@ theorem RawSound.iota (h : RecData Γ₁ η ls l ps ms mins)
         funext i
         rw [op_comp, Functor.map_comp_apply,
           ← Tm.label_eq_var (hsound.genericTyped hB hblock hd s (.index i)).typed rfl, Tm.map_label]
-        congr 2 <;> simp [Expr.subst, RecTyping.recrHom, Inductive.recrBinderType]
+        congr 2 <;> simp! [RecTyping.recrHom]
       have hvals : (fun i => ρ' (Var.db (RecrBinder.index (s := s) i).resolve)) =
           fun i => (rawInterpret (piLimit E₂ ℓ) Γ₁ (((E₂.get η).block.ctors s c).targetIndex ls ps inst.fds i)).app _ σ₁.op ρ₁ := by
         funext i

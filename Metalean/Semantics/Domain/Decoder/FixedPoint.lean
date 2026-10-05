@@ -124,7 +124,7 @@ theorem piStage_eval_prop (k : Nat) {c : CoherentShape Γ₁} (hc : Shape.IsCode
         | ind _ h => exact h
       change (((piStage E ℓ) k).piStepValue (.ind code ctorTypes) ha).val.app _
         ((𝟙 Γ₁).op, n) X = (⊥ : Domain Γ₁)
-      simp [piStepValue, hrel, IdealAction.bottom]
+      simp! [hrel, IdealAction.bottom]
     | quot code =>
       have hrel : code.level.rel = false := by
         cases hc with

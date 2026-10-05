@@ -203,7 +203,7 @@ theorem Realizes.denotes_motivePiAt {k count : Nat}
   apply h.denotes_piAt hs
   intro final hfinal
   have hb : (fun v => final (v.castAdd k)) = s := funext (hbase final hfinal)
-  simpa [Inductive.motiveResult, Expr.denote, hb, his final hfinal] using
+  simpa! [Inductive.motiveResult, hb, his final hfinal] using
     hleaf final hfinal _ (Reachable.apps_mem_of_base hfinal (hbase final hfinal) hvalue)
 
 theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
@@ -462,11 +462,11 @@ theorem appTuple_encode {count : Nat} (fn : ZFSet) (γ : Slots count) :
   induction count with
   | zero =>
     obtain rfl : γ = ![] := Subsingleton.elim _ _
-    simp [appTuple, Aczel.apps]
+    simp! [Aczel.apps]
   | succ count ih =>
     rw [show encode γ = pair (encode (Fin.init γ))
         (γ (Fin.last count)) from rfl]
-    simp [appTuple, ih, ← Aczel.apps_snoc]
+    simp! [ih, ← Aczel.apps_snoc]
 
 theorem fibre_bundleMotive_typed {count level : Nat}
     {arities : Fin count → Nat} {vms : Fin count → ZFSet}

@@ -41,7 +41,7 @@ private theorem substOf
     E[Γ₂] ⊢ e₁.subst σ ≡ e₂.subst σ : t.subst σ := by
   intro h
   induction h generalizing m Γ₂ with
-    try simp! [Expr.inst_subst, Expr.wk_subst_lift, Fin.fun_vecCons, Fin.fun_vecEmpty,
+    try simp! [Expr.inst_subst, Fin.fun_vecCons, Fin.fun_vecEmpty,
       Fin.const_fin_one] at *
   | var _ ih =>
     cases image hσ _ with
@@ -89,10 +89,10 @@ private theorem substOf
         rfl
     exact .eta
       (iht hσ) (iht' (lift hσ))
-      (by simpa [Expr.wk_subst_lift] using ihtwk (lift hσ))
+      (by simpa using ihtwk (lift hσ))
       (by
         have dewk := ihewk (lift hσ)
-        simp! [Expr.wk_subst_lift, Expr.wkFrom_subst σ.lift.lift] at dewk
+        simp! [Expr.wkFrom_subst σ.lift.lift] at dewk
         rwa [hlift, ← Expr.subst_wkFrom σ.lift] at dewk)
       (ihe hσ)
   | etaStruct h _ _ _ ihps ihmaj ihrebuild =>
@@ -140,16 +140,16 @@ private theorem SubstRen.lift {t : Expr ζ ℓ n} (h : SubstRen E Γ₁ Γ₂ σ
   cases v using Fin.lastCases with
   | last =>
     exact .renamed (Fin.last m) (Subst.lift_last σ)
-      (by simp [Expr.wk_subst_lift])
+      (by simp)
   | cast v =>
     cases h v with
     | typed d =>
       refine .typed ?_
-      simpa [Expr.wk_subst_lift] using d.wk (t.subst σ)
+      simpa using d.wk (t.subst σ)
     | renamed w hw htype =>
       refine .renamed w.castSucc ?_ ?_
       · simp [hw, Expr.wk]
-      · simp [Expr.wk_subst_lift]
+      · simp
         exact congrArg Expr.wk htype
 
 private theorem SubstRen.liftN (h : SubstRen E Γ₁ Γ₂ σ)
@@ -157,7 +157,7 @@ private theorem SubstRen.liftN (h : SubstRen E Γ₁ Γ₂ σ)
     SubstRen E (Γ₁ ++ Δ) (Γ₂ ++ Ctx.substN σ k Δ) (σ.liftN k) := by
   induction Δ using Tele.addInduction with
   | nil => exact h
-  | snoc k Δ t ih => simpa [Ctx.substN, Subst.liftN] using ih.lift
+  | snoc k Δ t ih => simpa! [Ctx.substN] using ih.lift
 
 private theorem SubstRen.inst
     {t e : Expr ζ ℓ m} (he : E[Γ] ⊢ e : t) :
@@ -293,11 +293,11 @@ theorem SubstWF.lift {t : Expr ζ ℓ n} :
   intro ⟨u, ht⟩ hσ v
   cases v using Fin.lastCases with
   | last =>
-    simp [Expr.wk_subst_lift]
+    simp
     rw [← Γ₂.get_last (t.subst σ)]
     exact .var <| by
       simpa [Expr.wk] using (ht.substitution hσ).wk (t.subst σ)
-  | cast v => simpa [Expr.wk_subst_lift] using (hσ v).wk (t.subst σ)
+  | cast v => simpa using (hσ v).wk (t.subst σ)
 
 theorem SubstWF.liftN {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ n (n + k)}
     (hΔ : TeleWF E P Γ₁ Δ) :

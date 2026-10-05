@@ -43,7 +43,7 @@ theorem targetIndex_recovery {ℓ n : Nat} (h : ctor.recoveryIndex f = some i)
     (ls : Fin ι.nlevels → Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ n)
     (fds : Fin csig.nfields → Expr ζ ℓ n) :
     ctor.targetIndex ls ps fds i = fds f := by
-  simp [targetIndex, recoveryIndex_spec h, Expr.subst]
+  simp [targetIndex, recoveryIndex_spec h]
 
 theorem recoveryIndex_exists {u : Level ι.nlevels} (h : ctor.Eligible u)
     {ℓ : Nat} (ls : Fin ι.nlevels → Level ℓ) (f : Fin csig.nfields)
