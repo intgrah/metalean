@@ -415,7 +415,9 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
       ctor.fieldTele η ls (fun i => (ps i).subst σ) stop := by
   unfold Ctor.fieldTele Ctor.ordinaryFieldTele
   rw [Ctx.substN₂_append, Ctor.recursiveFieldTeleAux_subst]
-  erw [Expr.boundVars_subst σ csig.nfields 0]
+  have h := Expr.boundVars_subst σ csig.nfields 0
+  simp only [Subst.liftN] at h
+  rw [h]
   simp
 
 @[simp] theorem Inductive.motiveResult_subst
@@ -652,7 +654,8 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
         (.var (w.castLE (by omega)) :
           Expr ζ ℓ (n + ι.nindices s))) =
       Fin.append (fun v : Fin n => (.var (v.castAdd (ι.nindices s)) :
-          Expr ζ ℓ (n + ι.nindices s))) fun i => .var ⟨n + i.val, by omega⟩ := by
+          Expr ζ ℓ (n + ι.nindices s))) fun previous =>
+        .var ⟨n + (previous.castLE i.isLt.le).val, by omega⟩ := by
     funext v
     by_cases hv : v.val < n
     · have heq : v = (⟨v.val, hv⟩ : Fin n).castAdd i.val := rfl
@@ -665,7 +668,7 @@ theorem Subst.liftN_eq_append {a : Nat} (σ : Subst ζ ℓ a m) (count : Nat) :
   change Expr.subst (fun w => (.var (w.castLE (by omega)) :
       Expr ζ ℓ (n + ι.nindices s))) _ = _
   rw [hσ]
-  erw [I.indexTele_entry_subst ls s ps
+  rw [I.indexTele_entry_subst ls s ps
     (fun v => .var (v.castAdd (ι.nindices s)))
     (fun i => .var ⟨n + i.val, by omega⟩) i]
   congr 2

@@ -89,7 +89,7 @@ theorem RawSound.recursiveSourceProperties :
     RawTeleProperties E₂ (CtxCat.ctorSource h s c).as.ctx (recursiveSourceTele E₂ η ls s c) := by
   apply RawTeleProperties.ofTypes (recursiveSourceTele_wf h s c)
   intro f
-  erw [← Subst.liftN_eq_append, Subst.liftN_id]
+  rw [← Subst.liftN_eq_append, Subst.liftN_id]
   let Δ := (((E₂.get η).block.ctors s c).recursive f).tele{ls}
   have hΔ := sourceTelescope_wf h s c f
   have pΔ := hsound.recursiveArgumentProperties hB hblock s c h f

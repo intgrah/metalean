@@ -148,7 +148,7 @@ theorem piStage_eval_prop (k : Nat) {c : CoherentShape Γ₁} (hc : Shape.IsCode
         rw [CodeAssignment.resultBody] at hy
         have ⟨c, hc, hy⟩ := (mem_extend _ _ _ _ _ _).mp hy
         rw [IdealAction.pullback_app] at hc
-        erw [graphAction_value] at hc
+        rw [graphAction_value ⟨_, _⟩] at hc
         rw [ih (isCode_of_mem_application_lamGenerator (fun i => (hf i).map _ _) _ _ (𝟙 Γ₄) hc)] at hy
         exact (ΩIdeal.mem_bot σ₂ y).mpr hy
       · exact @bot_le (Domain _) _ _ _

@@ -47,23 +47,29 @@ theorem SemanticSubstitution.liftTele {k : Nat} {P : Level ℓ → Prop}
     let υt := ρt.pushFin xs
     have hbase : σ₂ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection (hΔ.substitution σ₁.typed)) =
         σ₃ ≫ RawCtx.toCtx.map (RawCtx.Hom.teleProjection (TeleWF.substitution σ₁.typed hΔ.init)) := by
-      erw [RawCtx.Hom.teleProjection_snoc (TeleWF.substitution σ₁.typed hΔ.init) hΔ.last.choose_spec.1 htσ]
-      exact (Category.assoc _ _ _).symm
+      exact (congrArg (σ₂ ≫ ·) (RawCtx.Hom.teleProjection_snoc
+        (TeleWF.substitution σ₁.typed hΔ.init) hΔ.last.choose_spec.1 htσ)).trans
+        (Category.assoc _ _ _).symm
     rw [hbase] at hsub htarget
+    change Γ ⟶ CtxCat.extension T htσ at σ₂
     change SourceAdmissible (σ₂ ≫ CtxCat.extensionMap ht g) (υs.push (args (Fin.last k))) at hsource
     have htail := hsource.tail ht
-    erw [Category.assoc, CtxCat.extensionMap_projection, ← Category.assoc] at htail
+    rw [Category.assoc, CtxCat.extensionMap_projection, ← Category.assoc] at htail
     have ⟨hs, ha⟩ := ih hΔ.init pΔ.init σ₃ xs hsub htarget htail
     have heq := (pΔ.last S.as.wf).subst g σ₃ υs υt hs htail
     have .cons _ _ _ _ htI hx hfixed := hsource
-    erw [Category.assoc, CtxCat.extensionMap_projection, ← Category.assoc] at htI hfixed
+    change ((rawInterpret (piLimit E ℓ) S t).app _
+      ((σ₂ ≫ CtxCat.extensionMap ht g) ≫ CtxCat.rawProjection S ht).op _).IsDirected at htI
+    change (piLimit E ℓ).rawExtend ((rawInterpret (piLimit E ℓ) S t).app _
+      ((σ₂ ≫ CtxCat.extensionMap ht g) ≫ CtxCat.rawProjection S ht).op _) _ _ = _ at hfixed
+    rw [Category.assoc, CtxCat.extensionMap_projection, ← Category.assoc] at htI hfixed
     have hname : (Tm E ℓ).map (σ₂ ≫ CtxCat.extensionMap ht g).op
         (CtxCat.rawComprehension ht).generic =
         (Tm E ℓ).map σ₂.op (CtxCat.rawComprehension htσ).generic := by
-      erw [op_comp, Functor.map_comp_apply]
+      rw [op_comp, Functor.map_comp_apply]
       exact congrArg ((Tm E ℓ).map σ₂.op) (CtxCat.map_extensionMap_binderVar ht g)
-    erw [hname, ← heq] at hfixed
+    rw [hname] at hfixed
     exact ⟨.lift ht g σ₂ υs (ρt.pushFin args) hs,
-      .cons htσ σ₂ _ ha (heq.symm ▸ htI) hx hfixed⟩
+      .cons htσ σ₂ _ ha (heq.symm ▸ htI) hx (heq.symm ▸ hfixed)⟩
 
 end Metalean.CoherentShape
