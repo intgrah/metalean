@@ -318,7 +318,7 @@ theorem RawTyped.lam (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     (pt : RawInterpretationProperties Γ₁ t)
     (pb : RawTyped (Γ₁.extension ht) e₁' t₁') :
     RawTyped Γ₁ (.lam t e₁') (.forallE t t₁') := by
-  obtain ⟨v, ht'⟩ := pb.typed.regular
+  have ⟨v, ht'⟩ := pb.typed.regular
   exact ⟨.lamDF ht ht' ht' pb.typed pb.typed, .forallE ht ht' pt pb.type,
     .lam ht pt pb.term, .lam ht ht' pb.typed pt.ideal pb.type.ideal pb.term.ideal pb.fixed⟩
 

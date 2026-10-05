@@ -69,7 +69,7 @@ def lam (E : Env ζ) (ℓ : Nat) :
     intro ⟨Γ₁⟩ ⟨Γ₂⟩ ⟨σ⟩
     obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
     ext ⟨A, B⟩
-    obtain ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
+    have ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
     have hT := hT.symm
     change lamApp (y (RawCtx.toCtx.map σ) ≫ A)
         (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =
@@ -172,9 +172,9 @@ theorem map_apply (L : Ty.Pair Γ₁)
         ((Tm E ℓ).map σ.op n) ((Tm E ℓ).map σ.op m)
         (by rw [Tm.type_map, h, Ty.piApp_pairPresheaf_map])
         (by rw [Tm.type_map, hm]; exact yonedaEquiv_naturality L.1 σ) := by
-  obtain ⟨A, B⟩ := L
+  have ⟨A, B⟩ := L
   obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
-  obtain ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
+  have ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
   have hT := hT.symm
   have ⟨C, hC⟩ := Quotient.exists_rep (T.comprehension.eval A B (Ty.comprehension_type_eq hT))
   have hn := h.trans (Ty.piApp_eq_ofRepr A B T hT C hC)

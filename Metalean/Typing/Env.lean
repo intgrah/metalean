@@ -30,15 +30,15 @@ theorem map {sig : Sig} {entry : Entry ζ₁ sig} (pre : E₁.as ⟶ E₂.as) :
   intro h
   induction h with
   | «axiom» ht =>
-    obtain ⟨l, ht⟩ := ht
+    have ⟨l, ht⟩ := ht
     exact .axiom ⟨l, by simpa using ht.map pre⟩
   | «opaque» he ht =>
-    obtain ⟨l, ht⟩ := ht
+    have ⟨l, ht⟩ := ht
     exact .opaque
       (by simpa using he.map pre)
       ⟨l, by simpa using ht.map pre⟩
   | «def» ht he =>
-    obtain ⟨l, ht⟩ := ht
+    have ⟨l, ht⟩ := ht
     exact .def
       ⟨l, by simpa using ht.map pre⟩
       (by simpa using he.map pre)

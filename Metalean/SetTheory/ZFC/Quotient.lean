@@ -77,7 +77,7 @@ theorem equivClosure_least (hsb : s ⊆ b) (hxs : x ∈ s)
   lfp_least hsb fun v hv => by
     rcases mem_closureOp.mp hv with rfl | hv
     · exact hxs
-    · obtain ⟨w, hw, hva, hr⟩ := mem_relationStep.mp hv
+    · have ⟨w, hw, hva, hr⟩ := mem_relationStep.mp hv
       exact hstep w hw v hva hr
 
 theorem closureOp_subset_equivClosure (hab : a ⊆ b) (hx : x ∈ a) :

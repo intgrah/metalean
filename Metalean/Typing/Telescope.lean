@@ -23,7 +23,7 @@ theorem TeleWF.appendCtxWF :
   induction hWF with
   | nil => exact hΓ
   | snoc hΔ ht ih =>
-    obtain ⟨u, _, ht⟩ := ht
+    have ⟨u, _, ht⟩ := ht
     exact ih.snoc ⟨u, ht⟩
 
 theorem CtxWF.teleWF (hΓ : E[Γ] ⊢ ok) :
