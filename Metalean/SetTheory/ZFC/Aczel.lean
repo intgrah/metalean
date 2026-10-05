@@ -111,7 +111,7 @@ theorem piMap_mem_truth {a b : ZFSet} (hb : ∀ x ∈ a, ZFSet.app b x ∈ truth
 theorem pi_truth_id_eq_falsum : pi truth (fun x => x) = falsum :=
   (eq_empty _).2 fun z hz => by
     rw [pi] at hz
-    obtain ⟨f, hf, _⟩ := mem_piMap.mp hz
+    have ⟨f, hf, _⟩ := mem_piMap.mp hz
     have hmem := app_mem_of_mem_pi hf falsum_mem_truth
     rw [app_map falsum_mem_truth] at hmem
     exact notMem_empty _ hmem

@@ -518,7 +518,7 @@ theorem app_inv :
     · exact ⟨_, _, hf.right, he.right,
         .ofDefEq hres⟩
   | defeqDF ht _ _ ih =>
-    obtain ⟨t₁, t', hf, he, hinst⟩ := ih hd
+    have ⟨t₁, t', hf, he, hinst⟩ := ih hd
     exact ⟨t₁, t', hf, he, (TypeEq.ofDefEq ht).symm.trans hinst⟩
   | beta ht₁ ht' hbody he hres _ _ _ _ _ _ ihresult =>
     rcases hd with hd | hd
@@ -596,7 +596,7 @@ theorem lam_inv :
         .ofDefEq (.forallEDF ht₁
           ht'.left ht₂'.left)⟩
   | defeqDF ht _ _ ih =>
-    obtain ⟨t', he', hinst⟩ := ih he hΓ
+    have ⟨t', he', hinst⟩ := ih he hΓ
     exact ⟨t', he', (TypeEq.ofDefEq ht).symm.trans hinst⟩
   | beta => simp_all
   | zeta => simp_all

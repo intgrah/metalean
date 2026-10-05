@@ -77,7 +77,7 @@ def pi (E : Env ζ) (ℓ : Nat) : pairPresheaf E ℓ ⟶ Ty E ℓ where
     intro ⟨Γ₁⟩ ⟨Γ₂⟩ ⟨σ⟩
     obtain ⟨σ, rfl⟩ := RawCtx.toCtx.map_surjective σ
     ext ⟨A, B⟩
-    obtain ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
+    have ⟨T, hT⟩ := Quotient.exists_rep (yonedaEquiv A)
     have hT := hT.symm
     change piApp (y (RawCtx.toCtx.map σ) ≫ A)
         (ℒ.fibreMap A (y (RawCtx.toCtx.map σ)) ≫ B) =

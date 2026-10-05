@@ -116,7 +116,7 @@ theorem CtxWF.map (pre : E₁.as ⟶ E₂.as) :
   induction h with
   | nil => exact .nil
   | snoc _ ht ih =>
-    obtain ⟨u, ht⟩ := ht
+    have ⟨u, ht⟩ := ht
     exact .snoc ih ⟨u, ht.map pre⟩
 
 end Metalean

@@ -37,7 +37,7 @@ noncomputable def snd (p : ZFSet) : ZFSet :=
 @[simp] theorem fst_pair (a b : ZFSet) : fst (pair a b) = a := by
   let h : ∃ a₁ b₁, pair a b = pair a₁ b₁ := ⟨a, b, rfl⟩
   rw [fst, dite_eq_left h]
-  obtain ⟨b, hb⟩ := h.choose_spec
+  have ⟨b, hb⟩ := h.choose_spec
   exact (pair_inj.mp hb).1.symm
 
 @[simp] theorem snd_pair (a b : ZFSet) : snd (pair a b) = b := by
@@ -62,7 +62,7 @@ theorem isFunc_dom_image_snd
     exact pair_mem_prod.mpr ⟨pair_mem_dom hc,
       mem_image.mpr ⟨pair a b, hc, by simp⟩⟩
   · intro a₁ ha₁
-    obtain ⟨c, hc, ha⟩ := mem_dom.mp ha₁
+    have ⟨c, hc, ha⟩ := mem_dom.mp ha₁
     obtain ⟨a₂, b₁, rfl⟩ := hpair c hc
     rw [fst_pair] at ha
     subst a₂
@@ -111,7 +111,7 @@ noncomputable def σ (α β : ZFSet) : ZFSet :=
 
 theorem IsFunc.app_eq (hf : IsFunc α β f) (hab : pair a b ∈ f) : app f a = b := by
   have ha := (pair_mem_prod.mp (hf.1 hab)).1
-  obtain ⟨b₁, hb₁, huniq⟩ := hf.2 a ha
+  have ⟨b₁, hb₁, huniq⟩ := hf.2 a ha
   ext c
   rw [mem_app]
   constructor
@@ -123,9 +123,9 @@ def IsPi (α β f : ZFSet) : Prop :=
   IsFunc α (⋃₀ image (app β) α) f ∧ f ⊆ σ α β
 
 theorem IsPi.app_mem (hf : IsPi α β f) (ha : a ∈ α) : app f a ∈ app β a := by
-  obtain ⟨b, hb, _⟩ := hf.1.2 a ha
+  have ⟨b, hb, _⟩ := hf.1.2 a ha
   rw [hf.1.app_eq hb]
-  obtain ⟨a₁, _, b₁, hb₁, hab⟩ := mem_sigma.mp (hf.2 hb)
+  have ⟨a₁, _, b₁, hb₁, hab⟩ := mem_sigma.mp (hf.2 hb)
   have h := pair_inj.mp hab
   simpa [h.1, h.2] using hb₁
 
@@ -142,7 +142,7 @@ noncomputable def pi (α β : ZFSet) : ZFSet :=
   rw [mem_app]
   constructor
   · intro ⟨b, hp, hc⟩
-    obtain ⟨a₁, _, heq⟩ := mem_map.mp hp
+    have ⟨a₁, _, heq⟩ := mem_map.mp hp
     have hpair := pair_inj.mp heq
     exact hpair.2.symm.trans (congrArg op hpair.1) ▸ hc
   · intro hc
