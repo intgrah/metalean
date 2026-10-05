@@ -56,4 +56,33 @@ def PreInductive.withLevels (pre : PreInductive ζ ι)
   level := pre.level
   ctors s c := (pre.ctors s c).withLevels (levels s c)
 
+@[simp] theorem PreCtorDecl.withLevels_ordinaryTeleAux (pre : PreCtorDecl ζ ι s csig)
+    (levels : Fin csig.nfields → Level ι.nlevels) (count : Nat)
+    (hcount : count ≤ csig.nfields) :
+    (pre.withLevels levels).ordinaryTeleAux count hcount =
+      pre.ordinaryTeleAux count hcount := by
+  induction count with
+  | zero => rfl
+  | succ count ih =>
+    change (Ctor.ordinaryTeleAux _ count _).snoc _ = (pre.ordinaryTeleAux count _).snoc _
+    rw [ih (by omega)]
+    rfl
+
+@[simp] theorem PreCtorDecl.withLevels_ordinary (pre : PreCtorDecl ζ ι s csig)
+    (levels : Fin csig.nfields → Level ι.nlevels) (f : Fin csig.nfields) :
+    (pre.withLevels levels).ordinary f = ⟨pre.ordinary f, levels f⟩ :=
+  rfl
+
+@[simp] theorem PreInductive.withLevels_params (pre : PreInductive ζ ι)
+    (levels : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
+      Fin (ι.ctors s c).nfields → Level ι.nlevels) :
+    (pre.withLevels levels).params = pre.params :=
+  rfl
+
+@[simp] theorem PreInductive.withLevels_ctors (pre : PreInductive ζ ι)
+    (levels : (s : Fin ι.nsorts) → (c : Fin (ι.nctors s)) →
+      Fin (ι.ctors s c).nfields → Level ι.nlevels) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    (pre.withLevels levels).ctors s c = (pre.ctors s c).withLevels (levels s c) :=
+  rfl
+
 end Metalean
