@@ -26,15 +26,15 @@ section
 variable {count level sortCode arity : Nat} {arities : Fin count → Nat}
   {vms : Fin count → ZFSet} {motive block entry value : ZFSet}
 
-noncomputable def appTuple : Nat → ZFSet → ZFSet → ZFSet
-  | 0, f, _ => f
-  | k + 1, f, values => [zf|$(appTuple k f [zf|values.1]) values.2]
+noncomputable def appTuple (f values : ZFSet) : Nat → ZFSet
+  | 0 => f
+  | k + 1 => [zf|$(appTuple f [zf|values.1] k) values.2]
 
 def sortPart (sortCode : Nat) (block : ZFSet) : ZFSet :=
   block.sep fun entry => [zf|(entry.1).1] = numeral sortCode
 
 noncomputable def motiveAt (level arity : Nat) (motive entry : ZFSet) : ZFSet :=
-  [zf|$(appTuple arity motive [zf|(entry.1).2]) $(propVal level [zf|entry.2])]
+  [zf|$(appTuple motive [zf|(entry.1).2] arity) $(propVal level [zf|entry.2])]
 
 noncomputable def motivePart (level sortCode arity : Nat)
     (motive block : ZFSet) : ZFSet :=

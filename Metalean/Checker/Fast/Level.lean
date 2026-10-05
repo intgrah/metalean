@@ -85,15 +85,15 @@ theorem Denotes.unique {l : FLevel} {l₁ l₂ : RawLevel ℓ} :
   | .param _, .param _ => rfl
 
 theorem Denotes.inst {us : Array FLevel} {σ : Param ℓ → RawLevel ℓ'} (hus : us.size = ℓ)
-    {l : FLevel} {l' : RawLevel ℓ} :
+    {l : FLevel} {l' : RawLevel ℓ}
+    (hus' : ∀ i, Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (σ i)) :
     Denotes l l' →
-    (∀ i, Denotes (us[i.val]'(hus.symm ▸ i.isLt)) (σ i)) →
     Denotes l{us} l'{σ}
-  | .zero, _ => .zero
-  | .succ h, hus' => .succ (h.inst hus hus')
-  | .max h₁ h₂, hus' => .max (h₁.inst hus hus') (h₂.inst hus hus')
-  | .imax h₁ h₂, hus' => .imax (h₁.inst hus hus') (h₂.inst hus hus')
-  | .param (p := p) hp, hus' => by simpa! [hus, hp] using hus' ⟨p, hp⟩
+  | .zero => .zero
+  | .succ h => .succ (h.inst hus hus')
+  | .max h₁ h₂ => .max (h₁.inst hus hus') (h₂.inst hus hus')
+  | .imax h₁ h₂ => .imax (h₁.inst hus hus') (h₂.inst hus hus')
+  | .param (p := p) hp => by simpa! [hus, hp] using hus' ⟨p, hp⟩
 
 theorem Denotes.inst_of_hasParam_eq_false {l : FLevel} {l' : RawLevel ℓ}
     (hp : l.hasParam = false) (σ : Param ℓ → RawLevel ℓ') :

@@ -293,17 +293,17 @@ termination_by fe => (sizeOf fe, 0)
 
 end
 
-unsafe def openBVarsShared (base k : Nat) (fe : FExpr) : FExpr :=
+unsafe def openBVarsShared (base : Nat) (fe : FExpr) (k : Nat) : FExpr :=
   if k = 0 then fe else replaceShared (openStep base k) fe
 
 @[implemented_by openBVarsShared]
-def openBVars (base : Nat) : (k : Nat) → FExpr → FExpr
-  | 0, fe => fe
-  | k + 1, fe => openBVars (base + 1) k (instAt (.fvar base) k fe)
+def openBVars (base : Nat) (fe : FExpr) : (k : Nat) → FExpr
+  | 0 => fe
+  | k + 1 => openBVars (base + 1) (instAt (.fvar base) k fe) k
 
 @[implemented_by OpenClose.openShared]
 def OpenClose.open (base k : Nat) (fe : FExpr) (c : OpenClose) : FExpr × OpenClose :=
-  (openBVars base k fe, c)
+  (openBVars base fe k, c)
 
 @[implemented_by OpenClose.closeShared]
 def OpenClose.close (base k : Nat) (fe : FExpr) (c : OpenClose) : FExpr × OpenClose :=
@@ -450,12 +450,12 @@ theorem instAt_forallE (a : FExpr) (d : Nat) (t b : FExpr) :
   · rw [instAt_of_not_closed a d hc]
     simp [instAtCore]
 
-def instManyAt (d : Nat) : List FExpr → FExpr → FExpr
-  | [], b => b
-  | a :: as, b => instManyAt d as (instAt a (as.length + d) b)
+def instManyAt (d : Nat) (b : FExpr) : List FExpr → FExpr
+  | [] => b
+  | a :: as => instManyAt d (instAt a (as.length + d) b) as
 
 theorem instManyAt_forallE (d : Nat) (as : List FExpr) (t b : FExpr) :
-    instManyAt d as (.forallE t b) = .forallE (instManyAt d as t) (instManyAt (d + 1) as b) := by
+    instManyAt d (.forallE t b) as = .forallE (instManyAt d t as) (instManyAt (d + 1) b as) := by
   induction as generalizing t b with
   | nil => rfl
   | cons a as ih =>
@@ -463,7 +463,7 @@ theorem instManyAt_forallE (d : Nat) (as : List FExpr) (t b : FExpr) :
     rw [instAt_forallE, ih, Nat.add_assoc]
 
 theorem instAt_instManyAt (d : Nat) (as : List FExpr) (a b : FExpr) :
-    instAt a d (instManyAt (d + 1) as b) = instManyAt d (as ++ [a]) b := by
+    instAt a d (instManyAt (d + 1) b as) = instManyAt d b (as ++ [a]) := by
   induction as generalizing b with
   | nil => simp!
   | cons a' as ih =>
@@ -486,8 +486,8 @@ theorem instAt_letE (a : FExpr) (d : Nat) (t v b : FExpr) :
     simp [instAtCore]
 
 theorem instManyAt_letE (d : Nat) (as : List FExpr) (t v b : FExpr) :
-    instManyAt d as (.letE t v b) =
-      .letE (instManyAt d as t) (instManyAt d as v) (instManyAt (d + 1) as b) := by
+    instManyAt d (.letE t v b) as =
+      .letE (instManyAt d t as) (instManyAt d v as) (instManyAt (d + 1) b as) := by
   induction as generalizing t v b with
   | nil => rfl
   | cons a as ih =>
@@ -495,7 +495,7 @@ theorem instManyAt_letE (d : Nat) (as : List FExpr) (t v b : FExpr) :
     rw [instAt_letE, ih, Nat.add_assoc]
 
 def instManyIter (as : List FExpr) (b : FExpr) : FExpr :=
-  instManyAt 0 as b
+  instManyAt 0 b as
 
 unsafe def instManyShared (as : List FExpr) (b : FExpr) : FExpr :=
   let args := as.toArray
@@ -522,19 +522,19 @@ unsafe def instManyRevShared (rev : List FExpr) (b : FExpr) : FExpr :=
 
 @[implemented_by instManyRevShared]
 def instManyRev (rev : List FExpr) (b : FExpr) : FExpr :=
-  instManyAt 0 rev.reverse b
+  instManyAt 0 b rev.reverse
 
 theorem instManyRev_cons_forallE (rev : List FExpr) (a t b : FExpr) :
-    ∃ t', instManyRev rev (.forallE t b) = .forallE t' (instManyAt 1 rev.reverse b) ∧
-      instAt a 0 (instManyAt 1 rev.reverse b) = instManyRev (a :: rev) b := by
+    ∃ t', instManyRev rev (.forallE t b) = .forallE t' (instManyAt 1 b rev.reverse) ∧
+      instAt a 0 (instManyAt 1 b rev.reverse) = instManyRev (a :: rev) b := by
   refine ⟨_, instManyAt_forallE 0 rev.reverse t b, ?_⟩
   rw [instManyRev, List.reverse_cons]
   exact instAt_instManyAt 0 rev.reverse a b
 
 theorem instManyRev_letE (rev : List FExpr) (t v b : FExpr) :
     instManyRev rev (.letE t v b) =
-        .letE (instManyRev rev t) (instManyRev rev v) (instManyAt 1 rev.reverse b) ∧
-      instAt (instManyRev rev v) 0 (instManyAt 1 rev.reverse b) =
+        .letE (instManyRev rev t) (instManyRev rev v) (instManyAt 1 b rev.reverse) ∧
+      instAt (instManyRev rev v) 0 (instManyAt 1 b rev.reverse) =
         instManyRev (instManyRev rev v :: rev) b := by
   refine ⟨instManyAt_letE 0 rev.reverse t v b, ?_⟩
   rw [instManyRev, instManyRev, List.reverse_cons]
@@ -690,18 +690,18 @@ def peelLams : (max : Nat) → (f : FExpr) → (m : Nat) × {b : FExpr // LamBod
     ⟨m + 1, b, .succ h.1, by omega⟩
   | _, f => ⟨0, f, .zero, Nat.zero_le _⟩
 
-def spineAux : FExpr → List FExpr → FExpr × List FExpr
-  | .app f a, acc => spineAux f (a :: acc)
-  | f, acc => (f, acc)
+def spineAux (acc : List FExpr) : FExpr → FExpr × List FExpr
+  | .app f a => spineAux (a :: acc) f
+  | f => (f, acc)
 
 theorem appList_spineAux (e : FExpr) (acc : List FExpr) :
-    appList (spineAux e acc).1 (spineAux e acc).2 = appList e acc := by
-  fun_induction spineAux e acc with
+    appList (spineAux acc e).1 (spineAux acc e).2 = appList e acc := by
+  fun_induction spineAux acc e with
   | case1 f a acc ih => exact ih
   | case2 f acc _ => rfl
 
 def spine (e : FExpr) : {p : FExpr × List FExpr // appList p.1 p.2 = e} :=
-  ⟨spineAux e [], appList_spineAux e []⟩
+  ⟨spineAux [] e, appList_spineAux e []⟩
 
 def appHead : FExpr → FExpr
   | .app f _ => appHead f

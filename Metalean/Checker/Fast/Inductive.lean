@@ -570,16 +570,17 @@ def FCtor.ordinaryTemplates (fctor : FCtor) (f : Nat) : FCtx :=
 
 theorem FCtor.Denotes.ordinaryTele {ζ : Sigs} {E : Env ζ} {ι : IndSig} {s : Fin ι.nsorts}
     {c : Fin (ι.nctors s)} {fctor : FCtor} {ctor : Ctor ζ ι s (ι.ctors s c)}
-    (hc : FCtor.Denotes ⟨ζ, E⟩ fctor ctor) :
-    (f : Nat) → (hf : f ≤ (ι.ctors s c).nfields) →
-    FCtx.Denotes ⟨ζ, E⟩ (fctor.ordinaryTemplates f) (ctor.ordinaryTeleAux f hf)
-  | 0, _ => by
+    (hc : FCtor.Denotes ⟨ζ, E⟩ fctor ctor)
+    (f : Nat) (hf : f ≤ (ι.ctors s c).nfields) :
+    FCtx.Denotes ⟨ζ, E⟩ (fctor.ordinaryTemplates f) (ctor.ordinaryTeleAux f hf) := by
+  induction f with
+  | zero =>
     have : fctor.ordinaryTemplates 0 = #[] := by simp [FCtor.ordinaryTemplates]
     rw [this]
     exact .nil
-  | f + 1, hf => by
+  | succ f ih =>
     have hsize := hc.ordinarySize
-    have hprev := hc.ordinaryTele f (by omega)
+    have hprev := ih (by omega)
     have hpush : fctor.ordinaryTemplates (f + 1) =
         (fctor.ordinaryTemplates f).push (fctor.ordinary[f]'(by omega)).type := by
       simp [FCtor.ordinaryTemplates, -Array.push_extract_getElem,

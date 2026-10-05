@@ -50,8 +50,7 @@ def bitwiseDeps (accel : Accel F) :
       NatOp F Nat.add) :=
   need do pure (← accel.Nat_beq?, ← accel.Nat_mod?, ← accel.Nat_div?, ← accel.Nat_add?)
 
-def verifyOp (accel : Accel F) (name : Name) (pos : Nat) : EIO Failure (Accel F) :=
-  match name with
+def verifyOp (accel : Accel F) (pos : Nat) : Name → EIO Failure (Accel F)
   | ``Nat.add => do pure { accel with Nat_add? := some (← verifyAdd F hints table pos) }
   | ``Nat.sub => do pure { accel with Nat_sub? := some (← verifySub F hints table pos) }
   | ``Nat.mul => do
@@ -105,7 +104,7 @@ def verifyOp (accel : Accel F) (name : Name) (pos : Nat) : EIO Failure (Accel F)
   | _ => pure accel
 
 def verifyAccel (name : Name) (pos : Nat) (accel : Accel F) : EIO Failure (Accel F) :=
-  tryCatch (verifyOp F hints table accel name pos) fun f => do
+  tryCatch (verifyOp F hints table accel pos name) fun f => do
     warnUnverified name f
     pure accel
 

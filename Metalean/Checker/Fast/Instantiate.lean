@@ -108,23 +108,22 @@ theorem FExpr.Denotes.wk {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
     FExpr.Denotes E 0 fe e.wk := fun h =>
   h.rename _ le_rfl (by omega) ⟨fun v hv => by simp, fun v hv => by omega⟩
 
-theorem FExpr.Denotes.wkClosed {fe : FExpr} {e : Expr E.1 ℓ 0} :
-    FExpr.Denotes E 0 fe e →
+theorem FExpr.Denotes.wkClosed {fe : FExpr} {e : Expr E.1 ℓ 0}
+    (h : FExpr.Denotes E 0 fe e) :
     (n : Nat) →
     FExpr.Denotes E 0 fe (e.wkClosed (n := n))
-  | h, 0 => h
-  | h, n + 1 => (h.wkClosed n).wk
+  | 0 => h
+  | n + 1 => (h.wkClosed n).wk
 
 section
 
 variable {n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n}
 
-theorem FExpr.Denotes.wkN :
-    FExpr.Denotes E 0 ft e →
+theorem FExpr.Denotes.wkN (h : FExpr.Denotes E 0 ft e) :
     (k : Nat) →
     FExpr.Denotes E 0 ft (e.wkN k)
-  | h, 0 => h
-  | h, k + 1 => (h.wkN k).wk
+  | 0 => h
+  | k + 1 => (h.wkN k).wk
 
 theorem FExpr.Denotes.wkNOpen (k : Nat) :
     FExpr.Denotes E 0 ft e →
@@ -787,7 +786,7 @@ theorem FExpr.Denotes.instFVarAt {m p d : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
 theorem FExpr.Denotes.openBVars {m k base : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
     (hm : base + k = m) :
     FExpr.Denotes E k fe e →
-    FExpr.Denotes E 0 (FExpr.openBVars base k fe) e := by
+    FExpr.Denotes E 0 (FExpr.openBVars base fe k) e := by
   intro h
   induction k generalizing base fe with
   | zero => exact h
@@ -1194,15 +1193,15 @@ theorem instFVars {m n : Nat} {ft : FExpr} {e : Expr E.1 ℓ m} {args : Array FE
       free v hv := ⟨_, hargs.denotes v, rfl⟩
       bound v hv := absurd v.isLt (by have := hargs.size; omega) }
 
-theorem appsFin {n : Nat} {ff : FExpr} {f : Expr E.1 ℓ n} :
-    FExpr.Denotes E 0 ff f →
-    (k : Nat) → (fg : Fin k → FExpr) → (g : Fin k → Expr E.1 ℓ n) →
-    (∀ i, FExpr.Denotes E 0 (fg i) (g i)) →
-    FExpr.Denotes E 0 (Fin.foldl k (fun e i => .app e (fg i)) ff) (f.apps g)
-  | hf, 0, _, _, _ => by simpa using hf
-  | hf, k + 1, fg, g, hg => by
+theorem appsFin {n : Nat} {ff : FExpr} {f : Expr E.1 ℓ n} (hf : FExpr.Denotes E 0 ff f)
+    (k : Nat) (fg : Fin k → FExpr) (g : Fin k → Expr E.1 ℓ n)
+    (hg : ∀ i, FExpr.Denotes E 0 (fg i) (g i)) :
+    FExpr.Denotes E 0 (Fin.foldl k (fun e i => .app e (fg i)) ff) (f.apps g) := by
+  induction k with
+  | zero => simpa using hf
+  | succ k ih =>
     rw [Fin.foldl_succ_last, Expr.apps_last]
-    exact .app (hf.appsFin k _ _ fun i => hg i.castSucc) (hg (Fin.last k))
+    exact .app (ih _ _ fun i => hg i.castSucc) (hg (Fin.last k))
 
 theorem apps {n k : Nat} {ff : FExpr} {f : Expr E.1 ℓ n} {args : Array FExpr}
     (hargs : args.size = k) {args' : Fin k → Expr E.1 ℓ n} :
@@ -1560,7 +1559,7 @@ theorem FExpr.Denotes.unopenCore {m k : Nat} {fb : FExpr} {b₀ : Expr E.1 ℓ m
 theorem FExpr.Denotes.unopenBVars {m k base : Nat} {fe : FExpr} {e₀ e' : Expr E.1 ℓ m}
     (hm : base + k = m) :
     FExpr.Denotes E k fe e₀ →
-    FExpr.Denotes E 0 (FExpr.openBVars base k fe) e' →
+    FExpr.Denotes E 0 (FExpr.openBVars base fe k) e' →
     FExpr.Denotes E k fe e' := by
   intro h₀ h'
   induction k generalizing base fe with

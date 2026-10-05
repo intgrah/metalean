@@ -250,12 +250,12 @@ partial def whnfCoreNode (G : FCtx) (cheapProj : Bool) :
       else pure ⟨.quotInd pos l α r β f a₁, RedSpec.refl _⟩
     | _ => pure ⟨.quotInd pos l α r β f a₁, RedSpec.refl _⟩
   | .proj pos s idx e₁ => do
-    let ⟨e₂, h₁⟩ ← if cheapProj then whnfCore G cheapProj e₁ else whnf G e₁
-    let struct : {e₃ : FExpr // RedSpec F ℓ G e₁ e₃} ← match e₂, h₁ with
-      | .strLit P str, h₁ => do
+    let r ← if cheapProj then whnfCore G cheapProj e₁ else whnf G e₁
+    let struct : {e₃ : FExpr // RedSpec F ℓ G e₁ e₃} ← match r with
+      | ⟨.strLit P str, h₁⟩ => do
         let ⟨e₃, h₂⟩ ← whnf G (FExpr.strLitExpand P str)
         pure ⟨e₃, RedSpec.trans h₁ (RedSpec.trans RedSpec.strLit h₂)⟩
-      | e₂, h₁ => pure ⟨e₂, h₁⟩
+      | ⟨e₂, h₁⟩ => pure ⟨e₂, h₁⟩
     match struct with
     | ⟨.ctor pos₂ s₂ _ _ _ fds _, h₁⟩ =>
       if hsel : pos₂ = pos ∧ s₂ = s ∧ idx < fds.size then
@@ -683,9 +683,8 @@ partial def inferCore (G : FCtx) :
       ⟨_, _, .natLit hη, .nat hη, Expr.natLit_typed _ num⟩⟩
   | .strLit P str => do
     let ⟨tOfNat, hOfNat⟩ ← infer G (.const P.ofNat #[])
-    let ⟨tOfList, hOfList⟩ ← infer G (.const P.ofList #[])
-    match tOfList, hOfList with
-    | .forallE dom cod, hOfList =>
+    match ← infer G (.const P.ofList #[]) with
+    | ⟨.forallE dom cod, hOfList⟩ =>
       match hList : F[P.list]?, hChar : F[P.char]? with
       | some (.inductive ιList IList), some (.inductive ιChar IChar) =>
         let some ⟨hcod⟩ := cod.noProj | throw (.decline .literal)
@@ -697,7 +696,7 @@ partial def inferCore (G : FCtx) :
           obtain ⟨rfl, rfl, rfl, hl, rfl, rfl, hc, hr⟩ := h
           exact InferSpec.strLit hOfNat hOfList hList hChar hl hcod hc hr⟩
       | _, _ => throw (.decline .literal)
-    | _, _ => throw (.decline .literal)
+    | _ => throw (.decline .literal)
 
 partial def inferOnly (G : FCtx) (fe : FExpr) :
     CheckM F ℓ {ft : FExpr // InferOnlySpec F ℓ G fe ft} := do

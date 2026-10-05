@@ -38,9 +38,9 @@ theorem propVal_of_ne_zero {level : Nat} (h : level ≠ 0) (value : ZFSet) :
 
 theorem propVal_mem_propSet {level : Nat} {carrier value : ZFSet} (h : value ∈ carrier) :
     propVal level value ∈ propSet level carrier := by
-  match level with
-  | 0 => exact mem_squash.mpr ⟨value, h, rfl⟩
-  | _ + 1 => exact h
+  cases level with
+  | zero => exact mem_squash.mpr ⟨value, h, rfl⟩
+  | succ _ => exact h
 
 noncomputable def propGet (level : Nat) (carrier value : ZFSet) : ZFSet :=
   if level = 0 then Classical.epsilon (· ∈ carrier) else value
@@ -69,9 +69,9 @@ theorem propVal_propGet {level : Nat} {carrier value : ZFSet}
 theorem propSet_mem_sort {level : Nat} {carrier : ZFSet}
     (h : ∀ k : Nat, level = k + 1 → carrier ∈ U_ k) :
     propSet level carrier ∈ S_ level := by
-  match level with
-  | 0 => exact squash_mem_truth carrier
-  | _ + 1 => exact h _ rfl
+  cases level with
+  | zero => exact squash_mem_truth carrier
+  | succ _ => exact h _ rfl
 
 theorem propSet_eq_self_of_mem_sort {level : Nat} {carrier : ZFSet}
     (h : carrier ∈ S_ level) : propSet level carrier = carrier := by

@@ -141,10 +141,10 @@ inductive Prefix (ζ : Sigs) : Sigs → Type
   | step {ζ' : Sigs} {sig : Sig} :
     Prefix ζ ζ' → Prefix ζ (.snoc ζ' sig)
 
-def Prefix.trans {ζ₁ ζ₂ ζ₃ : Sigs} :
-    Prefix ζ₁ ζ₂ → Prefix ζ₂ ζ₃ → Prefix ζ₁ ζ₃
-  | pre, .refl => pre
-  | pre, .step suffix => .step (pre.trans suffix)
+def Prefix.trans {ζ₁ ζ₂ ζ₃ : Sigs} (pre : Prefix ζ₁ ζ₂) :
+    Prefix ζ₂ ζ₃ → Prefix ζ₁ ζ₃
+  | .refl => pre
+  | .step suffix => .step (pre.trans suffix)
 
 instance : SmallCategory Sigs where
   Hom := Prefix

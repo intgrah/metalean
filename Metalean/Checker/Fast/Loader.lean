@@ -28,18 +28,19 @@ inductive Justification (F : FEnv) (fe : FEntry) where
   | now (h : EntryWFSpec F fe)
   | later (line : Nat) (task : Task (Outcome (EntryWFSpec F fe)))
 
-def Justification.enqueue {F : FEnv} {fe : FEntry} :
-    Justification F fe → Array Pending → Array Pending
-  | .now _, pending => pending
-  | .later line task, pending => pending.push ⟨line, _, task⟩
+def Justification.enqueue {F : FEnv} {fe : FEntry} (pending : Array Pending) :
+    Justification F fe → Array Pending
+  | .now _ => pending
+  | .later line task => pending.push ⟨line, _, task⟩
 
-theorem Justification.split {F : FEnv} {fe : FEntry} {pending : Array Pending} :
-    (j : Justification F fe) →
-    (∀ o ∈ j.enqueue pending, o.P) →
-    (∀ o ∈ pending, o.P) ∧ EntryWFSpec F fe
-  | .now h, hs => ⟨hs, h⟩
-  | .later _ _, hs =>
-    ⟨fun o ho => hs o (Array.mem_push_of_mem _ ho), hs _ (Array.mem_push_self ..)⟩
+theorem Justification.split {F : FEnv} {fe : FEntry} {pending : Array Pending}
+    (j : Justification F fe)
+    (hs : ∀ o ∈ j.enqueue pending, o.P) :
+    (∀ o ∈ pending, o.P) ∧ EntryWFSpec F fe := by
+  cases j with
+  | now h => exact ⟨hs, h⟩
+  | later _ _ =>
+    exact ⟨fun o ho => hs o (Array.mem_push_of_mem _ ho), hs _ (Array.mem_push_self ..)⟩
 
 structure Addition (F : FEnv) where
   bindings : List (Name × Binding)

@@ -458,7 +458,7 @@ theorem Realizes.map {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
       simpa [Expr.denote_map pre.sigs hatoms] using hdomain s hs
 
 theorem appTuple_encode {count : Nat} (fn : ZFSet) (γ : Slots count) :
-    appTuple count fn (encode γ) = [zf|fn γ...] := by
+    appTuple fn (encode γ) count = [zf|fn γ...] := by
   induction count with
   | zero =>
     obtain rfl : γ = ![] := Subsingleton.elim _ _

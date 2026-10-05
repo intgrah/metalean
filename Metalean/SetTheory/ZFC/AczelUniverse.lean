@@ -40,9 +40,9 @@ theorem type_mem_of_mem_piMap {n : Nat} {a b fn : ZFSet} (ha : a ∈ U_ n)
 theorem pi_mem_sort_imax {lA lB : Nat} {a b : ZFSet} (ha : a ∈ S_ lA)
     (hb : ∀ x ∈ a, app b x ∈ S_ lB) :
     Aczel.piMap a b ∈ S_ (Nat.imax lA lB) := by
-  match lB with
-  | 0 => exact Aczel.piMap_mem_truth hb
-  | m + 1 =>
+  cases lB with
+  | zero => exact Aczel.piMap_mem_truth hb
+  | succ m =>
     have hk : Nat.imax lA (m + 1) = Nat.max lA (m + 1) := Nat.imax_succ_right
     have hpos : 1 ≤ Nat.max lA (m + 1) := Nat.le_trans (Nat.le_add_left 1 m) (Nat.le_max_right _ _)
     have hsucc : Nat.max lA (m + 1) = Nat.max lA (m + 1) - 1 + 1 :=

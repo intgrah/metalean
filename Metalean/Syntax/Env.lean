@@ -95,10 +95,10 @@ def Prefix.sigs {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂} : Pre
   | .step pre => .step pre.sigs
 
 def Prefix.trans {ζ₁ ζ₂ ζ₃ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
-    {E₃ : Env ζ₃} :
-    Prefix E₁ E₂ → Prefix E₂ E₃ → Prefix E₁ E₃
-  | pre, .refl => pre
-  | pre, .step suffix => .step (pre.trans suffix)
+    {E₃ : Env ζ₃} (pre : Prefix E₁ E₂) :
+    Prefix E₂ E₃ → Prefix E₁ E₃
+  | .refl => pre
+  | .step suffix => .step (pre.trans suffix)
 
 instance : SmallCategory (Σ ζ, Env ζ) where
   Hom | ⟨_, E₁⟩, ⟨_, E₂⟩ => Prefix E₁ E₂

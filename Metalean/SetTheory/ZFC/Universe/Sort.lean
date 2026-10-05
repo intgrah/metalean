@@ -31,9 +31,10 @@ theorem sort_mem_succ : ∀ n : Nat, S_ n ∈ S_ (n + 1)
   | 0 => truth_mem_type 0
   | _ + 1 => type_mem_succ
 
-@[zfBounds →] theorem mem_type_of_mem_sort : ∀ {n k : Nat}, n ≤ k + 1 → ∀ {x : ZFSet.{u}},
-    x ∈ S_ n → x ∈ U_ k
-  | 0, k, _, _, hx => mem_type_of_mem (truth_mem_type k) hx
-  | _ + 1, _, h, _, hx => type_mono (Nat.le_of_succ_le_succ h) hx
+@[zfBounds →] theorem mem_type_of_mem_sort {n k : Nat} (h : n ≤ k + 1) {x : ZFSet.{u}}
+    (hx : x ∈ S_ n) : x ∈ U_ k := by
+  cases n with
+  | zero => exact mem_type_of_mem (truth_mem_type k) hx
+  | succ _ => exact type_mono (Nat.le_of_succ_le_succ h) hx
 
 end ZFSet

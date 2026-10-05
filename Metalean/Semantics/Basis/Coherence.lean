@@ -152,32 +152,32 @@ theorem Compatible.reindexHom_iff (σ₁ : Γ₂ ⟶ Γ₁) (a b : Shape Γ₁) 
 
 mutual
 
-theorem Compatible.anti_left {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {a a' b : Shape Γ₁} :
+theorem Compatible.anti_left {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {a a' b : Shape Γ₁}
+    (hab : Compatible σ₁ a' b) :
     a ≤ a' →
-    Compatible σ₁ a' b →
     Compatible σ₁ a b
-  | .collapse h, _ => Compatible.of_isBottom_left σ₁ h
-  | .sort _, hab => hab
-  | .quot _, hab => hab
-  | .ind h, hab => by
+  | .collapse h => Compatible.of_isBottom_left σ₁ h
+  | .sort _ => hab
+  | .quot _ => hab
+  | .ind h => by
     cases b with
-    | ind _ _ => exact ⟨hab.1, fun c c' hcc => anti_left (h c) (hab.2 c c' hcc)⟩
+    | ind _ _ => exact ⟨hab.1, fun c c' hcc => anti_left (hab.2 c c' hcc) (h c)⟩
     | bot => trivial
     | _ => exact hab.imp nofun id
-  | .forallE ha hf, hab => by
+  | .forallE ha hf => by
     cases b with
     | forallE _ _ _ _ _ _ =>
-      refine ⟨hab.1, anti_left ha hab.2.1, fun i j Γ₃ σ₂ hn hin => ?_⟩
-      exact anti_left_entry (hf i)
-        (fun j' hn' => hab.2.2 j' j σ₂ <| congr((Tm E ℓ).map (σ₂ ≫ σ₁).op $hn').trans hn) hin
+      refine ⟨hab.1, anti_left hab.2.1 ha, fun i j Γ₃ σ₂ hn hin => ?_⟩
+      exact anti_left_entry
+        (fun j' hn' => hab.2.2 j' j σ₂ <| congr((Tm E ℓ).map (σ₂ ≫ σ₁).op $hn').trans hn) hin (hf i)
     | bot => trivial
     | _ => exact hab.imp nofun id
-  | .lam hf, hab => by
+  | .lam hf => by
     cases b with
     | lam _ _ _ _ =>
       intro i j Γ₃ σ₂ hn hin
-      exact anti_left_entry (hf i)
-        (fun j' hn' => hab j' j σ₂ <| congr((Tm E ℓ).map (σ₂ ≫ σ₁).op $hn').trans hn) hin
+      exact anti_left_entry
+        (fun j' hn' => hab j' j σ₂ <| congr((Tm E ℓ).map (σ₂ ≫ σ₁).op $hn').trans hn) hin (hf i)
     | bot => trivial
     | _ =>
       rcases hab with hbot | hbot
@@ -188,38 +188,38 @@ theorem Compatible.anti_left {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {a
           | bottom hy => exact hy
           | mem j' _ _ hout => exact Basis.le_bot_iff.mp (hout.trans (hg j').le)
       · exact .inr hbot
-  | .ctor hf, hab => by
+  | .ctor hf => by
     cases b with
     | ctor _ _ _ =>
-      exact ⟨hab.1, fun i j hij => ⟨(hab.2 i j hij).1, anti_left (hf i) (hab.2 i j hij).2⟩⟩
+      exact ⟨hab.1, fun i j hij => ⟨(hab.2 i j hij).1, anti_left (hab.2 i j hij).2 (hf i)⟩⟩
     | bot => trivial
     | _ => exact hab.imp nofun id
-  | .struct hf, hab => by
+  | .struct hf => by
     cases b with
     | struct _ _ _ =>
       rcases hab with hbot | hbot' | ⟨hh, h⟩
       · exact .inl (Basis.IsBottom.of_le (Basis.Le.struct hf) hbot)
       · exact .inr (.inl hbot')
-      · exact .inr (.inr ⟨hh, fun i j hij => anti_left (hf i) (h i j hij)⟩)
+      · exact .inr (.inr ⟨hh, fun i j hij => anti_left (h i j hij) (hf i)⟩)
     | bot => trivial
     | _ =>
       rcases hab with hbot | hbot
       · exact .inl (Basis.IsBottom.of_le (Basis.Le.struct hf) hbot)
       · exact .inr hbot
-  | .quotMk h, hab => by
+  | .quotMk h => by
     cases b with
-    | quotMk _ _ _ => exact ⟨hab.1, hab.2.1, anti_left h hab.2.2⟩
+    | quotMk _ _ _ => exact ⟨hab.1, hab.2.1, anti_left hab.2.2 h⟩
     | bot => trivial
     | _ => exact hab.imp nofun id
 
 theorem Compatible.anti_left_entry {g : Graph Γ₁} {name : Tm_ Γ₁} {x y : Shape Γ₁}
-    {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {x' y' : Shape Γ₁} :
+    {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {x' y' : Shape Γ₁}
+    (hg : ∀ j, g.names j = name → Compatible σ₁ (g.ins j) x' → Compatible σ₁ (g.outs j) y')
+    (hx : Compatible σ₁ x x') :
     Basis.Entry g name x y →
-    (∀ j, g.names j = name → Compatible σ₁ (g.ins j) x' → Compatible σ₁ (g.outs j) y') →
-    Compatible σ₁ x x' →
     Compatible σ₁ y y'
-  | .bottom hy, _, _ => Compatible.of_isBottom_left _ hy
-  | .mem j hn hin hout, hg, hx => anti_left hout (hg j hn (anti_left hin hx))
+  | .bottom hy => Compatible.of_isBottom_left _ hy
+  | .mem j hn hin hout => anti_left (hg j hn (anti_left hx hin)) hout
 
 end
 
@@ -403,7 +403,7 @@ theorem Le.reindex (σ : Γ₂ ⟶ Γ₁) {a b : CoherentShape Γ₁} (h : a ≤
 
 theorem compatible_of_le {a b c : CoherentShape Γ₁} (hac : a ≤ c) (hbc : b ≤ c) (σ : Γ₂ ⟶ Γ₁) :
     Shape.Compatible σ a.1 b.1 :=
-  (Shape.Compatible.anti_left hbc (Shape.Compatible.anti_left hac (c.2.compatible_self σ)).symm).symm
+  (Shape.Compatible.anti_left (Shape.Compatible.anti_left (c.2.compatible_self σ) hac).symm hbc).symm
 
 def piAtom (label : Ty.Pair Γ₁) : CoherentShape Γ₁ :=
   ⟨.pi label .bot .nil, .forallE .bot (fun i => i.elim0) (fun i => i.elim0) fun i => i.elim0⟩

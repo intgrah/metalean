@@ -117,9 +117,8 @@ def foldOp (G : FCtx) (pos : Nat) (ls : Array FLevel) :
     failure
   | _, _ => failure
 
-def natLitExt (G : FCtx) (fe₁ : FExpr) :
-    Option ((nat num : Nat) × PLift (RedSpec F ℓ G fe₁ (.natLit nat num))) :=
-  match fe₁ with
+def natLitExt (G : FCtx) : (fe₁ : FExpr) →
+    Option ((nat num : Nat) × PLift (RedSpec F ℓ G fe₁ (.natLit nat num)))
   | .natLit nat num => some ⟨nat, num, ⟨RedSpec.refl _⟩⟩
   | .ctor pos s c ls ps fds recFds =>
     if hzero : FExpr.ctor pos s c ls ps fds recFds = .ctor pos 0 0 #[] #[] #[] #[] then

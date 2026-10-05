@@ -213,13 +213,13 @@ def prependRecursive {n : Nat} :
 
 variable {blockW : ZFSet} {γ : Slots n} {vargs : ZFSet}
 
-noncomputable def predecessors {n : Nat} :
-    CtorCode n → Slots n → ZFSet → ZFSet
-  | .target _, _, _ => ∅
-  | .arg _ rest, γ, vargs =>
-    predecessors rest (γ.snoc [zf|vargs.1]) [zf|vargs.2]
-  | .recArg tele index rest, γ, vargs =>
-    recEntries tele index γ [zf|vargs.1] ∪ predecessors rest γ [zf|vargs.2]
+noncomputable def predecessors {n : Nat} (γ : Slots n) (vargs : ZFSet) :
+    CtorCode n → ZFSet
+  | .target _ => ∅
+  | .arg _ rest =>
+    predecessors (γ.snoc [zf|vargs.1]) [zf|vargs.2] rest
+  | .recArg tele index rest =>
+    recEntries tele index γ [zf|vargs.1] ∪ predecessors γ [zf|vargs.2] rest
 
 noncomputable def support {n : Nat} :
     CtorCode n → Dom n

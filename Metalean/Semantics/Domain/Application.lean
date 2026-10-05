@@ -79,7 +79,7 @@ private theorem compatible_right {I : Domain Γ₁} {label : Tm_ Γ₁} {x y d :
     Shape.Compatible (𝟙 Γ₁) y.1 d.1
   | .entry hy => h hy
   | .bottom => Shape.Compatible.of_isBottom_left _ .bot
-  | .lower hle hz => Shape.Compatible.anti_left hle (compatible_right h hz)
+  | .lower hle hz => Shape.Compatible.anti_left (compatible_right h hz) hle
   | .join _ hy hz => Shape.cSup_compatible _ (compatible_right h hy) (compatible_right h hz)
 
 theorem upper {I : Domain Γ₁} {label : Tm_ Γ₁} {x y z : CoherentShape Γ₁}

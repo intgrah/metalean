@@ -67,20 +67,21 @@ theorem wkClosed_of_rename {f : (n : Nat) → Expr ζ ℓ n}
     rw [wkClosed, wkClosed_of_rename hf n]
     exact hf _
 
-@[simp] theorem wkClosed_wkFrom (e : Expr ζ ℓ 0) :
-    {n : Nat} → cut ≤ n → e.wkClosed (n := n).wkFrom cut =
-      e.wkClosed (n := n + 1)
-  | 0, h => by
+@[simp] theorem wkClosed_wkFrom (e : Expr ζ ℓ 0) {n : Nat} (h : cut ≤ n) :
+    e.wkClosed (n := n).wkFrom cut =
+      e.wkClosed (n := n + 1) := by
+  induction n with
+  | zero =>
       obtain rfl : cut = 0 := Nat.eq_zero_of_le_zero h
       rfl
-  | n + 1, h => by
+  | succ n ih =>
       by_cases hc : cut = n + 1
       · subst cut
         rfl
       · have hcn : cut ≤ n := by omega
         change (e.wkClosed (n := n).wkFrom n).wkFrom cut =
           e.wkClosed (n := n + 1).wk
-        rw [wkFrom_wkFrom hcn, wkClosed_wkFrom e hcn]
+        rw [wkFrom_wkFrom hcn, ih hcn]
         rfl
 
 end Expr

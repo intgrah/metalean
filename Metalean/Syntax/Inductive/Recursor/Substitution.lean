@@ -57,8 +57,7 @@ def Inductive.recrSubst :
         ι.nindices s)) = maj := by
   simp [Inductive.recrSubst]
 
-def Inductive.recrBinderType (b : IndSig.RecrBinder ι s) : Expr ζ ℓ n :=
-  match b with
+def Inductive.recrBinderType : IndSig.RecrBinder ι s → Expr ζ ℓ n
   | .param p => I.paramType ls ps p
   | .motive t => I.motiveType η ls ps l t
   | .case t c => I.caseFnType η ls ps ms t c

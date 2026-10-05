@@ -56,12 +56,16 @@ def numeral : Nat → ZFSet
 theorem numeral_succ_ne_empty (n : Nat) : numeral (n + 1) ≠ ∅ := fun h =>
   notMem_empty (numeral n) (h ▸ mem_singleton.mpr rfl)
 
-theorem numeral_injective {n m : Nat} (h : numeral m = numeral n) : m = n :=
-  match m, n with
-  | 0, 0 => rfl
-  | _ + 1, _ + 1 => congrArg (· + 1) (numeral_injective (singleton_injective h))
-  | 0, n + 1 => absurd h.symm (numeral_succ_ne_empty n)
-  | m + 1, 0 => absurd h (numeral_succ_ne_empty m)
+theorem numeral_injective {n m : Nat} (h : numeral m = numeral n) : m = n := by
+  induction m generalizing n with
+  | zero =>
+    cases n with
+    | zero => rfl
+    | succ n => exact absurd h.symm (numeral_succ_ne_empty n)
+  | succ m ih =>
+    cases n with
+    | zero => exact absurd h (numeral_succ_ne_empty m)
+    | succ n => exact congrArg (· + 1) (ih (singleton_injective h))
 
 theorem numeral_mem_type (level tag : Nat) : numeral tag ∈ U_ level := by
   induction tag with

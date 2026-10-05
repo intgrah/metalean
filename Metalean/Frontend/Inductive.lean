@@ -40,12 +40,12 @@ def takeForallsRev : Nat → Export.Expr → Except Failure (List Export.Expr ×
     pure (binders ++ [type], rest)
   | _, _ => throw (.reject .arity)
 
-def takeForallsRevWhnf (defs : Export.Definitions) :
-    Nat → Export.Expr → Except Failure (List Export.Expr × Export.Expr)
-  | 0, e => pure ([], Export.whnf defs e)
-  | k + 1, e => do
+def takeForallsRevWhnf (defs : Export.Definitions) (e : Export.Expr) :
+    Nat → Except Failure (List Export.Expr × Export.Expr)
+  | 0 => pure ([], Export.whnf defs e)
+  | k + 1 => do
     let .forallE type body := Export.whnf defs e | throw (.reject .arity)
-    let (binders, rest) ← takeForallsRevWhnf defs k body
+    let (binders, rest) ← takeForallsRevWhnf defs body k
     pure (binders ++ [type], rest)
 
 partial def peelFieldForalls (defs : Export.Definitions) (e : Export.Expr) :
@@ -243,11 +243,11 @@ def analyzeBlock (leanElim : Bool) (E : Env ζ) (table : Table) (project : Proje
       throw (.reject .shape)
     let sortIdx? : Name → Option (Fin types.length) := fun nm =>
       types.findFinIdx? (·.name == nm)
-    let (paramBindersRev, _) ← takeForallsRevWhnf defs first.numParams first.type
+    let (paramBindersRev, _) ← takeForallsRevWhnf defs first.type first.numParams
     let sd ← Fin.mapM fun s : Fin types.length => do
       let ty := types[s.val]
-      let (_, rest) ← takeForallsRevWhnf defs first.numParams ty.type
-      let (indicesRev, .sort level) ← takeForallsRevWhnf defs ty.numIndices rest
+      let (_, rest) ← takeForallsRevWhnf defs ty.type first.numParams
+      let (indicesRev, .sort level) ← takeForallsRevWhnf defs rest ty.numIndices
         | throw (.reject .shape)
       let shapes ← ty.ctors.mapM fun cname => do
         let some c := ctors.find? (·.name == cname) | throw (.reject .shape)

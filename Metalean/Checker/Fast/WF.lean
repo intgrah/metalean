@@ -429,14 +429,15 @@ theorem WFSpec.ofClosed {ℓ n k : Nat} {ft : FExpr}
   have ⟨_, h⟩ := h hE
   exact (h.unbind (by omega) hc).strengthenN hr hc
 
-theorem WFSpec.appList {ℓ n k : Nat} {f : FExpr} :
-    (args : List FExpr) →
-    WFSpec F ℓ n k f →
-    (∀ a ∈ args, WFSpec F ℓ n k a) →
-    WFSpec F ℓ n k (f.appList args)
-  | [], hf, _ => hf
-  | a :: rest, hf, hargs =>
-    WFSpec.appList rest (hf.app (hargs a (List.mem_cons_self ..)))
+theorem WFSpec.appList {ℓ n k : Nat} {f : FExpr}
+    (args : List FExpr)
+    (hf : WFSpec F ℓ n k f)
+    (hargs : ∀ a ∈ args, WFSpec F ℓ n k a) :
+    WFSpec F ℓ n k (f.appList args) := by
+  induction args generalizing f with
+  | nil => exact hf
+  | cons a rest ih =>
+    exact ih (hf.app (hargs a (List.mem_cons_self ..)))
       fun b hb => hargs b (List.mem_cons_of_mem a hb)
 
 variable (F)

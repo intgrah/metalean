@@ -18,7 +18,7 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ n : Nat} {Γ : Ctx ζ ℓ 0 n} {t : Expr 
 theorem IsType.wk (t₁ : Expr ζ ℓ n) :
     E[Γ] ⊢ t typ →
     E[Γ.snoc t₁] ⊢ t.wk typ :=
-  fun h => have ⟨u, h⟩ := h; ⟨u, h.wk t₁⟩
+  fun ⟨u, h⟩ => ⟨u, h.wk t₁⟩
 
 theorem Defeq.wkClosed {e₁ e₂ t : Expr ζ ℓ 0} :
     E[#t[]] ⊢ e₁ ≡ e₂ : t →
@@ -45,7 +45,7 @@ theorem CtxWF.get (v : Var n) :
 theorem CtxWF.var (v : Var n) :
     E[Γ] ⊢ ok →
     E[Γ] ⊢ .var v : Γ.get v :=
-  fun hΓ => have ⟨_, hv⟩ := hΓ.get v; .var hv
+  fun hΓ => have ⟨_, hv⟩ := CtxWF.get v hΓ; .var hv
 
 theorem SubstWF.inst {t e : Expr ζ ℓ n} :
     E[Γ] ⊢ ok →

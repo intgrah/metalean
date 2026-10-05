@@ -81,7 +81,7 @@ end TypeEq
 theorem IsType.typeEq {t : Expr ζ ℓ n} :
     E[Γ] ⊢ t typ →
     E[Γ] ⊢ t ≡ t typ :=
-  fun h => have ⟨_, h⟩ := h; .ofDefEq h
+  fun ⟨_, h⟩ => .ofDefEq h
 
 theorem Defeq.snocConvTy {t₁ t₂ : Expr ζ ℓ n} (h : E[Γ] ⊢ t₁ ≡ t₂ typ)
     {e₁ e₂ t' : Expr ζ ℓ (n + 1)} :

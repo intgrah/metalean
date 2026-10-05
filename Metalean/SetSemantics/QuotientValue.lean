@@ -61,9 +61,9 @@ noncomputable def quotientMk (n : Nat) (α r a : ZFSet) : ZFSet :=
   propVal n (quotientClass n α r a)
 
 private theorem mem_type_pred {n : Nat} {α : ZFSet} (ha : α ∈ S_ n) : α ∈ U_ (n - 1) := by
-  match n with
-  | 0 => exact mem_type_of_mem_sort (by decide) ha
-  | _ + 1 => exact ha
+  cases n with
+  | zero => exact mem_type_of_mem_sort (by decide) ha
+  | succ _ => exact ha
 
 private theorem subset_type_pred {n : Nat} {α : ZFSet} (ha : α ∈ S_ n) : α ⊆ U_ (n - 1) :=
   fun _ hx => mem_type_of_mem (mem_type_pred ha) hx
@@ -86,9 +86,9 @@ theorem quotientMk_mem {n : Nat} {α r a : ZFSet} (hx : a ∈ α) :
 
 theorem quotientCarrier_mem_sort {n : Nat} {α r : ZFSet} (ha : α ∈ S_ n) :
     quotientCarrier n α r ∈ S_ n := by
-  match n with
-  | 0 => exact squash_mem_truth _
-  | k + 1 =>
+  cases n with
+  | zero => exact squash_mem_truth _
+  | succ k =>
     exact image_mem_type (mem_type_pred ha) fun _ hx =>
       mem_type_of_mem (powerset_mem_type (mem_type_pred ha))
         (ZFSet.mem_powerset.mpr (equivClosure_subset (subset_type_pred ha) hx))
@@ -109,11 +109,11 @@ theorem quotientMk_zero {α r a : ZFSet} (ha : α ∈ S_ 0) (hx : a ∈ α) :
 theorem quotientCarrier_representation {n : Nat} {α r c : ZFSet}
     (ha : α ∈ S_ n) (hc : c ∈ quotientCarrier n α r) :
     ∃ a ∈ α, c = quotientMk n α r a := by
-  match n with
-  | 0 =>
+  cases n with
+  | zero =>
     rw [quotientCarrier_zero ha] at hc
     exact ⟨c, hc, (quotientMk_zero ha hc).symm⟩
-  | k + 1 =>
+  | succ k =>
     rw [quotientCarrier] at hc
     have ⟨a, hx, hc⟩ := mem_quotient.mp hc
     exact ⟨a, hx, by simpa [quotientMk, quotientClass] using hc⟩
@@ -125,9 +125,9 @@ theorem quotientLift_mk {n : Nat} {α r fn a : ZFSet} (ha : α ∈ S_ n)
     (hcompat : ∀ a₁ ∈ α, ∀ a₂ ∈ α, [zf|r a₁ a₂] = verum → [zf|fn a₁] = [zf|fn a₂])
     (hx : a ∈ α) :
     quotientLift n fn (quotientMk n α r a) = [zf|fn a] := by
-  match n with
-  | 0 => simp [quotientLift, quotientMk_zero ha hx]
-  | k + 1 =>
+  cases n with
+  | zero => simp [quotientLift, quotientMk_zero ha hx]
+  | succ k =>
     exact quotientLift_equivClosure (subset_type_pred ha) hx hcompat
 
 theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
@@ -135,12 +135,12 @@ theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
     (hcompat : ∀ a₁ ∈ α, ∀ a₂ ∈ α, [zf|r a₁ a₂] = verum → [zf|fn a₁] = [zf|fn a₂])
     (hc : c ∈ quotientCarrier n α r) :
     quotientLift n fn c ∈ β := by
-  match n with
-  | 0 =>
+  cases n with
+  | zero =>
     rw [quotientCarrier_zero ha] at hc
     have h := Aczel.app_mem hf hc
     rwa [app_map hc] at h
-  | k + 1 =>
+  | succ k =>
     rw [quotientCarrier] at hc
     rw [quotientLift]
     have ⟨a, hx, hc⟩ := mem_quotient.mp hc
@@ -171,14 +171,14 @@ theorem quotientLiftResult_mem {n m : Nat} {equality : ZFSet → ZFSet → ZFSet
     (hf : fn ∈ quotientArrow α β) (hh : h ∈ quotientCompat equality α r β fn)
     (hc : c ∈ quotientCarrier n α r) :
     quotientLiftResult n m fn c ∈ β := by
-  match m with
-  | 0 =>
+  cases m with
+  | zero =>
     have ⟨a, hx, _⟩ := quotientCarrier_representation ha hc
     have hfx := Aczel.app_mem hf hx
     rw [app_map hx] at hfx
     rw [eq_verum_of_mem hb hfx]
     exact proof_mem_verum
-  | k + 1 =>
+  | succ k =>
     exact quotientLift_mem ha hf (quotientCompat_respects hseparates hb hf hh) hc
 
 theorem quotientLiftResult_mk {n m : Nat} {equality : ZFSet → ZFSet → ZFSet → ZFSet}
@@ -188,14 +188,14 @@ theorem quotientLiftResult_mk {n m : Nat} {equality : ZFSet → ZFSet → ZFSet 
     (hf : fn ∈ quotientArrow α β) (hh : h ∈ quotientCompat equality α r β fn)
     (hx : a ∈ α) :
     quotientLiftResult n m fn (quotientMk n α r a) = [zf|fn a] := by
-  match m with
-  | 0 =>
+  cases m with
+  | zero =>
     have hleft := quotientLiftResult_mem hseparates ha hb hf hh (quotientMk_mem hx)
     have hright := Aczel.app_mem hf hx
     rw [app_map hx] at hright
     exact (mem_verum.mp (eq_verum_of_mem hb hleft ▸ hleft)).trans
       (mem_verum.mp (eq_verum_of_mem hb hright ▸ hright)).symm
-  | k + 1 =>
+  | succ k =>
     exact quotientLift_mk ha (quotientCompat_respects hseparates hb hf hh) hx
 
 end Metalean

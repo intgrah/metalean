@@ -53,12 +53,11 @@ def quotIndIotaStep {n : Nat} (η : Head ζ .quot) (l : Level ℓ)
 partial def whnfCore {n : Nat} :
     (e₁ : Expr ζ ℓ n) → Except Failure {e₂ : Expr ζ ℓ n // E ⊢ e₁ ⤳* e₂}
   | .app f₁ a => do
-    let ⟨f₂, hred₁⟩ ← whnfCore f₁
-    match f₂, hred₁ with
-    | .lam _ e', hred₁ => do
+    match ← whnfCore f₁ with
+    | ⟨.lam _ e', hred₁⟩ => do
       let ⟨e₂, hred₂⟩ ← whnfCore (e'.inst a)
       pure ⟨e₂, (WHRedS.frame (.app a) hred₁).trans ((ReflTransGen.single .beta).trans hred₂)⟩
-    | f₂, hred₁ => pure ⟨.app f₂ a, WHRedS.frame (.app a) hred₁⟩
+    | ⟨f₂, hred₁⟩ => pure ⟨.app f₂ a, WHRedS.frame (.app a) hred₁⟩
   | .const (kind := .def) η ls => do
     let ⟨e₂, hred⟩ ← whnfCore (E.get η).defValue{ls}.wkClosed
     pure ⟨e₂, (ReflTransGen.single .delta).trans hred⟩

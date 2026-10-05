@@ -52,20 +52,20 @@ variable {ι : IndSig} {η : Head ζ (.inductive ι)} {s : Fin ι.nsorts}
 
 theorem ind : E[Γ] ⊢ .ind η s ls ps is !: .sort (E.get η).block.level{ls} :=
   fun hc =>
-    have ⟨_, _, _, _, ht⟩ := hc.ind_inv
+    have ⟨_, _, _, _, ht⟩ := Defeq.ind_inv hc
     ht.symm
 
 theorem ctor :
     E[Γ] ⊢ .ctor η s c ls ps fds recFds !:
       .ind η s ls ps (((E.get η).block.ctors s c).targetIndex ls ps fds) :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, hresult, ht⟩ := hc.ctor_inv
+    have ⟨_, _, _, _, _, _, hresult, ht⟩ := Defeq.ctor_inv hc
     (ht.trans (.ofDefEq hresult)).symm
 
 theorem recr :
     E[Γ] ⊢ .recr η s ls l ps ms mins is maj !: Inductive.motiveResult (ms s) is maj :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.recr_inv
+    have ⟨_, _, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := Defeq.recr_inv hc
     (ht.trans (.ofDefEq hresult)).symm
 
 end
@@ -85,7 +85,7 @@ theorem quotLift : E[Γ] ⊢ .quotLift η l₁ l₂ α r β f h a !: β :=
 
 theorem quotInd : E[Γ] ⊢ .quotInd η l α r β f a !: .app β a :=
   fun hc =>
-    have ⟨_, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := hc.quotInd_prem
+    have ⟨_, _, _, _, _, _, _, _, _, _, hresult, ht⟩ := Defeq.quotInd_prem hc
     (ht.trans (.ofDefEq hresult)).symm
 
 end

@@ -536,14 +536,14 @@ unsafe def exprAddrImpl (e : Export.Expr) : USize :=
 @[implemented_by exprAddrImpl]
 opaque exprAddr (e : Export.Expr) : USize
 
-def lowestBit (m : UInt64) : (fuel : Nat) → Nat → Nat
-  | 0, i => i
-  | fuel + 1, i => if (m >>> i.toUInt64) &&& 1 == 1 then i else lowestBit m fuel (i + 1)
+def lowestBit (m : UInt64) (i : Nat) : (fuel : Nat) → Nat
+  | 0 => i
+  | fuel + 1 => if (m >>> i.toUInt64) &&& 1 == 1 then i else lowestBit m (i + 1) fuel
 
 def scopeId {n : Nat} (ids : Array Nat) (e : Export.Expr) : TranslateM F lps n Nat := do
   let m := e.looseMask
   if m == 0 then return 0
-  let j := lowestBit m 64 0
+  let j := lowestBit m 0 64
   if j ≥ 63 then return ids.back?.getD 0
   return (ids[ids.size - 1 - j]?).getD 0
 
@@ -811,11 +811,11 @@ def analyzeBlock (types : List Export.InductiveType) (ctors : List Export.Constr
       throw (.reject .shape)
     let sortIdx? : Name → Option (Fin types.length) := fun nm =>
       types.findFinIdx? (·.name == nm)
-    let (paramBindersRev, _) ← Frontend.takeForallsRevWhnf defs first.numParams first.type
+    let (paramBindersRev, _) ← Frontend.takeForallsRevWhnf defs first.type first.numParams
     let sd ← Fin.mapM fun s : Fin types.length => do
       let ty := types[s.val]
-      let (_, rest) ← Frontend.takeForallsRevWhnf defs first.numParams ty.type
-      let (indicesRev, .sort level) ← Frontend.takeForallsRevWhnf defs ty.numIndices rest
+      let (_, rest) ← Frontend.takeForallsRevWhnf defs ty.type first.numParams
+      let (indicesRev, .sort level) ← Frontend.takeForallsRevWhnf defs rest ty.numIndices
         | throw (.reject .shape)
       let shapes ← ty.ctors.mapM fun cname => do
         let some c := ctors.find? (·.name == cname) | throw (.reject .shape)
