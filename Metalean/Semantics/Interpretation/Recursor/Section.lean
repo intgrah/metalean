@@ -76,7 +76,7 @@ theorem CtxCat.ctorFields_get_recursive (f : Fin (ι.ctors s c).nrecFields) :
   rw [fieldVar_natAdd]
   change Ctx.get (Fin.natAdd (Γ₁.as.len + (ι.ctors s c).nfields) f)
     (Γ₁.as.ctx ++ ((E.get η).block.ctors s c).fieldTele η ls ps) = _
-  erw [Ctor.fieldTele, ← Tele.append_assoc,
+  rw [Ctor.fieldTele, ← Tele.append_assoc,
     Ctor.recursiveFieldTeleAux, Ctx.get_append_ofTypes, RecField.instantiatedType_wkN]
   have hsubst :
       (fun v => ((Fin.append (fun i => (ps i).wkN (ι.ctors s c).nfields)
@@ -147,12 +147,14 @@ theorem projSubstWF (hstruct : (E.get η).block.IsStructure s c) :
       simpa [projSubst, Subst.wk, Ctor.fieldTele, ← Tele.append_assoc, Expr.subst_wk] using
         (CtxCat.majorCtx h s c hstruct).as.wf.var v.castSucc
     | right f =>
-      erw [projSubst_ordinary h s c hstruct f, CtxCat.ctorFields_get_ordinary,
+      change E[_] ⊢ projSubst h s c hstruct (fieldVar h s c (Fin.castAdd _ f)) :
+        (Ctx.get (fieldVar h s c (Fin.castAdd _ f)) _).subst _
+      rw [projSubst_ordinary h s c hstruct f, CtxCat.ctorFields_get_ordinary,
         ordinaryFieldExpr_projSubst]
       change E[_] ⊢ _ : ((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
         (fun current => hstruct.projTerm η ls (fun p => (ps p).wk) current
           (.var (Fin.last Γ₁.as.len))) _
-      erw [← Inductive.IsStructure.projType_eq]
+      rw [← Inductive.IsStructure.projType_eq]
       exact hstruct.projTerm_generic h.block f Γ₁.as.wf h.param
   | right f => exact hstruct.no_recursive.elim f
 

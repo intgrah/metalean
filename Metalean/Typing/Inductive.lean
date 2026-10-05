@@ -719,7 +719,7 @@ theorem fieldRecursive (hctor : CtorWF E (E.get η).block ctor) (f : Fin csig.nr
   rw [← Tele.append_assoc]
   have hl := hΓfield.var (Fin.natAdd (n + csig.nfields) f)
   rw [Ctor.fieldTele, ← Tele.append_assoc] at hl
-  erw [Ctor.recursiveFieldTeleAux, Ctx.get_append_ofTypes (Γ ++ ctor.ordinaryFieldTele η ls ps) _ f] at hl
+  rw [Ctor.recursiveFieldTeleAux, Ctx.get_append_ofTypes (Γ ++ ctor.ordinaryFieldTele η ls ps) _ f] at hl
   rw [RecField.instantiatedType_wkN] at hl
   have hpsEq :
       (fun p => ((ps p).wkN csig.nfields).wkN csig.nrecFields) = csig.fieldParams ps := rfl

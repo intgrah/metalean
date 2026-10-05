@@ -70,12 +70,6 @@ theorem RawCtx.Hom.liftTele_isPullback {Γ₁ Γ₂ : RawCtx E ℓ}
     exact IsPullback.of_vert_isIso ⟨by simp⟩
   | snoc k Δ A ih =>
     have ⟨u, hu, hA⟩ := hΔ.last
-    have hmap : RawCtx.toCtx.map (σ.liftTele (k := k + 1) hΔ) =
-        CtxCat.extensionMap hA (σ.liftTele hΔ.init) := rfl
-    have hproj := RawCtx.Hom.teleProjection_snoc hΔ.init hu hA
-    have hproj' := RawCtx.Hom.teleProjection_snoc (TeleWF.substitution σ.typed hΔ.init) hu
-      (hA.substitution (σ.liftTele hΔ.init).typed)
-    erw [hmap, hproj, hproj']
     exact (CtxCat.extensionIsPullback hA (σ.liftTele hΔ.init)).paste_vert (ih hΔ.init)
 
 end Metalean

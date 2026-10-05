@@ -93,17 +93,18 @@ theorem SourceAdmissible.tailTele {m : Nat} {Δ : Ctx ζ ℓ Γ₁.as.len m} (h�
   simp only [Nat.add_sub_cancel_left]
   induction Δ using Tele.addInduction generalizing ρ with
   | nil =>
-    have hp : RawCtx.toCtx.map (RawCtx.Hom.teleProjection hΔ) = 𝟙 Γ₁ :=
-      congrArg RawCtx.toCtx.map (RawCtx.Hom.ext rfl)
-    erw [hp, Category.comp_id]
+    change Γ₂ ⟶ Γ₁ at σ
+    change SourceAdmissible (σ ≫ 𝟙 _) _
+    rw [Category.comp_id]
     exact hρ
   | snoc k Δ A ih =>
     have hA := hΔ.last.choose_spec.2
+    change Γ₂ ⟶ CtxCat.extension (CtxCat.extendTele Γ₁ Δ hΔ.init) hA at σ
     have hρtail := SourceAdmissible.tail (Γ₁ := CtxCat.extendTele Γ₁ Δ hΔ.init) hA hρ
     have htail := ih hΔ.init hρtail
     have hcoords : ρ.tail.tailN k = ρ.tailN (k + 1) :=
       (RawValuation.tailN_tailN ρ 1 k).trans (congrArg ρ.tailN (Nat.add_comm 1 k))
-    erw [hcoords, Category.assoc] at htail
+    rw [hcoords, Category.assoc] at htail
     exact htail
 
 theorem SemanticHom.teleProjection {m : Nat} {Δ : Ctx ζ ℓ Γ₁.as.len m}
