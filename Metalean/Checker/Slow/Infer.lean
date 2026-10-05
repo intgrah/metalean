@@ -629,25 +629,4 @@ partial def isDefEqCore (hE : EnvWF E) {n : Nat} {Γ : Ctx ζ ℓ 0 n} (hΓ : E[
 
 end
 
-def isProp (hE : EnvWF E) (t : Expr ζ ℓ 0) : Except Failure Bool := do
-  let ⟨l, _⟩ ← checkIsType hE .nil t
-  pure (decide (l = .zero))
-
-def checkAxiom (hE : EnvWF E) (t : Expr ζ ℓ 0) :
-    Except Failure (PLift (EntryWF E (.axiom t))) := do
-  let ⟨l, ht⟩ ← checkIsType hE .nil t
-  pure ⟨.axiom ⟨l, ht⟩⟩
-
-def checkDef (hE : EnvWF E) (t e : Expr ζ ℓ 0) :
-    Except Failure (PLift (EntryWF E (.def t e))) := do
-  let ⟨l, ht⟩ ← checkIsType hE .nil t
-  let ⟨hvalue⟩ ← checkAgainst hE .nil e t ⟨l, ht⟩
-  pure ⟨.def ⟨l, ht⟩ hvalue⟩
-
-def checkOpaque (hE : EnvWF E) (t e : Expr ζ ℓ 0) :
-    Except Failure (PLift (EntryWF E (.opaque t))) := do
-  let ⟨l, ht⟩ ← checkIsType hE .nil t
-  let ⟨hvalue⟩ ← checkAgainst hE .nil e t ⟨l, ht⟩
-  pure ⟨.opaque hvalue ⟨l, ht⟩⟩
-
 end Metalean.Checker.Slow

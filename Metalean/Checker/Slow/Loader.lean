@@ -52,31 +52,24 @@ def translateClosed (st : State) (lps : List Name) (e : Export.Expr) :
     Except Failure (Expr st.ζ lps.length 0) :=
   translate st.leanElim st.env st.table lps (project st.env st.table) .nil Scope.empty e
 
-def stepAxiom (st : State) (c : Export.ConstantDecl) : Except Failure State := do
-  checkLevelParams c.levelParams
-  let t ← translateClosed st c.levelParams c.type
-  let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkAxiom st.wf t
-  pure (extend { st with table } (.axiom t) hwf)
-
-def stepDef (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
+def stepConst (st : State) (c : Export.ConstantDecl) {kind : ConstKind}
+    (check : Expr st.ζ c.levelParams.length 0 → Except Failure
+      ((entry : Entry st.ζ (.const kind c.levelParams.length)) ×' PLift (EntryWF st.env entry))) :
     Except Failure State := do
   checkLevelParams c.levelParams
   let t ← translateClosed st c.levelParams c.type
-  let e ← translateClosed st c.levelParams value
   let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkDef st.wf t e
-  let definitions := st.definitions.insert c.name (c.levelParams, value)
-  pure (extend { st with table, definitions } (.def t e) hwf)
+  let ⟨entry, ⟨hwf⟩⟩ ← check t
+  pure (extend { st with table } entry hwf)
 
-def stepOpaque (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
-    Except Failure State := do
-  checkLevelParams c.levelParams
-  let t ← translateClosed st c.levelParams c.type
-  let e ← translateClosed st c.levelParams value
-  let table ← bind st c.name (.const st.ζ.length)
-  let ⟨hwf⟩ ← checkOpaque st.wf t e
-  pure (extend { st with table } (.opaque t) hwf)
+def stepOpaque (st : State) (c : Export.ConstantDecl) (value : Export.Expr)
+    (requireProp : Bool) : Except Failure State :=
+  stepConst st c fun t => do
+    let e ← translateClosed st c.levelParams value
+    let ⟨l, ht⟩ ← checkIsType st.wf .nil t
+    if requireProp ∧ l ≠ .zero then throw (.reject .nonPropTheorem)
+    let ⟨he⟩ ← checkAgainst st.wf .nil e t ⟨l, ht⟩
+    pure ⟨.opaque t, ⟨.opaque he ⟨l, ht⟩⟩⟩
 
 def stepQuot (st : State) (c : Export.ConstantDecl) : Export.QuotKind → Except Failure State
   | .type => do
@@ -119,23 +112,21 @@ def stepInductive (st : State) (types : List Export.InductiveType)
   let ⟨levels, ⟨hwf⟩⟩ ← checkPreInductive st.wf result.pre
   pure (extend { st with table } (.inductive (result.pre.withLevels levels)) hwf)
 
-def stepTheorem (st : State) (c : Export.ConstantDecl) (value : Export.Expr) :
-    Except Failure State := do
-  checkLevelParams c.levelParams
-  unless ← isProp st.wf (← translateClosed st c.levelParams c.type) do
-    throw (.reject .nonPropTheorem)
-  stepOpaque st c value
-
 def step (st : State) : Export.Decl → Except Failure State
-  | .axiom c isUnsafe =>
-    if isUnsafe then throw (.decline .unsafe) else stepAxiom st c
-  | .def c value safety _ =>
-    if safety != .safe then throw (.decline .unsafe)
-    else stepDef st c value
-  | .theorem c value => stepTheorem st c value
-  | .opaque c value isUnsafe =>
-    if isUnsafe then throw (.decline .unsafe) else stepOpaque st c value
+  | .axiom c false => stepConst st c fun t => do
+    let ⟨l, ht⟩ ← checkIsType st.wf .nil t
+    pure ⟨.axiom t, ⟨.axiom ⟨l, ht⟩⟩⟩
+  | .def c value .safe _ => do
+    let next ← stepConst st c fun t => do
+      let e ← translateClosed st c.levelParams value
+      let ⟨l, ht⟩ ← checkIsType st.wf .nil t
+      let ⟨he⟩ ← checkAgainst st.wf .nil e t ⟨l, ht⟩
+      pure ⟨.def t e, ⟨.def ⟨l, ht⟩ he⟩⟩
+    pure { next with definitions := st.definitions.insert c.name (c.levelParams, value) }
+  | .theorem c value => stepOpaque st c value true
+  | .opaque c value false => stepOpaque st c value false
   | .quot c kind => stepQuot st c kind
   | .inductive types ctors recNames => stepInductive st types ctors recNames
+  | .axiom .. | .def .. | .opaque .. => throw (.decline .unsafe)
 
 end Metalean.Checker.Slow
