@@ -48,13 +48,10 @@ def cSup : Shape Γ → Shape Γ → Shape Γ
   | .forallE label a k names ins outs, .forallE _ a' k' names' ins' outs' =>
     .pi label (cSup a a') (Graph.append ⟨k, names, ins, outs⟩ ⟨k', names', ins', outs'⟩)
   | .ctor head names fields, .ctor head' names' fields' =>
-    if h : head = head' then .ctor head names fun i => cSup (fields i) (fields' (h ▸ i))
-    else cSupBot (.ctor head names fields) (.ctor head' names' fields')
-  | .struct head hstruct fields, .struct head' hstruct' fields' =>
     if h : head = head' then
-      if Basis.IsBottom (.struct head hstruct fields) then .struct head' hstruct' fields'
-      else .struct head hstruct fun i => cSup (fields i) (fields' (h ▸ i))
-    else cSupBot (.struct head hstruct fields) (.struct head' hstruct' fields')
+      if Basis.IsBottom (.ctor head names fields) then .ctor head' names' fields'
+      else .ctor head names fun i => cSup (fields i) (fields' (h ▸ i))
+    else cSupBot (.ctor head names fields) (.ctor head' names' fields')
   | .ind code ctorTypes, .ind code' ctorTypes' =>
     if h : code.toIndHead.nctors = code'.toIndHead.nctors then
       .ind code fun c => cSup (ctorTypes c) (ctorTypes' (Fin.cast h c))
@@ -84,22 +81,14 @@ theorem cSup_le {a b d : Shape Γ} (ha : a ≤ d) (hb : b ≤ d) :
       cases hb with
       | collapse h => nomatch h
       | forallE hb hg => exact .forallE (ih ha hb) (Graph.Le.append hf hg)
-  · rename_i ih
-    cases ha with
-    | collapse h => nomatch h
-    | ctor ha =>
-      cases hb with
-      | collapse h => nomatch h
-      | ctor hb => exact .ctor fun i => ih i (ha i) (hb i)
-  · exact cSupBot_induction (P := (· ≤ d)) ha hb
   · exact hb
   · rename_i ih
     cases ha with
     | collapse h => exact absurd h (by assumption)
-    | struct ha =>
+    | ctor ha =>
       cases hb with
-      | collapse h => exact .struct fun i => ih i (ha i) ((Basis.IsBottom.struct_iff.mp h) i).le
-      | struct hb => exact .struct fun i => ih i (ha i) (hb i)
+      | collapse h => exact .ctor fun i => ih i (ha i) ((Basis.IsBottom.ctor_iff.mp h).2 i).le
+      | ctor hb => exact .ctor fun i => ih i (ha i) (hb i)
   · exact cSupBot_induction (P := (· ≤ d)) ha hb
   · rename_i _ ih
     cases ha with
@@ -132,18 +121,15 @@ theorem le_cSup {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b) :
     have ⟨ha, hb⟩ := ih ha
     exact ⟨.forallE ha (Graph.Le.append_left ⟨k, names, ins, outs⟩ ⟨k', names', ins', outs'⟩),
       .forallE hb (Graph.Le.append_right ⟨k, names, ins, outs⟩ ⟨k', names', ins', outs'⟩)⟩
-  · rename_i head' names' fields' names fields ih
-    have ⟨_, hc⟩ := h
-    obtain rfl : names = names' := funext fun i => by simpa using (hc i i rfl).1
-    exact ⟨.ctor fun i => (ih i (hc i i rfl).2).1, .ctor fun i => (ih i (hc i i rfl).2).2⟩
-  · exact absurd h.1 (by assumption)
   · exact ⟨.collapse (by assumption), .refl _⟩
-  · rename_i head' hstruct' fields' hstruct fields hnb ih
+  · rename_i head' names' fields' names fields hnb ih
     rcases h with hbot | hbot | ⟨_, hc⟩
     · exact absurd hbot hnb
-    · exact ⟨.struct fun i => (ih i (Compatible.of_isBottom_right _
-        ((Basis.IsBottom.struct_iff.mp hbot) i))).1, .collapse hbot⟩
-    · exact ⟨.struct fun i => (ih i (hc i i rfl)).1, .struct fun i => (ih i (hc i i rfl)).2⟩
+    · exact ⟨.ctor fun i => (ih i (Compatible.of_isBottom_right _
+        ((Basis.IsBottom.ctor_iff.mp hbot).2 i))).1, .collapse hbot⟩
+    · obtain rfl : names = names' := funext fun hs => funext fun i => by
+        simpa using (hc i i rfl).1 hs hs
+      exact ⟨.ctor fun i => (ih i (hc i i rfl).2).1, .ctor fun i => (ih i (hc i i rfl).2).2⟩
   · refine le_cSupBot ?_
     rcases h with hbot | hbot | ⟨heq, _⟩
     · exact .inl hbot
@@ -163,7 +149,7 @@ theorem le_cSup {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b) :
     subst η'
     obtain rfl : name = name' := by simpa using hn
     exact ⟨.quotMk (ih hv).1, .quotMk (ih hv).2⟩
-  · rename_i a b hbot hbot' hlam hpi hctor hstruct hind hquotMk
+  · rename_i a b hbot hbot' hlam hpi hctor hind hquotMk
     fun_cases Compatible (𝟙 Γ) a b
     · exact (hbot rfl).elim
     · exact (hbot' rfl).elim
@@ -173,7 +159,6 @@ theorem le_cSup {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b) :
     · exact (hlam _ _ _ _ _ _ _ _ rfl rfl).elim
     · exact (hind _ _ _ _ rfl rfl).elim
     · exact (hctor _ _ _ _ _ _ rfl rfl).elim
-    · exact (hstruct _ _ _ _ _ _ rfl rfl).elim
     · change QuotCode.map _ _ = QuotCode.map _ _ at h
       rw [QuotCode.map_hom_id, QuotCode.map_hom_id] at h
       subst h
@@ -197,20 +182,15 @@ theorem cSup_isCoherent {a b : Shape Γ} (h : Compatible (𝟙 Γ) a b)
       cases hb with | forallE hb hd' hi' ho' =>
         have hc := Graph.IsCoherent.append ⟨hd, hi, ho⟩ ⟨hd', hi', ho'⟩ hfg
         exact .forallE (ih hab ha hb) hc.directed hc.ins hc.outs
-  · rename_i ih
-    have ⟨_, hc⟩ := h
-    cases ha with | ctor hns ha =>
-      cases hb with | ctor _ hb => exact .ctor hns fun i => ih i (hc i i rfl).2 (ha i) (hb i)
-  · exact cSupBot_induction ha hb
   · exact hb
   · rename_i ih
-    have .struct ha := ha
-    have .struct hb := hb
+    have .ctor ha := ha
+    have .ctor hb := hb
     rcases h with hbot | hbot | ⟨_, hc⟩
     · exact absurd hbot (by assumption)
-    · exact .struct fun i => ih i (Compatible.of_isBottom_right _
-        ((Basis.IsBottom.struct_iff.mp hbot) i)) (ha i) (hb i)
-    · exact .struct fun i => ih i (hc i i rfl) (ha i) (hb i)
+    · exact .ctor fun i => ih i (Compatible.of_isBottom_right _
+        ((Basis.IsBottom.ctor_iff.mp hbot).2 i)) (ha i) (hb i)
+    · exact .ctor fun i => ih i (hc i i rfl).2 (ha i) (hb i)
   · exact cSupBot_induction ha hb
   · rename_i _ ih
     have ⟨hcode, hct⟩ := h
@@ -233,18 +213,9 @@ theorem map_cSup (arg : (Tm_ Γ₁) → Tm_ Γ₂)
       by_cases h : head = head'
       · subst h
         simp only [cSup, map]
-        split_ifs <;> simp_all!
-      · simp! [h, map_cSupBot]
-    | _ => simp! [map_cSupBot]
-  | struct head hstruct fields ih =>
-    cases b with
-    | struct head' hstruct' fields' =>
-      by_cases h : head = head'
-      · subst h
-        simp only [cSup, map]
-        split_ifs <;> simp_all!
-      · simp! [h, map_cSupBot]
-    | _ => simp! [map_cSupBot]
+        split_ifs <;> simp_all [map]
+      · simp [cSup, map, h, map_cSupBot]
+    | _ => simp [cSup, map, map_cSupBot]
   | ind code ctorTypes ih =>
     cases b with
     | ind code' ctorTypes' =>
@@ -282,26 +253,20 @@ theorem cSup_compatible {a b d : Shape Γ₁} (σ : Γ₂ ⟶ Γ₁)
       exact ⟨hl, ih ha hb, Graph.Compatible.append_left (h := ⟨_, _, _, _⟩) hf hg⟩
     | bot => trivial
     | _ => exact ha.imp (fun h => nomatch h) id
-  · rename_i ih
-    cases d with
-    | ctor _ _ _ =>
-      exact ⟨ha.1, fun i j hij => ⟨(ha.2 i j hij).1, ih i (ha.2 i j hij).2 (hb.2 i j hij).2⟩⟩
-    | bot => trivial
-    | _ => exact ha.imp (fun h => nomatch h) id
-  · exact cSupBot_induction (P := (Compatible σ · d)) ha hb
   · exact hb
   · rename_i hnb ih
     cases d with
-    | struct _ _ _ =>
+    | ctor _ _ _ =>
       rcases ha with hba | hd | ⟨hh, ha⟩
       · exact absurd hba hnb
       · exact .inr (.inl hd)
       · rcases hb with hbb | hd | ⟨_, hb⟩
-        · exact .inr (.inr ⟨hh, fun i j hij =>
-            ih i (ha i j hij) (Compatible.of_isBottom_left _
-              ((Basis.IsBottom.struct_iff.mp hbb) i))⟩)
+        · exact .inr (.inr ⟨hh, fun i j hij => ⟨(ha i j hij).1,
+            ih i (ha i j hij).2 (Compatible.of_isBottom_left _
+              ((Basis.IsBottom.ctor_iff.mp hbb).2 i))⟩⟩)
         · exact .inr (.inl hd)
-        · exact .inr (.inr ⟨hh, fun i j hij => ih i (ha i j hij) (hb i j hij)⟩)
+        · exact .inr (.inr ⟨hh, fun i j hij =>
+            ⟨(ha i j hij).1, ih i (ha i j hij).2 (hb i j hij).2⟩⟩)
     | bot => trivial
     | _ => exact .inr (ha.resolve_left hnb)
   · exact cSupBot_induction (P := (Compatible σ · d)) ha hb

@@ -19,7 +19,6 @@ def Shape.rank : Shape Γ → Nat
   | .lam _ _ ins outs => (Finset.univ.sup fun i => max (rank (ins i)) (rank (outs i))) + 1
   | .ind _ ctorTypes => (Finset.univ.sup fun c => rank (ctorTypes c)) + 1
   | .ctor _ _ fields => (Finset.univ.sup fun i => rank (fields i)) + 1
-  | .struct _ _ fields => (Finset.univ.sup fun i => rank (fields i)) + 1
   | .quotMk _ _ value => value.rank + 1
   | _ => 0
 
@@ -75,10 +74,6 @@ theorem Shape.rank_cSup {a b : Shape Γ} : (a.cSup b).rank ≤ max a.rank b.rank
     simp! only [Nat.add_max_add_right, Nat.add_le_add_iff_right]
     rw [max_max_max_comm]
     exact max_le_max ih (Graph.rank_append_le ⟨k, names, ins, outs⟩ ⟨k', names', ins', outs'⟩)
-  · rename_i ih
-    simp! only [Nat.add_max_add_right, Nat.add_le_add_iff_right]
-    exact Finset.sup_le fun i _ => (ih i).trans (max_le_max (rank_le_sup _ _) (rank_le_sup _ _))
-  · exact cSupBot_induction (P := (·.rank ≤ _)) (le_max_left _ _) (le_max_right _ _)
   · exact le_max_right _ _
   · rename_i ih
     simp! only [Nat.add_max_add_right, Nat.add_le_add_iff_right]

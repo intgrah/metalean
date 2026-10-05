@@ -17,8 +17,8 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ : CtxCat E ℓ}
   {r : Level ℓ} {label : Ty.Pair Γ₁} {a : Shape Γ₁} {k : Nat}
   {names : Fin k → Tm_ Γ₁} {ins outs : Fin k → Shape Γ₁} {code : IndCode Γ₁}
   {ctorTypes : Fin code.toIndHead.nctors → Shape Γ₁} {qcode : QuotCode Γ₁} {η : Head ζ .quot}
-  {name : Tm_ Γ₁} {head : CtorHead ζ} {labels : Fin head.arity → Tm_ Γ₁}
-  {hstruct : head.IsStructural E} {fields : Fin head.arity → Shape Γ₁}
+  {name : Tm_ Γ₁} {head : CtorHead ζ} {labels : ¬ head.IsStructural E → Fin head.arity → Tm_ Γ₁}
+  {fields : Fin head.arity → Shape Γ₁}
 
 namespace Basis
 
@@ -31,10 +31,11 @@ judgement IsBottom : Shape Γ₁ → Prop where
   ──────────────────── lam {k : Nat} {names : Fin k → Tm_ Γ₁} {ins outs : Fin k → Shape Γ₁}
   IsBottom (.lam k names ins outs)
 
+  head.IsStructural E
   ∀ i, IsBottom (fields i)
-  ──────────────────── struct {head : CtorHead ζ} {hstruct : head.IsStructural E}
-    {fields : Fin head.arity → Shape Γ₁}
-  IsBottom (.struct head hstruct fields)
+  ──────────────────── ctor {head : CtorHead ζ}
+    {names : ¬ head.IsStructural E → Fin head.arity → Tm_ Γ₁} {fields : Fin head.arity → Shape Γ₁}
+  IsBottom (.ctor head names fields)
 
 mutual
 
@@ -65,14 +66,10 @@ judgement Le : Shape Γ₁ → Shape Γ₁ → Prop where
   Le (.ind code ctorTypes) (.ind code ctorTypes')
 
   ∀ i, Le (fields i) (fields' i)
-  ──────────────────── ctor {head : CtorHead ζ} {names : Fin head.arity → Tm_ Γ₁}
+  ──────────────────── ctor {head : CtorHead ζ}
+    {names : ¬ head.IsStructural E → Fin head.arity → Tm_ Γ₁}
     {fields fields' : Fin head.arity → Shape Γ₁}
   Le (.ctor head names fields) (.ctor head names fields')
-
-  ∀ i, Le (fields i) (fields' i)
-  ──────────────────── struct {head : CtorHead ζ} {hstruct : head.IsStructural E}
-    {fields fields' : Fin head.arity → Shape Γ₁}
-  Le (.struct head hstruct fields) (.struct head hstruct fields')
 
   ──────────────────── quot (code : QuotCode Γ₁)
   Le (.quot code) (.quot code)
@@ -106,24 +103,22 @@ end
 
 @[simp] theorem IsBottom.not_quotMk : ¬ IsBottom (Shape.quotMk η name a) := nofun
 
-@[simp] theorem IsBottom.not_ctor : ¬ IsBottom (Shape.ctor head labels fields) := nofun
-
 @[simp] theorem IsBottom.lam_iff : IsBottom (Shape.lam k names ins outs) ↔ ∀ i, IsBottom (outs i) :=
   ⟨fun | .lam h => h, .lam⟩
 
-@[simp] theorem IsBottom.struct_iff :
-    IsBottom (Shape.struct head hstruct fields) ↔ ∀ i, IsBottom (fields i) :=
-  ⟨fun | .struct h => h, .struct⟩
+@[simp] theorem IsBottom.ctor_iff :
+    IsBottom (Shape.ctor head labels fields) ↔ head.IsStructural E ∧ ∀ i, IsBottom (fields i) :=
+  ⟨fun | .ctor hs h => ⟨hs, h⟩, fun ⟨hs, h⟩ => .ctor hs h⟩
 
 def IsBottom.decidable : (a : Shape Γ₁) → Decidable (IsBottom a)
   | .bot => isTrue .bot
   | .lam _ _ _ outs =>
     letI : ∀ i, Decidable (IsBottom (outs i)) := fun i => IsBottom.decidable (outs i)
     decidable_of_iff _ lam_iff.symm
-  | .struct _ _ fields =>
+  | .ctor _ _ fields =>
     letI : ∀ i, Decidable (IsBottom (fields i)) := fun i => IsBottom.decidable (fields i)
-    decidable_of_iff _ struct_iff.symm
-  | .sort _ | .forallE _ _ _ _ _ _ | .ind _ _ | .ctor _ _ _ | .quot _ | .quotMk _ _ _ => isFalse nofun
+    decidable_of_iff _ ctor_iff.symm
+  | .sort _ | .forallE _ _ _ _ _ _ | .ind _ _ | .quot _ | .quotMk _ _ _ => isFalse nofun
 
 instance (a : Shape Γ₁) : Decidable (IsBottom a) := IsBottom.decidable a
 
@@ -140,7 +135,7 @@ variable (arg : (Tm_ Γ₁) → Tm_ Γ₂) (pi : Ty.Pair Γ₁ → Ty.Pair Γ₂
 theorem IsBottom.map {a : Shape Γ₁} : IsBottom a → IsBottom (a.map arg pi)
   | .bot => .bot
   | .lam h => .lam fun i => map (h i)
-  | .struct h => .struct fun i => map (h i)
+  | .ctor hs h => .ctor hs fun i => map (h i)
 
 theorem IsBottom.of_map (arg : (Tm_ Γ₁) → Tm_ Γ₂) (pi : Ty.Pair Γ₁ → Ty.Pair Γ₂) {a : Shape Γ₁} :
     IsBottom (a.map arg pi) → IsBottom a := by
@@ -150,9 +145,9 @@ theorem IsBottom.of_map (arg : (Tm_ Γ₁) → Tm_ Γ₂) (pi : Ty.Pair Γ₁ �
   | lam _ _ _ _ _ iho =>
     have .lam h := h
     exact .lam fun i => iho i (h i)
-  | struct _ _ _ ih =>
-    have .struct h := h
-    exact .struct fun i => ih i (h i)
+  | ctor _ _ _ ih =>
+    have .ctor hs h := h
+    exact .ctor hs fun i => ih i (h i)
   | _ => nomatch h
 
 @[simp] theorem IsBottom.map_iff (arg : (Tm_ Γ₁) → Tm_ Γ₂) (pi : Ty.Pair Γ₁ → Ty.Pair Γ₂)
@@ -199,7 +194,6 @@ theorem Le.refl : ∀ a : Shape Γ₁, a ≤ a
   | .lam _ _ ins outs => lam fun i => .mem i rfl (refl (ins i)) (refl (outs i))
   | .ind _ ctorTypes => ind fun c => refl (ctorTypes c)
   | .ctor _ _ fields => ctor fun i => refl (fields i)
-  | .struct _ _ fields => struct fun i => refl (fields i)
   | .quot code => quot code
   | .quotMk _ _ value => quotMk (refl value)
 
@@ -226,11 +220,9 @@ theorem Le.trans {a b c : Shape Γ₁} : a ≤ b → b ≤ c → a ≤ c
       match hg j with
       | .bottom hy => .bottom (le_bot_iff.mp (hout.trans hy.le))
       | .mem l hn' hin' hout' => .mem l (hn'.trans hn) (hin'.trans hin) (hout.trans hout')
-  | .ctor _, .collapse h => nomatch h
+  | .ctor hab, .collapse (.ctor hs hb) =>
+    collapse (.ctor hs fun i => le_bot_iff.mp ((hab i).trans (hb i).le))
   | .ctor hab, .ctor hbc => ctor fun i => (hab i).trans (hbc i)
-  | .struct hab, .collapse (.struct hb) =>
-    collapse (.struct fun i => le_bot_iff.mp ((hab i).trans (hb i).le))
-  | .struct hab, .struct hbc => struct fun i => (hab i).trans (hbc i)
   | .quotMk _, .collapse h => nomatch h
   | .quotMk hab, .quotMk hbc => quotMk (hab.trans hbc)
   | .ind _, .collapse h => nomatch h
@@ -252,7 +244,6 @@ theorem Le.map (arg : (Tm_ Γ₁) → Tm_ Γ₂)
   | .lam hf => .lam fun i => Entry.map arg pi (hf i)
   | .ind h => .ind fun c => Le.map arg pi (h c)
   | .ctor h => .ctor fun i => Le.map arg pi (h i)
-  | .struct h => .struct fun i => Le.map arg pi (h i)
   | .quot _ => .quot _
   | .quotMk h => .quotMk (Le.map arg pi h)
 

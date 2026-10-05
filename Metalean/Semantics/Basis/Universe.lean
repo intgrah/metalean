@@ -89,8 +89,6 @@ theorem cSup {r : Bool} {a b : Shape Γ₁} (ha : IsCode r a) (hb : IsCode r b) 
       cases hb with
       | bottom h => nomatch h
       | forallE_prop hb => exact .forallE_prop (Fin.addCases (by simpa [Graph.append] using ha) (by simpa [Graph.append] using hb))
-  · cases ha with | bottom h => nomatch h
-  · exact Shape.cSupBot_induction ha hb
   · exact hb
   · cases ha with | bottom h => exact absurd h (by assumption)
   · exact Shape.cSupBot_induction ha hb

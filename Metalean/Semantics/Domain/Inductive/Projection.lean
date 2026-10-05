@@ -92,13 +92,9 @@ theorem indMap_ctorMap (head : CtorHead ζ) (names : Fin head.arity → Tm_ Γ�
       ctorMap head names (head.projectFields fields fun f =>
         indMap ⟨head.η, head.sig.recursiveTarget f⟩ (fields (Fin.natAdd head.sig.nfields f))) := by
   refine Subtype.ext ?_
-  by_cases hs : head.IsStructural E
-  · simp only [indMap, val_ctorMap_struct hs, Shape.indProjection, ↓reduceIte]
-    exact congrArg _ (funext (head.projectFields_rel₂
-      (R := fun (x : Shape Γ₁) (y : CoherentShape Γ₁) => x = y.1) (fun _ => rfl) fun _ _ => rfl))
-  · simp only [indMap, val_ctorMap hs, Shape.indProjection, ↓reduceIte]
-    exact congrArg _ (funext (head.projectFields_rel₂
-      (R := fun (x : Shape Γ₁) (y : CoherentShape Γ₁) => x = y.1) (fun _ => rfl) fun _ _ => rfl))
+  simp only [indMap, ctorMap, Shape.indProjection, ↓reduceIte]
+  exact congrArg _ (funext (head.projectFields_rel₂
+    (R := fun (x : Shape Γ₁) (y : CoherentShape Γ₁) => x = y.1) (fun _ => rfl) fun _ _ => rfl))
 
 namespace RawValue
 

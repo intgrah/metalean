@@ -56,80 +56,52 @@ variable (head : CtorHead ζ)
 
 def ctorMap (names : Fin head.arity → Tm_ Γ₁)
     (fields : Fin head.arity → CoherentShape Γ₁) : CoherentShape Γ₁ :=
-  if h : head.IsStructural E then
-    ⟨.struct head h fun i => (fields i).1, .struct fun i => (fields i).2⟩
-  else ⟨.ctor head names fun i => (fields i).1, .ctor h fun i => (fields i).2⟩
+  ⟨.ctor head (fun _ => names) fun i => (fields i).1, .ctor fun i => (fields i).2⟩
 
 variable {head}
 
-theorem val_ctorMap (hns : ¬ head.IsStructural E)
-    (names : Fin head.arity → Tm_ Γ₁)
+theorem ctorMap_congr_names (hs : head.IsStructural E) (names names' : Fin head.arity → Tm_ Γ₁)
     (fields : Fin head.arity → CoherentShape Γ₁) :
-    (ctorMap head names fields).1 = .ctor head names fun i => (fields i).1 := by
-  rw [ctorMap, dite_eq_right hns]
-
-theorem val_ctorMap_struct (hs : head.IsStructural E)
-    (names : Fin head.arity → Tm_ Γ₁)
-    (fields : Fin head.arity → CoherentShape Γ₁) :
-    (ctorMap head names fields).1 = .struct head hs fun i => (fields i).1 := by
-  rw [ctorMap, dite_eq_left hs]
+    ctorMap head names fields = ctorMap head names' fields :=
+  Subtype.ext (congrArg (Shape.ctor head · _) (funext fun hns => absurd hs hns))
 
 theorem ctorMap_le_bot_iff {names : Fin head.arity → Tm_ Γ₁}
     {fields : Fin head.arity → CoherentShape Γ₁} :
     ctorMap head names fields ≤ ⊥ ↔ head.IsStructural E ∧ ∀ i, fields i ≤ ⊥ := by
-  by_cases hs : head.IsStructural E
-  · rw [le_bot_iff, val_ctorMap_struct hs]
-    simp [hs, le_bot_iff]
-  · rw [le_bot_iff, val_ctorMap hs]
-    simp [hs]
+  simp [le_bot_iff, ctorMap]
 
 theorem ctorMap_names_eq (hns : ¬ head.IsStructural E)
     {names names' : Fin head.arity → Tm_ Γ₁}
     {fields fields' : Fin head.arity → CoherentShape Γ₁}
     (h : ctorMap head names fields ≤ ctorMap head names' fields') : names = names' := by
-  rw [le_def, val_ctorMap hns, val_ctorMap hns] at h
+  change Basis.Le (.ctor head (fun _ => names) _) (.ctor head (fun _ => names') _) at h
+  generalize hN : (fun _ => names) = N at h
+  generalize hN' : (fun _ => names') = N' at h
   cases h with
-  | collapse h => nomatch h
-  | ctor => rfl
+  | collapse h => exact absurd (Basis.IsBottom.ctor_iff.mp h).1 hns
+  | ctor => exact congrFun (hN.trans hN'.symm) hns
 
 theorem ctorMap_le_field {names names' : Fin head.arity → Tm_ Γ₁}
     {fields fields' : Fin head.arity → CoherentShape Γ₁}
     (h : ctorMap head names fields ≤ ctorMap head names' fields') (i : Fin head.arity) :
     fields i ≤ fields' i := by
-  by_cases hs : head.IsStructural E
-  · rw [le_def, val_ctorMap_struct hs, val_ctorMap_struct hs] at h
-    cases h with
-    | collapse hbot => exact (le_bot_iff.mpr (Basis.IsBottom.struct_iff.mp hbot i)).trans bot_le
-    | struct hle => exact hle i
-  · rw [le_def, val_ctorMap hs, val_ctorMap hs] at h
-    cases h with
-    | collapse h => nomatch h
-    | ctor hle => exact hle i
+  change Basis.Le (.ctor head (fun _ => names) _) (.ctor head (fun _ => names') _) at h
+  generalize (fun _ => names) = N at h
+  generalize (fun _ => names') = N' at h
+  cases h with
+  | collapse hbot => exact (le_bot_iff.mpr ((Basis.IsBottom.ctor_iff.mp hbot).2 i)).trans bot_le
+  | ctor hle => exact hle i
 
 theorem ctorMap_head_eq {head' : CtorHead ζ}
     {names : Fin head.arity → Tm_ Γ₁} {fields : Fin head.arity → CoherentShape Γ₁}
     {names' : Fin head'.arity → Tm_ Γ₁} {fields' : Fin head'.arity → CoherentShape Γ₁}
     (h : ctorMap head names fields ≤ ctorMap head' names' fields') :
     ctorMap head names fields ≤ ⊥ ∨ head = head' := by
-  by_cases hs : head.IsStructural E
-  · rw [le_def, val_ctorMap_struct hs] at h
-    by_cases hs' : head'.IsStructural E
-    · rw [val_ctorMap_struct hs'] at h
-      cases h with
-      | collapse hbot => exact .inl (by rw [le_bot_iff, val_ctorMap_struct hs]; exact hbot)
-      | struct => exact .inr rfl
-    · rw [val_ctorMap hs'] at h
-      exact .inl (by
-        rw [le_bot_iff, val_ctorMap_struct hs]
-        cases h with | collapse h => exact h)
-  · rw [le_def, val_ctorMap hs] at h
-    by_cases hs' : head'.IsStructural E
-    · rw [val_ctorMap_struct hs'] at h
-      nomatch h
-    · rw [val_ctorMap hs'] at h
-      cases h with
-      | collapse h => nomatch h
-      | ctor => exact .inr rfl
+  change Basis.Le (.ctor head (fun _ => names) _) (.ctor head' (fun _ => names') _) at h
+  generalize (fun _ => names') = N' at h
+  cases h with
+  | collapse hbot => exact .inl (le_bot_iff.mpr hbot)
+  | ctor => exact .inr rfl
 
 theorem ctorMap_le_inv {names : Fin head.arity → Tm_ Γ₁}
     {fields : Fin head.arity → CoherentShape Γ₁} {z : CoherentShape Γ₁}
@@ -138,39 +110,24 @@ theorem ctorMap_le_inv {names : Fin head.arity → Tm_ Γ₁}
       ∃ fields' : Fin head.arity → CoherentShape Γ₁,
         z = ctorMap head names fields' ∧ ∀ i, fields i ≤ fields' i := by
   have ⟨z, hz⟩ := z
-  by_cases hs : head.IsStructural E
-  · rw [le_def, val_ctorMap_struct hs] at h
-    cases h with
-    | collapse hbot => exact .inl (by rw [le_bot_iff, val_ctorMap_struct hs]; exact hbot)
-    | struct hfields =>
-      have .struct hcoherent := hz
-      exact .inr ⟨fun i => ⟨_, hcoherent i⟩,
-        Subtype.ext (val_ctorMap_struct hs names fun i => ⟨_, hcoherent i⟩).symm, hfields⟩
-  · rw [le_def, val_ctorMap hs] at h
-    cases h with
-    | collapse h => nomatch h
-    | ctor hfields =>
-      have .ctor _ hcoherent := hz
-      exact .inr ⟨fun i => ⟨_, hcoherent i⟩,
-        Subtype.ext (val_ctorMap hs names fun i => ⟨_, hcoherent i⟩).symm, hfields⟩
+  cases h with
+  | collapse hbot => exact .inl (le_bot_iff.mpr hbot)
+  | ctor hfields =>
+    have .ctor hcoherent := hz
+    exact .inr ⟨fun i => ⟨_, hcoherent i⟩, rfl, hfields⟩
 
 variable (head)
 
 theorem ctorMap_mono (names : Fin head.arity → Tm_ Γ₁)
     {fields fields' : Fin head.arity → CoherentShape Γ₁} (h : ∀ i, fields i ≤ fields' i) :
-    ctorMap head names fields ≤ ctorMap head names fields' := by
-  by_cases hs : head.IsStructural E
-  · rw [le_def, val_ctorMap_struct hs, val_ctorMap_struct hs]
-    exact Basis.Le.struct h
-  · rw [le_def, val_ctorMap hs, val_ctorMap hs]
-    exact Basis.Le.ctor h
+    ctorMap head names fields ≤ ctorMap head names fields' :=
+  Basis.Le.ctor h
 
 @[simp] theorem reindex_ctorMap (names : Fin head.arity → Tm_ Γ₁)
     (fields : Fin head.arity → CoherentShape Γ₁) (σ : Γ₂ ⟶ Γ₁) :
     reindex σ (ctorMap head names fields) =
       ctorMap head (fun i => (Tm E ℓ).map σ.op (names i)) fun i => reindex σ (fields i) := by
-  dsimp only [ctorMap]
-  split_ifs <;> rfl
+  rfl
 
 namespace RawValue
 
@@ -242,8 +199,7 @@ theorem ctor_congr_names (hs : head.IsStructural E)
     (names names' : Fin head.arity → Tm_ Γ₁)
     (Xs : Fin head.arity → RawValue Γ₁) : ctor head names Xs = ctor head names' Xs :=
   ΩLower.ext fun _ y => exists_congr fun xs => and_congr_right fun _ =>
-    Iff.of_eq (congrArg (y ≤ ·) (Subtype.ext ((val_ctorMap_struct hs _ xs).trans
-      (val_ctorMap_struct hs _ xs).symm)))
+    Iff.of_eq (congrArg (y ≤ ·) (ctorMap_congr_names hs _ _ xs))
 
 theorem ctor_mono (names : Fin head.arity → Tm_ Γ₁)
     {Xs Ys : Fin head.arity → RawValue Γ₁} (h : ∀ i, Xs i ≤ Ys i) :

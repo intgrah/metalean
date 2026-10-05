@@ -76,21 +76,16 @@ def Shape.indProjection (target : IndHead ζ) : Shape Γ → Shape Γ
       .ctor head names (head.projectFields fields fun f =>
         indProjection ⟨head.η, head.sig.recursiveTarget f⟩ (fields (Fin.natAdd head.sig.nfields f)))
     else .bot
-  | .struct head hstruct fields =>
-    if head.toIndHead = target then
-      .struct head hstruct (head.projectFields fields fun f =>
-        indProjection ⟨head.η, head.sig.recursiveTarget f⟩ (fields (Fin.natAdd head.sig.nfields f)))
-    else .bot
   | _ => .bot
 
 theorem Basis.IsBottom.indProjection (target : IndHead ζ) {a : Shape Γ} :
     Basis.IsBottom a →
     Basis.IsBottom (a.indProjection target)
   | .bot | .lam _ => .bot
-  | .struct (head := head) (fields := fields) hf => by
+  | .ctor (head := head) (fields := fields) hs hf => by
     simp only [Shape.indProjection]
     split_ifs
-    · exact .struct (head.projectFields_rel (R := fun x _ => IsBottom x)
+    · exact .ctor hs (head.projectFields_rel (R := fun x _ => IsBottom x)
         (fields' := fields) hf fun _ _ => indProjection _ (hf _))
     · exact .bot
 
@@ -102,12 +97,6 @@ theorem indProjection_le (target : IndHead ζ) (a : Shape Γ) : a.indProjection 
     simp only [indProjection]
     split_ifs
     · exact .ctor (head.projectFields_rel (fun _ => Basis.Le.refl _)
-        fun _ _ => ih _ _)
-    · exact Basis.Le.bot _
-  | struct head hstruct fields ih =>
-    simp only [indProjection]
-    split_ifs
-    · exact .struct (head.projectFields_rel (fun _ => Basis.Le.refl _)
         fun _ _ => ih _ _)
     · exact Basis.Le.bot _
   | _ => exact Basis.Le.bot _
@@ -122,26 +111,12 @@ theorem indProjection_mono (target : IndHead ζ) {a b : Shape Γ} :
     · exact .ctor (head.projectFields_rel₂ (R := (· ≤ ·)) hf fun _ _ =>
         indProjection_mono _ (hf _))
     · exact Basis.Le.bot _
-  | .struct (head := head) hf => by
-    simp only [indProjection]
-    split_ifs
-    · exact .struct (head.projectFields_rel₂ (R := (· ≤ ·)) hf fun _ _ =>
-        indProjection_mono _ (hf _))
-    · exact Basis.Le.bot _
   | .sort _ | .forallE _ _ | .lam _ | .ind _ | .quot _ | .quotMk _ => Basis.Le.bot _
 
 @[simp] theorem indProjection_idempotent (target : IndHead ζ) (a : Shape Γ) :
     (a.indProjection target).indProjection target = a.indProjection target := by
   induction a generalizing target with
   | ctor head names fields ih =>
-    simp only [indProjection]
-    split_ifs
-    · simp only [indProjection]
-      split_ifs
-      refine congrArg _ (funext (head.projectFields_rel (fun _ => rfl) fun f hf => ?_))
-      simpa [hf] using ih _ _
-    · rfl
-  | struct head hstruct fields ih =>
     simp only [indProjection]
     split_ifs
     · simp only [indProjection]
@@ -162,27 +137,15 @@ theorem indProjection_map (target : IndHead ζ)
     · exact congrArg _ (funext (head.projectFields_rel₂
         (R := fun x (y : Shape Γ₁) => x = y.map arg pi) (fun _ => rfl) fun _ _ => ih _ _))
     · rfl
-  | struct head hstruct fields ih =>
-    simp only [map, indProjection]
-    split_ifs
-    · exact congrArg _ (funext (head.projectFields_rel₂
-        (R := fun x (y : Shape Γ₁) => x = y.map arg pi) (fun _ => rfl) fun _ _ => ih _ _))
-    · rfl
   | _ => rfl
 
 theorem IsCoherent.indProjection (target : IndHead ζ) {a : Shape Γ} (ha : IsCoherent Γ a) :
     IsCoherent Γ (a.indProjection target) := by
   induction ha generalizing target with
-  | @ctor _ _ fields hns hf ih =>
+  | @ctor _ _ fields hf ih =>
     simp only [Shape.indProjection]
     split_ifs
-    · exact .ctor hns (CtorHead.projectFields_rel (R := fun x _ => IsCoherent Γ x)
-        (fields' := fields) hf fun _ _ => ih _ _)
-    · exact .bot
-  | @struct _ _ fields hf ih =>
-    simp only [Shape.indProjection]
-    split_ifs
-    · exact .struct (CtorHead.projectFields_rel (R := fun x _ => IsCoherent Γ x)
+    · exact .ctor (CtorHead.projectFields_rel (R := fun x _ => IsCoherent Γ x)
         (fields' := fields) hf fun _ _ => ih _ _)
     · exact .bot
   | _ => exact .bot

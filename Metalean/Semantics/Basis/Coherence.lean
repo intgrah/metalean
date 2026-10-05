@@ -35,13 +35,10 @@ def Shape.Compatible {Γ₂ : CtxCat E ℓ} (σ₁ : Γ₂ ⟶ Γ₁) : Shape Γ
     code.map ((Tm E ℓ).map σ₁.op) = code'.map ((Tm E ℓ).map σ₁.op) ∧
       ∀ c c', c.val = c'.val → Compatible σ₁ (ctorTypes c) (ctorTypes' c')
   | .ctor head names fields, .ctor head' names' fields' =>
-    head = head' ∧ ∀ i j, i.val = j.val →
-      (Tm E ℓ).map σ₁.op (names i) = (Tm E ℓ).map σ₁.op (names' j) ∧
-        Compatible σ₁ (fields i) (fields' j)
-  | .struct head hstruct fields, .struct head' hstruct' fields' =>
-    Basis.IsBottom (.struct head hstruct fields) ∨
-      Basis.IsBottom (.struct head' hstruct' fields') ∨
-      head = head' ∧ ∀ i j, i.val = j.val → Compatible σ₁ (fields i) (fields' j)
+    Basis.IsBottom (.ctor head names fields) ∨ Basis.IsBottom (.ctor head' names' fields') ∨
+      head = head' ∧ ∀ i j, i.val = j.val →
+        (∀ h h', (Tm E ℓ).map σ₁.op (names h i) = (Tm E ℓ).map σ₁.op (names' h' j)) ∧
+          Compatible σ₁ (fields i) (fields' j)
   | .quot code, .quot code' =>
     code.map ((Tm E ℓ).map σ₁.op) = code'.map ((Tm E ℓ).map σ₁.op)
   | .quotMk η name value, .quotMk η' name' value' =>
@@ -71,10 +68,10 @@ theorem Compatible.of_isBottom_left {Γ₂ : CtxCat E ℓ} {a b : Shape Γ₁} (
     | bot => trivial
     | lam _ _ _ _ => exact fun i j Γ₃ σ₂ _ _ => of_isBottom_left _ (h i)
     | _ => exact .inl (.lam h)
-  | .struct h => by
+  | .ctor hs h => by
     cases b with
     | bot => trivial
-    | _ => exact .inl (.struct h)
+    | _ => exact .inl (.ctor hs h)
 
 theorem Compatible.comm (a b : Shape Γ₁) (σ₁ : Γ₂ ⟶ Γ₁) :
     Compatible σ₁ a b ↔ Compatible σ₁ b a := by
@@ -103,23 +100,17 @@ theorem Compatible.comm (a b : Shape Γ₁) (σ₁ : Γ₂ ⟶ Γ₁) :
   | ctor _ _ _ ih =>
     cases b with
     | ctor _ _ _ =>
-      exact ⟨fun ⟨rfl, h⟩ => ⟨rfl, fun i j hij =>
-          ⟨(h j i hij.symm).1.symm, (ih j _ _).mp (h j i hij.symm).2⟩⟩,
-        fun ⟨rfl, h⟩ => ⟨rfl, fun i j hij =>
-          ⟨(h j i hij.symm).1.symm, (ih i _ _).mpr (h j i hij.symm).2⟩⟩⟩
-    | _ => first | exact Iff.rfl | exact Or.comm
-  | struct _ _ _ ih =>
-    cases b with
-    | struct _ _ _ =>
       constructor
       · rintro (hbot | hbot' | ⟨rfl, h⟩)
         · exact .inr (.inl hbot)
         · exact .inl hbot'
-        · exact .inr (.inr ⟨rfl, fun i j hij => (ih j _ _).mp (h j i hij.symm)⟩)
+        · exact .inr (.inr ⟨rfl, fun i j hij => ⟨fun h₁ h₂ => ((h j i hij.symm).1 h₂ h₁).symm,
+            (ih j _ _).mp (h j i hij.symm).2⟩⟩)
       · rintro (hbot' | hbot | ⟨rfl, h⟩)
         · exact .inr (.inl hbot')
         · exact .inl hbot
-        · exact .inr (.inr ⟨rfl, fun i j hij => (ih i _ _).mpr (h j i hij.symm)⟩)
+        · exact .inr (.inr ⟨rfl, fun i j hij => ⟨fun h₁ h₂ => ((h j i hij.symm).1 h₂ h₁).symm,
+            (ih i _ _).mpr (h j i hij.symm).2⟩⟩)
     | _ => first | exact Iff.rfl | exact Or.comm
   | quot _ => cases b <;> first | exact eq_comm | exact Iff.rfl | exact Or.comm
   | quotMk _ _ _ ih =>
@@ -191,20 +182,14 @@ theorem Compatible.anti_left {Γ₂ : CtxCat E ℓ} {σ₁ : Γ₂ ⟶ Γ₁} {a
   | .ctor hf => by
     cases b with
     | ctor _ _ _ =>
-      exact ⟨hab.1, fun i j hij => ⟨(hab.2 i j hij).1, anti_left (hab.2 i j hij).2 (hf i)⟩⟩
-    | bot => trivial
-    | _ => exact hab.imp nofun id
-  | .struct hf => by
-    cases b with
-    | struct _ _ _ =>
       rcases hab with hbot | hbot' | ⟨hh, h⟩
-      · exact .inl (Basis.IsBottom.of_le (Basis.Le.struct hf) hbot)
+      · exact .inl (Basis.IsBottom.of_le (Basis.Le.ctor hf) hbot)
       · exact .inr (.inl hbot')
-      · exact .inr (.inr ⟨hh, fun i j hij => anti_left (h i j hij) (hf i)⟩)
+      · exact .inr (.inr ⟨hh, fun i j hij => ⟨(h i j hij).1, anti_left (h i j hij).2 (hf i)⟩⟩)
     | bot => trivial
     | _ =>
       rcases hab with hbot | hbot
-      · exact .inl (Basis.IsBottom.of_le (Basis.Le.struct hf) hbot)
+      · exact .inl (Basis.IsBottom.of_le (Basis.Le.ctor hf) hbot)
       · exact .inr hbot
   | .quotMk h => by
     cases b with
@@ -284,16 +269,10 @@ judgement Shape.IsCoherent (Γ₁ : CtxCat E ℓ) : Shape Γ₁ → Prop where
     {ctorTypes : Fin code.toIndHead.nctors → Shape Γ₁}
   IsCoherent Γ₁ (.ind code ctorTypes)
 
-  ¬ head.IsStructural E
   ∀ i, IsCoherent Γ₁ (fields i)
-  ──────────────────── ctor {head : CtorHead ζ} {names : Fin head.arity → Tm_ Γ₁}
-    {fields : Fin head.arity → Shape Γ₁}
+  ──────────────────── ctor {head : CtorHead ζ}
+    {names : ¬ head.IsStructural E → Fin head.arity → Tm_ Γ₁} {fields : Fin head.arity → Shape Γ₁}
   IsCoherent Γ₁ (.ctor head names fields)
-
-  ∀ i, IsCoherent Γ₁ (fields i)
-  ──────────────────── struct {head : CtorHead ζ} {hstruct : head.IsStructural E}
-    {fields : Fin head.arity → Shape Γ₁}
-  IsCoherent Γ₁ (.struct head hstruct fields)
 
   ──────────────────── quot (code : QuotCode Γ₁)
   IsCoherent Γ₁ (.quot code)
@@ -339,12 +318,9 @@ theorem compatible_self {a : Shape Γ₁} (σ : Γ₂ ⟶ Γ₁) :
     exact compatible_self σ (h c)⟩
   | .forallE ha hd _ _ => ⟨rfl, compatible_self σ ha, hd.of_id σ⟩
   | .lam hd _ _ => hd.of_id σ
-  | .ctor _ h => ⟨rfl, fun i j hij => by
+  | .ctor h => .inr (.inr ⟨rfl, fun i j hij => by
     obtain rfl := Fin.ext hij
-    exact ⟨rfl, compatible_self σ (h i)⟩⟩
-  | .struct h => .inr (.inr ⟨rfl, fun i j hij => by
-    obtain rfl := Fin.ext hij
-    exact compatible_self σ (h i)⟩)
+    exact ⟨fun _ _ => rfl, compatible_self σ (h i)⟩⟩)
   | .quotMk h => ⟨rfl, rfl, compatible_self σ h⟩
 
 end Shape.IsCoherent
@@ -393,8 +369,6 @@ instance : Preorder (CoherentShape Γ₁) := Subtype.preorder _
 instance : OrderBot (CoherentShape Γ₁) where
   bot := ⟨⊥, .bot⟩
   bot_le a := Basis.Le.bot a.1
-
-theorem le_def {a b : CoherentShape Γ₁} : a ≤ b ↔ a.1 ≤ b.1 := Iff.rfl
 
 theorem le_bot_iff {a : CoherentShape Γ₁} : a ≤ ⊥ ↔ Basis.IsBottom a.1 := Basis.le_bot_iff
 
