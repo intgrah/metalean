@@ -78,10 +78,4 @@ theorem pullback_pi (label : Ty.Pair Γ₁) (A : Domain Γ₁) (B : IdealAction 
       pi ((Ty.pairPresheaf E ℓ).map σ.op label) (A.pullback σ) (B.pullback σ) :=
   Subtype.val_injective (BasisAction.pullback_pi label A.val B.onBasis σ)
 
-@[simp]
-theorem mem_piAtom_pi_iff (label : Ty.Pair Γ₁) (A : Domain Γ₁) (B : IdealAction Γ₁)
-    (σ : Γ₂ ⟶ Γ₁) (label' : Ty.Pair Γ₂) :
-    (pi label A B).mem σ (piAtom label') ↔ label' = (Ty.pairPresheaf E ℓ).map σ.op label :=
-  BasisAction.mem_piAtom_pi_iff label A.val B.onBasis σ label'
-
 end Metalean.CoherentShape

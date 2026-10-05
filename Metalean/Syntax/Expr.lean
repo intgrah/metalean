@@ -340,11 +340,6 @@ def extend (σ : Subst ζ ℓ m n) (value : Expr ζ ℓ n) : Subst ζ ℓ (m + 1
     σ.extend value (Fin.last m) = value := by
   simp [extend]
 
-theorem extend_apply (σ : Subst ζ ℓ m n) (value : Expr ζ ℓ n) (v : Var (m + 1)) :
-    σ.extend value v = if h : v.val < m then σ ⟨v.val, h⟩ else value := by
-  simp only [extend, Fin.snoc]
-  split <;> rfl
-
 def liftN (σ : Subst ζ ℓ m n) : (k : Nat) → Subst ζ ℓ (m + k) (n + k)
   | 0 => σ
   | k + 1 => (σ.liftN k).lift
@@ -466,24 +461,6 @@ def caseSubst (csig : CtorSig nsorts)
     (recFds ihs : Fin csig.nrecFields → Expr ζ ℓ n) :
     Subst ζ ℓ (n + csig.nfields + csig.nrecFields + csig.nrecFields) n :=
   Fin.append (Fin.append (Fin.append (Subst.id : Subst ζ ℓ n n) fds) recFds) ihs
-
-@[simp] theorem caseSubst_ordinary (csig : CtorSig nsorts)
-    (fds : Fin csig.nfields → Expr ζ ℓ n)
-    (recFds ihs : Fin csig.nrecFields → Expr ζ ℓ n)
-    (f : Fin csig.nfields) :
-    csig.caseSubst fds recFds ihs
-        (((f.natAdd n).castAdd csig.nrecFields).castAdd csig.nrecFields) =
-      fds f := by
-  simp [caseSubst]
-
-@[simp] theorem caseSubst_recursive (csig : CtorSig nsorts)
-    (fds : Fin csig.nfields → Expr ζ ℓ n)
-    (recFds ihs : Fin csig.nrecFields → Expr ζ ℓ n)
-    (f : Fin csig.nrecFields) :
-    csig.caseSubst fds recFds ihs
-        ((f.natAdd (n + csig.nfields)).castAdd csig.nrecFields) =
-      recFds f := by
-  simp [caseSubst]
 
 end CtorSig
 
@@ -626,10 +603,6 @@ namespace Subst
     (Fin.append σ₁ σ₂){ls} = Fin.append σ₁{ls} σ₂{ls} :=
   Fin.append_comp σ₁ σ₂ (·{ls})
 
-@[simp] theorem instL_id (ls : Param ℓ → Level ℓ') :
-    (id : Subst ζ ℓ n n){ls} = id :=
-  rfl
-
 @[simp] theorem instL_lift (ls : Param ℓ → Level ℓ') (σ : Subst ζ ℓ m n) :
     σ.lift{ls} = Subst.lift σ{ls} := by
   funext v
@@ -671,11 +644,6 @@ attribute [local instance] Level.category in
 @[simp] theorem wkN_instL (ls : Param ℓ → Level ℓ') (e : Expr ζ ℓ n) (k : Nat) :
     (e.wkN k){ls} = e{ls}.wkN k := by
   induction k <;> simp_all!
-
-@[simp] theorem instL_boundVars (ls : Param ℓ → Level ℓ')
-    (ambient count suffix : Nat) (i : Fin count) :
-    (boundVars (ζ := ζ) (ℓ := ℓ) ambient count suffix i){ls} =
-      boundVars (ζ := ζ) (ℓ := ℓ') ambient count suffix i := rfl
 
 @[simp] theorem instL_var_tuple (ls : Param ℓ → Level ℓ') (f : Fin m → Fin n) :
     (fun i => (Expr.var (f i) : Expr ζ ℓ n)){ls} =

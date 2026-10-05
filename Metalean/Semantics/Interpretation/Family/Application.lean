@@ -52,13 +52,6 @@ noncomputable abbrev stepApplicationRaw (label : Tm_ Γ₁) :=
       application (principalIdeal u) ((Tm E ℓ).map σ.op label) (principalIdeal x) :=
   rfl
 
-@[simp] theorem stepApplicationRaw_app (label : Tm_ Γ₁) (σ : Γ₂ ⟶ Γ₁)
-    (u x : CoherentShape Γ₂) :
-    (stepApplicationRaw label).app (op Γ₂) ⟨σ⟩ (u, x) =
-      (application (principalIdeal u) ((Tm E ℓ).map σ.op label)
-        (principalIdeal x)).val :=
-  rfl
-
 theorem application_eq_bind₂ (I : Domain Γ₁) (label : Tm_ Γ₁) (X : Domain Γ₁) :
     application I label X = ΩIdeal.bind₂ I X (stepApplication label) := by
   ext Γ₂ σ y

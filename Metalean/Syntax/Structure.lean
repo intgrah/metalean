@@ -210,13 +210,6 @@ theorem projection_map :
         simp [ms, ihMotiveTerm]
       · exact funext h.no_indices.elim
 
-@[simp] theorem projType_map :
-    (h.projType η ls ps f maj).map pre =
-      (h.map pre).projType (η.map pre) ls
-        (fun param => (ps param).map pre) f
-        (maj.map pre) :=
-  congrArg Prod.fst (h.projection_map pre η ls ps f maj)
-
 @[simp] theorem projTerm_map :
     (h.projTerm η ls ps f maj).map pre =
       (h.map pre).projTerm (η.map pre) ls
@@ -279,11 +272,6 @@ theorem projection_instL :
         funext previous
         exact ihMotiveTerm previous
       · exact funext h.no_indices.elim
-
-@[simp] theorem projType_instL :
-    (h.projType η ls ps f maj){ls'} =
-      h.projType η ls{ls'} ps{ls'} f maj{ls'} :=
-  congrArg Prod.fst (h.projection_instL ls' η ls ps f maj)
 
 @[simp] theorem projTerm_instL :
     (h.projTerm η ls ps f maj){ls'} =

@@ -245,11 +245,6 @@ end RawFamily
 
 namespace RawActionFamily
 
-@[simp] theorem pullback_app (F : RawActionFamily Γ₁) {Δ : (CtxCat E ℓ)ᵒᵖ} {Γ₂ : CtxCat E ℓ}
-    (σ₁ : op Γ₁ ⟶ Δ) (σ₂ : Γ₂ ⟶ Δ.unop) (ρ : RawValuation Δ.unop) :
-    RawAction.pullback (F.app Δ σ₁ ρ) σ₂ = F.app (op Γ₂) (σ₁ ≫ σ₂.op) (ρ.pullback σ₂) :=
-  (F.naturality_apply σ₂.op σ₁ ρ).symm
-
 def IsFinitary (F : RawActionFamily Γ₁) : Prop :=
   ∀ ⦃Γ₂ : CtxCat E ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (i : ℕ) (ρ : RawValuation Γ₂)
     (X : RawValue Γ₂) (label : Tm_ Γ₂),

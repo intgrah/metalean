@@ -25,11 +25,4 @@ variable {C : Type*} [Category* C] {F : C ⥤ Type}
       ((List.foldl_hom (F.map σ) (fun e i => α.naturality_apply σ ⟨e, args i⟩)).trans
         (congrArg (F.map σ) (Fin.foldl_eq_finRange_foldl (fun e i => α.app X₁ ⟨e, args i⟩) e).symm))
 
-@[reducible] def listFold (α : F ⊗ F ⟶ F) :
-    F ⊗ (F ⋙ ofTypeFunctor List) ⟶ F where
-  app X := ↾fun ⟨e, args⟩ => args.foldl (fun e a => α.app X ⟨e, a⟩) e
-  naturality {X₁ X₂} σ := by
-    ext ⟨e, args⟩
-    exact List.foldl_map_hom (g := F.map σ) (fun e a => α.naturality_apply σ ⟨e, a⟩)
-
 end CategoryTheory.NatTrans

@@ -110,10 +110,6 @@ def map (arg : (Tm_ Γ₁) → Tm_ Γ₂) (code : QuotCode Γ₁) : QuotCode Γ�
 
 @[simp] theorem map_id (code : QuotCode Γ₁) : code.map id = code := rfl
 
-@[simp] theorem map_map (arg : (Tm_ Γ₁) → Tm_ Γ₂)
-    (arg' : (Tm_ Γ₂) → Tm_ Γ₃) (code : QuotCode Γ₁) :
-    (code.map arg).map arg' = code.map (arg' ∘ arg) := rfl
-
 @[simp] theorem map_hom_id (code : QuotCode Γ₁) :
     code.map ((Tm E ℓ).map (𝟙 Γ₁).op) = code := by
   simp [map]

@@ -185,12 +185,6 @@ def ind (code : IndCode Γ₁) (Ts : Fin code.toIndHead.nctors → RawValue Γ�
   bottom σ := ⟨fun _ => ⊥, fun c => (Ts c).bottom σ, bot_le⟩
   lower σ hyz := fun ⟨ts, hts, hz⟩ => ⟨ts, hts, hyz.trans hz⟩
 
-@[simp] theorem mem_ind (code : IndCode Γ₁) (Ts : Fin code.toIndHead.nctors → RawValue Γ₁)
-    (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (ind code Ts).mem σ y ↔ ∃ ts : Fin code.toIndHead.nctors → CoherentShape Γ₂,
-      (∀ c, (Ts c).mem σ (ts c)) ∧ y ≤ indAtom (code.map ((Tm E ℓ).map σ.op)) ts :=
-  Iff.rfl
-
 theorem ind_mono (code : IndCode Γ₁) {Ts Us : Fin code.toIndHead.nctors → RawValue Γ₁}
     (h : ∀ c, Ts c ≤ Us c) : ind code Ts ≤ ind code Us :=
   fun σ _ ⟨ts, hts, hy⟩ => ⟨ts, fun c => h c σ _ (hts c), hy⟩

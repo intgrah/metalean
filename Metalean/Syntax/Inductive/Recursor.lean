@@ -313,52 +313,6 @@ def recrTele (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) (l : Level 
     I.indexTele ls s ps |>.snoc
     maj
 
-@[simp] private theorem motiveBinders_map (I : Inductive ζ₁ ι)
-    (pre : ζ₁ ⟶ ζ₂) (η : Head ζ₁ (.inductive ι))
-    (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
-    (I.motiveBinders η ls l).map pre =
-      (I.map pre).motiveBinders (η.map pre) ls l :=
-  (Ctx.ofTypes_map _ pre).trans <| by simp! [motiveBinders]
-
-@[simp] private theorem caseBinders_map (I : Inductive ζ₁ ι)
-    (pre : ζ₁ ⟶ ζ₂) (η : Head ζ₁ (.inductive ι))
-    (ls : Fin ι.nlevels → Level ℓ) :
-    (I.caseBinders η ls).map pre =
-      (I.map pre).caseBinders (η.map pre) ls :=
-  (Ctx.ofTypes_map _ pre).trans <| by simp! [caseBinders]
-
-@[simp] theorem recrTele_map
-    (pre : ζ₁ ⟶ ζ₂) (η : Head ζ₁ (.inductive ι))
-    (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ) (l : Level ℓ) :
-    (I.recrTele η s ls l).map pre =
-      (I.map pre).recrTele (η.map pre) s ls l := by
-  change (Ctx.map pre _).snoc _ = _
-  congr 1
-  · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
-    · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
-      · refine (Ctx.map_append pre _ _).trans (congrArg₂ Tele.append ?_ ?_)
-        · exact I.params.map_instL pre ls
-        · exact I.motiveBinders_map pre η ls l
-      · exact I.caseBinders_map pre η ls
-    · exact I.indexTele_map pre ls s _
-  · simp!
-
-@[simp] theorem motiveBinders_instL :
-    (I.motiveBinders η ls l){ls'} =
-      I.motiveBinders η ls{ls'} l{ls'} := by
-  simp! [motiveBinders, InstLevel.inst_tuple]
-
-@[simp] theorem caseBinders_instL :
-    (I.caseBinders η ls){ls'} =
-      I.caseBinders η ls{ls'} := by
-  simp! [caseBinders, InstLevel.inst_tuple]
-
-@[simp] theorem recrTele_instL
-    (s : Fin ι.nsorts) (l : Level ℓ) :
-    (I.recrTele η s ls l){ls'} =
-      I.recrTele η s ls{ls'} l{ls'} := by
-  simp! [recrTele, InstLevel.inst_tuple]
-
 end Inductive
 
 namespace IndSig
@@ -369,10 +323,6 @@ def recrBody (ι : IndSig) (s : Fin ι.nsorts) :
     (.var (RecrBinder.motive s).resolve)
     (fun index => .var (RecrBinder.index index).resolve)
     (.var RecrBinder.major.resolve)
-
-@[simp] theorem recrBody_map (ι : IndSig) (pre : ζ₁ ⟶ ζ₂) (s : Fin ι.nsorts) :
-    (ι.recrBody s : Expr ζ₁ ℓ _).map pre = (ι.recrBody s : Expr ζ₂ ℓ _) := by
-  simp! [recrBody]
 
 end IndSig
 

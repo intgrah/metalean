@@ -107,10 +107,6 @@ theorem lt_size_of_getElem? {a : PArray α} {i : Nat} {x : α} (h : a[i]? = some
       omega
     · simp [hq, hq'] at h
 
-@[simp] theorem getElem?_empty (i : Nat) : (∅ : PArray α)[i]? = none := by
-  show empty.get? i = none
-  simp [empty, get?]
-
 @[simp] theorem size_empty : (∅ : PArray α).size = 0 := by
   simp [EmptyCollection.emptyCollection, empty, size]
 

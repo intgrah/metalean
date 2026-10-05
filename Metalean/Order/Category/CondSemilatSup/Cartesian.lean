@@ -41,7 +41,4 @@ instance : CartesianMonoidalCategory CondSemilatSup.{u} :=
 
 instance : BraidedCategory CondSemilatSup.{u} := .ofCartesianMonoidalCategory
 
-@[simp] theorem tensor_apply {W X Y Z : CondSemilatSup.{u}} (f : W ⟶ X) (g : Y ⟶ Z) (p : W × Y) :
-    (f ⊗ₘ g) p = (f p.1, g p.2) := rfl
-
 end CondSemilatSup

@@ -177,9 +177,6 @@ theorem presheaf_map_principal (a : R.obj (op X)) (f : Y ⟶ X) :
   ext
   simp
 
-@[simp]
-theorem principal_bottom : principal R (⊥ : R.obj (op X)) = ⊥ := rfl
-
 def IsDirected (L : ΩLower R X) : Prop :=
   ∀ {Y : C} (f : Y ⟶ X) {a b : R.obj (op Y)},
     L.mem f a → L.mem f b → ∃ c : R.obj (op Y), L.mem f c ∧ a ≤ c ∧ b ≤ c

@@ -25,12 +25,6 @@ variable (ps : Fin ι.nparams → Expr ζ ℓ m) (ms : Fin ι.nsorts → Expr ζ
 variable (mins : (t : Fin ι.nsorts) → Fin (ι.nctors t) → Expr ζ ℓ m)
 variable (σ : Subst ζ ℓ m n)
 
-@[simp] theorem Expr.subst_appList (e : Expr ζ ℓ m) (args : List (Expr ζ ℓ m)) :
-    (e.appList args).subst σ =
-      (e.subst σ).appList (args.map fun arg => arg.subst σ) :=
-  letI := Subst.category ζ ℓ
-  Expr.appSubstHom.listFold.naturality_apply σ ⟨e, args⟩ |>.symm
-
 @[simp] theorem Expr.inst_app (f e : Expr ζ ℓ (n + 1)) (value : Expr ζ ℓ n) :
     (f.app e).inst value = (f.inst value).app (e.inst value) := rfl
 
@@ -145,12 +139,6 @@ theorem Expr.boundVars_subst (count suffix : Nat) :
       Fin.append (fun i => (ps i).subst σ)
         fun i => (tail i).subst σ :=
   Fin.append_comp ps tail (Expr.subst σ)
-
-@[simp] theorem Subst.precomp_liftN_wkN (extra : Nat) :
-    (σ.liftN extra).precomp (Ren.wkN extra) =
-      σ.rename (Ren.wkN extra) := by
-  funext v
-  simp [Subst.precomp, Subst.rename, Ren.wkN, Expr.wkN_eq_rename]
 
 @[simp] theorem Expr.wkN_subst_case (e : Expr ζ ℓ n)
     (csig : CtorSig nsorts)
@@ -306,12 +294,6 @@ theorem Expr.inst_subst_lift (σ : Subst ζ ℓ n p) (e' : Expr ζ ℓ (n + 1)) 
       (Ctx.substN σ k Δ).lam (e.subst (σ.liftN k)) :=
   letI := Subst.category ζ ℓ
   ((Ctx.foldSubstHom Expr.lamSubstHom k).naturality_apply σ ⟨Δ, e⟩).symm
-
-@[simp] theorem Ctx.lam_subst₂ (Δ : Ctx ζ ℓ m (m + a + b)) (e : Expr ζ ℓ (m + a + b)) :
-    (Δ.lam e).subst σ =
-      (Ctx.substN₂ σ a b Δ).lam (e.subst ((σ.liftN a).liftN b)) :=
-  letI := Subst.category ζ ℓ
-  ((Ctx.foldSubstHom₂ Expr.lamSubstHom a b).naturality_apply σ ⟨Δ, e⟩).symm
 
 @[simp] theorem Ctx.lam_subst₃ (Δ : Ctx ζ ℓ m (m + a + b + k))
     (e : Expr ζ ℓ (m + a + b + k)) :
@@ -902,14 +884,6 @@ theorem Subst.renames_wkFrom {cut : Nat} (Γ₀ : Ctx ζ ℓ 0 cut) (t : Expr ζ
 section
 
 variable {cut : Nat} (fd : RecField ζ ι nfields arity target)
-
-namespace Quot
-
-@[simp] theorem relType_wkFrom (α : Expr ζ ℓ m) :
-    (relType α).wkFrom cut = relType (α.wkFrom cut) := by
-  simp [Expr.wkFrom_eq_subst]
-
-end Quot
 
 namespace Inductive
 

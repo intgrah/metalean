@@ -26,10 +26,6 @@ variable {C : Type u} [Category.{v} C] {D : Type w} [Category.{w'} D]
   map_id X := by ext; simp
   map_comp f g := by ext; simp
 
-@[simp] theorem HomObj.functor_map_app (F G : C ⥤ D) {X Y Z : C}
-    (f : X ⟶ Y) (x : (HomObj.functor F G).obj X) (g : Y ⟶ Z) :
-    (x.map (coyoneda.map f.op)).app Z g = x.app Z (f ≫ g) := rfl
-
 section Concrete
 
 variable {FD : D → D → Type*} {CD : D → Type*}

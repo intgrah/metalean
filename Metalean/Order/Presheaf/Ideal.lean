@@ -38,9 +38,6 @@ instance (R : Cᵒᵖ ⥤ CondSemilatSup.{max u v}) (X : Cᵒᵖ) :
 
 def pullback (I : ΩIdeal R X) (f : Y ⟶ X) : ΩIdeal R Y := (presheaf R).map f.op I
 
-@[simp↓] theorem presheaf_map_eq_pullback {X Y : Cᵒᵖ} (g : X ⟶ Y) (I : ΩIdeal R X.unop) :
-    (presheaf R).map g I = I.pullback g.unop := rfl
-
 @[simp] theorem pullback_id (I : ΩIdeal R X) : I.pullback (𝟙 X) = I :=
   (presheaf R).map_id_apply _ I
 
@@ -50,10 +47,6 @@ def pullback (I : ΩIdeal R X) (f : Y ⟶ X) : ΩIdeal R Y := (presheaf R).map f
 
 theorem pullback_mono {I J : ΩIdeal R X} (h : I ≤ J) (f : Y ⟶ X) : I.pullback f ≤ J.pullback f :=
   ((presheaf R).map f.op).hom.monotone h
-
-@[simp]
-theorem val_presheaf_map (I : ΩIdeal R X) (f : Y ⟶ X) :
-    (I.pullback f).val = I.val.pullback f := rfl
 
 abbrev mem (I : ΩIdeal R X) (f : Y ⟶ X) (a : R.obj (op Y)) := I.val.mem f a
 
@@ -101,10 +94,6 @@ def principal (R : Cᵒᵖ ⥤ CondSemilatSup.{max u v}) (x : R.obj (op X)) : Ω
     (principal R x).mem f a ↔ a ≤ R.map f.op x := ΩLower.mem_principal x f a
 
 @[simp]
-theorem principal_bottom : principal R (⊥ : R.obj (op X)) = ⊥ :=
-  Subtype.val_injective ΩLower.principal_bottom
-
-@[simp]
 theorem presheaf_map_principal (x : R.obj (op X)) (f : Y ⟶ X) :
     (principal R x).pullback f = principal R (R.map f.op x) :=
   Subtype.val_injective (ΩLower.presheaf_map_principal x f)
@@ -126,10 +115,6 @@ theorem val_principal (a : R.obj (op X)) :
 end ΩIdeal
 
 namespace ΩLower
-
-@[simp]
-theorem val_toIdeal (L : ΩLower R X) (hL : L.IsDirected) :
-    (L.toIdeal hL).val = L := rfl
 
 def pair (I : ΩLower R X) (J : ΩLower S X) : ΩLower (R ⊗ S) X where
   mem f := fun (a, b) => I.mem f a ∧ J.mem f b
@@ -153,11 +138,6 @@ def bind (I : ΩLower R X)
       (by simpa using (F.app _ ⟨f⟩ a).natural (𝟙 _) g b hb)⟩
   bottom f := ⟨(⊥ : R.obj (op _)), I.bottom f, (F.app _ ⟨f⟩ (⊥ : R.obj (op _))).bottom _⟩
   lower f h := fun ⟨a, ha, hb⟩ => ⟨a, ha, (F.app _ ⟨f⟩ a).lower _ h hb⟩
-
-@[simp] theorem mem_bind (I : ΩLower R X)
-    (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord) (presheaf S)
-      (uliftYoneda.{u}.obj X)) (f : Y ⟶ X) (b : S.obj (op Y)) :
-    (I.bind F).mem f b ↔ ∃ a, I.mem f a ∧ (F.app (op Y) ⟨f⟩ a).mem (𝟙 Y) b := Iff.rfl
 
 theorem IsDirected.bind {I : ΩLower R X} (hI : I.IsDirected)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord) (presheaf S)

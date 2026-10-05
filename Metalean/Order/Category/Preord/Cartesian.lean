@@ -32,7 +32,4 @@ instance : CartesianMonoidalCategory Preord.{u} :=
 
 instance : BraidedCategory Preord.{u} := .ofCartesianMonoidalCategory
 
-@[simp] theorem tensor_apply {W X Y Z : Preord.{u}} (f : W ⟶ X) (g : Y ⟶ Z) (p : W × Y) :
-    (f ⊗ₘ g) p = (f p.1, g p.2) := rfl
-
 end Preord

@@ -51,10 +51,6 @@ theorem replace_ne (ρ : RawValuation Γ₁) {i j : ℕ} (h : j ≠ i) (I : RawV
 @[simp]
 theorem tail_push (ρ : RawValuation Γ₁) (I : RawValue Γ₁) : (ρ.push I).tail = ρ := rfl
 
-theorem push_tail (ρ : RawValuation Γ₁) : ρ.tail.push (ρ 0) = ρ := by
-  funext i
-  cases i <;> rfl
-
 @[simp]
 theorem pullback_id (ρ : RawValuation Γ₁) : ρ.pullback (𝟙 Γ₁) = ρ :=
   funext fun i => ΩLower.pullback_id (ρ i)

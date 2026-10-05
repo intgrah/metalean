@@ -205,11 +205,6 @@ def unstep {sig sig₁ : Sig} {ζ : Sigs} :
   | .here => none
   | .there η => some η
 
-@[simp] theorem unstep_map_step {sig sig₁ : Sig} {ζ : Sigs}
-    (η : Head ζ sig) :
-    unstep (η.map (@.step ζ ζ sig₁ .refl)) = some η :=
-  rfl
-
 end Head
 
 end Metalean

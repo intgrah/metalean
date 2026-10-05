@@ -15,8 +15,6 @@ variable {ℓ : Nat}
 
 @[simp] def rel (u : Level ℓ) : Bool := decide (u ≠ zero)
 
-@[simp] theorem rel_zero : (zero : Level ℓ).rel = false := by simp
-
 theorem imax_eq_zero_iff (u v : Level ℓ) : u.imax v = zero ↔ v = zero := by
   constructor
   · intro h

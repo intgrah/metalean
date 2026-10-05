@@ -21,17 +21,6 @@ instance : DecidableEq (Var n) := inferInstanceAs (DecidableEq (Fin n))
 
 abbrev db (v : Var n) : Nat := n - 1 - v.val
 
-abbrev ofDb (i : Nat) (h : i < n) : Var n := ⟨n - 1 - i, by omega⟩
-
-@[simp] theorem db_ofDb (i : Nat) (h : i < n) : (ofDb i h).db = i := by
-  simp [db]
-  omega
-
-@[simp] theorem ofDb_db (v : Var n) (h : v.db < n) : ofDb v.db h = v := by
-  apply Fin.ext
-  simp [db]
-  omega
-
 @[simp] theorem db_last : db (Fin.last n) = 0 := by
   simp [db]
 

@@ -41,10 +41,6 @@ def imax (u v : Level ℓ) : Level ℓ :=
 
 def one : Level ℓ := succ zero
 
-def ofNat : Nat → Level ℓ
-  | 0 => zero
-  | n + 1 => succ (ofNat n)
-
 def eval (ν : Param ℓ → Nat) (u : Level ℓ) : Nat :=
   Quotient.liftOn u (·.eval ν) fun _ _ h => h.eval ν
 
@@ -74,9 +70,6 @@ def eval (ν : Param ℓ → Nat) (u : Level ℓ) : Nat :=
   rfl
 
 @[simp] theorem eval_one (ν : Param ℓ → Nat) : eval ν (one : Level ℓ) = 1 := rfl
-
-@[simp] theorem eval_ofNat (ν : Param ℓ → Nat) (n : Nat) : (ofNat n).eval ν = n := by
-  induction n <;> simp! [*]
 
 @[simp] theorem succ_ne_zero (u : Level ℓ) : u.succ ≠ zero :=
   fun h => by simpa using congrArg (eval fun _ => 0) h
@@ -122,12 +115,6 @@ theorem mk_inst (σ : Param ℓ → RawLevel ℓ₁) (l : RawLevel ℓ) :
 @[simp] theorem inst_succ (σ : Param ℓ → Level ℓ₁) (u : Level ℓ) :
     u.succ{σ} = u{σ}.succ := by
   rcases u
-  rfl
-
-@[simp] theorem inst_max (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :
-    (u.max v){σ} = u{σ}.max v{σ} := by
-  rcases u
-  rcases v
   rfl
 
 @[simp] theorem inst_imax (σ : Param ℓ → Level ℓ₁) (u v : Level ℓ) :

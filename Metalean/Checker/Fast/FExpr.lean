@@ -507,10 +507,6 @@ namespace FExpr
     (natLit nat num).data = .mk (mixHash 3 (hash num)) 0 0 false false := by
   simp [data]
 
-@[simp] theorem data_strLit (pos : StrPos) (str : String) :
-    (strLit pos str).data = .mk (mixHash 3 (hash str)) 0 0 false false := by
-  simp [data]
-
 @[simp] theorem fvarRange_bvar (i : Nat) : (bvar i).fvarRange = 0 := by
   simp [fvarRange]
 

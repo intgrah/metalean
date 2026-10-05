@@ -32,19 +32,6 @@ variable {ζ : Sigs} {ℓ n m : Nat} {ι : IndSig}
         f fun prior => (previous prior).subst σ := by
   simp [projTypeWith]
 
-@[simp] theorem IsStructure.projTypeWith_wkFrom
-    (previous : Fin f.val → Expr ζ ℓ n) (cut : Nat) :
-    (projTypeWith I ls ps f previous).wkFrom cut =
-      projTypeWith I ls (fun param => (ps param).wkFrom cut)
-        f fun prior => (previous prior).wkFrom cut := by
-  let ρ : Ren n (n + 1) := Ren.wkFrom cut
-  have hrename (e : Expr ζ ℓ n) :
-      e.subst (fun v => .var (ρ v)) = e.rename ρ := by
-    rw [← Expr.subst_id (e.rename ρ), Expr.rename_subst]
-    rfl
-  simpa [Expr.wkFrom, hrename] using
-    IsStructure.projTypeWith_subst ls ps f previous fun v => .var (ρ v)
-
 include h
 
 theorem IsStructure.projection_subst :
@@ -80,13 +67,6 @@ theorem IsStructure.projection_subst :
               ((ι.ctors s c).liftCaseSubst σ)) _ = _
         simp [ms, ihMotiveTerm]
       · exact funext h.no_indices.elim
-
-theorem IsStructure.projection_wkFrom :
-    (h.projection η ls ps f maj).map (Expr.wkFrom cut) (Expr.wkFrom cut) =
-      h.projection η ls (fun param => (ps param).wkFrom cut)
-        f (maj.wkFrom cut) := by
-  simpa! [Expr.wkFrom] using
-    h.projection_subst η ls ps f maj fun v => .var (Ren.wkFrom cut v)
 
 theorem IsStructure.motiveTeleHead :
     Expr.ind η s ls
@@ -239,12 +219,6 @@ theorem IsStructure.projType_eq :
         f (maj.subst σ) :=
   congrArg Prod.snd (h.projection_subst η ls ps f maj σ)
 
-@[simp] theorem IsStructure.projTerm_wkFrom :
-    (h.projTerm η ls ps f maj).wkFrom cut =
-      h.projTerm η ls (fun param => (ps param).wkFrom cut)
-        f (maj.wkFrom cut) :=
-  congrArg Prod.snd (h.projection_wkFrom η ls ps f maj cut)
-
 theorem IsStructure.projectionMotives_subst (other : Fin ι.nsorts) :
     (h.projectionMotives η ls ps f other).subst σ =
       h.projectionMotives η ls (fun param => (ps param).subst σ) f other := by
@@ -278,16 +252,6 @@ theorem IsStructure.motiveType_self (l : Level ℓ) :
   congr 1
   · funext f
     exact h.projTerm_subst η ls ps f maj σ
-  · exact funext h.no_recursive.elim
-
-@[simp] theorem IsStructure.rebuildTerm_wkFrom :
-    (h.rebuildTerm η ls ps maj).wkFrom cut =
-      h.rebuildTerm η ls (fun param => (ps param).wkFrom cut)
-        (maj.wkFrom cut) := by
-  simp only [rebuildTerm, Expr.wkFrom_ctor]
-  congr 1
-  · funext f
-    exact h.projTerm_wkFrom η ls ps f maj cut
   · exact funext h.no_recursive.elim
 
 end Metalean.Inductive

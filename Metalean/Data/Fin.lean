@@ -53,9 +53,6 @@ instance {α : Type u} {n : Nat} : LawfulGetElem (Fin n → α) Nat α fun _ i =
   getElem?_def f i h := by
     split <;> simp_all
 
-@[simp] theorem getElem?_fun {α : Type u} {n : Nat} (f : Fin n → α) (i : Nat) :
-    f[i]? = if h : i < n then some (f ⟨i, h⟩) else none := rfl
-
 instance {α : Type u} {k : Nat} [DecidableEq α] : DecidableEq (Fin k → α) := fun f g =>
   if h : ∀ i, f i = g i then isTrue (funext h) else isFalse fun he => h fun _ => he ▸ rfl
 

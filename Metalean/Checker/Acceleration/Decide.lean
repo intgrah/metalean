@@ -27,23 +27,9 @@ def Reduces (P d : Expr ζ 0 0) (v : Bool) : Prop :=
 
 variable {kl : ConstKind} (ηLe : Head ζ (.inductive Nat.le.sig)) (ηDecLe : Head ζ (.const kl 0))
 
-def DecLe : Prop :=
-  ∀ b a : Nat, Reduces E η ηDite ηFalse (Expr.le ηLe (natLit η b) (natLit η a))
-    (Expr.op₂ ηDecLe (natLit η b) (natLit η a)) (decide (b ≤ a))
-
 variable (ηEq : Head ζ (.inductive Eq.sig)) {ki : ConstKind} (ηInst : Head ζ (.const ki 0))
 
-def DecEqNat : Prop :=
-  ∀ a b : Nat, Reduces E η ηDite ηFalse
-    (Expr.eq ηEq (.succ .zero) (Expr.nat η) (natLit η a) (natLit η b))
-    (Expr.op₂ ηInst (natLit η a) (natLit η b)) (a == b)
-
 variable (ηBool : Head ζ (.inductive Bool.sig))
-
-def DecEqBool : Prop :=
-  ∀ β γ : Bool, Reduces E η ηDite ηFalse
-    (Expr.eq ηEq (.succ .zero) (Expr.bool ηBool) (Expr.boolLit ηBool β) (Expr.boolLit ηBool γ))
-    (Expr.op₂ ηInst (Expr.boolLit ηBool β) (Expr.boolLit ηBool γ)) (β == γ)
 
 variable {kc : ConstKind} (ηDecide : Head ζ (.const kc 0))
 

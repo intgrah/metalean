@@ -67,55 +67,12 @@ theorem wkClosed_of_rename {f : (n : Nat) → Expr ζ ℓ n}
     rw [wkClosed, wkClosed_of_rename hf n]
     exact hf _
 
-@[simp] theorem wkClosed_wkFrom (e : Expr ζ ℓ 0) {n : Nat} (h : cut ≤ n) :
-    e.wkClosed (n := n).wkFrom cut =
-      e.wkClosed (n := n + 1) := by
-  induction n with
-  | zero =>
-      obtain rfl : cut = 0 := Nat.eq_zero_of_le_zero h
-      rfl
-  | succ n ih =>
-      by_cases hc : cut = n + 1
-      · subst cut
-        rfl
-      · have hcn : cut ≤ n := by omega
-        change (e.wkClosed (n := n).wkFrom n).wkFrom cut =
-          e.wkClosed (n := n + 1).wk
-        rw [wkFrom_wkFrom hcn, ih hcn]
-        rfl
-
 end Expr
 
 namespace Expr
 
 @[simp] theorem wkFrom_sort (l : Level ℓ) :
     (Expr.sort l : Expr ζ ℓ n).wkFrom cut = .sort l := rfl
-
-@[simp] theorem wkFrom_var' (cut : Nat) (v : Var n) :
-    (Expr.var v : Expr ζ ℓ n).wkFrom cut = .var (Ren.wkFrom cut v) := by
-  simp [Ren.wkFrom]
-  split <;> rfl
-
-@[simp] theorem var_wkFrom_ge (v : Var n) (h : cut ≤ v.val) :
-    (Expr.var v : Expr ζ ℓ n).wkFrom cut = .var v.succ := by
-  simp [h]
-
-@[simp] theorem last_wkFrom (h : cut ≤ n) :
-    (Expr.var (Fin.last n) : Expr ζ ℓ (n + 1)).wkFrom cut =
-      .var (Fin.last (n + 1)) := by
-  simp [var_wkFrom_ge (Fin.last n) (by simp [Fin.last]; omega)]
-
-@[simp] theorem wkFrom_app (f e : Expr ζ ℓ n) :
-    (Expr.app f e).wkFrom cut = Expr.app (f.wkFrom cut) (e.wkFrom cut) := rfl
-
-@[simp] theorem wkFrom_apps (η : Expr ζ ℓ n)
-    (args : Fin k → Expr ζ ℓ n) :
-    (η.apps args).wkFrom cut =
-      (η.wkFrom cut).apps fun i => (args i).wkFrom cut := by
-  induction k generalizing η with
-  | zero => rfl
-  | succ k ih =>
-    rw [apps_succ, ih, wkFrom_app, apps_succ]
 
 @[simp] theorem wkFrom_lam (h : cut ≤ n) (t : Expr ζ ℓ n)
     (e' : Expr ζ ℓ (n + 1)) :
@@ -126,12 +83,6 @@ namespace Expr
     (e' : Expr ζ ℓ (n + 1)) :
     (Expr.forallE t e').wkFrom cut =
       Expr.forallE (t.wkFrom cut) (e'.wkFrom cut) := by
-  simp [wkFrom, Ren.wkFrom_lift cut h]
-
-@[simp] theorem wkFrom_letE (h : cut ≤ n) (t v : Expr ζ ℓ n)
-    (e' : Expr ζ ℓ (n + 1)) :
-    (Expr.letE t v e').wkFrom cut =
-      Expr.letE (t.wkFrom cut) (v.wkFrom cut) (e'.wkFrom cut) := by
   simp [wkFrom, Ren.wkFrom_lift cut h]
 
 @[simp] theorem wk_wkFrom (h : cut ≤ n) (e : Expr ζ ℓ n) :
@@ -148,41 +99,6 @@ theorem wkFrom_subst (σ : Subst ζ ℓ (m + 1) n) (e : Expr ζ ℓ m) :
   simp [wkFrom]
   congr 1
 
-@[simp] theorem inst_wkFrom (h : cut ≤ n) (t' : Expr ζ ℓ (n + 1))
-    (e : Expr ζ ℓ n) :
-    (t'.inst e).wkFrom cut = (t'.wkFrom cut).inst (e.wkFrom cut) := by
-  change (t'.subst _).wkFrom cut = (t'.wkFrom cut).subst _
-  rw [subst_wkFrom, wkFrom_subst]
-  congr 1
-  funext v
-  change Expr.wkFrom cut (dite _ _ _) = dite _ _ _
-  by_cases hv : v.val < n
-  · have hs : (Ren.wkFrom cut v).val < n + 1 := by
-      by_cases hc : v.val < cut
-      · simp [hc]
-      · simpa [Ren.wkFrom, hc] using hv
-    rw [dite_eq_left hv, dite_eq_left hs]
-    simp [Subst.id]
-    by_cases hc : v.val < cut
-    · rw [ite_eq_left hc]
-      apply congrArg Expr.var
-      apply Fin.ext
-      simp [hc]
-    · rw [ite_eq_right hc]
-      apply congrArg Expr.var
-      apply Fin.ext
-      simp [Ren.wkFrom, hc]
-  · have hs : ¬(Ren.wkFrom cut v).val < n + 1 := by
-      have hvn : v.val = n := by omega
-      rw [Ren.wkFrom_of_ge v (by omega)]
-      simp [hvn]
-    rw [dite_eq_right hv, dite_eq_right hs]
-    simp
-
-@[simp] theorem wkFrom_const {kind : ConstKind} {nlevels : Nat}
-    (η : Head ζ (.const kind nlevels)) (ls : Fin nlevels → Level ℓ) :
-    (Expr.const η ls : Expr ζ ℓ n).wkFrom cutPos = .const η ls := rfl
-
 @[simp] theorem wkFrom_ind (η : Head ζ (.inductive ι))
     (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ)
     (ps : Fin ι.nparams → Expr ζ ℓ n)
@@ -191,52 +107,10 @@ theorem wkFrom_subst (σ : Subst ζ ℓ (m + 1) n) (e : Expr ζ ℓ m) :
       .ind η s ls (fun i => (ps i).wkFrom cutPos)
         fun i => (is i).wkFrom cutPos := rfl
 
-@[simp] theorem wkFrom_ctor {d : Nat} (η : Head ζ (.inductive ι))
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (ls : Fin ι.nlevels → Level ℓ)
-    (ps : Fin ι.nparams → Expr ζ ℓ n)
-    (fds : Fin (ι.ctors s c).nfields → Expr ζ ℓ n)
-    (recFds : Fin (ι.ctors s c).nrecFields → Expr ζ ℓ n) :
-    (Expr.ctor η s c ls ps fds recFds).wkFrom d =
-      .ctor η s c ls (fun i => (ps i).wkFrom d)
-        (fun i => (fds i).wkFrom d)
-        fun i => (recFds i).wkFrom d := rfl
-
-@[simp] theorem wkFrom_recr {d : Nat} (η : Head ζ (.inductive ι))
-    (s : Fin ι.nsorts) (ls : Fin ι.nlevels → Level ℓ)
-    (l : Level ℓ) (ps : Fin ι.nparams → Expr ζ ℓ n)
-    (ms : Fin ι.nsorts → Expr ζ ℓ n)
-    (mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n)
-    (is : Fin (ι.nindices s) → Expr ζ ℓ n)
-    (maj : Expr ζ ℓ n) :
-    (Expr.recr η s ls l ps ms mins is maj).wkFrom d =
-      .recr η s ls l
-        (fun i => (ps i).wkFrom d)
-        (fun s => (ms s).wkFrom d)
-        (fun s c => (mins s c).wkFrom d)
-        (fun i => (is i).wkFrom d) (maj.wkFrom d) := rfl
-
 @[simp] theorem wkFrom_quot (η : Head ζ .quot) (l : Level ℓ)
     (α r : Expr ζ ℓ n) :
     (Expr.quot η l α r).wkFrom cutPos =
       .quot η l (α.wkFrom cutPos) (r.wkFrom cutPos) := rfl
-
-@[simp] theorem wkFrom_quotMk (η : Head ζ .quot) (l : Level ℓ)
-    (α r x : Expr ζ ℓ n) :
-    (Expr.quotMk η l α r x).wkFrom cutPos =
-      .quotMk η l (α.wkFrom cutPos) (r.wkFrom cutPos) (x.wkFrom cutPos) := rfl
-
-@[simp] theorem wkFrom_quotLift (η : Head ζ .quot) (l₁ l₂ : Level ℓ)
-    (α r β f h a : Expr ζ ℓ n) :
-    (Expr.quotLift η l₁ l₂ α r β f h a).wkFrom cutPos =
-      .quotLift η l₁ l₂ (α.wkFrom cutPos) (r.wkFrom cutPos) (β.wkFrom cutPos)
-        (f.wkFrom cutPos) (h.wkFrom cutPos) (a.wkFrom cutPos) := rfl
-
-@[simp] theorem wkFrom_quotInd (η : Head ζ .quot) (l : Level ℓ)
-    (α r β f a : Expr ζ ℓ n) :
-    (Expr.quotInd η l α r β f a).wkFrom cutPos =
-      .quotInd η l (α.wkFrom cutPos) (r.wkFrom cutPos)
-        (β.wkFrom cutPos) (f.wkFrom cutPos) (a.wkFrom cutPos) := rfl
 
 end Expr
 
@@ -295,22 +169,7 @@ theorem get_insert (Γ₀ : Ctx ζ ℓ 0 cutPos) (t : Expr ζ ℓ cutPos)
       rw [ih (v.castLT hlt)]
       exact (Expr.wk_wkFrom hcm _).symm
 
-@[simp] theorem insert_snoc (Γ : Ctx ζ ℓ 0 cutPos) (t : Expr ζ ℓ cutPos)
-    (Δ : Ctx ζ ℓ cutPos n) (t₁ : Expr ζ ℓ n) :
-    Γ.insert t (Δ.snoc t₁) = (Γ.insert t Δ).snoc (t₁.wkFrom cutPos) := rfl
-
-@[simp] theorem insert_nil (Γ : Ctx ζ ℓ 0 n) (t : Expr ζ ℓ n) :
-    Γ.insert t (.nil : Ctx ζ ℓ n n) = Γ.snoc t := rfl
-
 end Ctx
-
-@[simp] theorem Expr.inst_rename (ρ : Ren n m) (e' : Expr ζ ℓ (n + 1))
-    (e : Expr ζ ℓ n) :
-    (e'.inst e).rename ρ = (e'.rename ρ.lift).inst (e.rename ρ) := by
-  simp [Expr.inst]
-  congr 1
-  funext v
-  cases v using Fin.lastCases <;> simp [Subst.rename, Subst.precomp, Subst.id]
 
 @[simp] theorem Expr.var_wk {ℓ n : Nat} (v : Var n) : (Expr.var v : Expr ζ ℓ n).wk = .var v.castSucc := by
   simp [Expr.wk, Expr.wkFrom]

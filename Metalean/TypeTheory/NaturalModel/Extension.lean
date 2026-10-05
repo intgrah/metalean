@@ -114,19 +114,8 @@ theorem Sect.ext_term {A : y Γ ⟶ Ty} {f g : Sect ℳ A} (h : f.term = g.term)
   cases hhom
   rfl
 
-def Sect.convert {A B : y Γ ⟶ Ty} (h : A = B) (f : Sect ℳ A) : Sect ℳ B :=
-  Sect.ofTerm B f.term (by rw [f.term_typing, h])
-
 def Sect.pullbackAlong {A : y Γ ⟶ Ty} (σ : Δ ⟶ Γ) (f : Sect ℳ A) : Sect ℳ (y σ ≫ A) :=
   Sect.ofTerm _ (Tm.map σ.op f.term) (ℳ.map_term_typing _ _ _ f.term_typing)
-
-@[simp] theorem Sect.term_convert {A B : y Γ ⟶ Ty} (h : A = B) (f : Sect ℳ A) :
-    (Sect.convert h f).term = f.term :=
-  Sect.term_ofTerm _ _ _
-
-@[simp] theorem Sect.term_pullbackAlong {A : y Γ ⟶ Ty} (σ : Δ ⟶ Γ) (f : Sect ℳ A) :
-    (Sect.pullbackAlong σ f).term = Tm.map σ.op f.term :=
-  Sect.term_ofTerm _ _ _
 
 end
 

@@ -149,10 +149,6 @@ abbrev strLit (str : String) : Expr ζ ℓ n :=
 
 variable {ηNat ηBool ηList ηChar ηOfNat η}
 
-@[simp] theorem boolLit_subst {m : Nat} (σ : Subst ζ ℓ m n) (b : Bool) :
-    (boolLit ηBool b : Expr ζ ℓ m).subst σ = boolLit ηBool b := by
-  cases b <;> simp! [Fin.fun_vecEmpty]
-
 @[simp] theorem boolLit_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (b : Bool) :
     (boolLit ηBool b : Expr ζ ℓ n){σ} = boolLit ηBool b := by
   cases b <;> simp!

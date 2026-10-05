@@ -68,10 +68,6 @@ theorem isFunc_dom_image_snd
     subst a₂
     exact ⟨b₁, hc, fun b₂ hb₂ => huniq a₁ b₂ b₁ hb₂ hc⟩
 
-@[simp] theorem dom_singleton_pair (a b : ZFSet) : dom {pair a b} = {a} := by
-  ext
-  simp
-
 def fibreOp (α a : ZFSet) : ZFSet :=
   (⋃₀ ⋃₀ α).sep fun b => pair a b ∈ α
 
@@ -91,13 +87,6 @@ def app (f a : ZFSet) : ZFSet :=
   rw [app, mem_sep]
   exact ⟨And.right, fun ⟨b, hab, hc⟩ => ⟨mem_sUnion.2 ⟨b, mem_sUnion.2 ⟨{a, b},
     mem_sUnion.2 ⟨pair a b, hab, by simp [pair]⟩, by simp⟩, hc⟩, b, hab, hc⟩⟩
-
-noncomputable def graph (α : ZFSet.{u}) (fn : α → ZFSet.{u}) : ZFSet.{u} :=
-  range fun x : α => pair x (fn x)
-
-@[simp] theorem mem_graph {fn : α → ZFSet.{u}} :
-    c ∈ graph α fn ↔ ∃ x : α, pair x (fn x) = c :=
-  mem_range
 
 noncomputable def σ (α β : ZFSet) : ZFSet :=
   (prod α (⋃₀ image (app β) α)).sep fun c =>

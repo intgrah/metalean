@@ -1286,26 +1286,6 @@ inductive FExpr.NoProj : FExpr → Prop where
   | strLit (P : StrPos) (str : String) :
     FExpr.NoProj (.strLit P str)
 
-theorem FExpr.charList_noProj (P : StrPos) (cs : List Char) :
-    (FExpr.charList P cs).NoProj := by
-  induction cs with
-  | nil =>
-    refine .ctor (fun p hp => ?_) (by simp) (by simp)
-    obtain rfl : p = FExpr.char P.char := by simpa using hp
-    exact .ind (by simp) (by simp)
-  | cons c cs ih =>
-    refine .ctor (fun p hp => ?_) (fun f hf => ?_) (fun r hr => ?_)
-    · obtain rfl : p = FExpr.char P.char := by simpa using hp
-      exact .ind (by simp) (by simp)
-    · obtain rfl : f = FExpr.op₁ P.ofNat (.natLit P.nat c.toNat) := by simpa using hf
-      exact .app (.const _ _) (.natLit _ _)
-    · obtain rfl : r = FExpr.charList P cs := by simpa using hr
-      exact ih
-
-theorem FExpr.strLitExpand_noProj (P : StrPos) (str : String) :
-    (FExpr.strLitExpand P str).NoProj :=
-  .app (.const _ _) (FExpr.charList_noProj _ _)
-
 theorem FExpr.Denotes.unique {n k : Nat} {fe : FExpr} {e₁ e₂ : Expr E.1 ℓ n} :
     FExpr.Denotes E k fe e₁ →
     FExpr.Denotes E k fe e₂ →

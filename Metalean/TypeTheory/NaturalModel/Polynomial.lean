@@ -85,8 +85,4 @@ theorem polynomial_ext {A₁ A₂ : y Γ ⟶ Ty} {B₁ : pullback A₁ ℳ.typin
     (ℳ.polynomial.obj X).map σ.op ⟨A, B⟩ = ⟨y σ ≫ A, ℳ.fibreMap A (y σ) ≫ B⟩ :=
   rfl
 
-@[simp] theorem polynomial_map_app (f : X ⟶ Y) (A : y Γ ⟶ Ty) (B : pullback A ℳ.typing ⟶ X) :
-    (ℳ.polynomial.map f).app (op Γ) ⟨A, B⟩ = ⟨A, B ≫ f⟩ :=
-  rfl
-
 end Metalean.TypeTheory.NaturalModel

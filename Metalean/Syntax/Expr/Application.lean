@@ -47,10 +47,6 @@ theorem apps_eq_self_of_zero (h : k = 0) (η : Expr ζ ℓ n)
   subst k
   rfl
 
-theorem apps_succ (η : Expr ζ ℓ n) (args : Fin (k + 1) → Expr ζ ℓ n) :
-    η.apps args = (η.app (args 0)).apps fun i => args i.succ :=
-  Fin.foldl_succ ..
-
 theorem apps_last (η : Expr ζ ℓ n) (args : Fin (k + 1) → Expr ζ ℓ n) :
     η.apps args = (η.apps fun i => args i.castSucc).app (args (Fin.last k)) :=
   Fin.foldl_succ_last ..
@@ -70,17 +66,6 @@ theorem apps_append (e : Expr ζ ℓ n) (args₁ : Fin k → Expr ζ ℓ n)
     (η : Expr ζ ℓ n) (args : Fin k → Expr ζ ℓ n) :
     (η.apps args){ls} = η{ls}.apps args{ls} :=
   (appLevelHom.finFold k).naturality_apply ls ⟨η, args⟩ |>.symm
-
-@[simp] theorem map_appList (pre : ζ₁ ⟶ ζ₂)
-    (η : Expr ζ₁ ℓ n) (args : List (Expr ζ₁ ℓ n)) :
-    (η.appList args).map pre =
-      (η.map pre).appList (args.map (Expr.map pre)) :=
-  appHom.listFold.naturality_apply pre ⟨η, args⟩ |>.symm
-
-@[simp] theorem instL_appList (ls : Param ℓ → Level ℓ')
-    (η : Expr ζ ℓ n) (args : List (Expr ζ ℓ n)) :
-    (η.appList args){ls} = η{ls}.appList args{ls} :=
-  appLevelHom.listFold.naturality_apply ls ⟨η, args⟩ |>.symm
 
 theorem applyBound_eq_apps (e : Expr ζ ℓ n) (k : Nat) :
     e.applyBound k = (e.wkN k).apps fun i : Fin k => .var (Fin.natAdd n i) := by

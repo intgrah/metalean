@@ -63,16 +63,6 @@ theorem tailN_apply (ρ : RawValuation Γ₁) (k j : Nat) : ρ.tailN k j = ρ (j
   funext i
   simp [tailN_apply, Nat.add_comm, Nat.add_left_comm]
 
-@[simp] theorem tailN_pushFin (ρ : RawValuation Γ₁) {k : Nat} (args : Fin k → RawValue Γ₁) :
-    (ρ.pushFin args).tailN k = ρ := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    funext j
-    rw [tailN_apply]
-    change (ρ.pushFin fun i => args i.castSucc) (j + k) = ρ j
-    simpa [tailN_apply] using congrFun (ih fun i => args i.castSucc) j
-
 @[simp] theorem pushFin_tailN (ρ : RawValuation Γ₁) (k : Nat) :
     (ρ.tailN k).pushFin (fun i : Var k => ρ i.db) = ρ := by
   induction k generalizing ρ with

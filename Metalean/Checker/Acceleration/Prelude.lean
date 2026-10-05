@@ -85,10 +85,6 @@ namespace Expr
 
 variable {ζ : Sigs} {ℓ n : Nat}
 
-abbrev le (η : Head ζ (.inductive Nat.le.sig)) (a b : Expr ζ ℓ n) :
-    Expr ζ ℓ n :=
-  .ind η 0 ![] ![a] ![b]
-
 abbrev false (η : Head ζ (.inductive False.sig)) : Expr ζ ℓ n :=
   .ind η 0 ![] ![] ![]
 
@@ -99,10 +95,6 @@ abbrev eq (η : Head ζ (.inductive Eq.sig)) (l : Level ℓ) (α a b : Expr ζ �
     Expr ζ ℓ n :=
   .ind η 0 ![l] ![α, a] ![b]
 
-abbrev eqRefl (η : Head ζ (.inductive Eq.sig)) (l : Level ℓ) (α a : Expr ζ ℓ n) :
-    Expr ζ ℓ n :=
-  .ctor η 0 0 ![l] ![α, a] ![] ![]
-
 abbrev decidable (η : Head ζ (.inductive Decidable.sig)) (p : Expr ζ ℓ n) :
     Expr ζ ℓ n :=
   .ind η 0 ![] ![p] ![]
@@ -112,14 +104,6 @@ abbrev decidable (η : Head ζ (.inductive Decidable.sig)) (p : Expr ζ ℓ n) :
     Bool → Expr ζ ℓ n
   | .false => .ctor η 0 0 ![] ![p] ![h] ![]
   | .true => .ctor η 0 1 ![] ![p] ![h] ![]
-
-abbrev psigma (η : Head ζ (.inductive PSigma.sig)) (l₁ l₂ : Level ℓ)
-    (α β : Expr ζ ℓ n) : Expr ζ ℓ n :=
-  .ind η 0 ![l₁, l₂] ![α, β] ![]
-
-abbrev psigmaMk (η : Head ζ (.inductive PSigma.sig)) (l₁ l₂ : Level ℓ)
-    (α β a b : Expr ζ ℓ n) : Expr ζ ℓ n :=
-  .ctor η 0 0 ![l₁, l₂] ![α, β] ![a, b] ![]
 
 variable {kd : ConstKind}
 

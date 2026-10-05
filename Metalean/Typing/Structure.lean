@@ -319,14 +319,6 @@ theorem projTerm_hasType :
       h.projType η ls ps f maj :=
   fun hΓ hps hmaj => (h.projection_spec hB hΓ hps hmaj f).term
 
-theorem projType_hasType :
-    E[Γ] ⊢ ok →
-    (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
-    E[Γ] ⊢ maj : .ind η s ls ps h.indices →
-    E[Γ] ⊢ h.projType η ls ps f maj :
-      .sort (((E.get η).block.ctors s c).ordinary f).level{ls} :=
-  fun hΓ hps hmaj => (h.projection_spec hB hΓ hps hmaj f).type
-
 theorem projTerm_generic :
     E[Γ] ⊢ ok →
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →

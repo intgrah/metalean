@@ -35,9 +35,6 @@ instance : CSupHomClass (CSupHom α β) α β where
   map_rel f := f.monotone' (b := _)
   map_cSup_le f := f.map_cSup'
 
-@[ext] theorem ext {f g : CSupHom α β} (h : ∀ a, f a = g a) : f = g :=
-  DFunLike.ext f g h
-
 def id (α : Type*) [CondSemilatticeSup α] : CSupHom α α where
   __ := OrderHom.id
   map_cSup' _ _ h := cSup_le h
@@ -69,9 +66,6 @@ instance : CSupHomClass (Hom α β) α β where
 
 instance : BotHomClass (Hom α β) α β where
   map_bot f := f.map_bot'
-
-@[ext] theorem ext {f g : Hom α β} (h : ∀ a, f a = g a) : f = g :=
-  DFunLike.ext f g h
 
 theorem map_le_bot (f : Hom α β) {a : α} (h : a ≤ ⊥) : f a ≤ ⊥ :=
   (f.monotone h).trans_eq (map_bot f)

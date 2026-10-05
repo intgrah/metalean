@@ -20,13 +20,6 @@ noncomputable def abstraction (hA : ℒ.Comprehension Γ₁ ΓA)
     (C : RawFamily Γ₁) (B : RawFamily ΓA) : RawFamily Γ₁ :=
   (RawActionFamily.normalizedBody D hA C B).comp (.ofNatTrans (RawAction.abstractionHom E ℓ))
 
-@[simp]
-theorem abstraction_value (hA : ℒ.Comprehension Γ₁ ΓA)
-    (C : RawFamily Γ₁) (B : RawFamily ΓA)
-    (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) :
-    (abstraction D hA C B).app _ σ.op ρ =
-      (normalizedBodyAction D hA C B σ ρ).abstraction := rfl
-
 theorem abstraction_mono (hA : ℒ.Comprehension Γ₁ ΓA)
     {C C' : RawFamily Γ₁} (hC : C ≤ C') {B B' : RawFamily ΓA} (hB : B ≤ B') :
     abstraction D hA C B ≤ abstraction D hA C' B' :=

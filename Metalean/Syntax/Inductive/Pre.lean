@@ -56,21 +56,4 @@ def PreInductive.withLevels (pre : PreInductive ζ ι)
   level := pre.level
   ctors s c := (pre.ctors s c).withLevels (levels s c)
 
-@[simp] theorem PreCtorDecl.withLevels_ordinaryTeleAux (pre : PreCtorDecl ζ ι s csig)
-    (levels : Fin csig.nfields → Level ι.nlevels) (count : Nat)
-    (hcount : count ≤ csig.nfields) :
-    (pre.withLevels levels).ordinaryTeleAux count hcount =
-      pre.ordinaryTeleAux count hcount := by
-  induction count with
-  | zero => rfl
-  | succ count ih =>
-    change (Ctor.ordinaryTeleAux _ count _).snoc _ = (pre.ordinaryTeleAux count _).snoc _
-    rw [ih (by omega)]
-    rfl
-
-@[simp] theorem PreCtorDecl.withLevels_ordinaryTele (pre : PreCtorDecl ζ ι s csig)
-    (levels : Fin csig.nfields → Level ι.nlevels) :
-    (pre.withLevels levels).ordinaryTele = pre.ordinaryTele :=
-  pre.withLevels_ordinaryTeleAux levels csig.nfields le_rfl
-
 end Metalean

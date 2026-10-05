@@ -59,10 +59,6 @@ instance (T : RelativeMonad J) : Category (Kleisli T) where
 
 abbrev functor (T : RelativeMonad J) : C ⥤ D := T.lift ⋙ T.extension
 
-@[reducible] def η (T : RelativeMonad J) : J ⟶ T.functor where
-  app X := T.unit X
-  naturality _ Y f := (T.unit_bind (J.map f ≫ T.unit Y)).symm
-
 @[ext] structure Hom (T₁ T₂ : RelativeMonad J) where
   app (X : C) : T₁.obj X ⟶ T₂.obj X
   unit_app (X : C) : T₁.unit X ≫ app X = T₂.unit X
@@ -100,15 +96,6 @@ instance : Category (RelativeMonad J) where
 @[reducible] def forget : RelativeMonad J ⥤ C ⥤ D where
   obj T := T.functor
   map α := α.toNatTrans
-
-@[reducible] def Hom.kleisli {T₁ T₂ : RelativeMonad J} (α : T₁ ⟶ T₂) :
-    T₁.Kleisli ⥤ T₂.Kleisli where
-  obj X := ⟨X.of⟩
-  map {_ Y} f := ⟨f.of ≫ α.app Y.of⟩
-  map_id X := Kleisli.Hom.ext (α.unit_app X.of)
-  map_comp f₁ f₂ :=
-    Kleisli.Hom.ext ((Category.assoc ..).trans
-      ((congrArg (f₁.of ≫ ·) (α.bind_app f₂.of)).trans (Category.assoc ..).symm))
 
 end RelativeMonad
 

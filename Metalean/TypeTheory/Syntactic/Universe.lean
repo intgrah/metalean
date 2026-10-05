@@ -152,10 +152,6 @@ namespace Tm
 def label (Γ : RawCtx E ℓ) {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ e : t) : Tm_ (⟨Γ⟩ : CtxCat E ℓ) :=
   ⟦⟨t, e, he.regular, he⟩⟧
 
-@[simp] theorem type_label {Γ : RawCtx E ℓ} {t e : Expr ζ ℓ Γ.len} (he : E[Γ.ctx] ⊢ e : t) :
-    type (label Γ he) = ⟦⟨t, he.regular⟩⟧ :=
-  rfl
-
 theorem label_eq {Γ : RawCtx E ℓ} {t₁ e₁ t₂ e₂ : Expr ζ ℓ Γ.len}
     {he₁ : E[Γ.ctx] ⊢ e₁ : t₁} {he₂ : E[Γ.ctx] ⊢ e₂ : t₂}
     (ht : E[Γ.ctx] ⊢ t₁ ≡ t₂ typ) (he : E[Γ.ctx] ⊢ e₁ ≡ e₂ : t₁) : label Γ he₁ = label Γ he₂ :=
