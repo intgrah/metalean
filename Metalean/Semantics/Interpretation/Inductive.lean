@@ -169,9 +169,9 @@ theorem names_congr
   funext i
   cases i using Fin.addCases with
   | left f =>
-    simpa [names, Fin.append_left] using Tm.label_eq (.ofDefEq (hfieldTypes f)) (hfields f)
+    simpa [names] using Tm.label_eq (.ofDefEq (hfieldTypes f)) (hfields f)
   | right f =>
-    simpa [names, Fin.append_right] using Tm.label_eq (.ofDefEq (hrecFieldTypes f)) (hrecFields f)
+    simpa [names] using Tm.label_eq (.ofDefEq (hrecFieldTypes f)) (hrecFields f)
 
 end CtorTyping
 

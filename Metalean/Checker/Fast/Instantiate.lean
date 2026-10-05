@@ -42,11 +42,11 @@ theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k'
   | @bvar m k i j hi hj =>
     have hv := hρ.bound ⟨i, by omega⟩ (by simp; omega)
     have : ρ ⟨i, by omega⟩ = ⟨n - 1 - j, by omega⟩ := Fin.ext (by simp at hv ⊢; omega)
-    simpa [Expr.rename, this] using .bvar (by omega) (by omega)
+    simpa [this] using .bvar (by omega) (by omega)
   | @fvar m k i hi =>
     have hv := hρ.free ⟨i, by omega⟩ (by simp; omega)
     have : ρ ⟨i, by omega⟩ = ⟨i, by omega⟩ := Fin.ext hv
-    simpa [Expr.rename, this] using .fvar (by omega)
+    simpa [this] using .fvar (by omega)
   | sort hl => exact .sort hl
   | const hls hη hls' => exact .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
@@ -508,7 +508,7 @@ theorem Subst.Instantiates.lift {m n q p d : Nat} {a' : Expr E.1 ℓ q} {σ : Su
     have := h.size
     have ⟨w, hw, hwv⟩ := h.free ⟨v.val, by omega⟩ hv
     refine ⟨w.castSucc, ?_, by simpa using hwv⟩
-    simp [Subst.lift, show v.val < m by omega, hw, Expr.wk, Expr.wkFrom, Expr.rename]
+    simp [Subst.lift, show v.val < m by omega, hw, Expr.wk, Expr.wkFrom]
   here v hv := by
     have := h.size
     have := h.le
@@ -521,7 +521,7 @@ theorem Subst.Instantiates.lift {m n q p d : Nat} {a' : Expr E.1 ℓ q} {σ : Su
     by_cases hvm : v.val < m
     · have ⟨w, hw, hwv⟩ := h.bound ⟨v.val, hvm⟩ hv
       refine ⟨w.castSucc, ?_, by simp at hwv ⊢; omega⟩
-      simp [Subst.lift, hvm, hw, Expr.wk, Expr.wkFrom, Expr.rename]
+      simp [Subst.lift, hvm, hw, Expr.wk, Expr.wkFrom]
     · refine ⟨Fin.last n, by simp [Subst.lift, hvm], ?_⟩
       simp
       omega
@@ -538,12 +538,12 @@ theorem FExpr.Denotes.drop {m k : Nat} {fb : FExpr} {b : Expr E.1 ℓ m}
     rw [FExpr.data_bvar, Data.toNat_looseBVarRange_mk] at hc
     have := hσ.size
     have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
-    simpa [Expr.subst, hw] using .bvar (i := w.val) (by simp at hwv; omega) (by omega)
+    simpa [hw] using .bvar (i := w.val) (by simp at hwv; omega) (by omega)
   | @fvar m k i hi =>
     have := hσ.size
     have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
-    simpa [Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
+    simpa [hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
   | sort hl => exact .sort hl
   | const hls hη hls' => exact .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
@@ -651,9 +651,9 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
     have := hσ.size
     by_cases hjd : j < d
     · have ⟨w, hw, hwv⟩ := hσ.bound ⟨i, by omega⟩ (by simp; omega)
-      simpa [FExpr.instAtCore, Expr.subst, hjd, hw] using .bvar (i := w.val) (by simp at hwv; omega) hjd
+      simpa [FExpr.instAtCore, hjd, hw] using .bvar (i := w.val) (by simp at hwv; omega) hjd
     · have hjd' : j = d := by omega
-      simp [FExpr.instAtCore, Expr.subst, hjd', hσ.here ⟨i, by omega⟩ (by simp; omega)]
+      simp [FExpr.instAtCore, hjd', hσ.here ⟨i, by omega⟩ (by simp; omega)]
       have := hσ.le
       exact ha.rename (Fin.castLE (by omega)) (Nat.zero_le d) (by omega)
         ⟨fun v _ => rfl, fun v hv => absurd v.isLt (by omega)⟩
@@ -661,7 +661,7 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
     have := hσ.size
     have := hσ.scope
     have ⟨w, hw, hwv⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
-    simpa [FExpr.instAtCore, Expr.subst, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
+    simpa [FExpr.instAtCore, hw, show w = ⟨i, by omega⟩ by ext; simpa using hwv] using .fvar (by omega)
   | sort hl =>
     simpa [FExpr.instAtCore] using .sort hl
   | const hls hη hls' =>
@@ -720,7 +720,7 @@ theorem FExpr.Denotes.instAtCore {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ
       (hf.instAtStep ihf σ hk hσ)
       (ha'.instAtStep iha σ hk hσ)
   | proj hstruct hη hs hidx he' ihe =>
-    simpa [FExpr.instAtCore, Inductive.IsStructure.projTerm_subst] using
+    simpa [FExpr.instAtCore] using
       .proj hstruct hη hs hidx (he'.instAtStep ihe σ hk hσ)
   | app hf ha' ihf iha =>
     simpa [FExpr.instAtCore] using .app
@@ -1009,7 +1009,7 @@ theorem FExpr.Denotes.instLCore {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {u
   | letE ht hv hb iht ihv ihb =>
     simpa [FExpr.instLCore] using .letE (ht.instLStep iht) (hv.instLStep ihv) (hb.instLStep ihb)
   | natLit hNat =>
-    simpa [FExpr.instLCore, Expr.natLit_instL] using .natLit hNat
+    simpa [FExpr.instLCore] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
     simpa [FExpr.instLCore] using .strLit hNat hList hChar hOfNat hString
 
@@ -1034,7 +1034,7 @@ theorem Subst.InstFVars.lift {n₀ n k : Nat} {args : Array FExpr} {σ : Subst E
   free v hv := by
     have := h.size
     have ⟨a', ha', hσ⟩ := h.free ⟨v.val, by omega⟩ hv
-    exact ⟨a', ha', by simp [Subst.lift, show v.val < n₀ by omega, hσ, Expr.wkN]⟩
+    exact ⟨a', ha', by simp! [Subst.lift, show v.val < n₀ by omega, hσ]⟩
   bound v hv := by
     have := h.size
     by_cases hvn : v.val < n₀
@@ -1170,7 +1170,7 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
       (ihf hσ)
       (iha hσ)
   | proj hstruct hη hs hidx _ ihe =>
-    simpa [FExpr.instFVarsCore, Inductive.IsStructure.projTerm_subst] using .proj hstruct hη hs hidx (ihe hσ)
+    simpa [FExpr.instFVarsCore] using .proj hstruct hη hs hidx (ihe hσ)
   | app _ _ ihf iha =>
     simpa [FExpr.instFVarsCore] using .app (ihf hσ) (iha hσ)
   | lam _ _ iht ihb =>
@@ -1180,7 +1180,7 @@ theorem instFVarsAux {n₀ k n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n₀} {args
   | letE _ _ _ iht ihv ihb =>
     simpa [FExpr.instFVarsCore] using .letE (iht hσ) (ihv hσ) (ihb hσ.lift)
   | natLit hNat =>
-    simpa [FExpr.instFVarsCore, Expr.natLit_subst] using .natLit hNat
+    simpa [FExpr.instFVarsCore] using .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
     simpa [FExpr.instFVarsCore] using .strLit hNat hList hChar hOfNat hString
 

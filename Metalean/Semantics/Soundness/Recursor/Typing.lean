@@ -318,7 +318,7 @@ theorem RawSound.recr_value (hrel : l.rel = true)
       (Tm.label (CtxCat.recr h.toRecDecl s).as ((RecTyping.generic h.toRecDecl s).typed)) =
       (Tm E₂ ℓ).map σ.op (Tm.label Γ.as h.typed) := by
     rw [op_comp, Functor.map_comp_apply, Tm.map_label]
-    simp [Expr.subst, RecTyping.recrHom]
+    simp [RecTyping.recrHom]
   have hd := h.toRecDecl
   have hβ := RawFamily.ctxLam_openBeta (Γ₁ := CtxCat.nil E₂ ℓ)
     ((E₂.get η).block.recrTele η s ls l) (k := ι.recrEnd s) (by simp) hd.block.recrTele (hsound.recrTeleProperties hB hblock hd s)

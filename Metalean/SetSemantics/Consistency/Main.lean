@@ -32,7 +32,7 @@ noncomputable def Env.Model.classical : Model.{u} ClassicalEnv.E :=
   let m₆ := m₅.addAxiom
     (propext_valid m₅ (by simp! [Env.get, Entry.block]) (by simp! [Env.get, Entry.block]))
   let m₇ := m₆.addAxiom
-    (classicalChoice_valid m₆ (by simp [Env.get, Entry.map, Entry.block]))
+    (classicalChoice_valid m₆ (by simp! [Env.get, Entry.block]))
   m₇
 
 def Con : Prop :=

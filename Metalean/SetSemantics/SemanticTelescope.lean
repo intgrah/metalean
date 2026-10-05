@@ -161,7 +161,7 @@ theorem foldAt_pull {a₁ count : Nat} (former : ZFSet → (ZFSet → ZFSet) →
         (Δ.pull project count) γ value =
       foldAt former leaf Δ (project γ) value := by
   induction Δ using Tele.addInduction generalizing value with
-  | nil => simp [SemTele.pull, foldAt]
+  | nil => simp! [foldAt]
   | snoc _ prior domain ih =>
     simpa [SemTele.pull, foldAt] using ih
       (leaf := fun final result =>

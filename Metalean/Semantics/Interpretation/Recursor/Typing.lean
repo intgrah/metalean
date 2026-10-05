@@ -136,7 +136,7 @@ theorem subst (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) (
       (maj₁.subst σ.subst) where
   __ := h.toRecData.subst σ
   index i := by simpa using (h.index i).substitution σ.typed
-  major := by simpa [Expr.subst] using h.major.substitution σ.typed
+  major := by simpa using h.major.substitution σ.typed
 
 def recrHom (h : RecTyping Γ₁ η s ls l ps₁ ms₁ mins₁ is₁ maj₁) :
     Γ₁.as ⟶ (CtxCat.recr h.toRecDecl s).as :=

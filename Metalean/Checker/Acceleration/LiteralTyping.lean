@@ -125,13 +125,13 @@ theorem listCons_typed (hL : (E.get ηList).block = List.block)
     ![h] ![h] ![t] ![t] ![.succ .zero] ![.succ .zero]
     (fun ⟨0, _⟩ => by rw [hL]; simpa [Inductive.paramType] using char_typed hC)
     (fun ⟨0, _⟩ => by rw [hL]; simpa [List.consDecl] using hh)
-    (fun ⟨0, _⟩ => by rw [hL]; simpa [List.consDecl, RecField.instantiatedType,
+    (fun ⟨0, _⟩ => by rw [hL]; simpa! [List.consDecl, RecField.instantiatedType,
       RecField.instantiatedTelescope, RecField.instantiatedIndices, Matrix.empty_eq,
-      Fin.const_fin_one, Expr.wkN] using ht)
+      Fin.const_fin_one] using ht)
     (fun ⟨0, _⟩ => by rw [hL]; simpa [Ctor.ordinaryFieldExpr, List.consDecl] using char_typed hC)
-    (fun ⟨0, _⟩ => by rw [hL]; simpa [Ctor.recursiveFieldExpr, List.consDecl,
+    (fun ⟨0, _⟩ => by rw [hL]; simpa! [Ctor.recursiveFieldExpr, List.consDecl,
       RecField.instantiatedType, RecField.instantiatedTelescope, RecField.instantiatedIndices,
-      Matrix.empty_eq, Fin.const_fin_one, Expr.wkN] using list_typed hL hC)
+      Matrix.empty_eq, Fin.const_fin_one] using list_typed hL hC)
     (by rw [hL]; simpa [Matrix.empty_eq] using list_typed hL hC)
   rw [hL] at h
   simpa [Matrix.empty_eq] using h

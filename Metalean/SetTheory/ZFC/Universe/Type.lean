@@ -60,7 +60,7 @@ theorem omega_mem_type : omega ∈ U_ n := by
       intro k
       induction k with
       | zero =>
-        simpa [PSet.ofNat] using
+        simpa! using
           Cardinal.ord_inaccessible_isSuccLimit.succ_lt
             Cardinal.ord_inaccessible_isSuccLimit.bot_lt
       | succ k ih =>

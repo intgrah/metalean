@@ -90,8 +90,7 @@ theorem ctorFieldTypes_eq_pi {ps : Fin ι.nparams → Expr ζ₂ ℓ Γ₁.as.le
       rw [← Ctx.get_instL, Inductive.paramType_eq_get_subst]
     rw [hn] at hb
     rw [RawFamily.closedApps_value]
-    simpa [ctorParamHom, Inductive.ctorTypeFn, CtxCat.hom_nil_eq (σ₁ ≫ CtxCat.toNil Γ₁) (CtxCat.toNil Γ₂),
-      Expr.instL] using hb
+    simpa [ctorParamHom, Inductive.ctorTypeFn, CtxCat.hom_nil_eq (σ₁ ≫ CtxCat.toNil Γ₁) (CtxCat.toNil Γ₂)] using hb
   · rw [op_comp, Functor.map_comp_apply, Tm.map_varLabel]
     simp only [ctorTargetHom, Fin.append_right]
     apply congrArg ((Tm E₂ ℓ).map σ₁.op)
@@ -129,7 +128,7 @@ theorem RawSound.ctorFieldProperties
   have ⟨_, ht⟩ := Ctx.pi_isType (e := .sort I.level)
     (((hB.ctors s c).ordinaryTeleAux _ le_rfl).appendCtxWF hp) .sortDF
   convert (hsound.properties (hp.instLevel ls) (ht.instLevel ls)).left using 1 <;>
-    simp [Inductive.map, Ctor.ordinaryTele, Expr.map]
+    simp [Inductive.map, Ctor.ordinaryTele]
 
 theorem RawSound.ordinaryTeleProperties :
     RawTeleProperties E₂ (E₂.get η).block.params{ls}
@@ -165,6 +164,6 @@ theorem RawSound.ordinaryTypeJudgment (f : Fin (ι.ctors s c).nfields)
   intro hctx
   convert hsound.properties (hB.ordinaryClosedWF s c ls f.val f.isLt.le)
     (((hB.ctors s c).ordinary f).typeExact.instLevel ls) using 1 <;>
-    simp [Inductive.map, Ctor.map, Field.map, Expr.map]
+    simp [Inductive.map, Ctor.map, Field.map]
 
 end Metalean

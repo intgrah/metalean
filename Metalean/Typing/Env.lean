@@ -31,17 +31,17 @@ theorem map {sig : Sig} {entry : Entry ζ₁ sig} (pre : E₁.as ⟶ E₂.as) :
   induction h with
   | «axiom» ht =>
     obtain ⟨l, ht⟩ := ht
-    exact .axiom ⟨l, by simpa [Expr.map] using ht.map pre⟩
+    exact .axiom ⟨l, by simpa using ht.map pre⟩
   | «opaque» he ht =>
     obtain ⟨l, ht⟩ := ht
     exact .opaque
-      (by simpa [Expr.map] using he.map pre)
-      ⟨l, by simpa [Expr.map] using ht.map pre⟩
+      (by simpa using he.map pre)
+      ⟨l, by simpa using ht.map pre⟩
   | «def» ht he =>
     obtain ⟨l, ht⟩ := ht
     exact .def
-      ⟨l, by simpa [Expr.map] using ht.map pre⟩
-      (by simpa [Expr.map] using he.map pre)
+      ⟨l, by simpa using ht.map pre⟩
+      (by simpa using he.map pre)
   | quot heq =>
     exact .quot <| by
       simpa [Env.get_map] using congrArg (Inductive.map pre.sigs) heq

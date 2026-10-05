@@ -54,7 +54,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
             (fun index => Expr.var ⟨ι.nparams + index.val, by omega⟩)⟧ = model.toModel.sortValue s
             (fun param : Fin ι.nparams => γ (param.castLE (Nat.le_add_right _ _)))
             fun index : Fin (ι.nindices s) => γ (Fin.natAdd ι.nparams index) := by
-      simpa [Expr.denote, Fin.natAdd, Fin.castAdd] using hsorts s
+      simpa! [Fin.natAdd, Fin.castAdd] using hsorts s
         (fun param => γ (param.castLE (Nat.le_add_right _ _))) fun index =>
           γ (Fin.natAdd ι.nparams index)
     have hsnoc := Tele.Forall₂.snoc ((model.tele.indices s).realizes_mapInst pre hatoms) hlast

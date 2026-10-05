@@ -151,15 +151,15 @@ variable {ηNat ηBool ηList ηChar ηOfNat η}
 
 @[simp] theorem boolLit_subst {m : Nat} (σ : Subst ζ ℓ m n) (b : Bool) :
     (boolLit ηBool b : Expr ζ ℓ m).subst σ = boolLit ηBool b := by
-  cases b <;> simp [boolLit, Fin.fun_vecEmpty]
+  cases b <;> simp! [Fin.fun_vecEmpty]
 
 @[simp] theorem boolLit_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ') (b : Bool) :
     (boolLit ηBool b : Expr ζ ℓ n){σ} = boolLit ηBool b := by
-  cases b <;> simp [boolLit]
+  cases b <;> simp!
 
 @[simp] theorem boolLit_map (pre : ζ ⟶ ζ₂) (b : Bool) :
     (boolLit ηBool b : Expr ζ ℓ n).map pre = boolLit (ηBool.map pre) b := by
-  cases b <;> simp [boolLit, Fin.fun_vecEmpty]
+  cases b <;> simp! [Fin.fun_vecEmpty]
 
 theorem charListLevels :
     (![.zero] : Fin 1 → Level ℓ) = (⟦(![.zero] : Fin 1 → RawLevel ℓ) ·⟧) :=
@@ -189,7 +189,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (ηChar : Head ζ (.inductive Char.sig)) (ηOfNat : Head ζ (.const .def 0))
     (cs : List Char) :
     (charList ηNat ηList ηChar ηOfNat cs).subst σ = charList ηNat ηList ηChar ηOfNat cs := by
-  induction cs <;> simp_all [charList, Fin.fun_vecEmpty, Fin.const_fin_one]
+  induction cs <;> simp_all! [Fin.fun_vecEmpty, Fin.const_fin_one]
 
 @[simp] theorem natLit_instL {ℓ' : Nat} (σ : Param ℓ → Level ℓ')
     (η : Head ζ (.inductive Nat.sig)) (num : Nat) :
@@ -202,7 +202,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (cs : List Char) :
     (charList ηNat ηList ηChar ηOfNat cs : Expr ζ ℓ n){σ} =
       charList ηNat ηList ηChar ηOfNat cs := by
-  induction cs <;> simp_all [charList]
+  induction cs <;> simp_all!
 
 @[simp] theorem natLit_map {ζ₂ : Sigs} (pre : ζ ⟶ ζ₂) (η : Head ζ (.inductive Nat.sig))
     (num : Nat) :
@@ -215,11 +215,11 @@ theorem charList_cons (c : Char) (cs : List Char) :
     (cs : List Char) :
     (charList ηNat ηList ηChar ηOfNat cs : Expr ζ ℓ n).map pre =
       charList (ηNat.map pre) (ηList.map pre) (ηChar.map pre) (ηOfNat.map pre) cs := by
-  induction cs <;> simp_all [charList, Fin.fun_vecEmpty, Fin.const_fin_one]
+  induction cs <;> simp_all! [Fin.fun_vecEmpty, Fin.const_fin_one]
 
 @[simp] theorem boolLit_rename {m : Nat} (ρ : Ren n m) (b : Bool) :
     (boolLit ηBool b : Expr ζ ℓ n).rename ρ = boolLit ηBool b := by
-  cases b <;> simp [boolLit, Fin.fun_vecEmpty]
+  cases b <;> simp! [Fin.fun_vecEmpty]
 
 @[simp] theorem natLit_rename {m : Nat} (ρ : Ren n m) (num : Nat) :
     (natLit ηNat num : Expr ζ ℓ n).rename ρ = natLit ηNat num := by
@@ -228,7 +228,7 @@ theorem charList_cons (c : Char) (cs : List Char) :
 @[simp] theorem charList_rename {m : Nat} (ρ : Ren n m) (cs : List Char) :
     (charList ηNat ηList ηChar ηOfNat cs : Expr ζ ℓ n).rename ρ =
       charList ηNat ηList ηChar ηOfNat cs := by
-  induction cs <;> simp_all [charList, Fin.fun_vecEmpty, Fin.const_fin_one]
+  induction cs <;> simp_all! [Fin.fun_vecEmpty, Fin.const_fin_one]
 
 @[simp] theorem nat_wkClosed : (ℕ : Expr ζ ℓ 0).wkClosed = (ℕ : Expr ζ ℓ n) :=
   wkClosed_of_rename (f := fun _ => ℕ) (fun _ => by simp [Fin.fun_vecEmpty]) n

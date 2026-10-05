@@ -74,7 +74,7 @@ def kindIdx : RawLevel ℓ → Nat
 theorem sizeOf_toOffset_le (l : RawLevel ℓ) : sizeOf (toOffset l).1 ≤ sizeOf l := by
   induction l with
   | succ l ih => simp only [toOffset, succ.sizeOf_spec]; omega
-  | zero | max | imax | param => simp [toOffset]
+  | zero | max | imax | param => simp!
 
 mutual
 
@@ -165,11 +165,11 @@ theorem evalMax_perm {ls₁ ls₂ : List (RawLevel ℓ)} :
   (repeat' split) <;> omega
 
 @[simp] theorem eval_succN (l : RawLevel ℓ) (k : Nat) : eval ν (succN l k) = eval ν l + k := by
-  induction k <;> simp [succN, Nat.add_assoc, *]
+  induction k <;> simp! [Nat.add_assoc, *]
 
 theorem eval_toOffset (l : RawLevel ℓ) : eval ν l = eval ν (toOffset l).1 + (toOffset l).2 := by
   induction l with
-  | succ l ih => simp [toOffset, ih, Nat.add_assoc]
+  | succ l ih => simp! [ih, Nat.add_assoc]
   | zero | max | imax | param => rfl
 
 theorem eval_of_isExplicit {l : RawLevel ℓ} :
@@ -178,7 +178,7 @@ theorem eval_of_isExplicit {l : RawLevel ℓ} :
   intro h
   induction l with
   | zero => rfl
-  | succ l ih => simp [toOffset, ih h]
+  | succ l ih => simp! [ih h]
   | max | imax | param => cases h
 
 theorem pos_of_isNotZero {l : RawLevel ℓ} :
@@ -266,7 +266,7 @@ theorem eval_mkMaxList (ls : List (RawLevel ℓ)) : eval ν (mkMaxList ls) = eva
   | nil => rfl
   | cons l ls ih =>
     cases ls with
-    | nil => simp [mkMaxList]
+    | nil => simp!
     | cons l' ls =>
       change eval ν (mkMax l (mkMaxList (l' :: ls))) = _
       rw [eval_mkMax, ih]
@@ -274,13 +274,13 @@ theorem eval_mkMaxList (ls : List (RawLevel ℓ)) : eval ν (mkMaxList ls) = eva
 
 theorem maxArgs_ne_nil (l : RawLevel ℓ) : maxArgs l ≠ [] := by
   induction l with
-  | max _ _ ih₁ _ => simp [maxArgs, ih₁]
-  | zero | succ | imax | param => simp [maxArgs]
+  | max _ _ ih₁ _ => simp! [ih₁]
+  | zero | succ | imax | param => simp!
 
 theorem evalMax_maxArgs (l : RawLevel ℓ) : evalMax ν (maxArgs l) = eval ν l := by
   induction l with
-  | max l₁ l₂ ih₁ ih₂ => simp [maxArgs, ih₁, ih₂]
-  | zero | succ | imax | param => simp [maxArgs]
+  | max l₁ l₂ ih₁ ih₂ => simp! [ih₁, ih₂]
+  | zero | succ | imax | param => simp!
 
 theorem evalMax_map_succN (k : Nat) {ls : List (RawLevel ℓ)} :
     ls ≠ [] →

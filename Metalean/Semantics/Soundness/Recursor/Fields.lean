@@ -82,8 +82,7 @@ theorem RawSound.recursiveIndexProperties (i : Fin (ι.nindices ((ι.ctors s c).
   have hp := hsound.properties hfull hi
   convert hp using 1 <;>
     simp [CtxCat.sourceFieldTarget, CtxCat.ctorSource, CtxCat.extendTele,
-      hblock, Inductive.map, Ctor.map, Ctor.ordinaryTele, RecField.map,
-      Ctx.map_instL, Ctx.map_append, InstLevel.inst_apply, Expr.map]
+      hblock, Inductive.map, Ctor.map, Ctor.ordinaryTele, RecField.map]
   congr 1
 
 theorem RawSound.recursiveSourceProperties :
@@ -156,7 +155,7 @@ theorem RawSound.fieldTeleProperties
     rw [← CtxCat.ctorFields_get_ordinary h s c f]
     convert pall.var ((h.block.ctors s c).fieldTele rfl Γ.as.wf h.param)
       (fieldVar h s c (f.castAdd (ι.ctors s c).nrecFields)) (by dsimp [fieldVar]; omega) using 1
-    simp [CtorSig.fieldOrdinary, fieldVar, Expr.var_wkN, Fin.natAdd]
+    simp [CtorSig.fieldOrdinary, fieldVar, Fin.natAdd]
   have pa := Ctor.forall_ordinarySubst (ctor := (E₂.get η).block.ctors s c)
     (motive := fun e _ t => RawTyped (CtxCat.ctorFields h s c) e t)
     (ps₂ := (ι.ctors s c).fieldParams ps) (fds₂ := (ι.ctors s c).fieldOrdinary) le_rfl pp pf
@@ -193,7 +192,7 @@ theorem RawSound.sourceIndexProperties (h : IndData Γ η ls ps) (i : Fin (ι.ni
   have hi := ((hB.ctors s c).targetIndices i).instLevel ls
   rw [Inductive.indexType_instL] at hi
   convert (hsound.properties (hB.ordinaryClosedWF s c ls _ le_rfl) hi).toRawTyped using 1 <;>
-    simp [CtxCat.ctorSource, hblock, Inductive.map, Ctor.map, Expr.map]
+    simp [CtxCat.ctorSource, hblock, Inductive.map, Ctor.map]
   rfl
 
 theorem RawSound.appliedMajorProperties (h : IndData Γ η ls ps) (hR : RawTeleProperties E₂ .nil Γ.as.ctx)
@@ -254,11 +253,11 @@ theorem RawSound.fieldTargetArgProperties (h : IndData Γ η ls ps)
     ∀ v, RawTyped (CtxCat.ctorFieldTarget h s c f) (σ v)
       ((Ctx.get v ((E₂.get η).block.recrTele η ((ι.ctors s c).recursiveTarget f) ls l)).subst σ) :=
   Inductive.forall_recrSubst (motive := fun _ _ e t => RawTyped _ e t)
-    (fun p => by simpa only [Inductive.paramType_subst, ctorFieldTargetHom_params,
+    (fun p => by simpa [ctorFieldTargetHom_params,
       CtxCat.ctorFieldTargetHom_param, CtorSig.fieldParams] using (SemanticHom.ctorFieldTarget h s c f).typed (pps p))
-    (fun t => by simpa only [Inductive.motiveType_subst, ctorFieldTargetHom_params] using
+    (fun t => by simpa [ctorFieldTargetHom_params] using
       (SemanticHom.ctorFieldTarget h s c f).typed (pms t))
-    (fun t c₁ => by simpa only [Inductive.caseFnType_subst, ctorFieldTargetHom_params] using
+    (fun t c₁ => by simpa [ctorFieldTargetHom_params] using
       (SemanticHom.ctorFieldTarget h s c f).typed (pmins t c₁))
     (hsound.fieldIndexProperties hB hblock s c h f pps)
     (hsound.appliedMajorProperties hB hblock s c h hR pps f)
@@ -275,6 +274,6 @@ theorem RawSound.caseTeleProperties (h : IndData Γ η ls ps) (hR : RawTelePrope
         have hp := RawInterpretationProperties.pi (fieldTelescope h s c f)
           (fieldTelescope_wf h s c f) (hsound.fieldTelescopeProperties hB hblock s c h f pps)
           _ pm.typed pm.term
-        simpa only [CtxCat.ctorFieldTargetHom_param] using hp)
+        simpa [CtxCat.ctorFieldTargetHom_param] using hp)
 
 end Metalean

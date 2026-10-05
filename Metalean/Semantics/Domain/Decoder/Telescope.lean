@@ -65,7 +65,7 @@ theorem telescope_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent) {n
   induction n generalizing T with
   | zero => rfl
   | succ n ih =>
-    simp [telescope, extend_idempotent hF, ih]
+    simp! [extend_idempotent hF, ih]
 
 theorem telescope_finitary (F : CodeAssignment E ℓ) {n : Nat}
     (names : Fin n → Tm_ Γ₁)

@@ -51,7 +51,7 @@ def iotaIH : Expr ζ₁ ℓ n :=
   refine (Ctx.map_lam pre _ _).trans
     (congrArg₂ Ctx.lam ?_
       (instantiatedTelescope_map pre recFd ls fieldSubst))
-  simp [instantiatedIndices, Expr.map]
+  simp [instantiatedIndices]
   rfl
 
 @[simp] theorem iotaIH_instL :

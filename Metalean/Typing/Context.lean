@@ -36,7 +36,7 @@ theorem CtxWF.get (v : Var n) :
   | nil => exact Fin.elim0 v
   | @snoc n Γ t _ ht ih =>
     by_cases hv : v.val = n
-    · rw [show Ctx.get v (Γ.snoc t) = t.wk by simp [Ctx.get, hv]]
+    · rw [show Ctx.get v (Γ.snoc t) = t.wk by simp! [hv]]
       exact ht.wk t
     · rw [show Ctx.get v (Γ.snoc t) =
           (Ctx.get (v.castLT (by omega)) Γ).wk by simp [hv]]

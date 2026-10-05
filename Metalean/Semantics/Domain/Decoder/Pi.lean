@@ -323,8 +323,8 @@ noncomputable def piAction : IdealAction Γ₁ where
         (G.pullback σ.unop)) =
       (IdealAction.abstraction (F.piBody ((Ty.pairPresheaf E ℓ).map p.1.unop.op label) p.2
         (A.pullback p.1.unop) (B.pullback p.1.unop) G)).pullback σ.unop
-    simp only [pullback_abstraction, pullback_piBody, ΩIdeal.pullback_pullback,
-      IdealAction.pullback_pullback, unop_comp, op_comp, Functor.map_comp_apply, Quiver.Hom.op_unop]
+    simp [pullback_abstraction, pullback_piBody,
+      IdealAction.pullback_pullback]
   property _ p := IdealAction.abstraction_finitary
     (fun G => F.piBody ((Ty.pairPresheaf E ℓ).map p.1.unop.op label) p.2
       (A.pullback p.1.unop) (B.pullback p.1.unop) G)

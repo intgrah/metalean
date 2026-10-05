@@ -320,14 +320,14 @@ theorem mem_argSet_arg {domain : Dom n} {rest : CtorCode (n + 1)}
     {value : ZFSet} (hvalue : value ∈ domain γ)
     (hrest : vargs ∈ rest.argSet block (Fin.snoc γ value)) :
     [zf|(value, vargs)] ∈ (CtorCode.arg domain rest).argSet block γ :=
-  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa [argSet] using hrest, rfl⟩
+  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa! using hrest, rfl⟩
 
 theorem mem_argSet_recArg {b : Nat} {tele : SemTele n b} {index : Dom b}
     {rest : CtorCode n} {value : ZFSet}
     (hvalue : value ∈ recFieldSet tele index block γ)
     (hrest : vargs ∈ rest.argSet block γ) :
     [zf|(value, vargs)] ∈ (CtorCode.recArg tele index rest).argSet block γ :=
-  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa [argSet] using hrest, rfl⟩
+  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa! using hrest, rfl⟩
 
 theorem argSet_arg_inv {domain : Dom n} {rest : CtorCode (n + 1)}
     (h : vargs ∈ (CtorCode.arg domain rest).argSet block γ) :
@@ -382,7 +382,7 @@ theorem argSet_mem_of_support
       have hmem' : (CtorCode.recArg tele index rest).readSupport γ
           [zf|(field, tail)] [zf|(falsum, point)] ∈ block₁ := by
         simpa [readSupport] using hmem
-      simpa [readSupport, branch_falsum] using hp hmem'
+      simpa [readSupport] using hp hmem'
     refine mem_argSet_recArg hfield' (ih γ tail htail ?_)
     intro point hpoint hmem
     have hp := hsupport [zf|(verum, point)] (mem_union.mpr (.inr
@@ -390,17 +390,17 @@ theorem argSet_mem_of_support
     have hmem' : (CtorCode.recArg tele index rest).readSupport γ
         [zf|(field, tail)] [zf|(verum, point)] ∈ block₁ := by
       rw [readSupport]
-      simp [branch_verum]
+      simp
       exact hmem
-    simpa [readSupport, branch_verum] using hp hmem'
+    simpa [readSupport] using hp hmem'
 
 theorem eq_proof_of_mem_argSet_target {index : Dom n}
     (h : vargs ∈ argSet block (.target index) γ) : vargs = proof := by
-  simpa [argSet] using h
+  simpa! using h
 
 theorem proof_mem_argSet_target {index : Dom n} (γ : Slots n) :
     proof ∈ argSet block (CtorCode.target index) γ := by
-  simp [argSet]
+  simp!
 
 theorem eq_proof_of_mem_argSet_prependRecursive {count : Nat}
     {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
@@ -456,11 +456,11 @@ theorem argMap_congr_of_predecessors (code : CtorCode n)
   | target => rfl
   | arg domain rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp [argMap]
+    simp!
     rw [ih (γ.snoc value) tail htail]
     intro predecessor hpredecessor
     apply hgraph predecessor
-    simpa [predecessors] using hpredecessor
+    simpa! using hpredecessor
   | recArg tele index rest ih =>
     obtain ⟨field, tail, hfield, htail, rfl⟩ := argSet_recArg_inv hargs
     have hfieldMap : recMap tele index graph₁ γ field = recMap tele index graph₂ γ field := by
@@ -472,12 +472,12 @@ theorem argMap_congr_of_predecessors (code : CtorCode n)
       · exact hfield
       · intro predecessor hpredecessor
         apply hgraph predecessor
-        simpa [predecessors] using .inl hpredecessor
+        simpa! using .inl hpredecessor
     simp only [argMap, fst_pair, snd_pair]
     rw [hfieldMap, ih γ tail htail]
     intro predecessor hpredecessor
     apply hgraph predecessor
-    simpa [predecessors] using .inr hpredecessor
+    simpa! using .inr hpredecessor
 
 noncomputable def forgetIhs {n : Nat} :
     CtorCode n → ZFSet → ZFSet
@@ -495,12 +495,12 @@ theorem forgetIhs_mem_argSet (code : CtorCode n)
   | arg domain rest ih =>
     obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma.mp hargs
     rw [app_map hvalue] at htail
-    simpa [forgetIhs] using mem_argSet_arg hvalue (ih (γ.snoc value) tail htail)
+    simpa! using mem_argSet_arg hvalue (ih (γ.snoc value) tail htail)
   | recArg tele index rest ih =>
     obtain ⟨fieldAndIh, hfieldAndIh, tail, htail, rfl⟩ := mem_sigma.mp hargs
     rw [app_map hfieldAndIh] at htail
     obtain ⟨field, hfield, fieldIh, _, rfl⟩ := mem_sigma.mp hfieldAndIh
-    simpa [forgetIhs] using mem_argSet_recArg hfield (ih γ tail htail)
+    simpa! using mem_argSet_recArg hfield (ih γ tail htail)
 
 noncomputable def applyFields (level : Nat) {n : Nat} :
     (code : CtorCode n) → Slots n → ZFSet → ZFSet → ZFSet
@@ -531,7 +531,7 @@ theorem argMap_congr (h : ∀ value ∈ block, app graph₁ value = app graph₂
   | target => rfl
   | arg domain rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp [argMap]
+    simp!
     rw [ih (γ.snoc value) tail htail]
   | recArg tele index rest ih =>
     obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
@@ -545,11 +545,11 @@ theorem forgetIhs_argMap (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
   | target => rfl
   | arg domain rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp [argMap, forgetIhs]
+    simp!
     rw [ih (γ.snoc value) tail htail]
   | recArg tele index rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_recArg_inv hargs
-    simp [argMap, forgetIhs]
+    simp!
     rw [ih γ tail htail]
 
 theorem argMap_mem (hgraph : ∀ value ∈ block, app graph value ∈ fibreOp motive value)
@@ -562,7 +562,7 @@ theorem argMap_mem (hgraph : ∀ value ∈ block, app graph value ∈ fibreOp mo
     obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_arg_inv hargs
     refine mem_sigma.mpr ⟨value, hvalue, argMap graph rest (γ.snoc value) tail,
       by rw [app_map hvalue]; exact ih (γ.snoc value) tail htail, ?_⟩
-    simp [argMap]
+    simp!
   | recArg tele index rest ih =>
     obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
     have hih : [zf|(value, $(recMap tele index graph γ value))]
@@ -573,7 +573,7 @@ theorem argMap_mem (hgraph : ∀ value ∈ block, app graph value ∈ fibreOp mo
     refine mem_sigma.mpr
       ⟨_, hih, argMap graph rest γ tail, by rw [app_map hih]; exact ih γ tail htail,
         ?_⟩
-    simp [argMap]
+    simp!
 
 noncomputable def targetIndex {n : Nat} :
     CtorCode n → Slots n → ZFSet → ZFSet
@@ -667,7 +667,7 @@ theorem predecessor_key_recover
     ∃ recovered ∈ code.predecessors γ left,
       [zf|recovered.1] = [zf|predecessor.1] := by
   induction hagree generalizing predecessor with
-  | target => simp [predecessors] at hpredecessor
+  | target => simp! at hpredecessor
   | arg hfst _ ih =>
     obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
     obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright

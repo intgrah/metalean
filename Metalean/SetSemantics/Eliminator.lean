@@ -159,7 +159,7 @@ theorem app_minorFamily_outside {count : Nat} (vmins : Slots count)
     (tag : Nat) (htag : count ≤ tag) :
     [zf|$(minorFamily vmins) $(numeral tag)] = ∅ := by
   induction vmins using Fin.snocInduction with
-  | elim0 => simp [minorFamily, Aczel.app_empty]
+  | elim0 => simp! [Aczel.app_empty]
   | snoc vmins vmin ih =>
     rw [minorFamily, Fin.init_snoc, Fin.snoc_last, app_union,
       ih (Nat.le_trans (Nat.le_succ _) htag),

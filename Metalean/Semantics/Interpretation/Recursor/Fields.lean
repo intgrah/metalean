@@ -83,7 +83,7 @@ theorem recursiveSourceTele_subst {n : Nat} (ps : Fin ι.nparams → Expr ζ ℓ
         (Expr.boundVars n (ι.ctors s c).nfields 0) := by
   rw [Ctor.recursiveFieldTeleAux_subst]
   erw [Expr.boundVars_subst ps (ι.ctors s c).nfields 0]
-  simp [Subst.id, Expr.subst]
+  simp [Subst.id]
 
 end
 

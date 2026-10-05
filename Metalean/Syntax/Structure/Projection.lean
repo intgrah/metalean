@@ -56,7 +56,7 @@ theorem IsStructure.projection_subst :
     have ihMajorTerm := fun previous => congrArg Prod.snd (ihMajor previous σ)
     have ihMotiveTerm := fun previous => congrArg Prod.snd
       (ihMotive previous (σ.liftN (ι.nindices s + 1)))
-    simp [Expr.subst] at ihMajorTerm ihMotiveTerm
+    simp at ihMajorTerm ihMotiveTerm
     rw [projection, Prod.map]
     congr 1
     · rw [projTypeWith_subst]
@@ -85,7 +85,7 @@ theorem IsStructure.projection_wkFrom :
     (h.projection η ls ps f maj).map (Expr.wkFrom cut) (Expr.wkFrom cut) =
       h.projection η ls (fun param => (ps param).wkFrom cut)
         f (maj.wkFrom cut) := by
-  simpa [Prod.map, Expr.wkFrom] using
+  simpa! [Expr.wkFrom] using
     h.projection_subst η ls ps f maj fun v => .var (Ren.wkFrom cut v)
 
 theorem IsStructure.motiveTeleHead :

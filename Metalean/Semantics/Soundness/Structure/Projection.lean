@@ -145,7 +145,7 @@ theorem RawSound.recr_structural (hsound : RawSound E₂ ℓ pre) (hI : Inductiv
           RecTyping.recrHom, Expr.subst, Inductive.recrSubst_param, Inductive.recrSubst_major]
         exact hs.projTerm_hasType h.block f Γ₁.as.wf h.param h.major
     | right f => exact hs.no_recursive.elim f
-  · simp [RawFamily.lookup, RawValuation.pushFin]
+  · simp! [RawFamily.lookup]
     rfl
 
 end Metalean.CoherentShape

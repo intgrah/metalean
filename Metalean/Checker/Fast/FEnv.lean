@@ -152,8 +152,8 @@ theorem FEnv.Denotes.size {F : FEnv} {E : Env ζ} :
     F.size = ζ.length := by
   intro h
   induction h with
-  | nil => simp [Sigs.length]
-  | snoc _ _ ih => simp [Sigs.length, ih]
+  | nil => simp!
+  | snoc _ _ ih => simp! [ih]
 
 theorem FEnv.Denotes.get {F : FEnv} {E : Env ζ} {pos : Nat} {fentry : FEntry}
     (hfe : F[pos]? = some fentry) :
@@ -168,12 +168,12 @@ theorem FEnv.Denotes.get {F : FEnv} {E : Env ζ} {pos : Nat} {fentry : FEntry}
     by_cases hpos : pos = F.size
     · simp only [hpos, ↓reduceIte, Option.some.injEq] at hfe
       subst hfe
-      refine ⟨.here, by simp [Sigs.lookup, hpos, hE.size], ?_⟩
+      refine ⟨.here, by simp! [hpos, hE.size], ?_⟩
       exact he.map (target := ⟨_, E.snoc entry⟩) (Env.Prefix.step .refl)
     · simp only [hpos] at hfe
       have ⟨η, hη, hden⟩ := ih hfe
       refine ⟨η.there,
-        by simp [Sigs.lookup, hη, show pos ≠ ζ.length by rw [← hE.size]; exact hpos], ?_⟩
+        by simp! [hη, show pos ≠ ζ.length by rw [← hE.size]; exact hpos], ?_⟩
       exact hden.map (target := ⟨_, E.snoc entry⟩) (Env.Prefix.step .refl)
 
 theorem FEnv.Denotes.lookup {E : Σ ζ, Env ζ} {F : FEnv} (hE : FEnv.Denotes F E.2) {pos : Nat}

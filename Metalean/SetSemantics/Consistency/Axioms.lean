@@ -81,7 +81,7 @@ theorem quotSoundValue_mem {ε : Atom ζ 0 → ZFSet.{u}}
     refine Aczel.pi_congr fun α hα => Aczel.pi_congr fun r hr => Aczel.pi_congr fun a₁ ha₁ =>
       Aczel.pi_congr fun a₂ ha₂ => Aczel.pi_congr fun witness hwitness => ?_
     congr 2 <;> funext i <;> fin_cases i <;>
-      simp [Expr.denote, hquot.quotAtom, hquot.quotMkAtom]
+      simp! [hquot.quotAtom, hquot.quotMkAtom]
   rw [htype]
   refine lam_mem_pi fun α hα => lam_mem_pi fun r hr => lam_mem_pi fun a ha =>
     lam_mem_pi fun b hb => lam_mem_pi fun witness hwitness => ?_

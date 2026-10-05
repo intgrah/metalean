@@ -231,7 +231,7 @@ private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
   · simpa [γ₁] using hps
   · intro v
     cases v using Fin.addCases with
-    | left param => simp [σ, γ₁, vps, Expr.denote]
+    | left param => simp! [σ, γ₁, vps]
     | right index => simp [σ, γ₁]
   · intro v hv
     cases v using Fin.addCases with
@@ -244,10 +244,10 @@ private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
         I.indexTele_get, Inductive.indexType_subst,
         show (fun param : Fin ι.nparams => Expr.subst σ ((Expr.var param).wkN (ι.nindices s))) =
           fun param => (Expr.var (param.castLE hm) : Expr ζ₁ 0 m) from
-            funext fun param => by simp [σ, Expr.subst],
+            funext fun param => by simp [σ],
         show (fun i : Fin (ι.nindices s) =>
             Expr.subst σ (.var (Fin.natAdd ι.nparams i))) = is from
-          funext fun i => by simp [Expr.subst, σ]]
+          funext fun i => by simp [σ]]
       exact (interp index).mem
 
 theorem StrongRecursiveFieldSource.valuesReachable (recFd : RecField ζ₁ ι nfields arity s₁)

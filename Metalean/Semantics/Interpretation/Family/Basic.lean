@@ -82,7 +82,7 @@ theorem replace_zero_push (ρ : RawValuation Γ₁) (I J : RawValue Γ₁) :
 theorem push_replace (ρ : RawValuation Γ₁) (i : ℕ) (I J : RawValue Γ₁) :
     (ρ.replace i I).push J = (ρ.push J).replace (i + 1) I := by
   funext j
-  cases j <;> simp [replace, push, Function.update_apply]
+  cases j <;> simp! [replace, Function.update_apply]
 
 theorem pullback_mono {ρ ρ' : RawValuation Γ₁} (h : ρ ≤ ρ') (σ : Γ₂ ⟶ Γ₁) :
     ρ.pullback σ ≤ ρ'.pullback σ :=
@@ -100,13 +100,13 @@ def pushFin (ρ : RawValuation Γ₁) : {k : Nat} → (Fin k → RawValue Γ₁)
 @[simp] theorem pushFin_snoc (ρ : RawValuation Γ₁) {k : Nat}
     (args : Fin k → RawValue Γ₁) (I : RawValue Γ₁) :
     ρ.pushFin (Fin.snoc args I) = (ρ.pushFin args).push I := by
-  simp [pushFin]
+  simp!
 
 theorem pushFin_append (ρ : RawValuation Γ₁) {n k : Nat}
     (args : Fin n → RawValue Γ₁) (fields : Fin k → RawValue Γ₁) :
     ρ.pushFin (Fin.append args fields) = (ρ.pushFin args).pushFin fields := by
   induction k with
-  | zero => simp [pushFin]
+  | zero => simp!
   | succ k ih =>
     rw [← Fin.snoc_init_self fields, Fin.append_snoc, pushFin_snoc, pushFin_snoc, ih]
 
@@ -116,8 +116,8 @@ theorem pushFin_append (ρ : RawValuation Γ₁) {n k : Nat}
   | zero => exact v.elim0
   | succ k ih =>
     cases v using Fin.lastCases with
-    | last => simp [pushFin, push]
-    | cast v => simpa [pushFin, push] using ih (fun i => args i.castSucc) v
+    | last => simp!
+    | cast v => simpa! using ih (fun i => args i.castSucc) v
 
 theorem pushFin_mono {ρ ρ' : RawValuation Γ₁} (hρ : ρ ≤ ρ') {k : Nat} {v v' : Fin k → RawValue Γ₁}
     (hv : ∀ i, v i ≤ v' i) : ρ.pushFin v ≤ ρ'.pushFin v' := by

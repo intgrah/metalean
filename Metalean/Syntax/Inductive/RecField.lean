@@ -68,14 +68,14 @@ theorem instantiatedType_of_arity_eq_zero
     ∃ is : Fin (ι.nindices target) → Expr ζ₁ ℓ n,
       fd.instantiatedType η ls ps σ = .ind η target ls ps is := by
   subst h
-  exact ⟨fd.instantiatedIndices ls σ, by simp [instantiatedType, instantiatedTelescope, Expr.wkN]⟩
+  exact ⟨fd.instantiatedIndices ls σ, by simp! [instantiatedType, instantiatedTelescope]⟩
 
 @[simp] theorem instantiatedType_map :
     (fd.instantiatedType η ls ps σ).map pre =
       (fd.map pre).instantiatedType (η.map pre) ls
         (fun i => (ps i).map pre) (σ.map pre) := by
   refine (Ctx.map_pi pre _ _).trans (congrArg₂ Ctx.pi ?_ ?_)
-  · simp [instantiatedIndices, Expr.map]
+  · simp [instantiatedIndices]
     rfl
   · exact instantiatedTelescope_map pre fd ls σ
 

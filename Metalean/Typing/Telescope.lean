@@ -159,7 +159,7 @@ theorem TeleWF.entry_isType {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ 
             (Fin.append σ fun previous : Fin q.val =>
               xs (previous.castLE q.castSucc.isLt.le)) := by
         simpa using hxs q.castSucc (by simpa [Fin.lt_def] using hq)
-      simpa [Ctx.entry, hp.ne] using ih (xs := fun q => xs q.castSucc) hΔ ⟨p.val, hp⟩ hprefix
+      simpa! [hp.ne] using ih (xs := fun q => xs q.castSucc) hΔ ⟨p.val, hp⟩ hprefix
     · obtain rfl : p = Fin.last k := Fin.ext (by have := p.isLt; simp only [Fin.val_last]; omega)
       have hprefix (q : Fin k) : E[Γ] ⊢ xs q.castSucc :
           (Ctx.entry Δ (by omega) (by omega)).subst
@@ -196,8 +196,8 @@ theorem TeleWF.entry_isType_nil {m : Nat} {Θ : Ctx ζ ℓ 0 m}
       exact ⟨u, by simpa using ht.substitution hσ⟩
     · have := ih (xs := fun w => xs w.castSucc) (by omega) fun q hq => by
         have := hxs q hq
-        simpa [Ctx.entry, show q ≠ m by omega] using this
-      simpa [Ctx.entry, hpm] using this
+        simpa! [show q ≠ m by omega] using this
+      simpa! [hpm] using this
 
 theorem SubstEq.extendFamily {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ₁ : Ctx ζ ℓ 0 b}
     {Δ : Ctx ζ ℓ a (a + k)} {P : Level ℓ → Prop} (hΔ : TeleWF E P Γ₀ Δ) {σ₁ σ₂ : Subst ζ ℓ a b}
@@ -231,7 +231,7 @@ theorem SubstEq.lift {t : Expr ζ ℓ n} {σ₁ σ₂ : Subst ζ ℓ n m} :
   cases v using Fin.lastCases with
   | last => simpa using hσ.left.lift ht (Fin.last n)
   | cast v =>
-    simpa [Expr.wk_subst_lift] using (hσ v).wk (t.subst σ₁)
+    simpa using (hσ v).wk (t.subst σ₁)
 
 theorem SubstEq.liftN {k : Nat} {P : Level ℓ → Prop} {Δ : Ctx ζ ℓ n (n + k)} {σ₁ σ₂ : Subst ζ ℓ n m}
     (hΔ : TeleWF E P Γ₁ Δ) :
@@ -299,7 +299,7 @@ theorem Ctx.pi_applyBound {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
   | nil => exact he
   | snoc k Δ t₁ ih =>
     have .snoc (hΓΔ : E[Γ ++ Δ] ⊢ ok) ⟨v, (ht' : E[Γ ++ Δ] ⊢ t₁ : .sort v)⟩ := hΓΔ
-    simpa [Expr.applyBound, Expr.inst_wkFrom_last] using
+    simpa! [Expr.inst_wkFrom_last] using
       Defeq.appDF (ht'.wk t₁) (ht.wkFrom (Γ ++ Δ) #t[t₁] t₁)
         (by simpa [Expr.wk] using (ih hΓΔ (.forallEDF ht' ht ht) he).wk t₁)
         (by simpa using CtxWF.var (Fin.last (n + k)) (hΓΔ.snoc ⟨v, ht'⟩))
@@ -343,7 +343,7 @@ theorem Ctx.pi_applyFamily {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
       .snoc .nil ⟨u₁, trivial, ht₁⟩
     have htσ := ht.substitution (hσ.liftN hΔt₁)
     rw [Expr.apps_last, Expr.apps_last]
-    simpa [init₁, init₂, Subst.liftN, Expr.inst_subst_lift, Subst.extend,
+    simpa! [init₁, init₂, Expr.inst_subst_lift, Subst.extend,
       ← Fin.append_snoc, ← Fin.init_def] using Defeq.appDF
       (ht₁.substitution hσ) htσ
       (ih hΔ ⟨_, .forallEDF ht₁ ht ht⟩ hprefix he)
@@ -397,7 +397,7 @@ theorem Ctx.lam_applyFamily {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
     have happ := Defeq.appDF ht₁σ htσ hfun hlast hresult
     have hbeta := Defeq.beta ht₁σ htσ he₀ hlast hresult heresult
     rw [Expr.apps_last]
-    simpa [xs₀, Ctx.lam, Subst.liftN, Expr.inst_subst_lift,
+    simpa! [xs₀, Ctx.lam, Expr.inst_subst_lift,
       Subst.extend, ← Fin.append_snoc, ← Fin.init_def] using happ.trans hbeta
 
 theorem TeleWF.ofTypes {k : Nat} {ts : Fin k → Expr ζ ℓ n}

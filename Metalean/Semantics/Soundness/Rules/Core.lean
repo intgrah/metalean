@@ -55,7 +55,7 @@ theorem RawInterpretationProperties.letE (pinst : RawInterpretationProperties Γ
     rw [rawInterpret_letE]
     exact pinst.ideal σ ρ hρ
   subst _ _ σ₁ σ₂ ρ₁ ρ₂ hσ hρ := by
-    simpa [Expr.subst, Expr.inst_subst] using pinst.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ
+    simpa [Expr.inst_subst] using pinst.subst σ₁ σ₂ ρ₁ ρ₂ hσ hρ
 
 namespace RawJudgment
 

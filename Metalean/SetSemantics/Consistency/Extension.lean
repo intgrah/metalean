@@ -44,7 +44,7 @@ noncomputable def Env.Model.addQuotient {pre : Env ζ}
   refine m.snoc fresh (.quot (Quot.RulesSound.ofValues .here equality
     hseparates hequality ?_ ?_ ?_ ?_))
   all_goals intros
-  all_goals simp [atomBelow, fresh, Atom.unstep, Head.unstep]
+  all_goals simp! [atomBelow, fresh, Head.unstep]
 
 inductive IsAxiom : {ζ : Sigs} → {sig : Sig} → Entry ζ sig → Prop
   | intro {ζ : Sigs} {ℓ : Nat} (t : Expr ζ ℓ 0) : IsAxiom (.axiom t)

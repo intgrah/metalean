@@ -268,12 +268,12 @@ def entry {m : Nat} : Ctx ζ ℓ b m → b ≤ p → p < m → Expr ζ ℓ p
 @[simp] theorem entry_snoc_self (Δ : Ctx ζ ℓ a b) (t : Expr ζ ℓ b) (hb : a ≤ b)
     (hp : b < b + 1) :
     (Δ.snoc t).entry hb hp = t := by
-  simp [entry]
+  simp!
 
 @[simp] theorem entry_snoc_of_lt (Δ : Ctx ζ ℓ a b) (t : Expr ζ ℓ b) (hb : a ≤ p)
     (hp : p < b + 1) (hlt : p < b) :
     (Δ.snoc t).entry hb hp = Δ.entry hb hlt := by
-  simp [entry, show p ≠ b by omega]
+  simp! [show p ≠ b by omega]
 
 theorem ext {a k : Nat} (Δ₁ Δ₂ : Ctx ζ ℓ a (a + k))
     (h : ∀ (p : Nat) (hp : a ≤ p) (hp' : p < a + k), Δ₁.entry hp hp' = Δ₂.entry hp hp') :

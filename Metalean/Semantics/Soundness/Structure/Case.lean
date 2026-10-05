@@ -43,7 +43,7 @@ theorem HasEquality.structure_projection_motive_beta
     Expr.apps_eq_self_of_zero (Fin.eq_zero_of_isEmpty hs.no_indices),
     show hs.projType η ls ps f maj = (hs.projType η ls (fun p => (ps p).wk) f
       (.var (Fin.last Γ₁.as.len))).inst maj by
-      simp [Expr.inst, Expr.wk_subst_extend, Expr.subst]]
+      simp [Expr.inst, Expr.wk_subst_extend]]
   exact @HasEquality.beta _ _ _ _ _ _ _ _ (hs.indType pps) pmaj.typed
     pmaj.type.ideal pbodyI pmaj.term.ideal pmaj.fixed pmaj.term.subst pbodyS
 
@@ -122,11 +122,11 @@ theorem RawTyped.structure_projection_case (hsound : RawSound E₂ ℓ pre) (hI 
   have pps' (p : Fin ι.nparams) : RawTyped Γ₁' ((ι.ctors s c).caseParams ps p) ((E₂.get η).block.paramType ls ((ι.ctors s c).caseParams ps) p) := by
     convert (SemanticHom.teleProjection hΔ).typed (pps p) using 1 <;>
       simp [RawCtx.Hom.teleProjection, CtorSig.caseParams,
-        CtorSig.fieldParams, Expr.wkN_eq_rename, Expr.rename_rename, Expr.subst_vars]
+        CtorSig.fieldParams, Expr.wkN_eq_rename]
     · rfl
     · congr
       funext v
-      simp [CtorSig.caseParams, CtorSig.fieldParams, Expr.wkN_eq_rename, Expr.rename_rename, Ren.wkN]
+      simp [CtorSig.caseParams, CtorSig.fieldParams, Expr.wkN_eq_rename, Ren.wkN]
       rfl
   have hctx (k : Nat) (hk : k ≤ (ι.ctors s c).nfields) := hB.ordinaryClosedWF s c ls k hk
   have pctx (k : Nat) (hk : k ≤ (ι.ctors s c).nfields) :=

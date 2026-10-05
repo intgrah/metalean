@@ -106,7 +106,7 @@ theorem TeleWF.map (pre : E.as ⟶ E₂.as) {P : Level ℓ → Prop} {T : Ctx ζ
   | nil => exact .nil
   | snoc hT ht ih =>
     have ⟨u, hu, ht⟩ := ht
-    exact .snoc ih ⟨u, hu, by simpa [Expr.map] using ht.map pre⟩
+    exact .snoc ih ⟨u, hu, by simpa using ht.map pre⟩
 
 section
 
@@ -148,7 +148,7 @@ theorem FieldWF.map (pre : E.as ⟶ E₂.as) :
     FieldWF E I Γ fd →
     FieldWF E₂ (I.map pre.sigs) (Γ.map pre.sigs) (fd.map pre.sigs) := by
   intro ⟨htype, hlevel⟩
-  exact ⟨by simpa [Expr.map, Field.map] using htype.map pre, hlevel⟩
+  exact ⟨by simpa [Field.map] using htype.map pre, hlevel⟩
 
 end
 
@@ -162,7 +162,7 @@ theorem RecFieldWF.map (pre : E.as ⟶ E₂.as) :
     RecFieldWF E I Γ fd →
     RecFieldWF E₂ (I.map pre.sigs) (Γ.map pre.sigs) (fd.map pre.sigs) := by
   intro ⟨htele, his⟩
-  exact ⟨htele.map pre, by simpa [RecField.map, Expr.map] using his.map pre⟩
+  exact ⟨htele.map pre, by simpa [RecField.map] using his.map pre⟩
 
 section
 
@@ -255,7 +255,7 @@ theorem CtorWF.map (pre : E.as ⟶ E₂.as) (h : CtorWF E I ctor) :
   ordinary f := by simpa [Inductive.map, Ctor.map] using (h.ordinary f).map pre
   recursive f := by simpa [Inductive.map, Ctor.map] using (h.recursive f).map pre
   targetIndices := by
-    simpa [Inductive.map, Ctor.map, Expr.map] using h.targetIndices.map pre
+    simpa [Inductive.map, Ctor.map] using h.targetIndices.map pre
 
 theorem CtorWF.ordinaryFieldExpr (hctor : CtorWF E I ctor) (f : Fin csig.nfields) :
     (∀ p, E[Γ] ⊢ ps p : I.paramType ls ps p) →
@@ -445,7 +445,7 @@ theorem RecFieldWF.instantiatedType_congr
   have hid : E[I.params ++ Θ] ⊢ Subst.id ⊣
       (I.params ++ Θ){(Level.param : Param ι.nlevels → Level ι.nlevels)} := fun v => by
     simp only [Ctx.instL_param, Expr.subst_id]
-    simpa only [Subst.id] using hΔ.var v
+    simpa [Subst.id] using hΔ.var v
   have ⟨u, hraw⟩ := hfield.instantiatedType hhead (fun _ => rfl) hΔ hpsId hid
   have hraw := (hsource.instLevel (Q := fun _ => True) ls
     fun _ => trivial).substitution_congr hσ (hraw.instLevel ls)
@@ -698,7 +698,7 @@ theorem fieldOrdinary (hctor : CtorWF E (E.get η).block ctor) (f : Fin csig.nfi
   unfold CtorSig.fieldParams CtorSig.fieldOrdinary
   have hl := hl.wkN (Δ := ctor.recursiveFieldTele η ls (fun p => (ps p).wkN csig.nfields)
       (Expr.boundVars n csig.nfields 0))
-  simpa [Tele.append_assoc, Expr.boundVars, Ctor.fieldTele, Expr.instL] using hl
+  simpa [Tele.append_assoc, Expr.boundVars, Ctor.fieldTele] using hl
 
 theorem fieldTargetSubst (hctor : CtorWF E (E.get η).block ctor) :
     (∀ p, E[Γ] ⊢ ps p : (E.get η).block.paramType ls ps p) →
@@ -1134,7 +1134,7 @@ theorem InductiveWF.caseOrdinary_typed (hB : InductiveWF E (E.get η).block)
                 (previous.castLE f.isLt.le)) := by
   intro hps
   unfold CtorSig.caseOrdinary CtorSig.caseParams
-  simpa [Inductive.caseTele, Tele.append_assoc, Expr.instL] using
+  simpa [Inductive.caseTele, Tele.append_assoc] using
     ((hB.ctors s c).fieldOrdinary f hps).wkN
 
 theorem InductiveWF.caseRecursive_typed (hB : InductiveWF E (E.get η).block)
@@ -1432,7 +1432,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
           (Expr.boundVars n (ι.ctors s c).nfields 0) ++
         ((E.get η).block.ctors s c).ihTele ls ps ms by
       unfold Inductive.caseTele Ctor.fieldTele
-      simp only [Tele.append_assoc]] at h
+      simp [Tele.append_assoc]] at h
   have htA : E[Γ ++ ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps] ⊢
       Ctx.pi (Ctx.pi ((E.get η).block.caseType η ls ps ms s c)
           (((E.get η).block.ctors s c).ihTele ls ps ms))
@@ -1455,7 +1455,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
           fds (previous.castLE p.isLt.le)) := by
     intro p
     rw [Ctor.ordinaryFieldTele]
-    simpa [Expr.boundVars, Expr.subst] using hfields p
+    simpa [Expr.boundVars] using hfields p
   have hA := Ctx.pi_applyFamily (P := fun _ => True) hΓ hΔord htA hxsA (hfn ▸ hmins s c)
   have hΔrecSubst : Ctx.substN (Fin.append Subst.id fds)
       (ι.ctors s c).nrecFields
@@ -1463,7 +1463,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
         (fun i => (ps i).wkN (ι.ctors s c).nfields)
         (Expr.boundVars n (ι.ctors s c).nfields 0)) =
       ((E.get η).block.ctors s c).recursiveFieldTele η ls ps fds := by
-    simp [Expr.boundVars, Expr.subst]
+    simp [Expr.boundVars]
   rw [Ctx.pi_subst, hΔrecSubst] at hA
   have hσA : E[Γ] ⊢ Fin.append Subst.id fds ⊣
       Γ ++ ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps :=
@@ -1507,7 +1507,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
     intro f
     rw [Ctor.recursiveFieldTele, Ctor.recursiveFieldTeleAux, Ctx.entry_ofTypes,
       Expr.wkN_subst_append]
-    simpa [Expr.boundVars, Expr.subst] using hrecFields f
+    simpa [Expr.boundVars] using hrecFields f
   have hσAB : E[Γ] ⊢ Fin.append (Fin.append Subst.id fds) recFds ⊣
       Γ ++ ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps ++
         ((E.get η).block.ctors s c).recursiveFieldTele η ls
@@ -1526,7 +1526,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
     rw [Ctx.entry_substN _ _ _ f.val (by omega) (by omega) (by omega) (by omega), Ctor.ihTele,
       Ctx.entry_ofTypes, Ctor.ihType]
     simpa [iotaIHs, Ctor.iotaIH, Ctor.ihTypeWith, CtorSig.fieldParams, CtorSig.fieldOrdinary,
-      CtorSig.fieldRecursive, Expr.subst] using
+      CtorSig.fieldRecursive] using
       ((hB.ctors s c).recursive f).iotaIH hB rfl hallowed (by simp) hΓ hps hms hmins
         (Ctor.forall_ordinarySubst le_rfl hps hfields) (hrecFields f)
   have hC := Ctx.pi_applyFamily (P := fun _ => True) hΓ (hΔih.substitution hσAB)

@@ -24,8 +24,8 @@ def Head.rank {ζ : Sigs} : Head ζ sig → Nat
 
 theorem Head.rank_le_length (η : Head ζ sig) : η.rank ≤ 2 * ζ.length := by
   induction η with
-  | here => simp [rank, Sigs.length]; omega
-  | there η ih => exact ih.trans (by simp [Sigs.length]; omega)
+  | here => simp!; omega
+  | there η ih => exact ih.trans (by simp!; omega)
 
 theorem Head.rank_pos (η : Head ζ sig) : 0 < η.rank := by
   induction η with
@@ -69,20 +69,20 @@ def Expr.headRank {n : Nat} : Expr ζ ℓ n → Nat
 namespace Expr
 
 theorem headRank_le_length (e : Expr ζ ℓ n) : e.headRank ≤ 2 * ζ.length := by
-  induction e <;> simp [headRank, Head.rank_le_length,
+  induction e <;> simp! [Head.rank_le_length,
     (Nat.sub_le _ _).trans (Head.rank_le_length _), *]
 
 @[simp] theorem headRank_map (pre : ζ₁ ⟶ ζ₂) (e : Expr ζ₁ ℓ n) :
     (e.map pre).headRank = e.headRank := by
-  induction e <;> simp [headRank, map, *]
+  induction e <;> simp! [*]
 
 @[simp] theorem headRank_instL (ls : Param ℓ → Level ℓ₁) (e : Expr ζ ℓ n) :
     e{ls}.headRank = e.headRank := by
-  induction e <;> simp [headRank, *]
+  induction e <;> simp! [*]
 
 @[simp] theorem headRank_rename {m : Nat} (ρ : Ren m n) (e : Expr ζ ℓ m) :
     (e.rename ρ).headRank = e.headRank := by
-  induction e generalizing n <;> simp [headRank, rename, *]
+  induction e generalizing n <;> simp! [*]
 
 @[simp] theorem headRank_wkN (e : Expr ζ ℓ n) (k : Nat) :
     (e.wkN k).headRank = e.headRank :=
@@ -97,7 +97,7 @@ theorem headRank_le_length (e : Expr ζ ℓ n) : e.headRank ≤ 2 * ζ.length :=
     (e.applyBound k).headRank = e.headRank := by
   induction k with
   | zero => rfl
-  | succ k ih => simpa [applyBound, headRank, wk, wkFrom] using ih
+  | succ k ih => simpa! [wk, wkFrom] using ih
 
 theorem headRank_subst_le {m : Nat} (e : Expr ζ ℓ n) (σ : Subst ζ ℓ n m)
     (k : Nat) (he : e.headRank ≤ k) (hσ : ∀ v, (σ v).headRank ≤ k) :
@@ -107,17 +107,17 @@ theorem headRank_subst_le {m : Nat} (e : Expr ζ ℓ n) (σ : Subst ζ ℓ n m)
   | lam t e' iht ihe' | forallE t e' iht ihe' =>
     have hlift : ∀ v, (σ.lift v).headRank ≤ k := by
       intro v
-      cases v using Fin.lastCases <;> simp [headRank, wk, wkFrom, hσ]
+      cases v using Fin.lastCases <;> simp! [wk, wkFrom, hσ]
     exact max_le (iht σ (le_trans (le_max_left _ _) he) hσ)
       (ihe' σ.lift (le_trans (le_max_right _ _) he) hlift)
   | letE t e e' iht ihe ihe' =>
     have hlift : ∀ v, (σ.lift v).headRank ≤ k := by
       intro v
-      cases v using Fin.lastCases <;> simp [headRank, wk, wkFrom, hσ]
+      cases v using Fin.lastCases <;> simp! [wk, wkFrom, hσ]
     exact max_le (iht σ (le_trans (le_max_left _ _) he) hσ)
       (max_le (ihe σ (le_trans (le_max_left _ _) (le_trans (le_max_right _ _) he)) hσ)
         (ihe' σ.lift (le_trans (le_max_right _ _) (le_trans (le_max_right _ _) he)) hlift))
-  | _ => simp_all [headRank, subst]
+  | _ => simp_all!
 
 def sizeWith {n : Nat} (w : Var n → Nat) : Expr ζ ℓ n → Nat
   | .var v => w v
@@ -162,7 +162,7 @@ def size (e : Expr ζ ℓ n) : Nat := e.sizeWith fun _ => 1
     apply congrArg fun w => e'.sizeWith w
     funext v
     cases v using Fin.lastCases <;> simp
-  | _ => simp [rename, sizeWith, *]
+  | _ => simp! [*]
 
 @[simp] theorem sizeWith_subst {m : Nat} (e : Expr ζ ℓ n) (σ : Subst ζ ℓ n m)
     (w : Var m → Nat) :
@@ -174,15 +174,15 @@ def size (e : Expr ζ ℓ n) : Nat := e.sizeWith fun _ => 1
     congr 1
     apply congrArg fun w => e'.sizeWith w
     funext v
-    cases v using Fin.lastCases <;> simp [sizeWith, wk, wkFrom, Function.comp_def]
+    cases v using Fin.lastCases <;> simp! [wk, wkFrom, Function.comp_def]
   | letE t e e' iht ihe ihe' =>
     simp only [subst, sizeWith, iht, ihe, ihe']
     congr 1
     congr 1
     apply congrArg fun w => e'.sizeWith w
     funext v
-    cases v using Fin.lastCases <;> simp [sizeWith, wk, wkFrom, Function.comp_def]
-  | _ => simp [subst, sizeWith, *]
+    cases v using Fin.lastCases <;> simp! [wk, wkFrom, Function.comp_def]
+  | _ => simp! [*]
 
 def measure (e : Expr ζ ℓ n) : Nat × Nat := (e.headRank, e.size)
 
@@ -194,13 +194,13 @@ theorem measure_lt {m : Nat} {e₁ : Expr ζ ℓ m} {e₂ : Expr ζ ℓ n}
 
 theorem measure_inst (t e : Expr ζ ℓ n) (e' : Expr ζ ℓ (n + 1)) :
     Prod.Lex (· < ·) (· < ·) (e'.inst e).measure (Expr.letE t e e').measure := by
-  refine measure_lt (headRank_subst_le _ _ _ (by simp [headRank]) fun v => ?_) ?_
-  · cases v using Fin.lastCases <;> simp [Subst.id, headRank]
+  refine measure_lt (headRank_subst_le _ _ _ (by simp!) fun v => ?_) ?_
+  · cases v using Fin.lastCases <;> simp! [Subst.id]
   · simp only [size, inst, sizeWith_subst]
     have hw : (fun v => (Subst.id.extend e v).sizeWith fun _ => 1) =
         Fin.snoc (fun _ => 1) (e.sizeWith fun _ => 1) := by
       funext v
-      cases v using Fin.lastCases <;> simp [sizeWith, Subst.id]
+      cases v using Fin.lastCases <;> simp! [Subst.id]
     rw [hw]
     exact Nat.lt_succ_of_le (Nat.le_add_left _ _)
 
@@ -304,20 +304,20 @@ theorem headRank_le_length (Γ : Ctx ζ ℓ a b) : Γ.headRank ≤ 2 * ζ.length
 @[simp] theorem headRank_pi (Δ : Ctx ζ ℓ a b) (e : Expr ζ ℓ b) :
     (Δ.pi e).headRank = max Δ.headRank e.headRank := by
   induction Δ with
-  | nil => simp [headRank]
+  | nil => simp!
   | snoc Δ t ih =>
     change (Ctx.pi (.forallE t e) Δ).headRank = _
     rw [ih]
-    simp [headRank, Expr.headRank]
+    simp!
 
 @[simp] theorem headRank_lam (Δ : Ctx ζ ℓ a b) (e : Expr ζ ℓ b) :
     (Δ.lam e).headRank = max Δ.headRank e.headRank := by
   induction Δ with
-  | nil => simp [headRank]
+  | nil => simp!
   | snoc Δ t ih =>
     change (Ctx.lam (.lam t e) Δ).headRank = _
     rw [ih]
-    simp [headRank, Expr.headRank]
+    simp!
 
 end Ctx
 
@@ -429,7 +429,7 @@ theorem Env.get_block_headRank_lt (E : Env ζ) (η : Head ζ (.inductive ι)) :
         rw [Inductive.headRank_map]
         exact Nat.lt_succ_of_le I.headRank_le_length
     | there η =>
-      simpa [Env.get, Head.rank] using ih η
+      simpa! [Env.get] using ih η
 
 theorem Env.get_defValue_headRank_lt {nlevels : Nat} (E : Env ζ)
     (η : Head ζ (.const .def nlevels)) : (E.get η).defValue.headRank < η.rank := by
@@ -444,13 +444,13 @@ theorem Env.get_defValue_headRank_lt {nlevels : Nat} (E : Env ζ)
         rw [Expr.headRank_map]
         exact lt_of_le_of_lt e.headRank_le_length (by omega)
     | there η =>
-      simpa [Env.get, Head.rank, dsimp% (Entry.defValueNatTrans _).naturality_apply] using ih η
+      simpa! [Env.get, dsimp% (Entry.defValueNatTrans _).naturality_apply] using ih η
 
 theorem Expr.measure_const_def {nlevels : Nat} {E : Env ζ} (η : Head ζ (.const .def nlevels))
     (ls : Fin nlevels → Level ℓ) :
     Prod.Lex (· < ·) (· < ·) ((E.get η).defValue{ls}.wkClosed (n := n)).measure
       (Expr.const η ls : Expr ζ ℓ n).measure :=
-  .left _ _ (by simpa [Expr.headRank] using E.get_defValue_headRank_lt η)
+  .left _ _ (by simpa! using E.get_defValue_headRank_lt η)
 
 section RecursorRank
 
@@ -504,8 +504,8 @@ theorem Subst.headRank_liftN_le {σ : Subst ζ ℓ n m} (hσ : ∀ v, (σ v).hea
   | zero => exact hσ v
   | succ k ih =>
     cases v using Fin.lastCases with
-    | last => simp [Expr.headRank]
-    | cast v => simpa [Subst.liftN, Expr.wk, Expr.wkFrom] using ih v
+    | last => simp!
+    | cast v => simpa! [Expr.wk, Expr.wkFrom] using ih v
 
 theorem Ctx.headRank_append_le {a b c : Nat} {Γ : Ctx ζ ℓ a b} {Δ : Ctx ζ ℓ b c}
     (hΓ : Γ.headRank ≤ r) (hΔ : Δ.headRank ≤ r) : Ctx.headRank (Γ ++ Δ) ≤ r := by
@@ -606,7 +606,7 @@ theorem Inductive.headRank_fieldTele_le : ((I.ctors s c).fieldTele η ls ps).hea
   · exact Ctx.headRank_ofTypes_le fun f => RecField.headRank_instantiatedType_le
       (headRank_recursive_le hI _) hη (fun p => by simpa using hps p)
       (Fin.headRank_append_le (fun p => by simpa using hps p)
-        fun _ => by simp [Expr.boundVars, Expr.headRank])
+        fun _ => by simp! [Expr.boundVars])
 
 include hη hps hms in
 theorem Inductive.headRank_caseFnType_le : (I.caseFnType η ls ps ms s c).headRank ≤ r := by
@@ -614,11 +614,11 @@ theorem Inductive.headRank_caseFnType_le : (I.caseFnType η ls ps ms s c).headRa
     simpa [CtorSig.fieldParams] using hps p
   have hsubst (v : Fin (ι.nparams + (ι.ctors s c).nfields)) :
       (Fin.append ((ι.ctors s c).fieldParams ps) (ι.ctors s c).fieldOrdinary v).headRank ≤ r :=
-    Fin.headRank_append_le hparams (fun _ => by simp [CtorSig.fieldOrdinary, Expr.headRank]) v
+    Fin.headRank_append_le hparams (fun _ => by simp! [CtorSig.fieldOrdinary]) v
   have hcase (v : Fin (ι.nparams + (ι.ctors s c).nfields)) :
       (Fin.append ((ι.ctors s c).caseParams ps) (ι.ctors s c).caseOrdinary v).headRank ≤ r :=
     Fin.headRank_append_le (fun p => by simpa [CtorSig.caseParams] using hparams p)
-      (fun _ => by simp [CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.headRank]) v
+      (fun _ => by simp! [CtorSig.caseOrdinary, CtorSig.fieldOrdinary]) v
   have hindex (i : Fin (ι.nindices s)) :
       ((I.ctors s c).targetIndex ls ((ι.ctors s c).caseParams ps) (ι.ctors s c).caseOrdinary i).headRank ≤
         r := by
@@ -632,8 +632,8 @@ theorem Inductive.headRank_caseFnType_le : (I.caseFnType η ls ps ms s c).headRa
   refine max_le (Ctx.headRank_append_le (headRank_fieldTele_le hI hη hps)
     (Ctx.headRank_ofTypes_le fun f => hih _)) (Expr.headRank_motiveResult_le (by simpa using hms s) hindex
       (Expr.headRank_ctor_le hη (fun p => by simpa [CtorSig.caseParams] using hparams p)
-        (fun _ => by simp [CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.headRank])
-        fun _ => by simp [CtorSig.caseRecursive, CtorSig.fieldRecursive, Expr.headRank]))
+        (fun _ => by simp! [CtorSig.caseOrdinary, CtorSig.fieldOrdinary])
+        fun _ => by simp! [CtorSig.caseRecursive, CtorSig.fieldRecursive]))
 
 include hη in
 theorem Inductive.headRank_recrTele_le : (I.recrTele η s ls l).headRank ≤ r := by
@@ -647,7 +647,7 @@ theorem Inductive.headRank_recrTele_le : (I.recrTele η s ls l).headRank ≤ r :
     exact headRank_caseFnType_le hI hη (fun _ => Expr.headRank_var_le _)
       fun _ => Expr.headRank_var_le _
   · exact headRank_indexTele_le hI fun _ => Expr.headRank_var_le _
-  · exact Expr.headRank_ind_le hη (fun p => by simp [Expr.headRank]) fun _ => Expr.headRank_var_le _
+  · exact Expr.headRank_ind_le hη (fun p => by simp!) fun _ => Expr.headRank_var_le _
 
 end RecursorRank
 

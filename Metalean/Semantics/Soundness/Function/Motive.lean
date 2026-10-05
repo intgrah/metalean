@@ -57,14 +57,14 @@ theorem RawTyped.motiveSpine (ht' : InductiveWF E₂ (E₂.get η).block) (h : I
     simpa [σ₁] using pis i
   have fσ₁ (i) : HasFixedness Γ₁ (σ₁.subst (Fin.natAdd Γ₁.as.len i))
       ((Ctx.get (Fin.natAdd Γ₁.as.len i) (Γ₁.as.ctx ++ Δ)).subst σ₁.subst) := by
-    simpa [Δ, σ₁, Expr.subst] using fis i
+    simpa [Δ, σ₁] using fis i
   have hσ₁ := SemanticHom.extendTele rfl hΔ pΔ.init σ₁
     (by rw [hover]; exact .id Γ₁) pσ₁ fσ₁
   have hbound := RawTyped.applyBound hΔ pΔ.init hcode pcode
     ⟨hm, .pi _ hΔ pΔ.init _ hcode pcode, pm, fm⟩
   have papp := hσ₁.typed hbound
   have pc := hσ₁.props pt
-  simpa [σ₁, t, t', Expr.applyBound_eq_apps, Expr.subst_apps, Expr.subst] using And.intro papp pc
+  simpa [σ₁, t, t', Expr.applyBound_eq_apps] using And.intro papp pc
 
 variable (hB : InductiveWF E₂ (E₂.get η).block) (h : IndTyping Γ₁ η s ls ps is)
   (hmaj : E₂[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps is)

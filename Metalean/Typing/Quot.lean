@@ -94,7 +94,7 @@ theorem Quot.compatType_isType {ηeq : Head ζ (.inductive Eq.sig)}
   have ha₂ : E[(Γ.snoc α).snoc α.wk] ⊢ .var ⟨n, by omega⟩ : α.wk.wk := by
     have h := ha₁.wk α.wk
     have hv : (Expr.var (Fin.last n) : Expr ζ ℓ (n + 1)).wk = .var ⟨n, by omega⟩ := by
-      simp [Expr.wk, Expr.wkFrom, Expr.rename]
+      simp [Expr.wk, Expr.wkFrom]
       exact Fin.ext rfl
     rwa [hv] at h
   have hb₂ : E[(Γ.snoc α).snoc α.wk] ⊢ .var ⟨n + 1, by omega⟩ : α.wk.wk := by
@@ -131,14 +131,14 @@ theorem Quot.compatType_isType {ηeq : Head ζ (.inductive Eq.sig)}
       .var ⟨n, by omega⟩ : α.wk.wk.wk := by
     have h := ha₂.wk ((r.wk.wk.app (.var ⟨n, by omega⟩)).app (.var ⟨n + 1, by omega⟩))
     have hv : (Expr.var ⟨n, by omega⟩ : Expr ζ ℓ (n + 2)).wk = .var ⟨n, by omega⟩ := by
-      simp [Expr.wk, Expr.wkFrom, Expr.rename]
+      simp [Expr.wk, Expr.wkFrom]
     rwa [hv] at h
   have hb₃ : E[((Γ.snoc α).snoc α.wk).snoc
       ((r.wk.wk.app (.var ⟨n, by omega⟩)).app (.var ⟨n + 1, by omega⟩))] ⊢
       .var ⟨n + 1, by omega⟩ : α.wk.wk.wk := by
     have h := hb₂.wk ((r.wk.wk.app (.var ⟨n, by omega⟩)).app (.var ⟨n + 1, by omega⟩))
     have hv : (Expr.var ⟨n + 1, by omega⟩ : Expr ζ ℓ (n + 2)).wk = .var ⟨n + 1, by omega⟩ := by
-      simp [Expr.wk, Expr.wkFrom, Expr.rename]
+      simp [Expr.wk, Expr.wkFrom]
     rwa [hv] at h
   have hβ₄ := hβ₃.wk α.wk.wk.wk
   have hfa := Defeq.appDF hα₃ hβ₄ hf₃' ha₃ (hβ₄.inst_congr ha₃)

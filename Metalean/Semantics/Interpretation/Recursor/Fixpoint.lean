@@ -75,7 +75,7 @@ theorem fieldTele_headRank_lt : (((E.get η).block.ctors s c).fieldTele η ls ps
 theorem fieldArgs_headRank_le (v : Fin (ι.nparams + (ι.ctors s c).nfields)) :
     (Fin.append ((ι.ctors s c).fieldParams ps) (ι.ctors s c).fieldOrdinary v).headRank ≤ η.rank - 1 :=
   Fin.headRank_append_le (fun p => by simpa [CtorSig.fieldParams] using hps p)
-    (fun _ => by simp [CtorSig.fieldOrdinary, Expr.headRank]) v
+    (fun _ => by simp! [CtorSig.fieldOrdinary]) v
 
 theorem fieldTelescope_headRank_lt : (fieldTelescope h s c f).headRank < η.rank :=
   Head.lt_rank_of_le (RecField.headRank_instantiatedTelescope_le
@@ -103,16 +103,15 @@ theorem ihSubst_headRank_lt (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (f : Fin
   have hσ (w : Var (CtxCat.recr hd s).as.len) :
       ((CtxCat.ctorFieldTargetHom (RecTyping.generic hd s).toIndData s c f).subst w).headRank ≤
         η.rank - 1 := by
-    simp [CtxCat.ctorFieldTargetHom, CtxCat.ctorFieldsProjection, RawCtx.Hom.teleProjection,
-      Expr.headRank]
+    simp! [CtxCat.ctorFieldTargetHom, CtxCat.ctorFieldsProjection, RawCtx.Hom.teleProjection]
   exact Inductive.forall_recrSubst_image
-    (fun p => Head.lt_rank_of_le (by simp [CtorSig.fieldParams, Expr.headRank]))
+    (fun p => Head.lt_rank_of_le (by simp! [CtorSig.fieldParams]))
     (fun t => Head.lt_rank_of_le (Expr.headRank_subst_le _ _ _ (Expr.headRank_var_le _) hσ))
     (fun t c₁ => Head.lt_rank_of_le (Expr.headRank_subst_le _ _ _ (Expr.headRank_var_le _) hσ))
     (fun i => Head.lt_rank_of_le (RecField.headRank_instantiatedIndices_le
       (Inductive.headRank_recursive_le (E.get_block_headRank_lt η).le f)
       (fieldArgs_headRank_le (fun _ => Expr.headRank_var_le _) s c) i))
-    (Head.lt_rank_of_le (by simp [appliedMajor, CtorSig.fieldRecursive, Expr.headRank])) v
+    (Head.lt_rank_of_le (by simp! [appliedMajor, CtorSig.fieldRecursive])) v
 
 noncomputable def recursorHyp (V : RecApprox E ℓ ι) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (f : Fin (ι.ctors s c).nrecFields) : RawFamily (CtxCat.recr hd s) :=

@@ -86,9 +86,9 @@ def ordinaryTeleAux (ctor : Ctor ζ ι s csig) (count : Nat)
   | last count =>
       change (ctor.ordinaryTeleAux (count + 1) hcount).entry _ _ =
         (ctor.ordinary ⟨count, by omega⟩).type
-      simp [ordinaryTeleAux]
+      simp!
   | cast f ih =>
-    simpa [ordinaryTeleAux] using ih (by omega)
+    simpa! using ih (by omega)
 
 abbrev ordinaryTele (ctor : Ctor ζ ι s csig) :
     Ctx ζ ι.nlevels ι.nparams (ι.nparams + csig.nfields) :=
@@ -101,7 +101,7 @@ abbrev ordinaryTele (ctor : Ctor ζ ι s csig) :
       (ctor.map pre).ordinaryTeleAux count hcount := by
   induction count with
   | zero => rfl
-  | succ count ih => simp [ordinaryTeleAux, map, Field.map, ih]
+  | succ count ih => simp! [map, Field.map, ih]
 
 end Ctor
 
