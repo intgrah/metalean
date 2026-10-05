@@ -432,8 +432,9 @@ variable {ms₂ : Fin ι.nsorts → Expr ζ ℓ Γ₂.as.len}
   {mins₂ : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ Γ₂.as.len}
   (hms : ∀ t, (ms t).subst σ.subst = ms₂ t) (hmins : ∀ t c, (mins t c).subst σ.subst = mins₂ t c)
 
-include hps hms hmins
+include hps hms
 
+include hmins in
 theorem ih_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
     ((generic h.toIndData s c).ih l
       (fun t => ((ms t).wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields)
@@ -442,7 +443,6 @@ theorem ih_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
   simp [ih, generic, fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary,
     CtorSig.fieldRecursive, hps, hms, hmins]
 
-omit hmins in
 theorem ihType_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
     (((E.get η).block.ctors s c).ihTypeWith ls
       (fun t => ((ms t).wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields)
@@ -452,6 +452,7 @@ theorem ihType_fieldsSubst (f : Fin (ι.ctors s c).nrecFields) :
   simp [generic, fieldsSubst, CtorSig.fieldParams, CtorSig.fieldOrdinary,
     CtorSig.fieldRecursive, hps, hms]
 
+include hmins in
 theorem ihName_section (h₂ : RecData Γ₂ η ls l ps₂ ms₂ mins₂) (f : Fin (ι.ctors s c).nrecFields) :
     (inst.section h σ hps).ihName f = inst.ihName h₂ f := by
   change (Tm E ℓ).map (RawCtx.toCtx.map (inst.fieldsHom h.toIndData σ hps)).op

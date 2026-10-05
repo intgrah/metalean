@@ -500,7 +500,6 @@ theorem FCtor.Denotes.recursiveTys :
     ((hps.wkN _).append (ArgsDenote.fvars n _)) hη
 
 include hc hus' hps in
-omit hms in
 theorem FCtor.Denotes.ihTys {fmotive : Fin fctor.recursive.size → FExpr}
     (hmotive : ∀ r, FExpr.Denotes E 0 (fmotive r)
       (ms' ((ι.ctors s c).recursiveTarget (r.cast hc.recursiveSize)))) :
@@ -529,7 +528,6 @@ theorem FCtor.Denotes.caseType {fsortMotive : FExpr}
     (ArgsDenote.caseRecursive _).denotes
 
 include hc hus' hps hη htarget in
-omit hms in
 theorem FCtor.Denotes.caseFnType {fmotive : Fin fctor.recursive.size → FExpr}
     (hmotive : ∀ r, FExpr.Denotes E 0 (fmotive r)
       (ms' ((ι.ctors s c).recursiveTarget (r.cast hc.recursiveSize))))

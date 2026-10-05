@@ -141,12 +141,12 @@ section
 
 variable (hdecl : SemDecls E₁ ε₁ ![])
   (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
-include hdecl hrule hE hB
+include hdecl hrule hB
 
 section
 
 variable (total : E₁.as ⟶ E₂.as) (hatoms : AtomsMap total.sigs ε₁ ε₂)
-include hatoms
+include hE hatoms
 
 theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
@@ -410,7 +410,6 @@ theorem projTerm_denotes_field
 
 end
 
-omit hE in
 theorem etaStructRuleSound
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (hblock : (E₂.get η).block = I.map pre.sigs)
