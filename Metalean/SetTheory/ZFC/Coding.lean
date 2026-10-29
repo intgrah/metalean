@@ -15,6 +15,14 @@ namespace ZFSet
 
 variable {n : Nat} {α : Type v} {β : Type w}
 
+noncomputable def tupleValues (count : Nat) (value : ZFSet.{u}) : Fin count → ZFSet.{u} :=
+  fun i => fst ((snd^[i.val]) value)
+
+@[simp] theorem tupleValues_succ (value : ZFSet.{u}) :
+    tupleValues (n + 1) value = Fin.cons (fst value) (tupleValues n (snd value)) := by
+  funext i
+  cases i using Fin.cases <;> simp [tupleValues, Function.iterate_succ_apply]
+
 class Encode (α : Type v) where
   encode : α → ZFSet.{u}
   injective : Function.Injective encode

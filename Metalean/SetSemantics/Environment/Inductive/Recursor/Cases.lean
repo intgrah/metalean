@@ -117,16 +117,13 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
       Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l))
     (minor : ZFSet)
     (hminor : minor ∈ model.recrCaseDomain s c (Fin.append vps vms))
-    (vargs : ZFSet)
-    (hargs : vargs ∈ (model.codeOf s c).ihArgSet
-      (model.toModel.block vps) (model.recrCaseMotive vps vms) vps) :
-    (model.codeOf s c).applyMinor model.toModel.level vps minor vargs ∈
+    (approximation : ZFSet) (happroximation : approximation ⊆ model.toModel.block vps)
+    (graph : ZFSet)
+    (hgraph : ∀ value ∈ approximation, app graph value ∈ fibreOp (model.recrCaseMotive vps vms) value)
+    (vargs : ZFSet) (hargs : vargs ∈ (model.codeOf s c).argSet approximation vps) :
+    (model.codeOf s c).applyMinor model.toModel.level graph vps minor vargs ∈
       fibreOp (model.recrCaseMotive vps vms)
-        (entry
-          ((model.codeOf s c).targetIndex vps
-            ((model.codeOf s c).forgetIhs vargs))
-          (tagOf s c)
-          ((model.codeOf s c).forgetIhs vargs)) := by
+        (entry ((model.codeOf s c).targetIndex vps vargs) (tagOf s c) vargs) := by
   let source := (model.ctors s c).source
   let fieldTele := source.ordinary.sem
   let fields := source.recursiveCodes
@@ -136,17 +133,21 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
     simpa using Reachable.base hms
   have hfields := SemTele.reachable_values (Δ := fieldTele)
     (reach := Reachable Set.univ model.paramsSem)
-    (CtorCode.forgetIhs_mem_argSet _ _ _ hargs) hps
-  rw [SemTele.values_forgetIhs] at hfields
+    hargs hps
   let γ₁ := fieldTele.values vps vargs
   let vfds := fun f => γ₁ (Fin.natAdd ι.nparams f)
   have hfieldsBase : (fun param : Fin ι.nparams =>
       γ₁ (param.castLE fieldTele.le)) = vps :=
     funext <| fieldTele.values_base vps vargs
-  have ⟨raw, ihs, hraw, hihs, happlyFields, happlyIhs, hpacked⟩ :=
-    CtorCode.splitIhArgSet_prependRecursive
-      (level := model.toModel.level) (fields := fields)
-      (CtorCode.tail_mem_ihArgSet (Δ := fieldTele) (rest := rest) hargs)
+  let raw := tupleValues (ι.ctors s c).nrecFields (fieldTele.tail vargs)
+  have hvargs := CtorCode.tail_mem_argSet (Δ := fieldTele) (rest := rest) hargs
+  have hvargs' := CtorCode.argSet_mono happroximation rest γ₁ hvargs
+  have hraw := CtorCode.recursiveValues_mem hvargs'
+  let ihs := fun f => recMap (fields f).2.tele (fields f).2.index graph γ₁ (raw f)
+  have hihs (f) : ihs f ∈ ihType (fields f).2.tele (fields f).2.index
+      (model.recrCaseMotive vps vms) γ₁ (raw f) :=
+    recMap_mem (fields f).2.tele (fields f).2.index hgraph γ₁ (raw f)
+      (CtorCode.recursiveValues_mem hvargs f)
   let typed := fun f => eraseRecField (fields f).2.tele model.toModel.level γ₁ (raw f)
   have hfieldsSlotsEq : γ₁ = Fin.append vps vfds := fieldTele.values_eq_append vps vargs
   have hrecFields : Fin.append γ₁ typed ∈ Reachable
@@ -189,26 +190,25 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
     (by simpa using hrecApp)
   simp only [Fin.append_right] at hleaf
   have happlyMinor : (model.codeOf s c).applyMinor model.toModel.level
-        vps minor vargs = [zf|minor vfds... typed... ihs...] := by
+        graph vps minor vargs = [zf|minor vfds... typed... ihs...] := by
     rw [show model.codeOf s c = CtorCode.prependOrdinary fieldTele rest from rfl]
     unfold CtorCode.applyMinor
-    rw [SemTele.applyFields_prependOrdinary, SemTele.values_forgetIhs, SemTele.tail_forgetIhs,
-      happlyFields, SemTele.applyIhs_prependOrdinary, happlyIhs]
+    rw [SemTele.applyFields_prependOrdinary, SemTele.applyIhs_prependOrdinary,
+      CtorCode.applyFields_prependRecursive, CtorCode.applyIhs_prependRecursive]
   simp [recrCaseLeaf, CaseSlots.ofValuation, CaseSlots.fieldValues] at hleaf
-  let rawArgs := (model.codeOf s c).forgetIhs vargs
-  have hfieldsRaw : model.ordinaryOf s c vps rawArgs = γ₁ :=
-    fieldTele.values_forgetIhs rest vps vargs
+  have hfieldsRaw : model.ordinaryOf s c vps vargs = γ₁ := rfl
   have hmaj : model.ctorResult s c vps vfds typed =
-      propVal model.toModel.level (entryValue (tagOf s c) rawArgs) := by
-    rw [show rawArgs = fieldTele.pack γ₁ (rest.forgetIhs (fieldTele.tail vargs)) from
-      fieldTele.forgetIhs_prependOrdinary rest vps vargs]
+      propVal model.toModel.level (entryValue (tagOf s c) vargs) := by
+    rw [show vargs = fieldTele.pack γ₁ (fieldTele.tail vargs) from
+      (SemTele.pack_values hargs).symm]
     dsimp only [StrongInductiveModel.ctorResult, StrongInductiveModel.ctorArgs]
     rw [← hfieldsSlotsEq]
-    exact hpacked _ (fieldTele.pack γ₁)
-  have htarget := model.codeOf_targetIndex s c vps rawArgs
+    exact CtorCode.packRecursive_erase hvargs' model.toModel.level (tagOf s c)
+      (fieldTele.pack γ₁)
+  have htarget := model.codeOf_targetIndex s c vps vargs
   rw [hfieldsRaw, hfieldsSlotsEq] at htarget
   have hentry : _ ∈ model.toModel.block vps := entry_mem_indSet (model.mapsTo vps)
-    (CtorCode.forgetIhs_mem_argSet _ _ _ hargs)
+    (CtorCode.argSet_mono happroximation _ vps hargs)
   rw [htarget] at hentry
   have hvalue := hmaj ▸ propVal_mem_propSet (level := model.toModel.level)
     (entryValue_mem_fibre hentry)

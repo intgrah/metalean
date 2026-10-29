@@ -21,7 +21,7 @@ attribute [local instance 2000] Classical.allZFSetDefinable
 
 namespace SemTele
 
-variable {n b : Nat}
+variable {n b : Nat} {block : ZFSet}
 
 noncomputable def pack {b : Nat} : SemTele n b → Slots b → ZFSet → ZFSet
   | .nil => fun _ tail => tail
@@ -58,42 +58,6 @@ theorem pack_values {Δ : SemTele n b} {rest : CtorCode b}
     rw [heq, fst_pair, snd_pair, ← heq]
     exact ih hargs
 
-theorem tail_forgetIhs (Δ : SemTele n b) (rest : CtorCode b) (vargs : ZFSet) :
-    Δ.tail ((CtorCode.prependOrdinary Δ rest).forgetIhs vargs) =
-      rest.forgetIhs (Δ.tail vargs) := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih => exact (congrArg snd (ih (.arg domain rest))).trans (snd_pair ..)
-
-theorem values_forgetIhs (Δ : SemTele n b) (rest : CtorCode b)
-    (γ : Slots n) (vargs : ZFSet) :
-    Δ.values γ ((CtorCode.prependOrdinary Δ rest).forgetIhs vargs) = Δ.values γ vargs := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih =>
-    change Slots.snoc
-      (values γ ((CtorCode.prependOrdinary Δ (.arg domain rest)).forgetIhs vargs) Δ)
-      (fst (SemTele.tail ((CtorCode.prependOrdinary Δ (.arg domain rest)).forgetIhs vargs) Δ)) = _
-    rw [ih, tail_forgetIhs]
-    exact congrArg (Fin.snoc _) (fst_pair ..)
-
-theorem forgetIhs_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
-    (γ : Slots n) (vargs : ZFSet) :
-    (CtorCode.prependOrdinary Δ rest).forgetIhs vargs =
-      Δ.pack (Δ.values γ vargs) (rest.forgetIhs (Δ.tail vargs)) := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih =>
-    exact (ih (.arg domain rest)).trans (by simp!)
-
-theorem tail_argMap (Δ : SemTele n b) (rest : CtorCode b) (graph : ZFSet)
-    (γ : Slots n) (vargs : ZFSet) :
-    Δ.tail ((CtorCode.prependOrdinary Δ rest).argMap graph γ vargs) =
-      rest.argMap graph (Δ.values γ vargs) (Δ.tail vargs) := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih => exact (congrArg snd (ih (.arg domain rest))).trans (snd_pair ..)
-
 theorem applyFields_prependOrdinary {level count : Nat}
     (Δ : SemTele n (n + count)) (rest : CtorCode (n + count))
     (γ : Slots n) (fn vargs : ZFSet) :
@@ -114,17 +78,9 @@ theorem applyFields_prependOrdinary {level count : Nat}
     rfl
 
 theorem applyIhs_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
-    (fn vargs : ZFSet) :
-    (CtorCode.prependOrdinary Δ rest).applyIhs fn vargs =
-      rest.applyIhs fn (Δ.tail vargs) := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih => exact ih (.arg domain rest)
-
-theorem predecessors_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
-    (γ : Slots n) (vargs : ZFSet) :
-    (CtorCode.prependOrdinary Δ rest).predecessors γ vargs =
-      rest.predecessors (Δ.values γ vargs) (Δ.tail vargs) := by
+    (graph : ZFSet) (γ : Slots n) (fn vargs : ZFSet) :
+    (CtorCode.prependOrdinary Δ rest).applyIhs graph γ fn vargs =
+      rest.applyIhs graph (Δ.values γ vargs) fn (Δ.tail vargs) := by
   induction Δ with
   | nil => rfl
   | snoc Δ domain ih => exact ih (.arg domain rest)
@@ -136,6 +92,36 @@ theorem targetIndex_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
   induction Δ with
   | nil => rfl
   | snoc Δ domain ih => exact ih (.arg domain rest)
+
+theorem reachable_values {Δ : SemTele n b} {rest : CtorCode b}
+    {reach : Set (Slots n)} {γ : Slots n} {vargs : ZFSet}
+    (hargs : vargs ∈ (CtorCode.prependOrdinary Δ rest).argSet block γ)
+    (hγ : γ ∈ reach) :
+    Δ.values γ vargs ∈ Reachable reach Δ := by
+  induction Δ with
+  | nil => exact .nil hγ
+  | snoc Δ domain ih =>
+    have ⟨_, _, hvalue, _, heq⟩ :=
+      CtorCode.argSet_arg_inv (CtorCode.tail_mem_argSet hargs)
+    change Fin.snoc (values γ vargs Δ) (fst (SemTele.tail vargs Δ)) ∈
+      Reachable reach (Δ.snoc domain)
+    refine .snoc ?_ ?_
+    · rw [Fin.init_snoc]
+      exact ih hargs
+    · rwa [Fin.init_snoc, Fin.snoc_last, heq, fst_pair]
+
+theorem pack_mem {Δ : SemTele n b} {rest : CtorCode b}
+    {reach : Set (Slots n)} {γ : Slots b} {tail : ZFSet}
+    (hγ : γ ∈ Reachable reach Δ)
+    (htail : tail ∈ rest.argSet block γ) :
+    Δ.pack γ tail ∈ (CtorCode.prependOrdinary Δ rest).argSet block
+      fun base => γ (base.castLE Δ.le) := by
+  induction Δ generalizing tail with
+  | nil => exact htail
+  | snoc Δ domain ih =>
+    have .snoc hprefix hlast := hγ
+    refine ih hprefix (CtorCode.mem_argSet_arg hlast ?_)
+    rwa [Fin.snoc_init_self]
 
 end SemTele
 
@@ -151,23 +137,6 @@ theorem targetIndex_prependRecursive
   induction count generalizing vargs with
   | zero => rfl
   | succ count ih => exact ih (snd vargs)
-
-theorem predecessors_mem_block (code : CtorCode n) (γ : Slots n)
-    (vargs : ZFSet) (hargs : vargs ∈ code.argSet block γ) :
-    ∀ predecessor ∈ code.predecessors γ vargs, predecessor ∈ block := by
-  induction code generalizing vargs with
-  | target => simp!
-  | arg domain rest ih =>
-    obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simpa! using ih (γ.snoc value) tail htail
-  | recArg tele index rest ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
-    intro predecessor hpredecessor
-    simp! at hpredecessor
-    cases hpredecessor with
-    | inl hentry =>
-      exact mem_recEntries_of_mem tele index γ value hvalue predecessor hentry
-    | inr hrest => exact ih γ tail htail predecessor hrest
 
 noncomputable def packRecursive {n count : Nat} (block : ZFSet)
     (fields : Fin count → CtorRecCode.Packed n) (level : Nat)
@@ -234,13 +203,12 @@ theorem applyFields_packRecursive {level : Nat}
       (values 0) (hvalues 0)]
     exact ih (Fin.tail fields) (Fin.tail values) (Fin.tail hvalues) [zf|minor $(values 0)]
 
-theorem applyIhs_argMap_packRecursive {level : Nat}
+theorem applyIhs_packRecursive {level : Nat}
     (fields : Fin count → CtorRecCode.Packed n) (index : Dom n)
     (block graph : ZFSet) (γ : Slots n) (values : Fin count → ZFSet)
     (minor : ZFSet) :
-    (prependRecursive count fields (.target index)).applyIhs minor
-        ((prependRecursive count fields (.target index)).argMap graph γ
-          (packRecursive block fields level γ values proof)) =
+    (prependRecursive count fields (.target index)).applyIhs graph γ minor
+        (packRecursive block fields level γ values proof) =
       [zf|minor $(fun f =>
         recMap (fields f).2.tele (fields f).2.index graph γ
           (recoverRecField (fields f).2.tele (fields f).2.index block
@@ -254,63 +222,133 @@ theorem applyIhs_argMap_packRecursive {level : Nat}
       [zf|minor $(recMap f.2.tele f.2.index graph γ
         (recoverRecField f.2.tele f.2.index block level γ (values 0)))]
 
-theorem splitIhArgSet_prependRecursive
-    {motive : ZFSet} {level : Nat}
-    {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
+theorem recursiveValues_mem {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
     {γ : Slots n} {vargs : ZFSet}
-    (hargs : vargs ∈ (prependRecursive count fields
-      (.target index)).ihArgSet block motive γ) :
-    ∃ raw ihs : Fin count → ZFSet,
-      let typed := fun f => eraseRecField (fields f).2.tele level γ (raw f)
-      (∀ f, raw f ∈ recFieldSet (fields f).2.tele
-        (fields f).2.index block γ) ∧
-      (∀ f, ihs f ∈ ihType (fields f).2.tele
-        (fields f).2.index motive γ (raw f)) ∧
-      (∀ fn, (prependRecursive count fields
-        (.target index)).applyFields level γ fn
-          ((prependRecursive count fields
-            (.target index)).forgetIhs vargs) = [zf|fn typed...]) ∧
-      (∀ fn, (prependRecursive count fields
-        (.target index)).applyIhs fn vargs = [zf|fn ihs...]) ∧
-      ∀ (tag : Nat) (build : ZFSet → ZFSet), propVal level (entryValue tag
-          (build (packRecursive block fields level γ typed proof))) =
-        propVal level (entryValue tag
-          (build ((prependRecursive count fields
-            (.target index)).forgetIhs vargs))) := by
+    (hargs : vargs ∈ (prependRecursive count fields (.target index)).argSet block γ) :
+    ∀ f, tupleValues count vargs f ∈ recFieldSet (fields f).2.tele (fields f).2.index block γ := by
   induction count generalizing vargs with
-  | zero =>
-    obtain rfl : vargs = proof := mem_verum.mp hargs
-    exact ⟨![], ![], fun f => Fin.elim0 f, fun f => Fin.elim0 f,
-      fun _ => rfl, fun _ => rfl, fun _ _ => rfl⟩
+  | zero => exact fun f => Fin.elim0 f
   | succ count ih =>
-    let recCode := fields 0
-    obtain ⟨fieldAndIh, hfieldAndIh, tail, htail, rfl⟩ := mem_sigma.mp hargs
-    rw [app_map hfieldAndIh] at htail
-    obtain ⟨rawHead, hrawHead, ihHead, hihHead, rfl⟩ := mem_sigma.mp hfieldAndIh
-    rw [app_map hrawHead] at hihHead
-    have ⟨rawTail, ihTail, hrawTail, hihTail, happlyFields, happlyIhs, hpacked⟩ :=
-      ih htail
-    let raw : Fin (count + 1) → ZFSet := Fin.cons rawHead rawTail
-    let ihs : Fin (count + 1) → ZFSet := Fin.cons ihHead ihTail
-    refine ⟨raw, ihs, Fin.cases hrawHead hrawTail, Fin.cases hihHead hihTail, ?_, ?_, ?_⟩
-    · intro fn
-      simp! [Aczel.apps_succ]
-      exact happlyFields _
-    · intro fn
-      simp! [Aczel.apps_succ]
-      exact happlyIhs _
-    · intro tag build
-      cases level with
-      | zero => simp
-      | succ level =>
-        have herase := eraseRecField_of_ne_zero (Nat.succ_ne_zero level)
-          recCode.2.tele recCode.2.index block γ rawHead hrawHead
-        have hrecover := recoverRecField_of_ne_zero (Nat.succ_ne_zero level)
-          recCode.2.tele recCode.2.index block γ rawHead hrawHead
-        simp [packRecursive, raw]
-        rw [herase, hrecover]
-        simpa [prependRecursive, forgetIhs, Fin.tail_def] using
-          hpacked tag fun tail => build (pair rawHead tail)
+    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
+    simpa using Fin.cases hvalue (ih (fields := Fin.tail fields) htail)
+
+theorem applyFields_prependRecursive (fields : Fin count → CtorRecCode.Packed n)
+    (index : Dom n) (level : Nat) (γ : Slots n) (fn vargs : ZFSet) :
+    (prependRecursive count fields (.target index)).applyFields level γ fn vargs =
+      [zf|fn $(fun f => eraseRecField (fields f).2.tele level γ (tupleValues count vargs f))...] := by
+  induction count generalizing fn vargs with
+  | zero => rfl
+  | succ count ih =>
+    simpa [prependRecursive, applyFields, applyIhs, Aczel.apps_succ, Fin.tail_def] using ih (Fin.tail fields)
+      [zf|fn $(eraseRecField (fields 0).2.tele level γ (fst vargs))] (snd vargs)
+
+theorem applyIhs_prependRecursive (fields : Fin count → CtorRecCode.Packed n)
+    (index : Dom n) (graph : ZFSet) (γ : Slots n) (fn vargs : ZFSet) :
+    (prependRecursive count fields (.target index)).applyIhs graph γ fn vargs =
+      [zf|fn $(fun f => recMap (fields f).2.tele (fields f).2.index graph γ
+        (tupleValues count vargs f))...] := by
+  induction count generalizing fn vargs with
+  | zero => rfl
+  | succ count ih =>
+    simpa [prependRecursive, applyFields, applyIhs, Aczel.apps_succ, Fin.tail_def] using ih (Fin.tail fields)
+      [zf|fn $(recMap (fields 0).2.tele (fields 0).2.index graph γ (fst vargs))] (snd vargs)
+
+theorem packRecursive_erase {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
+    {γ : Slots n} {vargs : ZFSet}
+    (hargs : vargs ∈ (prependRecursive count fields (.target index)).argSet block γ)
+    (level tag : Nat) (build : ZFSet → ZFSet) :
+    propVal level (entryValue tag (build (packRecursive block fields level γ
+      (fun f => eraseRecField (fields f).2.tele level γ (tupleValues count vargs f)) proof))) =
+      propVal level (entryValue tag (build vargs)) := by
+  induction count generalizing vargs build with
+  | zero => rw [eq_proof_of_mem_argSet_target hargs]; rfl
+  | succ count ih =>
+    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
+    cases level with
+    | zero => simp
+    | succ level =>
+      have herase := eraseRecField_of_ne_zero (Nat.succ_ne_zero level)
+        (fields 0).2.tele (fields 0).2.index block γ value hvalue
+      have hrecover := recoverRecField_of_ne_zero (Nat.succ_ne_zero level)
+        (fields 0).2.tele (fields 0).2.index block γ value hvalue
+      simp only [packRecursive, tupleValues_succ, fst_pair, snd_pair, Fin.cons_zero]
+      rw [herase, hrecover]
+      exact ih (fields := Fin.tail fields) (build := fun tail => build (pair value tail)) htail
+
+private theorem applyFields_zero_congr {n : Nat}
+    {code : CtorCode n} {block₁ block₂ : ZFSet}
+    {γ : Slots n} (minor : ZFSet) {left right : ZFSet}
+    (hleft : left ∈ code.argSet block₁ γ)
+    (hright : right ∈ code.argSet block₂ γ)
+    (h : code.ArgAgree left right) :
+    code.applyFields 0 γ minor left =
+      code.applyFields 0 γ minor right := by
+  induction h generalizing minor with
+  | target => rfl
+  | arg hfst _ ih =>
+    obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
+    obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
+    simp at hfst ih
+    subst hfst
+    simpa! using ih _ hleftTail hrightTail
+  | @recArg _ _ tele index _ _ _ _ ih =>
+    obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
+    obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
+    simp only [snd_pair] at ih
+    simp only [applyFields, fst_pair, snd_pair]
+    rw [eraseRecField_zero_eq tele index index block₁ block₂ γ hleftField hrightField]
+    exact ih _ hleftTail hrightTail
+
+private theorem applyIhs_key_congr {n : Nat}
+    {code : CtorCode n} {block₁ block₂ graph : ZFSet}
+    (hgraph : ∀ key leftValue rightValue,
+      pair key leftValue ∈ block₁ → pair key rightValue ∈ block₂ →
+      app graph (pair key leftValue) = app graph (pair key rightValue))
+    {γ : Slots n} (minor : ZFSet) {left right : ZFSet}
+    (hleft : left ∈ code.argSet block₁ γ)
+    (hright : right ∈ code.argSet block₂ γ)
+    (h : code.ArgAgree left right) :
+    code.applyIhs graph γ minor left =
+      code.applyIhs graph γ minor right := by
+  induction h generalizing minor with
+  | target => rfl
+  | arg hfst _ ih =>
+    obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
+    obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
+    simp only [fst_pair, snd_pair] at hfst ih
+    subst hfst
+    simpa! using ih _ hleftTail hrightTail
+  | @recArg _ _ tele index _ _ _ _ ih =>
+    obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
+    obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
+    simp only [snd_pair] at ih
+    simp only [applyIhs, fst_pair, snd_pair]
+    have hmap : recMap tele index graph γ leftField = recMap tele index graph γ rightField := by
+      rw [recFieldSet] at hleftField hrightField
+      apply tele.lamAt_eq_of_mem
+        (leftDomain := fun final => fibreOp block₁ (index final))
+        (rightDomain := fun final => fibreOp block₂ (index final))
+        (hleft := hleftField) (hright := hrightField)
+      intro final leftValue rightValue hleftValue hrightValue
+      exact hgraph _ _ _ (mem_fibre.mp hleftValue) (mem_fibre.mp hrightValue)
+    rw [hmap]
+    exact ih _ hleftTail hrightTail
+
+theorem applyMinor_zero_congr_of_argAgree
+    {n : Nat} (code : CtorCode n)
+    (block₁ block₂ graph : ZFSet)
+    (hgraph : ∀ key leftValue rightValue,
+      pair key leftValue ∈ block₁ → pair key rightValue ∈ block₂ →
+      app graph (pair key leftValue) = app graph (pair key rightValue))
+    (γ : Slots n) (minor : ZFSet) {left right : ZFSet}
+    (hleft : left ∈ code.argSet block₁ γ)
+    (hright : right ∈ code.argSet block₂ γ)
+    (h : code.ArgAgree left right) :
+    code.applyMinor 0 graph γ minor left =
+      code.applyMinor 0 graph γ minor right := by
+  unfold applyMinor
+  rw [applyFields_zero_congr minor hleft hright h]
+  exact applyIhs_key_congr hgraph _ hleft hright h
 
 end CtorCode
 

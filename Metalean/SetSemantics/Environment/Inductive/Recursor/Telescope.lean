@@ -116,11 +116,8 @@ noncomputable def recrState : ZFSet :=
 
 noncomputable def recrGraph : ZFSet :=
   recGraph model.toModel.codes model.toModel.bound
-    (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-    (stepGraph model.toModel.level (model.toModel.block (RecSlots.params γ))
-      (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-      (RecSlots.params γ) (minorFamily (RecSlots.cases γ)) model.toModel.codes)
-    (RecSlots.params γ)
+    (model.recrCaseMotive γ.params γ.motives) model.toModel.level
+    (minorFamily γ.cases) γ.params
 
 variable (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
 
@@ -224,11 +221,8 @@ theorem recrBody_denotes :
 
 theorem recrStepSound :
     StepSound model.toModel.codes (model.toModel.block (RecSlots.params γ))
-      (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-      (stepGraph model.toModel.level (model.toModel.block (RecSlots.params γ))
-        (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-        (RecSlots.params γ) (minorFamily (RecSlots.cases γ)) model.toModel.codes)
-      (RecSlots.params γ) := by
+      (model.recrCaseMotive γ.params γ.motives) model.toModel.level
+      (minorFamily γ.cases) γ.params := by
   have hprefix : γ.prefixValues ∈ Reachable Set.univ (model.recrPrefixSem l) := by
     simpa [RecSlots.valuation] using Reachable.base (Reachable.of_append (Reachable.init hγ))
   rw [recrPrefixSem] at hprefix
@@ -237,7 +231,7 @@ theorem recrStepSound :
   have hmsReach : Fin.append γ.params γ.motives ∈
       Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l) := by
     simpa [RecSlots.prefixValues] using Reachable.base hcaseReach
-  intro s₁ c vargs hargs
+  intro approximation happroximation graph hgraph s₁ c vargs hargs
   have hminor : RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) ∈
       model.recrCaseDomain s₁ c (Fin.append γ.params γ.motives) :=
     by simpa [RecSlots.prefixValues] using
@@ -245,8 +239,8 @@ theorem recrStepSound :
   have hminorEq : [zf|$(minorFamily (RecSlots.cases γ)) $(encode (tagOf s₁ c))] =
       RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) :=
     app_minorFamily (vmins := RecSlots.cases γ) (Fin.encodeSigma ι.nctors ⟨s₁, c⟩)
-  rw [app_stepGraph hargs, hminorEq]
-  exact model.recrCase_applyMinor_mem l s₁ c _ _ hmsReach _ hminor vargs hargs
+  rw [hminorEq]
+  exact model.recrCase_applyMinor_mem l s₁ c _ _ hmsReach _ hminor approximation happroximation graph hgraph vargs hargs
 
 end StrongInductiveModel
 

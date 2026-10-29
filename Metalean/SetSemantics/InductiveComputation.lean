@@ -21,44 +21,19 @@ variable {n m level : Nat} {nctors : Fin m → Nat} {s : Fin m} {c : Fin (nctors
   {block bound motive step graph minors vargs : ZFSet} {γ : Slots n}
   {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
 
-theorem recGraph_entry (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound))
-    (hstep : StepSound codes (indSet codes bound γ) motive step γ)
-    (hargs : vargs ∈ (codes s c).argSet (indSet codes bound γ) γ) :
-    app (recGraph codes bound motive step γ)
-        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
-      = app step (app (blockMapGraph (indSet codes bound γ)
-          (recGraph codes bound motive step γ) γ codes)
-          (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)) := by
-  refine (recGraph_isApprox hmaps).appEq _ ?_
-  rw [dom_recGraph hmaps hstep, ← indSet_unfold hmaps]
-  exact mem_indOp.mpr ⟨s, c, vargs, hargs, rfl⟩
-
-theorem app_stepGraph (hargs : vargs ∈ (codes s c).ihArgSet block motive γ) :
-    app (stepGraph level block motive γ minors codes)
-        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
-      = (codes s c).applyMinor level γ [zf|minors $(encode (tagOf s c))] vargs :=
-  app_pairGraph hargs
-
 theorem recGraph_iota
     (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound))
-    (hstep : StepSound codes (indSet codes bound γ) motive
-      (stepGraph level (indSet codes bound γ) motive γ minors codes) γ)
+    (hstep : StepSound codes (indSet codes bound γ) motive level minors γ)
     (hargs : vargs ∈ (codes s c).argSet (indSet codes bound γ) γ) :
-    app (recGraph codes bound motive
-        (stepGraph level (indSet codes bound γ) motive γ minors codes) γ)
-        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
-      = (codes s c).applyMinor level γ [zf|minors $(encode (tagOf s c))]
-          ((codes s c).argMap (recGraph codes bound motive
-            (stepGraph level (indSet codes bound γ) motive γ minors codes) γ)
-            γ vargs) := by
-  set graph := recGraph codes bound motive
-    (stepGraph level (indSet codes bound γ) motive γ minors codes) γ
-  have hmapped : (codes s c).argMap graph γ vargs
-      ∈ (codes s c).ihArgSet (indSet codes bound γ) motive γ :=
-    CtorCode.argMap_mem (fun _ hx => (recGraph_isApprox hmaps).app_mem
-      (by rwa [dom_recGraph hmaps hstep])) _ γ vargs hargs
-  rw [recGraph_entry hmaps hstep hargs, app_blockMapGraph hargs,
-    app_stepGraph hmapped]
+    app (recGraph codes bound motive level minors γ)
+        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
+      (codes s c).applyMinor level (recGraph codes bound motive level minors γ) γ
+        [zf|minors $(encode (tagOf s c))] vargs := by
+  have hdom : entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs ∈
+      dom (recGraph codes bound motive level minors γ) := by
+    rw [dom_recGraph hmaps hstep, ← indSet_unfold hmaps]
+    exact mem_indOp.mpr ⟨s, c, vargs, hargs, rfl⟩
+  rw [(recGraph_isApprox hmaps).appEq _ hdom, app_stepGraph hargs]
 
 theorem entry_mem_indSet (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound))
     (hargs : vargs ∈ (codes s c).argSet (indSet codes bound γ) γ) :

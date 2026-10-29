@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.ConstructorPredecessors
+public import Metalean.SetSemantics.ConstructorValue
 public import Metalean.SetSemantics.Realization
 public import Metalean.SetSemantics.Soundness
 

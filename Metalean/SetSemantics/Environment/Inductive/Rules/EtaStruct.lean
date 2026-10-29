@@ -40,15 +40,6 @@ noncomputable def fieldsOf (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
       (fibreOp (model.toModel.block vps) (sortKey s.val (encode vis))) vmaj))
     (Fin.natAdd ι.nparams f)
 
-theorem append_castLE_base (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields) :
-    (fun base : Fin ι.nparams => Fin.append vps vfds
-      (base.castLE (model.ctors s c).source.ordinary.sem.le)) =
-      vps := by
-  funext base
-  rw [show base.castLE (model.ctors s c).source.ordinary.sem.le =
-    base.castAdd (ι.ctors s c).nfields from Fin.ext rfl, Fin.append_left]
-
 theorem fieldsOf_ctorResult (hlevel : model.toModel.level ≠ 0) (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams) (vis : Slots (ι.nindices s))
     (vfds : Slots (ι.ctors s c).nfields) (vrecFds : Slots (ι.ctors s c).nrecFields) :
@@ -58,7 +49,7 @@ theorem fieldsOf_ctorResult (hlevel : model.toModel.level ≠ 0) (s : Fin ι.nso
     (CtorCode.packRecursive (model.toModel.block vps)
       (model.ctors s c).source.recursiveCodes
       model.toModel.level (Fin.append vps vfds) vrecFds proof)
-  rw [model.append_castLE_base s c vps vfds] at hvalues
+  simp at hvalues
   unfold fieldsOf ctorResult
   rw [propGet_of_ne_zero hlevel, propVal_of_ne_zero hlevel]
   change (fun f => (model.ctors s c).source.ordinary.sem.values vps
@@ -107,35 +98,6 @@ theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
         model.toModel.level (Fin.append vps vfds) vrecFds proof) = vargs
     rw [CtorCode.packRecursive_of_isEmpty _ _ _ _ _ _ hrec, ← hslotsEq, ← htailProof]
     exact SemTele.pack_values hargs, ← hrawEq, hvalue]
-
-theorem ctorArgs_mem_argSet {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    (hrec : IsEmpty (Fin (ι.ctors s c).nrecFields)) (vps : Slots ι.nparams)
-    (vfds : Slots (ι.ctors s c).nfields) (vrecFds : Slots (ι.ctors s c).nrecFields)
-    (hfieldsReach : Fin.append vps vfds ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem) :
-    model.ctorArgs s c vps vfds vrecFds ∈
-      (model.codeOf s c).argSet (model.toModel.block vps) vps := by
-  have hargs := SemTele.pack_mem (Δ := (model.ctors s c).source.ordinary.sem) (reach := {vps})
-    hfieldsReach (CtorCode.packRecursive_mem
-      (fields := (model.ctors s c).source.recursiveCodes)
-      (rest := .target (StrongCtorSource.targetIndex (model.ctors s c).target))
-      (level := model.toModel.level) (γ := Fin.append vps vfds)
-      (block := model.toModel.block vps) (values := vrecFds) (tail := proof)
-      hrec.elim (CtorCode.proof_mem_argSet_target _))
-  rwa [model.append_castLE_base s c vps vfds] at hargs
-
-theorem ctorResult_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
-    (hrec : IsEmpty (Fin (ι.ctors s c).nrecFields)) (hind : IsEmpty (Fin (ι.nindices s)))
-    (vps : Slots ι.nparams)
-    (vfds : Slots (ι.ctors s c).nfields) (vrecFds : Slots (ι.ctors s c).nrecFields)
-    (vis : Slots (ι.nindices s)) (hfieldsReach : Fin.append vps vfds ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem) :
-    model.ctorResult s c vps vfds vrecFds ∈ model.toModel.sortValue s vps vis := by
-  have hentry := entry_mem_indSet (model.mapsTo vps)
-    (model.ctorArgs_mem_argSet hrec vps vfds vrecFds hfieldsReach)
-  rw [model.codeOf_targetIndex s c vps (model.ctorArgs s c vps vfds vrecFds),
-    show model.targetValues s c (model.ordinaryOf s c vps (model.ctorArgs s c vps vfds vrecFds)) = vis from funext hind.elim] at hentry
-  exact propVal_mem_propSet (entryValue_mem_fibre (by simpa [InductiveModel.block] using hentry))
 
 section
 
@@ -222,10 +184,8 @@ theorem projTerm_denotes_field
     (hmajMem₁ : ε₂[γ₁]⟦maj₁⟧ ∈ model.toModel.sortValue s (ε₂[γ₁]⟦ps₁ ·⟧) vis) :
     ε₂[γ₁]⟦hstruct.projTerm η ls ps₁ f maj₁⟧ =
       model.fieldsOf s c (ε₂[γ₁]⟦ps₁ ·⟧) vis ε₂[γ₁]⟦maj₁⟧ f := by
-  have ⟨bound, hbound⟩ : ∃ bound, f.val = bound := ⟨f.val, rfl⟩
-  induction bound using Nat.strongRecOn generalizing f m₁ γ₁ ps₁ maj₁ with
-  | _ bound ih =>
-    subst hbound
+  induction f using Fin.strong_induction_on generalizing m₁ γ₁ ps₁ maj₁ with
+  | h f ih =>
     let vps := (ε₂[γ₁]⟦ps₁ ·⟧)
     have hdecomp {z : ZFSet} (hz : z ∈ model.toModel.sortValue s vps vis) :=
       model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
@@ -257,8 +217,8 @@ theorem projTerm_denotes_field
         (γ := γ₂) fun param => by simpa using congrFun hpsDen₂ param
         fun prior => by
           rw [Fin.append_right]
-          simpa [hpsDen₂] using ih prior.val prior.isLt _ (hpsDen₂ ▸ hvps) hpsTy₂
-            (hpsDen₂ ▸ hmajMem₂) rfl
+          simpa [hpsDen₂] using ih (prior.castLT (prior.isLt.trans f.isLt)) prior.isLt
+            (hpsDen₂ ▸ hvps) hpsTy₂ (hpsDen₂ ▸ hmajMem₂)
       rw [Fin.append_right] at hmem
       exact ⟨hmem, hsorted⟩
     have hindices : (ε₂[γ₁]⟦hstruct.indices ·⟧) = vis :=
@@ -359,8 +319,10 @@ theorem projTerm_denotes_field
         | right field =>
           simp only [Slots.pull_natAdd, Fin.append_right]
           exact congrArg slots (Fin.ext rfl)] at hreachArgs
-      have hctorMem := model.ctorResult_mem_sortValue hstruct.no_recursive
-        hstruct.no_indices vps vfds₁ hstruct.recursive vis hreachArgs
+      have hctorMem := model.ctorResult_mem_sortValue s c vps vfds₁ hreachArgs
+        hstruct.recursive hstruct.no_recursive.elim
+      rw [show model.targetValues s c (Fin.append vps vfds₁) = vis from
+        funext hstruct.no_indices.elim] at hctorMem
       rw [show ε₂[slots]⟦(I.map total.sigs).caseType η ls ps₁ mot s c⟧ =
           [zf|$(vms s) $(model.ctorResult s c vps vfds₁ hstruct.recursive)] from by
         simp only [Inductive.caseType, Inductive.motiveResult,
@@ -377,8 +339,8 @@ theorem projTerm_denotes_field
       hstruct.no_indices.elim
       (by rwa [hsortDen])
     rw [funext hmsDen, hindices] at hreach
-    have hargs := model.ctorArgs_mem_argSet hstruct.no_recursive vps vfds hstruct.recursive
-      hreachFds
+    have hargs := (model.ctorArgs_mem s c vps vfds hreachFds hstruct.recursive
+      hstruct.no_recursive.elim).1
     have hkey : (model.codeOf s c).targetIndex vps
         (model.ctorArgs s c vps vfds hstruct.recursive) = sortKey s.val (encode vis) := by
       rw [model.codeOf_targetIndex]
@@ -391,7 +353,7 @@ theorem projTerm_denotes_field
       (by simpa [RecSlots.args] using hkey)
       hrebuild.symm
     simp [RecSlots.args] at hiota
-    rw [model.applyMinor_ctorApplication s c vps vfds hreachFds hstruct.recursive hstruct.no_recursive.elim,
+    rw [model.applyMinor_ctorApplication s c vps vfds hstruct.recursive hstruct.no_recursive.elim,
       Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr, Fin.decodeSigma_encodeSigma,
       show vminsVal s c = _ from hcaseValue] at hiota
     have hlamApp := Reachable.apps_lam_of_base

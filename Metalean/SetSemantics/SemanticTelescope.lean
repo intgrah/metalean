@@ -249,6 +249,82 @@ theorem collect_property {leaf : DomAt b} {domain : Dom b} (Δ : SemTele a b)
     rw [app_map hargument] at happ
     exact hleaf _ _ happ result hresult
 
+theorem lamAt_congr_of_collect {a b : Nat} (P : ZFSet → Prop)
+    {domain : Dom b} {leaf leaf' keys : DomAt b} (tele : SemTele a b)
+    (hleaf : ∀ (final : Slots b) (value : ZFSet), value ∈ domain final →
+      (∀ key ∈ keys final value, P key) → leaf final value = leaf' final value)
+    (γ : Slots a) (value : ZFSet) (hfield : value ∈ tele.pi domain γ)
+    (hkeys : ∀ key ∈ tele.collect keys γ value, P key) :
+    tele.lamAt leaf γ value = tele.lamAt leaf' γ value := by
+  induction tele generalizing value with
+  | nil => exact hleaf γ value hfield (by simpa [SemTele.collect, SemTele.foldAt] using hkeys)
+  | snoc tele next ih =>
+    refine ih
+      (domain := fun current => [zf|(argument : $(next current)) →
+        $(domain (current.snoc argument))])
+      (leaf := fun current function => [zf|fun argument : $(next current) =>
+        $(leaf (current.snoc argument) [zf|function argument])])
+      (leaf' := fun current function => [zf|fun argument : $(next current) =>
+        $(leaf' (current.snoc argument) [zf|function argument])])
+      (keys := fun current function =>
+        ⋃₀ image (fun argument => keys (current.snoc argument) [zf|function argument])
+          (next current))
+      (fun current function hfunction hlocal => ?_) value hfield
+      (by simpa [SemTele.collect, SemTele.foldAt] using hkeys)
+    refine Aczel.lam_congr fun argument hargument => ?_
+    have happ := Aczel.app_mem hfunction hargument
+    rw [app_map hargument] at happ
+    exact hleaf (current.snoc argument) [zf|function argument] happ fun key hkey =>
+      hlocal key (mem_sUnion.mpr ⟨_, mem_image.mpr ⟨argument, hargument, rfl⟩, hkey⟩)
+
+theorem collect_rel
+    {leftDomain rightDomain : Dom b} {leaf₁ leaf₂ : DomAt b}
+    (r : ZFSet → ZFSet → Prop) (tele : SemTele a b)
+    (hleaf : ∀ (final : Slots b) (left right : ZFSet),
+      left ∈ leftDomain final → right ∈ rightDomain final →
+      ∀ result ∈ leaf₂ final right,
+        ∃ recovered ∈ leaf₁ final left, r recovered result)
+    (γ : Slots a) {left right : ZFSet}
+    (hleft : left ∈ tele.pi leftDomain γ)
+    (hright : right ∈ tele.pi rightDomain γ) :
+    ∀ result ∈ tele.collect leaf₂ γ right,
+      ∃ recovered ∈ tele.collect leaf₁ γ left,
+        r recovered result := by
+  induction tele generalizing left right with
+  | nil => exact hleaf γ left right hleft hright
+  | snoc tele next ih =>
+    have hleftPi : left ∈ SemTele.pi
+        (fun current => [zf|(argument : $(next current)) →
+          $(leftDomain (current.snoc argument))]) tele γ := by
+      simpa [SemTele.pi, SemTele.fold] using hleft
+    have hrightPi : right ∈ SemTele.pi
+        (fun current => [zf|(argument : $(next current)) →
+          $(rightDomain (current.snoc argument))]) tele γ := by
+      simpa [SemTele.pi, SemTele.fold] using hright
+    apply ih
+      (leftDomain := fun current => [zf|(argument : $(next current)) →
+        $(leftDomain (current.snoc argument))])
+      (rightDomain := fun current => [zf|(argument : $(next current)) →
+        $(rightDomain (current.snoc argument))])
+      (leaf₁ := fun current function =>
+        ⋃₀ image (fun argument => leaf₁ (current.snoc argument) [zf|function argument])
+          (next current))
+      (leaf₂ := fun current function =>
+        ⋃₀ image (fun argument => leaf₂ (current.snoc argument) [zf|function argument])
+          (next current)) ?_ hleftPi hrightPi
+    intro current leftFunction rightFunction hleftFunction hrightFunction
+      result hresult
+    have ⟨results, hresults, hresult⟩ := mem_sUnion.mp hresult
+    obtain ⟨argument, hargument, rfl⟩ := mem_image.mp hresults
+    have hleftValue := Aczel.app_mem hleftFunction hargument
+    have hrightValue := Aczel.app_mem hrightFunction hargument
+    rw [app_map hargument] at hleftValue hrightValue
+    have ⟨recovered, hrecovered, hkey⟩ := hleaf
+      (current.snoc argument) [zf|leftFunction argument]
+      [zf|rightFunction argument] hleftValue hrightValue result hresult
+    exact ⟨recovered, mem_sUnion.mpr
+      ⟨_, mem_image.mpr ⟨argument, hargument, rfl⟩, hrecovered⟩, hkey⟩
+
 theorem pi_mono_cod {cod cod' : Dom b} (Δ : SemTele a b)
     (h : ∀ γ : Slots b, cod γ ⊆ cod' γ) (γ : Slots a) :
     Δ.pi cod γ ⊆ Δ.pi cod' γ := by

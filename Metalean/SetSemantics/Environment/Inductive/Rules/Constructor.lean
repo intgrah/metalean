@@ -141,42 +141,32 @@ theorem targetIndexDenotes (index : Fin (ι.nindices s)) :
           (Reachable.append
             (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach))) index)))
 
-include hatoms hsorts hparamReach hfieldsReach in
+include hatoms hparamReach hfieldsReach in
 theorem targetIndexInterp (index : Fin (ι.nindices s)) :
     ε₂[γ] ⊨ ((I.map pre.sigs).ctors s c).targetIndex ls ps fds index ≡
       ((I.map pre.sigs).ctors s c).targetIndex ls ps fds index :
       (I.map pre.sigs).indexType ls s ps
         (fun i => ((I.map pre.sigs).ctors s c).targetIndex ls ps fds i) index := by
-  have hrealizes := model.realizes pre hatoms hsorts
-  let expressions : Fin (ι.nindices s) → Expr ζ₂ 0 n :=
-    fun i => ((I.map pre.sigs).ctors s c).targetIndex ls ps fds i
-  let σ : Subst ζ₂ 0 (ι.nparams + ι.nindices s) n :=
-    Fin.append ps expressions
-  let γ₁ : Slots (ι.nparams + ι.nindices s) :=
-    Fin.append (ε₂[γ]⟦ps ·⟧) (model.targetValues s c (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)))
-  have hvalues := (model.ctors s c).target.valuesReachable
-    (model.indicesSem s) (model.tele.indices s).realizes
-    (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
-    (Reachable.append (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach)))
-  rw [show (fun param : Fin ι.nparams =>
-      Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) (param.castLE (Nat.le_add_right _ _))) =
-      (ε₂[γ]⟦ps ·⟧) from funext (Fin.append_left (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))] at hvalues
-  have hσ : ∀ v, ε₂[γ]⟦σ v⟧ = γ₁ v := by
-    intro v
-    cases v using Fin.addCases with
-    | left param => simp [σ, γ₁]
-    | right i =>
-      simpa [σ, γ₁] using
-        model.targetIndexDenotes pre hatoms hparamReach hfieldsReach i
-  have h := (hrealizes.params.append (by simpa using hrealizes.indicesRealizes s)).slot_interp
-    (Γ := .nil) σ γ₁ (Reachable.append hvalues) hσ (Fin.natAdd ι.nparams index) (by simp)
-  rwa [show σ (Fin.natAdd ι.nparams index) = expressions index by simp [σ],
-    show (Ctx.get (Fin.natAdd ι.nparams index)
-      ((#t[] : Ctx ζ₂ 0 0 0) ++ ((I.map pre.sigs).params{ls} ++
-        ((I.map pre.sigs).indices s){ls}))).subst σ =
-      (I.map pre.sigs).indexType ls s ps expressions index by
-      rw [← Inductive.indexType_eq_get_subst, Tele.nil_append, ← Ctx.instL_append,
-        ← Ctx.get_instL]] at h
+  let fields := Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)
+  have hmem := ((model.ctors s c).target.interp fields
+    (Reachable.append (Reachable.mono hfieldsReach
+      (Set.singleton_subset_iff.mpr hparamReach))) index).mem
+  rw [← Expr.denote_map pre.sigs hatoms] at hmem
+  refine ⟨rfl, ?_⟩
+  have hsubst := Expr.denote_subst (ε := ε₂) (ν := ![]) γ (Fin.append ps fds)
+    ((I.indexType ls s (fun param => .var (param.castAdd (ι.ctors s c).nfields))
+      (I.ctors s c).targetIndices{ls} index).map pre.sigs)
+  simp [Expr.map_instL, Fin.append_comp] at hsubst
+  have hvalue := (model.targetIndexDenotes pre hatoms hparamReach hfieldsReach index).trans
+    ((model.ctors s c).target.denotes fields
+      (Reachable.append (Reachable.mono hfieldsReach
+        (Set.singleton_subset_iff.mpr hparamReach))) index).symm
+  rw [← hvalue] at hmem
+  simp only [Inductive.indexType_map, InstLevel.inst_apply, Expr.map_instL, Expr.map] at hmem
+  dsimp only [fields] at hmem
+  simp only [Fin.castAdd, Fin.castLE] at hsubst
+  rw [← hsubst] at hmem
+  simpa [Ctor.targetIndex, Inductive.map, Ctor.map] using hmem
 
 end
 
@@ -227,9 +217,6 @@ theorem ctorRuleSound
   let vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet := (ε₂[γ]⟦recFds₁ ·⟧)
   have hparamReach := model.paramsReachable pre hatoms hsorts hps
   have hfieldsReach := model.fieldSlotsReachable pre hatoms hparamReach hfields
-  have ⟨hargs, hfieldsOf⟩ :=
-    model.ctorArgs_mem s c vps vfds hfieldsReach vrecFds
-      (model.recFieldsMem pre hatoms hsorts hparamReach hfieldsReach hrecFields)
   refine ⟨?_, ?_⟩
   · simp only [Expr.denote]
     rw [funext fun p => (hps p).eq, funext fun f => (hfields f).eq,
@@ -238,23 +225,17 @@ theorem ctorRuleSound
     change ε₂ (.ctor η s c ls vps vfds vrecFds) ∈ ε₂ (.ind η s ls vps _)
     rw [hctors, funext fun index =>
       model.targetIndexDenotes pre hatoms hparamReach hfieldsReach index, hsorts]
-    have hentry := entry_mem_indSet (model.mapsTo vps) hargs
-    have hkey := model.codeOf_targetIndex s c vps (model.ctorArgs s c vps vfds vrecFds)
-    rw [hfieldsOf] at hkey
-    rw [hkey] at hentry
-    exact propVal_mem_propSet (entryValue_mem_fibre
-      (by simpa [InductiveModel.block] using hentry))
+    exact model.ctorResult_mem_sortValue s c vps vfds hfieldsReach vrecFds
+      (model.recFieldsMem pre hatoms hsorts hparamReach hfieldsReach hrecFields)
 
 theorem applyMinor_ctorApplication
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields)
-    (hfields : Fin.append vps vfds ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem)
     (vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet)
     (hrecFields : ∀ f, vrecFds f ∈ model.recFieldSet s c f vps (Fin.append vps vfds))
     (graph minor : ZFSet) :
-    (model.codeOf s c).applyMinor model.toModel.level vps minor
-        ((model.codeOf s c).argMap graph vps (model.ctorArgs s c vps vfds vrecFds)) =
+    (model.codeOf s c).applyMinor model.toModel.level graph vps minor
+        (model.ctorArgs s c vps vfds vrecFds) =
       [zf|minor vfds... vrecFds... $(fun f =>
           recMap (model.recCode s c f).tele (model.recCode s c f).index graph
             (Fin.append vps vfds)
@@ -268,20 +249,15 @@ theorem applyMinor_ctorApplication
   let rest := CtorCode.prependRecursive (ι.ctors s c).nrecFields fields (.target index)
   let tail := CtorCode.packRecursive (model.toModel.block vps) fields model.toModel.level
     (Fin.append vps vfds) vrecFds proof
-  have htail : tail ∈ rest.argSet (model.toModel.block vps) (Fin.append vps vfds) :=
-    CtorCode.packRecursive_mem hrecFields (CtorCode.proof_mem_argSet_target _)
-  have hpack := SemTele.pack_mem hfields htail
   have hvalues := tele.values_pack (Fin.append vps vfds) tail
-  rw [Set.eq_of_mem_singleton (Reachable.base hfields)] at hpack hvalues
-  change (CtorCode.prependOrdinary tele rest).applyMinor model.toModel.level vps minor
-    ((CtorCode.prependOrdinary tele rest).argMap graph vps
-      (tele.pack (Fin.append vps vfds) tail)) = _
-  rw [CtorCode.applyMinor, CtorCode.forgetIhs_argMap _ vps _ hpack,
-    SemTele.applyFields_prependOrdinary, SemTele.applyIhs_prependOrdinary, SemTele.tail_argMap,
-    hvalues, tele.tail_pack]
+  simp at hvalues
+  change (CtorCode.prependOrdinary tele rest).applyMinor model.toModel.level graph vps minor
+    (tele.pack (Fin.append vps vfds) tail) = _
+  rw [CtorCode.applyMinor, SemTele.applyFields_prependOrdinary,
+    SemTele.applyIhs_prependOrdinary, hvalues, tele.tail_pack]
   simp only [Fin.append_right]
   rw [CtorCode.applyFields_packRecursive fields index _ (Fin.append vps vfds) vrecFds hrecFields]
-  exact CtorCode.applyIhs_argMap_packRecursive fields index _ graph (Fin.append vps vfds) vrecFds _
+  exact CtorCode.applyIhs_packRecursive fields index _ graph (Fin.append vps vfds) vrecFds _
 
 end StrongInductiveModel
 

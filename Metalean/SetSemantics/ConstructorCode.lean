@@ -125,17 +125,6 @@ theorem recFieldSet_mono (Δ : SemTele n b) (index : Dom b) (h : block₁ ⊆ bl
 noncomputable def ihType (Δ : SemTele n b) (index : Dom b) (motive : ZFSet) : DomAt n :=
   Δ.piAt fun γ value => fibreOp motive [zf|($(index γ), value)]
 
-noncomputable def ihSet (Δ : SemTele n b) (index : Dom b) (block motive : ZFSet) : Dom n :=
-  fun γ =>
-    σ (recFieldSet Δ index block γ)
-      (map (ihType Δ index motive γ) (recFieldSet Δ index block γ))
-
-theorem ihSet_mono (Δ : SemTele n b) (index : Dom b) (h : block₁ ⊆ block₂) (motive : ZFSet)
-    (γ : Slots n) : ihSet Δ index block₁ motive γ ⊆ ihSet Δ index block₂ motive γ := by
-  have hdom := recFieldSet_mono Δ index h γ
-  refine sigma_mono hdom fun field hfield => ?_
-  rw [app_map hfield, app_map (hdom hfield)]
-
 noncomputable def recMap (Δ : SemTele n b) (index : Dom b) (graph : ZFSet) : DomAt n :=
   Δ.lamAt fun γ value => app graph [zf|($(index γ), value)]
 
@@ -152,19 +141,6 @@ theorem recMap_mem (Δ : SemTele n b) (index : Dom b)
     recMap Δ index graph γ value ∈ ihType Δ index motive γ value := by
   refine Δ.lamAt_mem_piAt ?_ γ value hfield
   exact fun _ _ hvalue => hgraph _ (mem_fibre.mp hvalue)
-
-noncomputable def recEntries (Δ : SemTele n b) (index : Dom b)
-    (γ : Slots n) (value : ZFSet) : ZFSet :=
-  Δ.collect (fun final value => {[zf|($(index final), value)]}) γ value
-
-theorem mem_recEntries_of_mem (Δ : SemTele n b) (index : Dom b)
-    {block : ZFSet} (γ : Slots n) (value : ZFSet)
-    (hfield : value ∈ Δ.pi (fun final => fibreOp block (index final)) γ) :
-    ∀ entry ∈ recEntries Δ index γ value, entry ∈ block := by
-  refine Δ.collect_property (fun entry => entry ∈ block)
-    (fun final value hvalue entry hentry => ?_) γ value hfield
-  rw [mem_singleton.mp hentry]
-  exact mem_fibre.mp hvalue
 
 inductive CtorCode : Nat → Type (u + 1)
   | target {n : Nat} (index : Dom n) : CtorCode n
@@ -233,14 +209,6 @@ theorem prependRecursive_snoc (fields : Fin n → CtorRecCode.Packed b)
 
 variable {blockW : ZFSet} {γ : Slots n} {vargs : ZFSet}
 
-noncomputable def predecessors {n : Nat} (γ : Slots n) (vargs : ZFSet) :
-    CtorCode n → ZFSet
-  | .target _ => ∅
-  | .arg _ rest =>
-    predecessors (γ.snoc [zf|vargs.1]) [zf|vargs.2] rest
-  | .recArg tele index rest =>
-    recEntries tele index γ [zf|vargs.1] ∪ predecessors γ [zf|vargs.2] rest
-
 noncomputable def support {n : Nat} :
     CtorCode n → Dom n
   | .target _ => fun _ => ∅
@@ -271,17 +239,6 @@ noncomputable def argSet (block : ZFSet) {n : Nat} :
     let domain := recFieldSet tele index block γ
     σ domain (map (fun _ => rest.argSet block γ) domain)
 
-noncomputable def ihArgSet
-    (block motive : ZFSet) {n : Nat} :
-    CtorCode n → Dom n
-  | .target _ => fun _ => verum
-  | .arg domain rest => fun γ =>
-    σ (domain γ) (map (fun value => rest.ihArgSet block motive (γ.snoc value))
-      (domain γ))
-  | .recArg tele index rest => fun γ =>
-    let domain := ihSet tele index block motive γ
-    σ domain (map (fun _ => rest.ihArgSet block motive γ) domain)
-
 theorem argSet_mono (h : block₁ ⊆ block₂) (code : CtorCode n) (γ : Slots n) :
     argSet block₁ code γ ⊆ argSet block₂ code γ := by
   induction code with
@@ -292,20 +249,6 @@ theorem argSet_mono (h : block₁ ⊆ block₂) (code : CtorCode n) (γ : Slots 
     exact ih _
   | recArg tele index rest ih =>
     have hdomain := recFieldSet_mono tele index h γ
-    refine sigma_mono hdomain fun value hvalue => ?_
-    rw [app_map hvalue, app_map (hdomain hvalue)]
-    exact ih _
-
-theorem ihArgSet_mono (h : block₁ ⊆ block₂) (motive : ZFSet) (code : CtorCode n)
-    (γ : Slots n) : ihArgSet block₁ motive code γ ⊆ ihArgSet block₂ motive code γ := by
-  induction code with
-  | target => exact subset_refl _
-  | arg domain rest ih =>
-    refine sigma_mono (subset_refl _) fun value hvalue => ?_
-    rw [app_map hvalue, app_map hvalue]
-    exact ih _
-  | recArg tele index rest ih =>
-    have hdomain := ihSet_mono tele index h motive γ
     refine sigma_mono hdomain fun value hvalue => ?_
     rw [app_map hvalue, app_map (hdomain hvalue)]
     exact ih _
@@ -430,98 +373,6 @@ theorem eq_proof_of_mem_argSet_prependRecursive {count : Nat}
   obtain rfl : count = 0 := Fin.eq_zero_of_isEmpty hcount
   exact eq_proof_of_mem_argSet_target h
 
-noncomputable def argMap (graph : ZFSet) {n : Nat} :
-    CtorCode n → Slots n → ZFSet → ZFSet
-  | .target _ => fun _ vargs => vargs
-  | .arg _ rest => fun γ vargs => [zf|(vargs.1,
-    $(argMap graph rest (γ.snoc [zf|vargs.1]) [zf|vargs.2]))]
-  | .recArg tele index rest => fun γ vargs =>
-    [zf|((vargs.1, $(recMap tele index graph γ [zf|vargs.1])),
-      $(argMap graph rest γ [zf|vargs.2]))]
-
-private theorem lamAt_congr_of_collect {a b : Nat} (P : ZFSet → Prop)
-    {domain : Dom b} {leaf leaf' keys : DomAt b} (tele : SemTele a b)
-    (hleaf : ∀ (final : Slots b) (value : ZFSet), value ∈ domain final →
-      (∀ key ∈ keys final value, P key) → leaf final value = leaf' final value)
-    (γ : Slots a) (value : ZFSet) (hfield : value ∈ tele.pi domain γ)
-    (hkeys : ∀ key ∈ tele.collect keys γ value, P key) :
-    tele.lamAt leaf γ value = tele.lamAt leaf' γ value := by
-  induction tele generalizing value with
-  | nil => exact hleaf γ value hfield (by simpa [SemTele.collect, SemTele.foldAt] using hkeys)
-  | snoc tele next ih =>
-    refine ih
-      (domain := fun current => [zf|(argument : $(next current)) →
-        $(domain (current.snoc argument))])
-      (leaf := fun current function => [zf|fun argument : $(next current) =>
-        $(leaf (current.snoc argument) [zf|function argument])])
-      (leaf' := fun current function => [zf|fun argument : $(next current) =>
-        $(leaf' (current.snoc argument) [zf|function argument])])
-      (keys := fun current function =>
-        ⋃₀ image (fun argument => keys (current.snoc argument) [zf|function argument])
-          (next current))
-      (fun current function hfunction hlocal => ?_) value hfield
-      (by simpa [SemTele.collect, SemTele.foldAt] using hkeys)
-    refine Aczel.lam_congr fun argument hargument => ?_
-    have happ := Aczel.app_mem hfunction hargument
-    rw [app_map hargument] at happ
-    exact hleaf (current.snoc argument) [zf|function argument] happ fun key hkey =>
-      hlocal key (mem_sUnion.mpr ⟨_, mem_image.mpr ⟨argument, hargument, rfl⟩, hkey⟩)
-
-theorem argMap_congr_of_predecessors (code : CtorCode n)
-    (γ : Slots n) (vargs : ZFSet) (hargs : vargs ∈ code.argSet block γ)
-    (hgraph : ∀ predecessor ∈ code.predecessors γ vargs,
-      app graph₁ predecessor = app graph₂ predecessor) :
-    code.argMap graph₁ γ vargs = code.argMap graph₂ γ vargs := by
-  induction code generalizing vargs with
-  | target => rfl
-  | arg domain rest ih =>
-    obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp!
-    rw [ih (γ.snoc value) tail htail]
-    intro predecessor hpredecessor
-    apply hgraph predecessor
-    simpa! using hpredecessor
-  | recArg tele index rest ih =>
-    obtain ⟨field, tail, hfield, htail, rfl⟩ := argSet_recArg_inv hargs
-    have hfieldMap : recMap tele index graph₁ γ field = recMap tele index graph₂ γ field := by
-      apply lamAt_congr_of_collect
-        (fun predecessor => app graph₁ predecessor = app graph₂ predecessor)
-        (keys := fun final value => {[zf|($(index final), value)]})
-      · intro final value _ hlocal
-        simpa using hlocal [zf|($(index final), value)] (by simp)
-      · exact hfield
-      · intro predecessor hpredecessor
-        apply hgraph predecessor
-        simpa! using .inl hpredecessor
-    simp only [argMap, fst_pair, snd_pair]
-    rw [hfieldMap, ih γ tail htail]
-    intro predecessor hpredecessor
-    apply hgraph predecessor
-    simpa! using .inr hpredecessor
-
-noncomputable def forgetIhs {n : Nat} :
-    CtorCode n → ZFSet → ZFSet
-  | .target _ => fun vargs => vargs
-  | .arg _ rest => fun vargs => [zf|(vargs.1, $(forgetIhs rest [zf|vargs.2]))]
-  | .recArg _ _ rest => fun vargs =>
-    [zf|((vargs.1).1, $(forgetIhs rest [zf|vargs.2]))]
-
-theorem forgetIhs_mem_argSet (code : CtorCode n)
-    (γ : Slots n) (vargs : ZFSet)
-    (hargs : vargs ∈ code.ihArgSet block motive γ) :
-    code.forgetIhs vargs ∈ code.argSet block γ := by
-  induction code generalizing vargs with
-  | target => exact hargs
-  | arg domain rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma.mp hargs
-    rw [app_map hvalue] at htail
-    simpa! using mem_argSet_arg hvalue (ih (γ.snoc value) tail htail)
-  | recArg tele index rest ih =>
-    obtain ⟨fieldAndIh, hfieldAndIh, tail, htail, rfl⟩ := mem_sigma.mp hargs
-    rw [app_map hfieldAndIh] at htail
-    obtain ⟨field, hfield, fieldIh, _, rfl⟩ := mem_sigma.mp hfieldAndIh
-    simpa! using mem_argSet_recArg hfield (ih γ tail htail)
-
 noncomputable def applyFields (level : Nat) {n : Nat} :
     (code : CtorCode n) → Slots n → ZFSet → ZFSet → ZFSet
   | .target _ => fun _ minor _ => minor
@@ -531,69 +382,38 @@ noncomputable def applyFields (level : Nat) {n : Nat} :
     applyFields level rest γ [zf|minor $(eraseRecField tele level γ [zf|vargs.1])]
       [zf|vargs.2]
 
-noncomputable def applyIhs {n : Nat} :
-    CtorCode n → ZFSet → ZFSet → ZFSet
-  | .target _ => fun minor _ => minor
-  | .arg _ rest => fun minor vargs => applyIhs rest minor [zf|vargs.2]
-  | .recArg _ _ rest => fun minor vargs =>
-    applyIhs rest [zf|minor (vargs.1).2] [zf|vargs.2]
+noncomputable def applyIhs (graph : ZFSet) {n : Nat} :
+    CtorCode n → Slots n → ZFSet → ZFSet → ZFSet
+  | .target _ => fun _ minor _ => minor
+  | .arg _ rest => fun γ minor vargs =>
+    applyIhs graph rest (γ.snoc [zf|vargs.1]) minor [zf|vargs.2]
+  | .recArg tele index rest => fun γ minor vargs =>
+    applyIhs graph rest γ [zf|minor $(recMap tele index graph γ [zf|vargs.1])] [zf|vargs.2]
 
-noncomputable def applyMinor (level : Nat) {n : Nat}
-    (code : CtorCode n)
-    (γ : Slots n) (minor vargs : ZFSet) : ZFSet :=
-  applyIhs code (applyFields level code γ minor (forgetIhs code vargs)) vargs
+noncomputable def applyMinor (level : Nat) (graph : ZFSet) {n : Nat}
+    (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet) : ZFSet :=
+  applyIhs graph code γ (applyFields level code γ minor vargs) vargs
 
-theorem argMap_congr (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
-    (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
+theorem applyIhs_congr (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
+    (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet)
     (hargs : vargs ∈ argSet block code γ) :
-    argMap graph₁ code γ vargs = argMap graph₂ code γ vargs := by
-  induction code generalizing vargs with
+    applyIhs graph₁ code γ minor vargs = applyIhs graph₂ code γ minor vargs := by
+  induction code generalizing minor vargs with
   | target => rfl
   | arg domain rest ih =>
     obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp!
-    rw [ih (γ.snoc value) tail htail]
+    simpa! using ih (γ.snoc value) minor tail htail
   | recArg tele index rest ih =>
     obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
-    simp only [argMap, fst_pair, snd_pair]
-    rw [recMap_congr tele index h γ value hvalue, ih γ tail htail]
+    simp only [applyIhs, fst_pair, snd_pair]
+    rw [recMap_congr tele index h γ value hvalue]
+    exact ih γ _ tail htail
 
-theorem forgetIhs_argMap (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
+theorem applyMinor_congr {level : Nat} (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
+    (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet)
     (hargs : vargs ∈ argSet block code γ) :
-    forgetIhs code (argMap graph code γ vargs) = vargs := by
-  induction code generalizing vargs with
-  | target => rfl
-  | arg domain rest ih =>
-    obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
-    simp!
-    rw [ih (γ.snoc value) tail htail]
-  | recArg tele index rest ih =>
-    obtain ⟨value, tail, _, htail, rfl⟩ := argSet_recArg_inv hargs
-    simp!
-    rw [ih γ tail htail]
-
-theorem argMap_mem (hgraph : ∀ value ∈ block, app graph value ∈ fibreOp motive value)
-    (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
-    (hargs : vargs ∈ argSet block code γ) :
-    argMap graph code γ vargs ∈ ihArgSet block motive code γ := by
-  induction code generalizing vargs with
-  | target => exact hargs
-  | arg domain rest ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_arg_inv hargs
-    refine mem_sigma.mpr ⟨value, hvalue, argMap graph rest (γ.snoc value) tail,
-      by rw [app_map hvalue]; exact ih (γ.snoc value) tail htail, ?_⟩
-    simp!
-  | recArg tele index rest ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
-    have hih : [zf|(value, $(recMap tele index graph γ value))]
-        ∈ ihSet tele index block motive γ := by
-      refine mem_sigma.mpr ⟨value, hvalue, recMap tele index graph γ value, ?_, rfl⟩
-      rw [app_map hvalue]
-      exact recMap_mem tele index hgraph γ value hvalue
-    refine mem_sigma.mpr
-      ⟨_, hih, argMap graph rest γ tail, by rw [app_map hih]; exact ih γ tail htail,
-        ?_⟩
-    simp!
+    applyMinor level graph₁ code γ minor vargs = applyMinor level graph₂ code γ minor vargs :=
+  applyIhs_congr h code γ _ vargs hargs
 
 noncomputable def targetIndex {n : Nat} :
     CtorCode n → Slots n → ZFSet → ZFSet
@@ -615,99 +435,6 @@ inductive ArgAgree :
     {rest : CtorCode n} {left right : ZFSet} :
     ArgAgree rest (snd left) (snd right) →
     ArgAgree (.recArg tele index rest) left right
-
-private theorem SemTele.collect_key_recover
-    {leftDomain rightDomain : Dom b} {leaf : DomAt b} (tele : SemTele n b)
-    (hleaf : ∀ (final : Slots b) (left right : ZFSet),
-      left ∈ leftDomain final → right ∈ rightDomain final →
-      ∀ result ∈ leaf final right,
-        ∃ recovered ∈ leaf final left, [zf|recovered.1] = [zf|result.1])
-    (γ : Slots n) {left right : ZFSet}
-    (hleft : left ∈ tele.pi leftDomain γ)
-    (hright : right ∈ tele.pi rightDomain γ) :
-    ∀ result ∈ tele.collect leaf γ right,
-      ∃ recovered ∈ tele.collect leaf γ left,
-        [zf|recovered.1] = [zf|result.1] := by
-  induction tele generalizing left right with
-  | nil => exact hleaf γ left right hleft hright
-  | snoc tele next ih =>
-    have hleftPi : left ∈ SemTele.pi
-        (fun current => [zf|(argument : $(next current)) →
-          $(leftDomain (current.snoc argument))]) tele γ := by
-      simpa [SemTele.pi, SemTele.fold] using hleft
-    have hrightPi : right ∈ SemTele.pi
-        (fun current => [zf|(argument : $(next current)) →
-          $(rightDomain (current.snoc argument))]) tele γ := by
-      simpa [SemTele.pi, SemTele.fold] using hright
-    apply ih
-      (leftDomain := fun current => [zf|(argument : $(next current)) →
-        $(leftDomain (current.snoc argument))])
-      (rightDomain := fun current => [zf|(argument : $(next current)) →
-        $(rightDomain (current.snoc argument))])
-      (leaf := fun current function =>
-        ⋃₀ image (fun argument =>
-          leaf (current.snoc argument) [zf|function argument])
-          (next current)) ?_ hleftPi hrightPi
-    intro current leftFunction rightFunction hleftFunction hrightFunction
-      result hresult
-    have ⟨results, hresults, hresult⟩ := mem_sUnion.mp hresult
-    obtain ⟨argument, hargument, rfl⟩ := mem_image.mp hresults
-    have hleftValue := Aczel.app_mem hleftFunction hargument
-    have hrightValue := Aczel.app_mem hrightFunction hargument
-    rw [app_map hargument] at hleftValue hrightValue
-    have ⟨recovered, hrecovered, hkey⟩ := hleaf
-      (current.snoc argument) [zf|leftFunction argument]
-      [zf|rightFunction argument] hleftValue hrightValue result hresult
-    exact ⟨recovered, mem_sUnion.mpr
-      ⟨_, mem_image.mpr ⟨argument, hargument, rfl⟩, hrecovered⟩, hkey⟩
-
-private theorem recEntries_key_recover
-    (tele : SemTele n b) (index : Dom b) (leftBlock rightBlock : ZFSet)
-    (γ : Slots n) {left right entry : ZFSet}
-    (hleft : left ∈ recFieldSet tele index leftBlock γ)
-    (hright : right ∈ recFieldSet tele index rightBlock γ)
-    (hentry : entry ∈ recEntries tele index γ right) :
-    ∃ recovered ∈ recEntries tele index γ left,
-      [zf|recovered.1] = [zf|entry.1] := by
-  rw [recFieldSet] at hleft hright
-  refine SemTele.collect_key_recover tele (γ := γ) ?_ hleft hright entry hentry
-  · intro final leftValue rightValue _ _ result hresult
-    rw [mem_singleton] at hresult
-    refine ⟨[zf|($(index final), leftValue)], by simp, ?_⟩
-    rw [hresult]
-    simp
-
-theorem predecessor_key_recover
-    (code : CtorCode n) (leftBlock rightBlock : ZFSet)
-    (γ : Slots n) {left right predecessor : ZFSet}
-    (hleft : left ∈ code.argSet leftBlock γ)
-    (hright : right ∈ code.argSet rightBlock γ)
-    (hagree : code.ArgAgree left right)
-    (hpredecessor : predecessor ∈ code.predecessors γ right) :
-    ∃ recovered ∈ code.predecessors γ left,
-      [zf|recovered.1] = [zf|predecessor.1] := by
-  induction hagree generalizing predecessor with
-  | target => simp! at hpredecessor
-  | arg hfst _ ih =>
-    obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
-    obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
-    simp only [fst_pair, snd_pair] at hfst ih
-    subst hfst
-    simp only [predecessors, fst_pair, snd_pair] at hpredecessor ⊢
-    exact ih _ hleftTail hrightTail hpredecessor
-  | @recArg _ _ tele index _ _ _ _ ih =>
-    obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
-    obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
-    simp only [snd_pair] at ih
-    simp only [predecessors, fst_pair, snd_pair, mem_union] at hpredecessor ⊢
-    cases hpredecessor with
-    | inl hfield =>
-      have ⟨recovered, hrecovered, hkey⟩ := recEntries_key_recover
-        tele index leftBlock rightBlock γ hleftField hrightField hfield
-      exact ⟨recovered, .inl hrecovered, hkey⟩
-    | inr htail =>
-      have ⟨recovered, hrecovered, hkey⟩ := ih γ hleftTail hrightTail htail
-      exact ⟨recovered, .inr hrecovered, hkey⟩
 
 theorem argAgree_prependRecursive {count : Nat}
     (fields : Fin count → CtorRecCode.Packed n) (index : Dom n)
@@ -750,18 +477,6 @@ theorem tail_mem_argSet {Δ : SemTele n b} {rest : CtorCode b}
   | snoc Δ domain ih =>
     have ⟨_, _, _, htail, heq⟩ := argSet_arg_inv (ih hargs)
     change snd (SemTele.tail vargs Δ) ∈ rest.argSet block
-      (Fin.snoc (SemTele.values γ vargs Δ) (fst (SemTele.tail vargs Δ)))
-    rwa [heq, fst_pair, snd_pair]
-
-theorem tail_mem_ihArgSet {Δ : SemTele n b} {rest : CtorCode b}
-    (hargs : vargs ∈ (prependOrdinary Δ rest).ihArgSet block motive γ) :
-    Δ.tail vargs ∈ rest.ihArgSet block motive (Δ.values γ vargs) := by
-  induction Δ with
-  | nil => exact hargs
-  | snoc Δ domain ih =>
-    have ⟨_, hvalue, _, htail, heq⟩ := mem_sigma.mp (ih hargs)
-    rw [app_map hvalue] at htail
-    change snd (SemTele.tail vargs Δ) ∈ rest.ihArgSet block motive
       (Fin.snoc (SemTele.values γ vargs Δ) (fst (SemTele.tail vargs Δ)))
     rwa [heq, fst_pair, snd_pair]
 

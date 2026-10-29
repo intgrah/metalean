@@ -9,7 +9,7 @@ public import Metalean.SetSemantics.Environment.Inductive.Model
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
 public import Metalean.SetSemantics.Environment.Inductive.Rules.Constructor
 import Metalean.Grind
-import Metalean.SetSemantics.ConstructorPredecessors
+import Metalean.SetSemantics.ConstructorValue
 import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
 import Metalean.SetSemantics.InductiveComputation
 import Metalean.Syntax.Substitution
@@ -201,7 +201,7 @@ theorem iotaRuleSound
   have houter : outer.valuation ∈ Reachable Set.univ (model.recrTeleSem s l) :=
     model.recrArgs_reachable pre hatoms hsorts hctors l
       (fun p => (hps p).mem) (fun s => (hms s).mem) (fun s c => (hmins s c).mem)
-      (fun i => (model.targetIndexInterp pre hatoms hsorts
+      (fun i => (model.targetIndexInterp pre hatoms
         hparamReach hfieldsReach i).mem) hmajInterp.mem
   have hrecFieldsMem := model.recFieldsMem pre hatoms hsorts
     hparamReach hfieldsReach hrecFields
@@ -233,10 +233,9 @@ theorem iotaRuleSound
        ε₂[γ]⟦mins s₁ c₁⟧)
     rw [Fin.decodeSigma_encodeSigma]
   have hrhsDen : ε₂[γ]⟦(I.map pre.sigs).iotaRhs η ls l ps ms mins s c fds recFds⟧ =
-      (model.codeOf s c).applyMinor model.toModel.level (RecSlots.params outer)
+      (model.codeOf s c).applyMinor model.toModel.level (model.recrGraph s outer) (RecSlots.params outer)
         (RecSlots.cases outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))
-        ((model.codeOf s c).argMap (model.recrGraph s outer) (RecSlots.params outer)
-          (model.ctorArgs s c (RecSlots.params outer) vfds vrecFds)) := by
+        (model.ctorArgs s c (RecSlots.params outer) vfds vrecFds) := by
     let fieldSlots := Fin.append (RecSlots.params outer) vfds
     have hparamReach' : RecSlots.params outer ∈ Reachable Set.univ model.paramsSem := by
       grind only [reachability]
@@ -267,7 +266,7 @@ theorem iotaRuleSound
       exact model.recursiveIotaLeaf s c f outer houter fieldSlots
         hfieldsReach (vrecFds f) (hrecFieldsMem f) final hfinal
     rw [model.applyMinor_ctorApplication s c
-      (RecSlots.params outer) vfds hfieldsReach vrecFds
+      (RecSlots.params outer) vfds vrecFds
       hrecFieldsMem (model.recrGraph s outer)
       (RecSlots.cases outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))]
     simp [Inductive.iotaRhs, hmins', hih]

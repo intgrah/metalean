@@ -6,6 +6,9 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Constructor
+import Metalean.SetSemantics.InductiveComputation
+import Metalean.Typing.Inductive
+import Metalean.Typing.InstLevel
 
 /-! # Semantic models for inductive blocks -/
 
@@ -282,6 +285,136 @@ theorem ctorArgs_mem
   · unfold ordinaryOf
     rw [← hbase]
     exact source.ordinary.sem.values_pack fieldSlots tail
+
+theorem ctorResult_mem_sortValue
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields)
+    (hfields : Fin.append vps vfds ∈ Reachable {vps}
+      (model.ctors s c).source.ordinary.sem)
+    (vrecFds : Slots (ι.ctors s c).nrecFields)
+    (hrecFields : ∀ f, vrecFds f ∈ typedRecFieldSet
+      ((model.ctors s c).source.recursiveCodes f).2.tele
+      ((model.ctors s c).source.recursiveCodes f).2.index
+      (model.toModel.block vps) model.toModel.level (Fin.append vps vfds)) :
+    model.ctorResult s c vps vfds vrecFds ∈ model.toModel.sortValue s vps
+      (model.targetValues s c (Fin.append vps vfds)) := by
+  have ⟨hargs, hvalues⟩ := model.ctorArgs_mem s c vps vfds hfields vrecFds hrecFields
+  have hentry := entry_mem_indSet (model.mapsTo vps) hargs
+  rw [model.codeOf_targetIndex, hvalues] at hentry
+  exact propVal_mem_propSet (entryValue_mem_fibre hentry)
+
+theorem large_target_separates
+    (hsubsingleton : I.Subsingleton)
+    (vps : Slots ι.nparams)
+    {s₁ s₂ : Fin ι.nsorts} {c₁ : Fin (ι.nctors s₁)} {c₂ : Fin (ι.nctors s₂)}
+    {leftArgs rightArgs : ZFSet}
+    (htarget : (model.codeOf s₁ c₁).targetIndex vps leftArgs =
+      (model.codeOf s₂ c₂).targetIndex vps rightArgs) :
+    (⟨s₁, c₁⟩ : (s : Fin ι.nsorts) × Fin (ι.nctors s)) = ⟨s₂, c₂⟩ := by
+  have hsortKey : sortKey s₁.val
+      (encode (model.targetValues s₁ c₁ (model.ordinaryOf s₁ c₁ vps leftArgs))) =
+      sortKey s₂.val
+        (encode (model.targetValues s₂ c₂ (model.ordinaryOf s₂ c₂ vps rightArgs))) := by
+    rwa [← model.codeOf_targetIndex s₁ c₁ vps leftArgs,
+      ← model.codeOf_targetIndex s₂ c₂ vps rightArgs]
+  obtain rfl : s₁ = s₂ := Fin.ext (congrArg Prod.fst (sortKey_injective hsortKey))
+  obtain rfl : c₁ = c₂ := hsubsingleton.unique s₁ c₁ c₂
+  rfl
+
+theorem ordinarySemCtx
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
+    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
+    (hslots : slots ∈ Reachable {vps} (model.ctors s c).source.ordinary.sem) :
+    ε₁[![]] ⊨ slots : (I.params ++ (I.ctors s c).ordinaryTele){ls} :=
+  Ctx.instL_append .. ▸ (model.ctors s c).source.ordinary.semCtx slots
+    (Reachable.mono hslots (Set.singleton_subset_iff.mpr hps))
+
+theorem ordinary_eq_proof
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
+    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
+    (hslots : slots ∈ Reachable {vps}
+      (model.ctors s c).source.ordinary.sem)
+    (f : Fin (ι.ctors s c).nfields)
+    (hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0) :
+    slots (Fin.natAdd ι.nparams f) = proof := by
+  have hrealises := model.ordinarySemCtx s c vps hps slots hslots
+  have hsorted := (soundness hdecl hrule hE
+    (((hB.ctors s c).ordinaryTele_get f).instLevel ls) slots hrealises).mem
+  have hslot := hrealises (Fin.natAdd ι.nparams f)
+  simp only [Ctx.get_instL, Expr.inst_sort, Expr.denote] at hsorted hslot
+  rw [hzero] at hsorted
+  exact mem_verum.mp (eq_verum_of_mem hsorted hslot ▸ hslot)
+
+theorem large_argAgree
+    (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
+    (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
+    {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
+    (heligible : (I.ctors s c).Eligible I.level)
+    (vps : Slots ι.nparams)
+    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (approximation : ZFSet)
+    (happroximation : approximation ⊆ model.toModel.block vps)
+    {leftArgs rightArgs : ZFSet}
+    (hleftArgs : leftArgs ∈ (model.codeOf s c).argSet
+      approximation vps)
+    (hrightArgs : rightArgs ∈ (model.codeOf s c).argSet
+      (model.toModel.block vps) vps)
+    (htarget : (model.codeOf s c).targetIndex vps leftArgs =
+      (model.codeOf s c).targetIndex vps rightArgs) :
+    (model.codeOf s c).ArgAgree leftArgs rightArgs := by
+  let ordinary := (model.ctors s c).source.ordinary.sem
+  let rest := model.recursiveRest s c
+  have hleftReach := SemTele.reachable_values hleftArgs (Set.mem_singleton vps)
+  have hrightReach := SemTele.reachable_values hrightArgs (Set.mem_singleton vps)
+  have hleftTail := CtorCode.tail_mem_argSet hleftArgs
+  have hrightTail := CtorCode.tail_mem_argSet hrightArgs
+  have hleftDenotes := model.targetRealizes s c vps hps leftArgs
+    (CtorCode.argSet_mono happroximation (model.codeOf s c) vps hleftArgs)
+  have hrightDenotes := model.targetRealizes s c vps hps rightArgs hrightArgs
+  have htargetValues : model.targetValues s c (model.ordinaryOf s c vps leftArgs) =
+      model.targetValues s c (model.ordinaryOf s c vps rightArgs) :=
+    Encode.injective (congrArg Prod.snd (sortKey_injective (by
+      rwa [← model.codeOf_targetIndex s c vps leftArgs,
+        ← model.codeOf_targetIndex s c vps rightArgs])))
+  have hfields : model.ordinaryOf s c vps leftArgs =
+      model.ordinaryOf s c vps rightArgs := by
+    funext slot
+    cases slot using Fin.addCases with
+    | left param =>
+      exact (model.ordinaryOf_castLE s c vps leftArgs param).trans
+        (model.ordinaryOf_castLE s c vps rightArgs param).symm
+    | right f =>
+      cases heligible.ordinary f with
+      | inl hzero =>
+        have hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0 := by
+          simp [hzero]
+        have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
+            Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
+          model.ordinary_eq_proof hdecl hrule hE hB s c vps hps _ hreach f hzero
+        exact (heq leftArgs hleftReach).trans (heq rightArgs hrightReach).symm
+      | inr hindex =>
+        have ⟨index, hindex⟩ := hindex
+        have hvar : (I.ctors s c).targetIndices index =
+            .var (Fin.natAdd ι.nparams f) := by
+          apply Expr.eq_var_of_isVar
+          simpa using hindex
+        have hleftValue := hleftDenotes index
+        have hrightValue := hrightDenotes index
+        rw [hvar] at hleftValue hrightValue
+        exact hleftValue.trans ((congrFun htargetValues index).trans hrightValue.symm)
+  rw [← show ordinary.values vps leftArgs = ordinary.values vps rightArgs from hfields]
+    at hrightTail
+  exact CtorCode.argAgree_prependOrdinary ordinary rest vps
+    (CtorCode.argAgree_prependRecursive (model.ctors s c).source.recursiveCodes
+      (StrongCtorSource.targetIndex (model.ctors s c).target)
+      (model.toModel.block vps) (model.ordinaryOf s c vps leftArgs)
+      (CtorCode.argSet_mono happroximation rest (model.ordinaryOf s c vps leftArgs) hleftTail)
+      hrightTail)
+    hfields
 
 end StrongInductiveModel
 

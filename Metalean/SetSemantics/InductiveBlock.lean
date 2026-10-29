@@ -78,31 +78,6 @@ theorem mem_indOp :
         entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs = z :=
   mem_tagGraph
 
-noncomputable def blockPredecessorRel (block : ZFSet) (γ : Slots n)
-    (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) : ZFSet :=
-  ⋃₀ tagGraph (fun code => code.argSet block γ)
-    (fun code tag vargs => image
-      (fun predecessor => [zf|(predecessor, $(entry (code.targetIndex γ vargs) tag vargs))])
-      (code.predecessors γ vargs))
-    codes
-
-theorem mem_blockPredecessorRel {predecessor current : ZFSet} :
-    [zf|(predecessor, current)] ∈ blockPredecessorRel block γ codes ↔
-      ∃ s c, ∃ vargs ∈ (codes s c).argSet block γ,
-        predecessor ∈ (codes s c).predecessors γ vargs ∧
-        current = entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs := by
-  constructor
-  · intro h
-    have ⟨edges, hedges, hedge⟩ := mem_sUnion.mp h
-    obtain ⟨s, c, vargs, hargs, rfl⟩ := mem_tagGraph.mp hedges
-    have ⟨_, hpredecessor, heq⟩ := mem_image.mp hedge
-    have ⟨rfl, rfl⟩ := pair_inj.mp heq
-    exact ⟨s, c, vargs, hargs, hpredecessor, rfl⟩
-  · intro ⟨s, c, vargs, hargs, hpredecessor, hcurrent⟩
-    rw [hcurrent]
-    exact mem_sUnion.mpr ⟨_, mem_tagGraph.mpr ⟨s, c, vargs, hargs, rfl⟩,
-      mem_image.mpr ⟨predecessor, hpredecessor, rfl⟩⟩
-
 theorem mem_indOp_inter {block₁ block₂ : ZFSet}
     (hz₁ : z ∈ indOp codes γ block₁)
     (hz₂ : z ∈ indOp codes γ block₂) :
@@ -124,16 +99,16 @@ noncomputable def indSet
     (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) (bound : ZFSet) (γ : Slots n) : ZFSet :=
   lfp bound (indOp codes γ)
 
-noncomputable def blockMapGraph (block graph : ZFSet) (γ : Slots n) :
-    ((s : Fin m) → Fin (nctors s) → CtorCode n) → ZFSet :=
-  pairGraph γ (fun code => code.argSet block γ)
-    fun code tag vargs =>
-      entry (code.targetIndex γ (code.argMap graph γ vargs)) tag (code.argMap graph γ vargs)
-
-noncomputable def stepGraph (level : Nat) (block motive : ZFSet) (γ : Slots n)
+noncomputable def stepGraph (level : Nat) (block graph : ZFSet) (γ : Slots n)
     (minors : ZFSet) : ((s : Fin m) → Fin (nctors s) → CtorCode n) → ZFSet :=
-  pairGraph γ (fun code => code.ihArgSet block motive γ)
-    fun code tag vargs => code.applyMinor level γ [zf|minors $(encode tag)] vargs
+  pairGraph γ (fun code => code.argSet block γ)
+    fun code tag vargs => code.applyMinor level graph γ [zf|minors $(encode tag)] vargs
+
+theorem app_stepGraph (hargs : vargs ∈ (codes s c).argSet block γ) :
+    app (stepGraph level block graph γ minors codes)
+        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
+      (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs :=
+  app_pairGraph hargs
 
 theorem indOp_inter {block₁ block₂ : ZFSet}
     (hw : ∀ value, value ∈ block₁ → value ∈ block₂ → value ∈ blockW)
@@ -142,39 +117,26 @@ theorem indOp_inter {block₁ block₂ : ZFSet}
   obtain ⟨s, c, vargs, hargs₁, hargs₂, rfl⟩ := mem_indOp_inter hz₁ hz₂
   exact mem_indOp.mpr ⟨s, c, vargs, CtorCode.argSet_inter hw _ γ vargs hargs₁ hargs₂, rfl⟩
 
-theorem app_blockMapGraph (hargs : vargs ∈ (codes s c).argSet block γ) :
-    app (blockMapGraph block graph γ codes)
-        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
-      entry ((codes s c).targetIndex γ ((codes s c).argMap graph γ vargs)) (tagOf s c)
-        ((codes s c).argMap graph γ vargs) :=
-  app_pairGraph hargs
-
-theorem blockMapGraph_app_cand {block₁ block₂ : ZFSet}
-    (hz₁ : z ∈ indOp codes γ block₁) (hz₂ : z ∈ indOp codes γ block₂) :
-    app (blockMapGraph block₁ graph γ codes) z = app (blockMapGraph block₂ graph γ codes) z := by
-  obtain ⟨_, _, _, hargs₁, hargs₂, rfl⟩ := mem_indOp_inter hz₁ hz₂
-  rw [app_blockMapGraph hargs₁, app_blockMapGraph hargs₂]
-
-theorem blockMapGraph_app_congr {inner outer graph₁ graph₂ : ZFSet}
+theorem stepGraph_app_congr {inner outer graph₁ graph₂ : ZFSet}
     (hagree : ∀ value ∈ inner, app graph₁ value = app graph₂ value)
     (hinner : z ∈ indOp codes γ inner) (houter : z ∈ indOp codes γ outer) :
-    app (blockMapGraph outer graph₁ γ codes) z = app (blockMapGraph outer graph₂ γ codes) z := by
+    app (stepGraph level outer graph₁ γ minors codes) z =
+      app (stepGraph level outer graph₂ γ minors codes) z := by
   obtain ⟨_, _, vargs, hinnerArgs, hargs, rfl⟩ := mem_indOp_inter hinner houter
-  rw [app_blockMapGraph hargs, app_blockMapGraph hargs,
-    CtorCode.argMap_congr hagree _ γ vargs hinnerArgs]
+  rw [app_stepGraph hargs, app_stepGraph hargs]
+  exact CtorCode.applyMinor_congr hagree _ γ _ vargs hinnerArgs
 
 def StepSound (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (block motive step : ZFSet) (γ : Slots n) : Prop :=
-  ∀ s c, ∀ vargs ∈ (codes s c).ihArgSet block motive γ,
-  app step (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
-    ∈ fibreOp motive
-      (entry ((codes s c).targetIndex γ ((codes s c).forgetIhs vargs)) (tagOf s c)
-        ((codes s c).forgetIhs vargs))
+    (block motive : ZFSet) (level : Nat) (minors : ZFSet) (γ : Slots n) : Prop :=
+  ∀ inner ⊆ block, ∀ graph, (∀ value ∈ inner, app graph value ∈ fibreOp motive value) →
+  ∀ s c, ∀ vargs ∈ (codes s c).argSet inner γ,
+  (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs ∈
+    fibreOp motive (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
 
 noncomputable def recGraph (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (bound motive step : ZFSet) (γ : Slots n) : ZFSet :=
+    (bound motive : ZFSet) (level : Nat) (minors : ZFSet) (γ : Slots n) : ZFSet :=
   ZFSet.recGraph (indOp codes γ) bound (fibreOp motive)
-    (fun graph z => app step (app (blockMapGraph (indSet codes bound γ) graph γ codes) z))
+    (fun graph z => app (stepGraph level (indSet codes bound γ) graph γ minors codes) z)
 
 theorem indOp_monotoneOn {bound : ZFSet} :
     MonotoneOn (indOp codes γ) (Set.Iic bound) :=
@@ -185,42 +147,33 @@ theorem indSet_unfold {bound : ZFSet}
     indOp codes γ (indSet codes bound γ) = indSet codes bound γ :=
   lfp_fixed hmaps indOp_monotoneOn
 
-theorem blockMapGraph_app_mem {inner outer graph motive step : ZFSet} (hsub : inner ⊆ outer)
-    (hgraph : ∀ value ∈ inner, app graph value ∈ fibreOp motive value)
-    (hstep : StepSound codes outer motive step γ)
-    (z : ZFSet) (hz : z ∈ indOp codes γ inner) :
-    app step (app (blockMapGraph inner graph γ codes) z) ∈ fibreOp motive z := by
-  obtain ⟨s, c, vargs, hargs, rfl⟩ := mem_indOp.mp hz
-  have hmem : (codes s c).argMap graph γ vargs ∈ (codes s c).ihArgSet outer motive γ :=
-    CtorCode.ihArgSet_mono hsub motive _ γ (CtorCode.argMap_mem hgraph _ γ vargs hargs)
-  have h := hstep s c _ hmem
-  rw [CtorCode.forgetIhs_argMap _ γ vargs hargs] at h
-  rwa [app_blockMapGraph hargs]
-
 theorem recGraph_isApprox
     (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound)) :
     ZFSet.IsApprox (indOp codes γ) bound (fibreOp motive)
-      (fun graph z => app step (app (blockMapGraph (indSet codes bound γ) graph γ codes) z))
-      (recGraph codes bound motive step γ) :=
+      (fun graph z => app (stepGraph level (indSet codes bound γ) graph γ minors codes) z)
+      (recGraph codes bound motive level minors γ) :=
   ZFSet.recGraph_isApprox hmaps indOp_monotoneOn
     (fun _ _ _ hz => indOp_inter (fun _ h₁ h₂ => mem_inter.mpr ⟨h₁, h₂⟩)
       (mem_inter.mp hz).1 (mem_inter.mp hz).2)
-    (fun _ _ _ _ hagree hz hblock => congrArg (app step)
-      (blockMapGraph_app_congr hagree hz ((indSet_unfold hmaps).symm ▸ hblock)))
+    (fun _ _ _ _ hagree hz hblock =>
+      stepGraph_app_congr hagree hz ((indSet_unfold hmaps).symm ▸ hblock))
 
 theorem dom_recGraph
     (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound))
-    (hstep : StepSound codes (indSet codes bound γ) motive step γ) :
-    dom (recGraph codes bound motive step γ) = indSet codes bound γ := by
+    (hstep : StepSound codes (indSet codes bound γ) motive level minors γ) :
+    dom (recGraph codes bound motive level minors γ) = indSet codes bound γ := by
   apply ZFSet.dom_recGraph
-    (F := fun graph z => app step (app (blockMapGraph (indSet codes bound γ) graph γ codes) z))
+    (F := fun graph z => app (stepGraph level (indSet codes bound γ) graph γ minors codes) z)
     hmaps indOp_monotoneOn
     (fun _ _ _ hz => indOp_inter (fun _ h₁ h₂ => mem_inter.mpr ⟨h₁, h₂⟩)
       (mem_inter.mp hz).1 (mem_inter.mp hz).2)
-    (fun _ _ _ _ hagree hz hblock => congrArg (app step)
-      (blockMapGraph_app_congr hagree hz ((indSet_unfold hmaps).symm ▸ hblock)))
+    (fun _ _ _ _ hagree hz hblock =>
+      stepGraph_app_congr hagree hz ((indSet_unfold hmaps).symm ▸ hblock))
   intro inner hsub graph hgraph z hz
-  have h := blockMapGraph_app_mem hsub hgraph hstep z hz
-  rwa [blockMapGraph_app_cand hz (indOp_mono hsub hz)] at h
+  obtain ⟨s, c, vargs, hargs, rfl⟩ := mem_indOp.mp hz
+  have hargs' : vargs ∈ (codes s c).argSet (indSet codes bound γ) γ :=
+    CtorCode.argSet_mono hsub _ γ hargs
+  rw [app_stepGraph hargs']
+  exact hstep inner hsub graph hgraph s c vargs hargs
 
 end Metalean
