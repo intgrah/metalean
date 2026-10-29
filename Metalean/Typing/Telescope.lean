@@ -135,7 +135,7 @@ theorem TeleWF.extendFamily {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ 
     have hlast := hxs (Fin.last k)
     simpa [Subst.extend, ← Fin.append_snoc,
       show Fin.snoc (fun previous : Fin k => xs (previous.castLE (Nat.le_succ k))) (xs (Fin.last k)) = xs from Fin.snoc_init_self xs] using
-      (ih hΔ hprefix).extend hlast
+      (show E[Γ] ⊢ _ ⊣ _ from (ih hΔ hprefix).extend hlast)
 
 theorem TeleWF.entry_isType {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ ℓ 0 b}
     {Δ : Ctx ζ ℓ a (a + k)} (hΔ : TeleWF E P Γ₀ Δ) {σ : Subst ζ ℓ a b}

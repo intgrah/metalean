@@ -243,15 +243,6 @@ theorem Defeq.inst_congr₂ {t e₁ e₂ : Expr ζ ℓ m} {e₁' e₂' t' : Expr
   fun he' h => (he'.substRen (SubstRen.inst h.left)).trans
     (he'.right.inst_congr h)
 
-theorem SubstWF.extend {t : Expr ζ ℓ n} {e : Expr ζ ℓ m} :
-    E[Γ₂] ⊢ e : t.subst σ →
-    E[Γ₂] ⊢ σ ⊣ Γ₁ →
-    E[Γ₂] ⊢ σ.extend e ⊣ Γ₁.snoc t := by
-  intro he hσ v
-  cases v using Fin.lastCases with
-  | last => simpa [Expr.wk_subst_extend]
-  | cast v => simpa [Expr.wk_subst_extend] using hσ v
-
 theorem SubstEq.nil {σ₁ σ₂ : Subst ζ ℓ 0 m} :
     E[Γ] ⊢ σ₁ ≡ σ₂ ⊣ #t[] := nofun
 
@@ -263,11 +254,6 @@ theorem SubstEq.extend {t : Expr ζ ℓ n} {e₁ e₂ : Expr ζ ℓ m} :
   cases v using Fin.lastCases with
   | last => simpa [Expr.wk_subst_extend]
   | cast v => simpa [Expr.wk_subst_extend] using hσ v
-
-theorem SubstWF.wk_comp {t : Expr ζ ℓ n} :
-    E[Γ₂] ⊢ σ' ⊣ Γ₁.snoc t →
-    E[Γ₂] ⊢ Subst.wk.comp σ' ⊣ Γ₁ :=
-  fun hσ v => by simpa [Expr.wk_subst] using hσ v.castSucc
 
 theorem SubstEq.wk_comp {t : Expr ζ ℓ n} :
     E[Γ₂] ⊢ σ₁' ≡ σ₂' ⊣ Γ₁.snoc t →

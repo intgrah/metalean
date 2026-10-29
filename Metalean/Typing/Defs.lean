@@ -291,16 +291,6 @@ theorem Defeq.regular {e₁ e₂ t : Expr ζ ℓ n} :
   | quotIota _ _ hβ => exact ⟨_, hβ.left⟩
   | delta htype => exact ⟨_, htype⟩
 
-def SubstWF (E : Env ζ) {ℓ n m : Nat} (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m) : Prop :=
-  ∀ v : Var n, E[Γ₂] ⊢ σ v : (Γ₁.get v).subst σ
-
-notation:65 E "[" Γ₂ "]" " ⊢ " σ:51 " ⊣ " Γ₁:51 => SubstWF E Γ₁ Γ₂ σ
-
-@[app_unexpander SubstWF]
-meta def SubstWF.unexpand : Lean.PrettyPrinter.Unexpander
-  | `($_ $E $Γ₁ $Γ₂ $σ) => `($E[$Γ₂] ⊢ $σ ⊣ $Γ₁)
-  | _ => throw ()
-
 def SubstEq (E : Env ζ) {ℓ n m : Nat} (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m)
     (σ₁ σ₂ : Subst ζ ℓ n m) : Prop :=
   ∀ v : Var n, E[Γ₂] ⊢ σ₁ v ≡ σ₂ v : (Γ₁.get v).subst σ₁
@@ -310,6 +300,16 @@ notation:65 E "[" Γ₂ "]" " ⊢ " σ₁:51 " ≡ " σ₂:51 " ⊣ " Γ₁:51 =
 @[app_unexpander SubstEq]
 meta def SubstEq.unexpand : Lean.PrettyPrinter.Unexpander
   | `($_ $E $Γ₁ $Γ₂ $σ₁ $σ₂) => `($E[$Γ₂] ⊢ $σ₁ ≡ $σ₂ ⊣ $Γ₁)
+  | _ => throw ()
+
+def SubstWF (E : Env ζ) {ℓ n m : Nat} (Γ₁ : Ctx ζ ℓ 0 n) (Γ₂ : Ctx ζ ℓ 0 m) (σ : Subst ζ ℓ n m) : Prop :=
+  SubstEq E Γ₁ Γ₂ σ σ
+
+notation:65 E "[" Γ₂ "]" " ⊢ " σ:51 " ⊣ " Γ₁:51 => SubstWF E Γ₁ Γ₂ σ
+
+@[app_unexpander SubstWF]
+meta def SubstWF.unexpand : Lean.PrettyPrinter.Unexpander
+  | `($_ $E $Γ₁ $Γ₂ $σ) => `($E[$Γ₂] ⊢ $σ ⊣ $Γ₁)
   | _ => throw ()
 
 theorem SubstEq.left {σ₁ σ₂ : Subst ζ ℓ n m} :
