@@ -196,6 +196,13 @@ private theorem denote_substLift {m n : Nat} (γ : Fin n → ZFSet) (σ : Subst 
     ε[ν; γ]⟦e.subst σ⟧ = ε[ν; (ε[ν; γ]⟦σ ·⟧)]⟦e⟧ := by
   induction e generalizing n <;> simp! [denote_substLift, *]
 
+theorem denote_substLiftN_append {m n k : Nat} (γ : Fin n → ZFSet) (σ : Subst ζ ℓ m n)
+    (values : Fin k → ZFSet) (e : Expr ζ ℓ (m + k)) :
+    ε[ν; Fin.append γ values]⟦e.subst (σ.liftN k)⟧ =
+      ε[ν; Fin.append (ε[ν; γ]⟦σ ·⟧) values]⟦e⟧ := by
+  rw [denote_subst, denote_substLiftN]
+  simp
+
 @[simp] theorem denote_inst {n : Nat} (γ : Fin n → ZFSet) (e : Expr ζ ℓ n)
     (e' : Expr ζ ℓ (n + 1)) :
     ε[ν; γ]⟦e'.inst e⟧ = ε[ν; Fin.snoc γ ε[ν; γ]⟦e⟧]⟦e'⟧ := by

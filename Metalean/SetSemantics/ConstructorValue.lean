@@ -58,24 +58,16 @@ theorem pack_values {Δ : SemTele n b} {rest : CtorCode b}
     rw [heq, fst_pair, snd_pair, ← heq]
     exact ih hargs
 
-theorem applyFields_prependOrdinary {level count : Nat}
-    (Δ : SemTele n (n + count)) (rest : CtorCode (n + count))
-    (γ : Slots n) (fn vargs : ZFSet) :
+theorem applyFields_prependOrdinary {level : Nat}
+    (Δ : SemTele n b) (rest : CtorCode b) (γ : Slots n) (fn vargs : ZFSet) :
     (CtorCode.prependOrdinary Δ rest).applyFields level γ fn vargs =
-      rest.applyFields level (Δ.values γ vargs)
-        [zf|fn $(fun f : Fin count => Δ.values γ vargs (Fin.natAdd n f))...]
-        (Δ.tail vargs) := by
-  induction Δ using Tele.addInduction generalizing fn with
+      rest.applyFields level (Δ.values γ vargs) (Δ.app (Δ.values γ vargs) fn) (Δ.tail vargs) := by
+  induction Δ with
   | nil => rfl
-  | snoc count Δ domain ih =>
-    refine (ih (.arg domain rest) fn).trans ?_
-    change _ = rest.applyFields level (Slots.snoc (values γ vargs Δ) (fst (SemTele.tail vargs Δ)))
-      [zf|fn $(fun f : Fin (count + 1) =>
-        Slots.snoc (values γ vargs Δ) (fst (SemTele.tail vargs Δ)) (Fin.natAdd n f))...]
-      (snd (SemTele.tail vargs Δ))
-    simp only [← Function.comp_def]
-    rw [Fin.snoc_comp_natAdd, Aczel.apps_snoc]
-    rfl
+  | snoc Δ domain ih =>
+    change (CtorCode.prependOrdinary Δ (.arg domain rest)).applyFields level γ fn vargs = _
+    rw [ih]
+    simp [CtorCode.applyFields, app, values, SemTele.tail]
 
 theorem applyIhs_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)
     (graph : ZFSet) (γ : Slots n) (fn vargs : ZFSet) :
@@ -157,19 +149,19 @@ theorem packRecursive_of_isEmpty {n count : Nat} (block : ZFSet)
   rfl
 
 theorem packRecursive_mem {fields : Fin count → CtorRecCode.Packed n}
-    {rest : CtorCode n} {level : Nat} {γ : Slots n}
+    {rest : CtorCode n} {block₁ : ZFSet} {level : Nat} {γ : Slots n}
     {values : Fin count → ZFSet} {tail : ZFSet}
-    (hvalues : ∀ f, values f ∈ typedRecFieldSet
-      (fields f).2.tele (fields f).2.index block level γ)
+    (hvalues : ∀ f, recoverRecField (fields f).2.tele (fields f).2.index block₁ level γ (values f) ∈
+      recFieldSet (fields f).2.tele (fields f).2.index block γ)
     (htail : tail ∈ rest.argSet block γ) :
-    packRecursive block fields level γ values tail ∈
+    packRecursive block₁ fields level γ values tail ∈
       (prependRecursive count fields rest).argSet block γ := by
   induction count generalizing tail with
   | zero => exact htail
   | succ count ih =>
     let f := fields 0
     exact mem_argSet_recArg
-      (recoverRecField_mem f.2.tele f.2.index (hvalues 0))
+      (hvalues 0)
       (by simpa [Fin.tail_def] using ih (Fin.tail hvalues) htail)
 
 theorem eraseRecField_recoverRecField {b level : Nat}

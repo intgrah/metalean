@@ -92,6 +92,17 @@ theorem fibre_bundleMotive_propVal (hentry : entry ∈ block) :
   have h₂ := mem_motiveDomain_value (level := level) hentry
   cases level <;> simp_all [motiveAt]
 
+theorem ihType_eraseRecField {n b : Nat} (Δ : SemTele n b) (index : Dom b)
+    (γ : Slots n) (raw : ZFSet) (hraw : raw ∈ recFieldSet Δ index block γ) :
+    ihType Δ index (bundleMotive level arities vms block) γ raw =
+      ihType Δ index (bundleMotive level arities vms block) γ (eraseRecField Δ level γ raw) := by
+  apply Δ.piAt_lamAt
+    (domain := fun final => fibreOp block (index final))
+    (map := fun _ value => propVal level value) _ _ ?_ γ raw hraw
+  exact fun final value hvalue => by
+    simpa using fibre_bundleMotive_propVal (arities := arities) (vms := vms) (level := level)
+      (mem_fibre.mp hvalue)
+
 noncomputable def minorFamily {count : Nat} (vmins : Slots.{u} count) : ZFSet.{u} :=
   Aczel.indexedLam (fun i => numeral i.val) vmins
 

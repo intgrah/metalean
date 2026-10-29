@@ -36,20 +36,32 @@ abbrev Realizes (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) {a b : Nat
     Ctx ζ ℓ a b → SemTele a b → Prop :=
   Tele.Forall₂ fun _ Θsem A => DenotesOver ε ν reach Θsem A
 
+theorem Realizes.denotes_fold
+    (h : Realizes ε ν reach Δsyn Δsem)
+    (K : {n : Nat} → Expr ζ ℓ n → Expr ζ ℓ (n + 1) → Expr ζ ℓ n)
+    (F : ZFSet → (ZFSet → ZFSet) → ZFSet)
+    (hK : ∀ {n} (γ : Slots n) t e,
+      ε[ν; γ]⟦K t e⟧ = F ε[ν; γ]⟦t⟧ (fun x => ε[ν; γ.snoc x]⟦e⟧))
+    (hF : ∀ A f₁ f₂, (∀ x ∈ A, f₁ x = f₂ x) → F A f₁ = F A f₂)
+    {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach)
+    (he : DenotesOver ε ν reach Δsem e leaf) :
+    ε[ν; s]⟦Tele.foldr K e Δsyn⟧ = Δsem.fold F leaf s := by
+  induction h with
+  | nil => exact he s (.nil hs)
+  | snoc _ hdomain ih =>
+    apply ih
+    intro γ hγ
+    rw [hK, hdomain γ hγ]
+    exact hF _ _ _ fun x hx => he (γ.snoc x)
+      (.snoc (by simpa using hγ) (by simpa using hx))
+
 theorem Realizes.denotes_pi {e : Expr ζ ℓ b} {cod : Dom b} (hs : s ∈ reach) :
     DenotesOver ε ν reach Δsem e cod →
     Realizes ε ν reach Δsyn Δsem →
     ε[ν; s]⟦Δsyn.pi e⟧ = Δsem.pi cod s := by
   intro he h
-  induction h with
-  | nil => exact he s (.nil hs)
-  | snoc _ hdomain ih =>
-    apply ih
-    intro s hs
-    simp only [Expr.denote, hdomain s hs]
-    apply Aczel.pi_congr
-    intro x hx
-    simpa using he (s.snoc x) (.snoc (by simpa using hs) (by simpa using hx))
+  exact h.denotes_fold Expr.forallE Aczel.pi (fun _ _ _ => rfl)
+    (fun _ _ _ h => Aczel.pi_congr h) hs he
 
 theorem Realizes.denotes_piAt {k : Nat}
     {Δsyn : Ctx ζ ℓ a (a + k)} {Δsem : SemTele a (a + k)}
@@ -59,59 +71,18 @@ theorem Realizes.denotes_piAt {k : Nat}
       ε[ν; final]⟦e⟧ = leaf final [zf|fn $(fun f : Fin k => final (Fin.natAdd a f))...])
     (h : Realizes ε ν reach Δsyn Δsem) :
     ε[ν; s]⟦Δsyn.pi e⟧ = Δsem.piAt leaf s fn := by
-  induction Δsyn using Tele.addInduction with
-  | nil =>
-    have .nil := h
-    simpa [SemTele.piAt, SemTele.foldAt, Aczel.apps] using he s (.nil hs)
-  | snoc k Δsyn t ih =>
-    have .snoc hprefix hdomain := h
-    apply ih
-    · intro current hcurrent
-      simp only [Expr.denote, hdomain current hcurrent]
-      apply Aczel.pi_congr
-      intro x hx
-      simpa [← Function.comp_def, Fin.snoc_comp_natAdd] using
-        he (current.snoc x) (.snoc (by simpa using hcurrent) (by simpa using hx))
-    · exact hprefix
-
-theorem Realizes.denotes_motivePiAt {k count : Nat}
-    {Δsyn : Ctx ζ ℓ a (a + k)} {Δsem : SemTele a (a + k)}
-    {motive : Expr ζ ℓ a}
-    {is : Fin count → Expr ζ ℓ (a + k)}
-    {vis : Slots (a + k) → Fin count → ZFSet}
-    {e : Expr ζ ℓ a} {domain : Dom (a + k)}
-    {leaf : DomAt (a + k)}
-    (hs : s ∈ reach) (hvalue : ε[ν; s]⟦e⟧ ∈ Δsem.pi domain s)
-    (hbase : ∀ final ∈ Reachable reach Δsem,
-      ∀ v : Fin a, final (v.castAdd k) = s v)
-    (his : ∀ final ∈ Reachable reach Δsem,
-      ∀ index, ε[ν; final]⟦is index⟧ = vis final index)
-    (hleaf : ∀ final ∈ Reachable reach Δsem, ∀ value,
-      value ∈ domain final →
-      [zf|$(ε[ν; s]⟦motive⟧) $(vis final)... value] = leaf final value)
-    (h : Realizes ε ν reach Δsyn Δsem) :
-    ε[ν; s]⟦Δsyn.pi (Inductive.motiveResult (motive.wkN k)
-        is (e.applyBound k))⟧ = Δsem.piAt leaf s ε[ν; s]⟦e⟧ := by
-  apply h.denotes_piAt hs
-  intro final hfinal
-  have hb : (fun v => final (v.castAdd k)) = s := funext (hbase final hfinal)
-  simpa! [Inductive.motiveResult, hb, his final hfinal] using
-    hleaf final hfinal _ (Reachable.apps_mem_of_base hfinal (hbase final hfinal) hvalue)
+  have hd := h.denotes_pi hs he
+  simp only [SemTele.pi] at hd
+  exact hd.trans (by simpa only [SemTele.app_eq_apps, SemTele.piAt] using
+    SemTele.fold_applyAt Δsem Aczel.pi leaf s fn)
 
 theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
     DenotesOver ε ν reach Δsem e leaf →
     Realizes ε ν reach Δsyn Δsem →
     ε[ν; s]⟦Δsyn.lam e⟧ = Δsem.lam leaf s := by
   intro he h
-  induction h with
-  | nil => exact he s (.nil hs)
-  | snoc _ hdomain ih =>
-    apply ih
-    intro s hs
-    simp! [hdomain s hs]
-    apply Aczel.lam_congr
-    intro x hx
-    simpa using he (s.snoc x) (.snoc (by simpa using hs) (by simpa using hx))
+  exact h.denotes_fold Expr.lam Aczel.lam (fun _ _ _ => rfl)
+    (fun _ _ _ h => Aczel.lam_congr h) hs he
 
 theorem Realizes.pull {a₁ count : Nat}
     {Δsyn : Ctx ζ ℓ a (a + count)}
@@ -133,6 +104,38 @@ theorem Realizes.pull {a₁ count : Nat}
     rw [Expr.denote_subst, Expr.denote_substLiftN,
       funext (hσ (fun v => γ (v.castAdd count)) (Reachable.base hγ))]
     exact hdomain _ (Reachable.pull hγ hreach)
+
+theorem Realizes.denotes_fold_subst {n count : Nat}
+    {Δsyn : Ctx ζ ℓ a (a + count)} {Δsem : SemTele a (a + count)}
+    (h : Realizes ε ν reach Δsyn Δsem)
+    (K : {n : Nat} → Expr ζ ℓ n → Expr ζ ℓ (n + 1) → Expr ζ ℓ n)
+    (F : ZFSet → (ZFSet → ZFSet) → ZFSet)
+    (hK : ∀ {n} (γ : Slots n) t e,
+      ε[ν; γ]⟦K t e⟧ = F ε[ν; γ]⟦t⟧ (fun x => ε[ν; γ.snoc x]⟦e⟧))
+    (hF : ∀ A f₁ f₂, (∀ x ∈ A, f₁ x = f₂ x) → F A f₁ = F A f₂)
+    (σ : Subst ζ ℓ a n) (γ : Slots n) (δ : Slots a)
+    (hδ : δ ∈ reach) (hσ : (ε[ν; γ]⟦σ ·⟧) = δ)
+    {e : Expr ζ ℓ (n + count)} {leaf : Dom (a + count)}
+    (he : ∀ values : Slots count, Fin.append δ values ∈ Reachable {δ} Δsem →
+      ε[ν; Fin.append γ values]⟦e⟧ = leaf (Fin.append δ values)) :
+    ε[ν; γ]⟦Tele.foldr K e (Ctx.substN σ count Δsyn)⟧ = Δsem.fold F leaf δ := by
+  have hp := h.pull σ (fun _ => δ) (reach₁ := {γ}) (fun _ _ => hδ)
+    (fun current hcurrent v => by subst current; exact congrFun hσ v)
+  have hd : DenotesOver ε ν {γ} (Δsem.pull (fun _ : Slots n => δ) count) e
+      (fun final => leaf (Slots.pull (fun _ : Slots n => δ) final)) := by
+    intro final hfinal
+    let values := fun f => final (Fin.natAdd n f)
+    have hbase : (fun v : Fin n => final (v.castAdd count)) = γ := by
+      simpa [Fin.castAdd, Fin.castLE] using Set.eq_of_mem_singleton (Reachable.base hfinal)
+    have hvalues : final = Fin.append γ values := by
+      rw [← hbase]
+      exact Fin.append_castAdd_natAdd.symm
+    have hs := Reachable.pull hfinal (reach := {δ}) (fun _ _ => rfl)
+    have hs' : Fin.append δ values ∈ Reachable {δ} Δsem := by
+      simpa [hvalues] using hs
+    simpa [hvalues] using he values hs'
+  have hd := hp.denotes_fold K F hK hF (Set.mem_singleton γ) hd
+  rwa [SemTele.fold_pull] at hd
 
 theorem Realizes.of_le (hba : b ≤ a) (Δsyn : Ctx ζ ℓ a b) :
     ∃ Δsem : SemTele a b, Realizes ε ν reach Δsyn Δsem := by

@@ -82,4 +82,13 @@ theorem propSet_eq_self_of_mem_sort {level : Nat} {carrier : ZFSet}
     · exact squash_eq_verum proof_mem_verum
   | succ level => simp
 
+theorem propVal_eq_self_of_mem {level : Nat} {carrier value : ZFSet}
+    (hcarrier : carrier ∈ S_ level) (hvalue : value ∈ carrier) :
+    propVal level value = value := by
+  cases level with
+  | zero =>
+    rw [propVal_zero]
+    exact (mem_verum.mp (eq_verum_of_mem hcarrier hvalue ▸ hvalue)).symm
+  | succ level => simp
+
 end Metalean

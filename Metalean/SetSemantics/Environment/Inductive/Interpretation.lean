@@ -124,22 +124,6 @@ theorem Realizes.mapInst {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Leve
   (congrArg (fun Δ => Realizes ε₂ ν _ Δ _)
     (Ctx.map_instL pre.sigs ls Δ)).mp (h.map pre hatoms)
 
-theorem StrongTeleModel.realizes_mapInst
-    {Γ : Ctx ζ₁ ℓ₁ 0 n} {ls : Param ℓ₁ → Level ℓ}
-    (model : StrongTeleModel E₁ ε₁ ν Γ{ls})
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν Set.univ (Γ.map pre.sigs){ls} model.sem :=
-  model.realizes.mapInst pre hatoms
-
-theorem StrongTeleExtension.realizes_mapInst
-    {Γ : Ctx ζ₁ ℓ₁ 0 n} {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
-    {base : StrongTeleModel E₁ ε₁ ν Γ{ls}}
-    (extension : StrongTeleExtension E₁ ε₁ ν base Δ{ls} bound)
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν (Reachable Set.univ base.sem)
-      (Δ.map pre.sigs){ls} extension.sem :=
-  extension.realizes.mapInst pre hatoms
-
 inductive CtorCode.Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet) (ν : Param ℓ → Nat) (block : ZFSet)
     (level : Nat) :
     {base scope : Nat} → (Slots scope → Slots base) →

@@ -125,6 +125,29 @@ noncomputable def lam : Dom b → SemTele a b → Dom a := fold Aczel.lam
 noncomputable def piAt : DomAt b → SemTele a b → DomAt a := foldAt Aczel.pi
 noncomputable def lamAt : DomAt b → SemTele a b → DomAt a := foldAt Aczel.lam
 
+noncomputable def app : {b : Nat} → SemTele a b → Slots b → ZFSet → ZFSet
+  | _, .nil => fun _ fn => fn
+  | _, .snoc Δ _ => fun γ fn => Aczel.app (app Δ (Fin.init γ) fn) (γ (Fin.last _))
+
+theorem app_append {c : Nat} (Δ : SemTele a b) (Θ : SemTele b c) (γ : Slots c) (fn : ZFSet) :
+    SemTele.app (Δ ++ Θ) γ fn =
+      SemTele.app Θ γ (SemTele.app Δ (fun v => γ (v.castLE Θ.le)) fn) := by
+  induction Θ with
+  | nil => rfl
+  | snoc Θ domain ih =>
+    simpa [app, Fin.init, Fin.castSucc_castLE] using
+      congrArg (fun value => Aczel.app value (γ (Fin.last _))) (ih (Fin.init γ))
+
+theorem app_eq_apps {count : Nat} (Δ : SemTele a (a + count)) (γ : Slots (a + count))
+    (fn : ZFSet) :
+    SemTele.app Δ γ fn = Aczel.apps fn (fun f => γ (Fin.natAdd a f)) := by
+  induction Δ using Tele.addInduction with
+  | nil => rfl
+  | snoc count Δ domain ih =>
+    change Aczel.app (SemTele.app Δ (Fin.init γ) fn) (γ (Fin.last (a + count))) = _
+    rw [ih, Fin.comp_natAdd_eq_snoc]
+    simp
+
 theorem pi_congr_base {cod₁ cod₂ : Dom b} (Δ : SemTele a b) (γ : Slots a)
     (h : ∀ final : Slots b, (fun base => final (base.castLE Δ.le)) = γ →
       cod₁ final = cod₂ final) :
@@ -143,6 +166,17 @@ theorem pi_base (Δ : SemTele a b) (cod : Slots a → Dom b)
     Δ.pi (fun final => cod (fun base => final (base.castLE Δ.le)) final) γ =
       Δ.pi (cod γ) γ :=
   Δ.pi_congr_base γ fun final hfinal => congrArg (fun base => cod base final) hfinal
+
+theorem fold_pull {a₁ count : Nat} (former : ZFSet → (ZFSet → ZFSet) → ZFSet)
+    (project : Slots a₁ → Slots a) (Δ : SemTele a (a + count)) (leaf : Dom (a + count))
+    (γ : Slots a₁) :
+    fold former (fun final => leaf (Slots.pull project final)) (Δ.pull project count) γ =
+      fold former leaf Δ (project γ) := by
+  induction Δ using Tele.addInduction with
+  | nil => simp [pull, fold]
+  | snoc count prior domain ih =>
+    simpa [SemTele.pull, fold] using ih
+      (leaf := fun final => former (domain final) fun field => leaf (final.snoc field))
 
 theorem foldAt_pull {a₁ count : Nat} (former : ZFSet → (ZFSet → ZFSet) → ZFSet)
     (project : Slots a₁ → Slots a)
@@ -385,6 +419,30 @@ theorem lamAt_eq_of_mem {leftDomain rightDomain : Dom b}
     rw [app_map hargument] at hleftValue hrightValue
     exact hleaf (current.snoc argument) _ _ hleftValue hrightValue
 
+theorem piAt_lamAt
+    {a b : Nat} (tele : SemTele a b)
+    {domain : Dom b} (map leaf leaf' : DomAt b)
+    (h : ∀ final value, value ∈ domain final →
+      leaf final value = leaf' final (map final value))
+    (γ : Slots a) (fn : ZFSet) (hf : fn ∈ tele.pi domain γ) :
+    tele.piAt leaf γ fn =
+      tele.piAt leaf' γ (tele.lamAt map γ fn) := by
+  induction tele generalizing fn with
+  | nil => exact h γ fn hf
+  | snoc tele binder ih =>
+    apply ih
+    · intro current value hvalue
+      apply congrArg (Aczel.piMap (binder current))
+      apply ZFSet.map_congr
+      intro argument hargument
+      rw [Aczel.app_lam hargument]
+      have happ := Aczel.app_mem
+        (b := ZFSet.map (fun argument => domain (current.snoc argument))
+          (binder current)) hvalue hargument
+      rw [app_map hargument] at happ
+      exact h (current.snoc argument) [zf|value argument] happ
+    · exact hf
+
 theorem lamAt_comp {source middle : Dom b} (Δ : SemTele a b)
     (outer inner : DomAt b)
     (hinner : ∀ (final : Slots b) (value : ZFSet),
@@ -530,81 +588,66 @@ inductive Reachable {a : Nat} (reach : Set (Slots a)) : {b : Nat} → SemTele a 
     s (Fin.last b) ∈ domain (Fin.init s) →
     Reachable reach (Δ.snoc domain) s
 
+theorem Reachable.app_mem_of_base {Δ : SemTele a b} {γ : Slots a} {final : Slots b}
+    {domain : Dom b} {fn : ZFSet} (h : final ∈ Reachable reach Δ)
+    (hbase : ∀ v : Fin a, final (v.castLE Δ.le) = γ v) (hf : fn ∈ Δ.pi domain γ) :
+    SemTele.app Δ final fn ∈ domain final := by
+  induction Δ with
+  | nil =>
+    obtain rfl : final = γ := funext hbase
+    exact hf
+  | snoc Δ next ih =>
+    have .snoc hprior hlast := h
+    have hresult := Aczel.app_mem (ih hprior hbase hf) hlast
+    rw [app_map hlast] at hresult
+    simpa [SemTele.app] using hresult
+
 theorem Reachable.apps_mem_of_base {k : Nat}
     {Δ : SemTele a (a + k)} {γ : Slots a}
     {final : Slots (a + k)} {domain : Dom (a + k)} {fn : ZFSet}
     (h : final ∈ Reachable reach Δ)
     (hbase : ∀ v : Fin a, final (v.castAdd k) = γ v)
     (hf : fn ∈ Δ.pi domain γ) :
-    [zf|fn $(fun fn : Fin k => final (Fin.natAdd a fn))...] ∈
-      domain final := by
-  induction Δ using Tele.addInduction with
-  | nil =>
-    obtain rfl : final = γ := funext hbase
-    simpa [SemTele.pi, SemTele.fold, Aczel.apps] using hf
-  | snoc k prior next ih =>
-    have .snoc hprior hlast := h
-    have hresult := Aczel.app_mem (ih hprior hbase hf) hlast
-    rw [app_map hlast] at hresult
-    rw [Fin.comp_natAdd_eq_snoc]
-    simpa using hresult
+    [zf|fn $(fun f : Fin k => final (Fin.natAdd a f))...] ∈ domain final := by
+  rw [← SemTele.app_eq_apps Δ]
+  exact Reachable.app_mem_of_base h hbase hf
 
-theorem Reachable.apps_lam_of_base {k : Nat}
-    {Δ : SemTele a (a + k)} {base : Slots a}
-    {final : Slots (a + k)} {leaf : Dom (a + k)}
-    (h : final ∈ Reachable {base} Δ) :
-    [zf|$(Δ.lam leaf base) $(fun f : Fin k => final (Fin.natAdd a f))...] =
-      leaf final := by
-  induction Δ using Tele.addInduction with
+theorem Reachable.app_lam {Δ : SemTele a b} {base : Slots a} {final : Slots b}
+    {leaf : Dom b} (h : final ∈ Reachable {base} Δ) :
+    SemTele.app Δ final (Δ.lam leaf base) = leaf final := by
+  induction Δ with
   | nil =>
     have .nil hbase := h
     subst final
-    simp [Aczel.apps, SemTele.lam, SemTele.fold]
-  | snoc k prior domain ih =>
+    rfl
+  | snoc Δ domain ih =>
     have .snoc hprior hlast := h
-    rw [Fin.comp_natAdd_eq_snoc, Aczel.apps_snoc]
-    change [zf|$(SemTele.lam (fun current =>
-          [zf|fun value : $(domain current) => $(leaf (Fin.snoc current value))])
-        prior base)
-      $(fun f : Fin k => Fin.init final (Fin.natAdd a f))...
-      $(final (Fin.last (a + k)))] = leaf final
-    rw [ih hprior]
-    calc
-      [zf|$([zf|fun value : $(domain (Fin.init final)) =>
-          $(leaf (Fin.snoc (Fin.init final) value))])
-        $(final (Fin.last (a + k)))] =
-          leaf (Fin.snoc (Fin.init final)
-            (final (Fin.last (a + k)))) := Aczel.app_lam hlast
-      _ = leaf final := congrArg leaf (Fin.snoc_init_self final)
+    change Aczel.app
+      (SemTele.app Δ (Fin.init final) (SemTele.lam (fun current =>
+        Aczel.lam (domain current) fun value => leaf (current.snoc value)) Δ base))
+      (final (Fin.last _)) = _
+    rw [ih hprior, Aczel.app_lam hlast]
+    exact congrArg leaf (Fin.snoc_init_self final)
 
-theorem SemTele.lam_applyAt {k : Nat} (Δ : SemTele a (a + k))
-    (leaf : DomAt (a + k)) (γ : Slots a) (fn : ZFSet) :
-    Δ.lam (fun final => leaf final
-        [zf|fn $(fun fn : Fin k => final (Fin.natAdd a fn))...]) γ =
-      Δ.lamAt leaf γ fn := by
-  induction Δ using Tele.addInduction generalizing fn with
-  | nil =>
-    simp [SemTele.lam, SemTele.fold, SemTele.lamAt, SemTele.foldAt, Aczel.apps]
-  | snoc k prior domain ih =>
-    let leaf₁ : DomAt (a + k) := fun current g =>
-      [zf|fun d : $(domain current) => $(leaf (current.snoc d) [zf|g d])]
-    have hleaf : (fun current => [zf|fun d : $(domain current) =>
-          $(leaf (current.snoc d)
-            [zf|fn $(fun fn : Fin (k + 1) =>
-              current.snoc d (Fin.natAdd a fn))...])]) =
-        fun current => leaf₁ current
-          [zf|fn $(fun fn : Fin k => current (Fin.natAdd a fn))...] := by
-      funext current
-      apply Aczel.lam_congr
-      intro d hd
-      simp [← Function.comp_def, Fin.snoc_comp_natAdd]
-    change SemTele.lam (fun current => [zf|fun d : $(domain current) =>
-        $(leaf (current.snoc d)
-          [zf|fn $(fun fn : Fin (k + 1) =>
-            current.snoc d (Fin.natAdd a fn))...])]) prior γ =
-      SemTele.lamAt leaf₁ prior γ fn
-    rw [hleaf]
-    exact ih leaf₁ fn
+theorem Reachable.apps_lam_of_base {k : Nat}
+    {Δ : SemTele a (a + k)} {base : Slots a} {final : Slots (a + k)} {leaf : Dom (a + k)}
+    (h : final ∈ Reachable {base} Δ) :
+    [zf|$(Δ.lam leaf base) $(fun f : Fin k => final (Fin.natAdd a f))...] = leaf final := by
+  rw [← SemTele.app_eq_apps Δ]
+  exact Reachable.app_lam h
+
+theorem SemTele.fold_applyAt (Δ : SemTele a b)
+    (F : ZFSet → (ZFSet → ZFSet) → ZFSet)
+    (leaf : DomAt b) (γ : Slots a) (fn : ZFSet) :
+    Δ.fold F (fun final => leaf final (SemTele.app Δ final fn)) γ =
+      Δ.foldAt F leaf γ fn := by
+  induction Δ generalizing fn with
+  | nil => rfl
+  | snoc Δ domain ih =>
+    change SemTele.fold F (fun current => F (domain current) fun value =>
+      leaf (current.snoc value) (SemTele.app (Δ.snoc domain) (current.snoc value) fn)) Δ γ = _
+    simpa [SemTele.app, SemTele.foldAt] using ih
+      (fun current fn => F (domain current) fun value => leaf (current.snoc value) [zf|fn value]) fn
 
 theorem Reachable.mem_collect {count : Nat} {Δ : SemTele a (a + count)}
     {γ : Slots a} {final : Slots (a + count)}

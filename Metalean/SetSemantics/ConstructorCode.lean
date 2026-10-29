@@ -54,8 +54,10 @@ theorem recoverRecField_apps {k : Nat} {Δ : SemTele n (n + k)} {index : Dom (n 
         (fun f => final (Fin.natAdd n f)) =
       propGet level (fibreOp block (index final))
         (Aczel.apps value (fun f => final (Fin.natAdd n f))) := by
-  rw [recoverRecField, ← SemTele.lam_applyAt]
-  exact Reachable.apps_lam_of_base hfinal
+  rw [recoverRecField]
+  simp only [SemTele.lamAt]
+  rw [← SemTele.fold_applyAt _ Aczel.lam]
+  simpa [SemTele.app_eq_apps, SemTele.lam] using Reachable.apps_lam_of_base hfinal
 
 noncomputable def eraseRecField (Δ : SemTele n b) (level : Nat)
     (γ : Slots n) (value : ZFSet) : ZFSet :=

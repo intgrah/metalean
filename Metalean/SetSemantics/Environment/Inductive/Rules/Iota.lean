@@ -61,37 +61,29 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         (code recFd source).index graph δ
         (recoverRecField (code recFd source).tele (code recFd source).index block level
           δ ε₂[γ]⟦r⟧) := by
-  let project : Slots n → Slots (ι.nparams + nfields) := fun _ => δ
-  have hrealizes := ((congrArg (fun Δ => Realizes ε₂ ![] _ Δ _)
-    (Ctx.map_instL pre.sigs ls recFd.tele)).mp
-      (source.extension.realizes.map pre hatoms)).pull σ project (reach₁ := {γ})
-    (fun _ _ => hδ) fun current hcurrent v => by subst current; exact congrFun hσ v
-  have hbase (final : Slots (n + arity))
-      (hfinal : final ∈ Reachable {γ} (source.extension.sem.pull project arity)) :
-      (fun v => final (v.castAdd arity)) = γ := Set.eq_of_mem_singleton (Reachable.base hfinal)
   let recovered := recoverRecField (code recFd source).tele (code recFd source).index block level
     δ ε₂[γ]⟦r⟧
-  let leaf : DomAt (ι.nparams + nfields + arity) :=
-    fun final value => app graph (pair ((code recFd source).index final) value)
-  have hden := hrealizes.denotes_lam
-    (leaf := fun final => leaf (Slots.pull project final)
-      (Aczel.apps recovered fun v => final (Fin.natAdd n v)))
+  have hden := (Realizes.mapInst source.extension.realizes pre hatoms).denotes_fold_subst
+    Expr.lam Aczel.lam (fun _ _ _ => rfl) (fun _ _ _ h => Aczel.lam_congr h)
+    σ γ δ hδ hσ
     (e := .recr η s ls l (fun p => (ps p).wkN arity)
       (fun s => (ms s).wkN arity) (fun s c => (mins s c).wkN arity)
-      (fun i => ((recFd.indices i).map pre.sigs){ls}.subst (σ.liftN arity))
-      (r.applyBound arity))
-    (Set.mem_singleton γ) fun final hfinal => by
-      simp only [Expr.denote, Expr.denote_wkN, Expr.denote_applyBound]
-      rw [hbase final hfinal, funext fun index => show
-          ε₂[final]⟦((recFd.indices index).map pre.sigs){ls}.subst
-            (σ.liftN arity)⟧ = ε₁[Slots.pull project final]⟦(recFd.indices index){ls}⟧ by
-        rw [Expr.denote_subst, Expr.denote_substLiftN, hbase final hfinal, hσ, ← Expr.map_instL]
-        exact Expr.denote_map pre.sigs hatoms _ _]
-      have h := hatom (Slots.pull project final) (Reachable.pull hfinal fun _ _ => rfl)
-      simpa [Slots.pull, leaf, recovered] using h
-  rwa [SemTele.lam_applyAt (source.extension.sem.pull project arity)
-    (fun final value => leaf (Slots.pull project final) value) γ recovered,
-    SemTele.lamAt_pull] at hden
+      ((recFd.map pre.sigs).instantiatedIndices ls σ) (r.applyBound arity))
+    (leaf := fun final => app graph (pair ((code recFd source).index final)
+      [zf|recovered $(fun f => final (Fin.natAdd (ι.nparams + nfields) f))...]))
+    (fun values hvalues => by
+      have his (index : Fin (ι.nindices s)) :
+          ε₂[Fin.append γ values]⟦(recFd.map pre.sigs).instantiatedIndices ls σ index⟧ =
+            ε₁[Fin.append δ values]⟦(recFd.indices index){ls}⟧ := by
+        rw [RecField.instantiatedIndices, Expr.denote_substLiftN_append, hσ]
+        simp only [RecField.map]
+        rw [← Expr.map_instL]
+        exact Expr.denote_map pre.sigs hatoms _ _
+      simpa [Expr.denote, his, recovered, -Expr.denote_instL] using hatom (Fin.append δ values) hvalues)
+  have hfold := SemTele.fold_applyAt source.extension.sem Aczel.lam
+    (fun final value => app graph (pair ((code recFd source).index final) value)) δ recovered
+  simp only [SemTele.app_eq_apps] at hfold
+  exact hden.trans hfold
 
 namespace StrongInductiveModel
 

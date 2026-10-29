@@ -60,7 +60,7 @@ theorem recrPrefixRealizes :
       ((I.map pre.sigs).params{ls} ++ (I.map pre.sigs).motiveBinders η ls l ++
         (I.map pre.sigs).caseBinders η ls)
       (model.recrPrefixSem l) :=
-  ((model.tele.params.realizes_mapInst pre hatoms).append
+  ((model.tele.params.realizes.mapInst pre hatoms).append
     (model.recrMotivesRealizes pre hatoms hsorts l)).append
     ((model.recrCasesRealizes pre hatoms hsorts hctors l).monoReach
       fun _ => Reachable.of_append)
@@ -70,7 +70,7 @@ theorem recrIndicesRealizes :
     Realizes ε₂ ![] (Reachable Set.univ (model.recrPrefixSem l))
       ((I.map pre.sigs).indexTele ls s fun param => .var (param.castLE (by omega)))
       (model.recrIndicesSem s) := by
-  have his := ((model.tele.indices s).realizes_mapInst pre hatoms).pull
+  have his := ((model.tele.indices s).realizes.mapInst pre hatoms).pull
     (reach₁ := Reachable Set.univ (model.recrPrefixSem l))
     (fun param => .var (param.castLE (by omega))) (fun γ p => γ (p.castLE (by omega)))
     (fun _ hγ =>

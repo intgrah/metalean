@@ -254,7 +254,7 @@ theorem applyMinor_ctorApplication
   change (CtorCode.prependOrdinary tele rest).applyMinor model.toModel.level graph vps minor
     (tele.pack (Fin.append vps vfds) tail) = _
   rw [CtorCode.applyMinor, SemTele.applyFields_prependOrdinary,
-    SemTele.applyIhs_prependOrdinary, hvalues, tele.tail_pack]
+    SemTele.applyIhs_prependOrdinary, hvalues, tele.tail_pack, SemTele.app_eq_apps]
   simp only [Fin.append_right]
   rw [CtorCode.applyFields_packRecursive fields index _ (Fin.append vps vfds) vrecFds hrecFields]
   exact CtorCode.applyIhs_packRecursive fields index _ graph (Fin.append vps vfds) vrecFds _

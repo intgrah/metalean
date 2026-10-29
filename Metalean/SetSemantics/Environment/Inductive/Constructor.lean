@@ -126,25 +126,29 @@ theorem ihType_denotes
         fibreOp motive (pair (code recFd source |>.index final) value)) :
     ε₂[γ]⟦(recFd.map pre.sigs).ihType ls ms σ e⟧ =
       ihType (code recFd source).tele (code recFd source).index motive δ ε₂[γ]⟦e⟧ := by
-  let project : Slots n → Slots (ι.nparams + nfields) := fun _ => δ
-  have hden := (Realizes.mapInst source.extension.realizes pre hatoms).pull σ project
-    (reach₁ := {γ}) (fun _ _ => hδ)
-    (fun current hcurrent v => by subst current; exact congrFun hσ v)
-    |>.denotes_motivePiAt
-    (vis := fun final => (ε₁[Slots.pull project final]⟦recFd.indices{ls} ·⟧))
-    (Set.mem_singleton γ) (by rwa [SemTele.pi_pull])
-    (fun _ hfinal v => congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal)) v)
-    (fun final hfinal index => by
-      have hsource := Expr.denote_map (ν := ![]) pre.sigs hatoms (Slots.pull project final)
-        (recFd.indices index){ls}
-      rw [Expr.map_instL] at hsource
-      rwa [Expr.denote_subst, Expr.denote_substLiftN,
-        show (fun v => final (v.castAdd arity)) = γ from
-          Set.eq_of_mem_singleton (Reachable.base hfinal), hσ])
-    fun final hfinal value hvalue =>
-      hleaf (Slots.pull project final) (fun v => by simp [project]) value hvalue
-  rwa [SemTele.piAt_pull (leaf := fun final value =>
-    fibreOp motive (pair ((code recFd source).index final) value))] at hden
+  have hden := (Realizes.mapInst source.extension.realizes pre hatoms).denotes_fold_subst
+    Expr.forallE Aczel.pi (fun _ _ _ => rfl) (fun _ _ _ h => Aczel.pi_congr h)
+    σ γ δ hδ hσ
+    (e := Inductive.motiveResult ((ms s₁).wkN arity)
+      ((recFd.map pre.sigs).instantiatedIndices ls σ) (e.applyBound arity))
+    (leaf := fun final => fibreOp motive (pair ((code recFd source).index final)
+      [zf|$(ε₂[γ]⟦e⟧) $(fun f => final (Fin.natAdd (ι.nparams + nfields) f))...]))
+    (fun values hvalues => by
+      have his (index : Fin (ι.nindices s₁)) :
+          ε₂[Fin.append γ values]⟦(recFd.map pre.sigs).instantiatedIndices ls σ index⟧ =
+            ε₁[Fin.append δ values]⟦(recFd.indices index){ls}⟧ := by
+        rw [RecField.instantiatedIndices, Expr.denote_substLiftN_append, hσ]
+        simp only [RecField.map]
+        rw [← Expr.map_instL]
+        exact Expr.denote_map pre.sigs hatoms _ _
+      simpa [Inductive.motiveResult, Expr.denote, his, -Expr.denote_instL] using
+        hleaf (Fin.append δ values) (fun _ => by simp) _
+          (Reachable.apps_mem_of_base hvalues (fun _ => by simp) hvalue))
+  have hfold := SemTele.fold_applyAt source.extension.sem Aczel.pi
+    (fun final value => fibreOp motive (pair ((code recFd source).index final) value))
+    δ ε₂[γ]⟦e⟧
+  simp only [SemTele.app_eq_apps] at hfold
+  exact hden.trans hfold
 
 end StrongRecursiveFieldSource
 

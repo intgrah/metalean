@@ -189,6 +189,10 @@ theorem sigma_mono {α₁ α₂ β₁ β₂ : ZFSet} (hα : α₁ ⊆ α₂)
   obtain ⟨a, ha, b, hb, rfl⟩ := mem_sigma.mp hc
   exact mem_sigma.mpr ⟨a, hα ha, b, hβ a ha hb, rfl⟩
 
+@[simp] theorem dom_empty : dom ∅ = ∅ := by
+  ext x
+  simp
+
 @[simp] theorem dom_sUnion (s : ZFSet) : dom (⋃₀ s) = ⋃₀ image dom s := by
   ext x
   rw [mem_dom, mem_sUnion_image]

@@ -118,7 +118,7 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
     (ps₁ : Fin ι.nparams → Expr ζ₂ 0 m) (previous : Fin f.val → Expr ζ₂ 0 m)
     (hps₁ : ∀ param, ε₂[γ]⟦ps₁ param⟧ = w (param.castLE (by omega)))
     (hprevious : ∀ prior : Fin f.val, ε₂[γ]⟦previous prior⟧ =
-      w (Fin.natAdd ι.nparams (prior.castLT (prior.isLt.trans f.isLt)))) :
+      w (Fin.natAdd ι.nparams (prior.castLE f.isLt.le))) :
     w (Fin.natAdd ι.nparams f) ∈
         ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∧
       ε₂[γ]⟦Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₁ f previous⟧ ∈
@@ -167,9 +167,6 @@ theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : 
 theorem projTerm_denotes_field
     (hsorts₂ : ∀ target vps vis,
       ε₂ (.ind η target ls vps vis) = model.toModel.sortValue target vps vis)
-    (hctors₂ : ∀ target ctor vps vfds vrecFds,
-      ε₂ (.ctor η target ctor ls vps vfds vrecFds) =
-        model.ctorResult target ctor vps vfds vrecFds)
     (hrecr₂ : ∀ target l vps vms vmins vis vmaj,
       ε₂ (.recr η target ls l vps vms vmins vis vmaj) =
         model.recLeaf target l (RecSlots.args vps vms vmins vis vmaj))
@@ -179,197 +176,105 @@ theorem projTerm_denotes_field
     {m₁ : Nat} {γ₁ : Slots m₁}
     {ps₁ : Fin ι.nparams → Expr ζ₂ 0 m₁} {maj₁ : Expr ζ₂ 0 m₁}
     (hvps : (ε₂[γ₁]⟦ps₁ ·⟧) ∈ Reachable Set.univ model.paramsSem)
-    (hpsTy₁ : ∀ param, ε₂[γ₁]⟦ps₁ param⟧ ∈
-      ε₂[γ₁]⟦(I.map total.sigs).paramType ls ps₁ param⟧)
     (hmajMem₁ : ε₂[γ₁]⟦maj₁⟧ ∈ model.toModel.sortValue s (ε₂[γ₁]⟦ps₁ ·⟧) vis) :
     ε₂[γ₁]⟦hstruct.projTerm η ls ps₁ f maj₁⟧ =
       model.fieldsOf s c (ε₂[γ₁]⟦ps₁ ·⟧) vis ε₂[γ₁]⟦maj₁⟧ f := by
-  induction f using Fin.strong_induction_on generalizing m₁ γ₁ ps₁ maj₁ with
+  induction f using Fin.strong_induction_on with
   | h f ih =>
     let vps := (ε₂[γ₁]⟦ps₁ ·⟧)
-    have hdecomp {z : ZFSet} (hz : z ∈ model.toModel.sortValue s vps vis) :=
-      model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
-        hstruct.no_recursive vps vis hstruct.recursive hz
-    have hsortAt {m : Nat} (δ : Slots m) (ps : Fin ι.nparams → Expr ζ₂ 0 m)
-        (is : Fin (ι.nindices s) → Expr ζ₂ 0 m) (hps : (ε₂[δ]⟦ps ·⟧) = vps) :
-        ε₂[δ]⟦.ind η s ls ps is⟧ = model.toModel.sortValue s vps vis := by
-      simp only [Expr.denote]
-      rw [hps, hsorts₂]
-      exact congrArg _ (funext hstruct.no_indices.elim)
-    let u : Level 0 := (((I.map total.sigs).ctors s c).ordinary f).level{ls}
+    let major := ε₂[γ₁]⟦maj₁⟧
+    let vfds := model.fieldsOf s c vps vis major
+    have ⟨hfields, hrebuild⟩ := model.ctorResult_of_mem_sortValue hstruct.sort_unique
+      hstruct.ctor_unique hstruct.no_recursive vps vis hstruct.recursive hmajMem₁
+    have htyped : vfds f ∈ ε₂[γ₁]⟦hstruct.projType η ls ps₁ f maj₁⟧ ∧
+        ε₂[γ₁]⟦hstruct.projType η ls ps₁ f maj₁⟧ ∈
+          S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
+      rw [hstruct.projType_eq_projTypeWith]
+      have h := model.projTypeWith_denotes hdecl hrule hE hB total hatoms vps hvps
+        (Fin.append vps vfds) hfields f ps₁
+        (fun prior => hstruct.projTerm η ls ps₁ (prior.castLE f.isLt.le) maj₁)
+        (γ := γ₁) (by simp [vps]) (fun prior => by
+          simpa [vfds, vps, major] using ih (prior.castLE f.isLt.le) prior.isLt)
+      simpa using h
+    let u := (((I.map total.sigs).ctors s c).ordinary f).level{ls}
     let mot := hstruct.projectionMotives η ls ps₁ f
-    let Δcase := (I.map total.sigs).caseTele η ls ps₁ mot s c
-    let projTy {m₂ : Nat} (ps₂ : Fin ι.nparams → Expr ζ₂ 0 m₂) (maj₂ : Expr ζ₂ 0 m₂) :=
-      Inductive.IsStructure.projTypeWith (I.map total.sigs) ls ps₂ f fun prior =>
-        hstruct.projTerm η ls ps₂ (prior.castLT (prior.isLt.trans f.isLt)) maj₂
-    have hbody {m₂ : Nat} {γ₂ : Slots m₂}
-        {ps₂ : Fin ι.nparams → Expr ζ₂ 0 m₂} {maj₂ : Expr ζ₂ 0 m₂}
-        (hpsDen₂ : (ε₂[γ₂]⟦ps₂ ·⟧) = vps)
-        (hpsTy₂ : ∀ param,
-          ε₂[γ₂]⟦ps₂ param⟧ ∈ ε₂[γ₂]⟦(I.map total.sigs).paramType ls ps₂ param⟧)
-        (hmajMem₂ : ε₂[γ₂]⟦maj₂⟧ ∈ model.toModel.sortValue s vps vis) :
-        model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧ f ∈ ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∧
-          ε₂[γ₂]⟦projTy ps₂ maj₂⟧ ∈
-            S_ (((I.ctors s c).ordinary f).level{ls}.eval ![]) := by
-      have ⟨hmem, hsorted⟩ := model.projTypeWith_denotes hdecl hrule hE hB total hatoms vps hvps
-        (Fin.append vps (model.fieldsOf s c vps vis ε₂[γ₂]⟦maj₂⟧)) (hdecomp hmajMem₂).1 f ps₂
-        (fun prior => hstruct.projTerm η ls ps₂ (prior.castLT (prior.isLt.trans f.isLt)) maj₂)
-        (γ := γ₂) fun param => by simpa using congrFun hpsDen₂ param
-        fun prior => by
-          rw [Fin.append_right]
-          simpa [hpsDen₂] using ih (prior.castLT (prior.isLt.trans f.isLt)) prior.isLt
-            (hpsDen₂ ▸ hvps) hpsTy₂ (hpsDen₂ ▸ hmajMem₂)
-      rw [Fin.append_right] at hmem
-      exact ⟨hmem, hsorted⟩
-    have hindices : (ε₂[γ₁]⟦hstruct.indices ·⟧) = vis :=
-      funext hstruct.no_indices.elim
-    have hsortDen := hsortAt γ₁ ps₁ hstruct.indices rfl
-    have hpsWk {k : Nat} (δ : Slots (m₁ + k))
-        (hδ : (fun v : Fin m₁ => δ (v.castAdd k)) = γ₁) :
-        (ε₂[δ]⟦ps₁ · |>.wkN k⟧) = vps ∧
-          ∀ param, ε₂[δ]⟦(ps₁ param).wkN k⟧ ∈
-            ε₂[δ]⟦(I.map total.sigs).paramType ls (fun p => (ps₁ p).wkN k) param⟧ :=
-      ⟨funext fun param => by rw [Expr.denote_wkN, hδ],
-        fun param => by
-          rw [← Inductive.paramType_wkN]
-          simpa only [Expr.denote_wkN, hδ] using hpsTy₁ param⟩
-    let op (z : ZFSet) :=
-      ε₂[Fin.snoc γ₁ z]⟦projTy (fun param => (ps₁ param).wkN 1) (.var (Fin.last m₁))⟧
-    have hop (z : ZFSet) (hz : z ∈ model.toModel.sortValue s vps vis) :
-        model.fieldsOf s c vps vis z f ∈ op z := by
-      have ⟨hden, hty⟩ := hpsWk (k := 1) (Fin.snoc γ₁ z)
-        (funext fun v => Fin.snoc_castSucc (α := fun _ => ZFSet) ..)
-      have ⟨hmem, _⟩ := hbody (γ₂ := Fin.snoc γ₁ z) (ps₂ := fun param => (ps₁ param).wkN 1)
-        (maj₂ := .var (Fin.last m₁)) hden hty (by simpa! using hz)
-      simpa [Expr.denote] using hmem
-    let vms : Fin ι.nsorts → ZFSet :=
-      fun _ => [zf|fun value : $(model.toModel.sortValue s vps vis) => $(op value)]
-    have hmsDen (target : Fin ι.nsorts) : ε₂[γ₁]⟦mot target⟧ = vms target := by
-      obtain rfl := (hstruct.sort_unique target).symm
-      unfold mot
-      rw [Inductive.IsStructure.projectionMotives_self, hstruct.projType_eq, Expr.denote,
-        hsortDen]
-      rfl
-    have hmsMem (target : Fin ι.nsorts) : ε₂[γ₁]⟦mot target⟧ ∈
-        ε₂[γ₁]⟦(I.map total.sigs).motiveType η ls ps₁ u target⟧ := by
-      obtain rfl := (hstruct.sort_unique target).symm
-      refine Expr.denote_lam_mem_pi fun slots hslots => ?_
-      have hprefix : (fun v : Fin m₁ => slots (v.castAdd (ι.nindices s + 1))) = γ₁ :=
-        Set.eq_of_mem_singleton (Reachable.base hslots)
-      have ⟨hpsSlots, hpsTySlots⟩ := hpsWk (k := ι.nindices s + 1) slots hprefix
-      have hlastMem : slots (Fin.last (m₁ + ι.nindices s)) ∈ model.toModel.sortValue s vps vis :=
-        hsortAt (Fin.init slots) (fun param => (ps₁ param).wkN (ι.nindices s)) _
-          (funext fun param => by
-            rw [Expr.denote_wkN]
-            exact congrArg (ε₂[·]⟦ps₁ param⟧) hprefix) ▸ Reachable.last hslots
-      exact (hbody (maj₂ := .var (Fin.last (m₁ + ι.nindices s))) hpsSlots hpsTySlots
-        hlastMem).2
-    have hord₂ := ((congrArg (Realizes ε₂ ![] _ · _)
+    let vms := (ε₂[γ₁]⟦mot ·⟧)
+    let vmins := (ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot · ·⟧)
+    have hmotive : [zf|$(vms s) vis... major] = ε₂[γ₁]⟦hstruct.projType η ls ps₁ f maj₁⟧ := by
+      rw [Aczel.apps_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_indices)]
+      change Aczel.app ε₂[γ₁]⟦hstruct.projectionMotives η ls ps₁ f s⟧ major = _
+      rw [hstruct.projectionMotives_self, Expr.denote,
+        show ε₂[γ₁]⟦.ind η s ls ps₁ hstruct.indices⟧ = model.toModel.sortValue s vps vis from by
+          rw [Expr.denote, hsorts₂]
+          exact congrArg _ (funext hstruct.no_indices.elim), Aczel.app_lam hmajMem₁]
+      rw [← Expr.denote_inst γ₁ maj₁]
+      simp [Expr.inst, Expr.wk_subst_extend]
+    have hord := ((congrArg (Realizes ε₂ ![] _ · _)
       (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
-      ((model.ctors s c).source.ordinary.realizes_mapInst total hatoms)).pull
+      ((model.ctors s c).source.ordinary.realizes.mapInst total hatoms)).pull
       (reach₁ := {γ₁}) ps₁ (fun _ => vps)
-      (fun δ hδ => by subst hδ; exact hvps) fun δ hδ v => by subst hδ; rfl
-    have hnr : (ι.ctors s c).nrecFields = 0 := Fin.eq_zero_of_isEmpty hstruct.no_recursive
-    have ⟨Δrec, hrecRealizes⟩ := Realizes.of_le (ε := ε₂) (ν := ![])
-      (reach := Reachable {γ₁} ((model.ctors s c).source.ordinary.sem.pull
-        (fun _ : Slots m₁ => vps) (ι.ctors s c).nfields)) (by omega)
-      (((I.ctors s c).map total.sigs).recursiveFieldTele η ls
-        (fun param => (ps₁ param).wkN (ι.ctors s c).nfields)
-        (Expr.boundVars m₁ (ι.ctors s c).nfields 0))
-    have hcaseRealizes := (hord₂.append hrecRealizes).append
-      (Realizes.of_le (ε := ε₂) (ν := ![]) (by omega)
-        (((I.ctors s c).map total.sigs).ihTele ls ps₁ mot)).choose_spec
-    have hcaseValue : ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot s c⟧ =
-        ((model.ctors s c).source.ordinary.sem.pull
-          (fun _ : Slots m₁ => vps) (ι.ctors s c).nfields).lam
-          (fun slots => slots (Fin.natAdd m₁ f)) γ₁ := by
+      (fun _ _ => hvps) (fun _ hγ _ => by subst hγ; rfl)
+    have hcase : [zf|$(vmins s c) vfds...] = vfds f := by
+      change Aczel.apps ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot s c⟧ vfds = _
       rw [hstruct.projectionCases_self]
-      exact Realizes.denotes_lam (reach := {γ₁}) rfl (fun slots _ => rfl) hord₂
-    have hmins (target : Fin ι.nsorts) (ctor : Fin (ι.nctors target)) :
-        ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot target ctor⟧ ∈
-        ε₂[γ₁]⟦(I.map total.sigs).caseFnType η ls ps₁ mot target ctor⟧ := by
-      obtain rfl := (hstruct.sort_unique target).symm
-      obtain rfl := (hstruct.ctor_unique ctor).symm
-      refine Expr.denote_lam_mem_pi (Δ := Δcase) (body := (ι.ctors s c).caseOrdinary f)
-        (leaf := (I.map total.sigs).caseType η ls ps₁ mot s c) fun slots hslots => ?_
-      let vfds₁ : Slots (ι.ctors s c).nfields := fun i => slots ⟨m₁ + i.val, by omega⟩
-      have hwk3 (e : Expr ζ₂ 0 m₁) :
-          ε₂[slots]⟦((e.wkN (ι.ctors s c).nfields).wkN (ι.ctors s c).nrecFields).wkN
-            (ι.ctors s c).nrecFields⟧ = ε₂[γ₁]⟦e⟧ := by
-        simp only [Expr.denote_wkN]
-        change ε₂[fun v => slots (v.castLE Δcase.le)]⟦e⟧ = ε₂[γ₁]⟦e⟧
-        rw [Set.eq_of_mem_singleton (Reachable.base hslots)]
-      have hfieldVar (i : Fin (ι.ctors s c).nfields) :
-          ε₂[slots]⟦(ι.ctors s c).caseOrdinary i⟧ = vfds₁ i := by
-        unfold CtorSig.caseOrdinary CtorSig.fieldOrdinary
-        rw [Expr.var_wkN, Expr.var_wkN]
-        rfl
-      have hreachArgs := Reachable.pull (reach := {vps})
-        (Reachable.base (Reachable.of_append (Reachable.base (Reachable.of_append
-          (Reachable.of_denote hcaseRealizes rfl hslots)))))
-        fun base _ => rfl
-      rw [show Slots.pull (fun _ : Slots m₁ => vps)
-          (fun w : Fin (m₁ + (ι.ctors s c).nfields) =>
-            (fun w₁ : Fin (m₁ + (ι.ctors s c).nfields +
-              (ι.ctors s c).nrecFields) => slots (w₁.castLE (by omega)))
-              (w.castLE (by omega))) = Fin.append vps vfds₁ from by
-        funext w
-        cases w using Fin.addCases with
-        | left param => simp
-        | right field =>
-          simp only [Slots.pull_natAdd, Fin.append_right]
-          exact congrArg slots (Fin.ext rfl)] at hreachArgs
-      have hctorMem := model.ctorResult_mem_sortValue s c vps vfds₁ hreachArgs
-        hstruct.recursive hstruct.no_recursive.elim
-      rw [show model.targetValues s c (Fin.append vps vfds₁) = vis from
-        funext hstruct.no_indices.elim] at hctorMem
-      rw [show ε₂[slots]⟦(I.map total.sigs).caseType η ls ps₁ mot s c⟧ =
-          [zf|$(vms s) $(model.ctorResult s c vps vfds₁ hstruct.recursive)] from by
-        simp only [Inductive.caseType, Inductive.motiveResult,
-          Expr.apps_eq_self_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_indices), Expr.denote,
-          CtorSig.caseParams, CtorSig.fieldParams, hwk3, hmsDen, hfieldVar, hctors₂]
-        congr 2
-        exact funext hstruct.no_recursive.elim, Aczel.app_lam hctorMem, hfieldVar f]
-      simpa [model.fieldsOf_ctorResult hlevel] using hop _ hctorMem
-    let vminsVal := (ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot · ·⟧)
-    let vfds := model.fieldsOf s c vps vis ε₂[γ₁]⟦maj₁⟧
-    have ⟨hreachFds, hrebuild⟩ := hdecomp hmajMem₁
-    have hreach := model.recrArgs_reachable total hatoms hsorts₂
-      hctors₂ u (maj := maj₁) hpsTy₁ hmsMem hmins
-      hstruct.no_indices.elim
-      (by rwa [hsortDen])
-    rw [funext hmsDen, hindices] at hreach
-    have hargs := (model.ctorArgs_mem s c vps vfds hreachFds hstruct.recursive
-      hstruct.no_recursive.elim).1
-    have hkey : (model.codeOf s c).targetIndex vps
-        (model.ctorArgs s c vps vfds hstruct.recursive) = sortKey s.val (encode vis) := by
+      have hden := hord.denotes_lam (e := Expr.boundVars m₁ (ι.ctors s c).nfields 0 f)
+        (leaf := fun slots => slots (Fin.natAdd m₁ f))
+        (Set.mem_singleton γ₁)
+        (fun _ _ => rfl)
+      have hfinal : Fin.append γ₁ vfds ∈ Reachable {γ₁}
+          ((model.ctors s c).source.ordinary.sem.pull (fun _ : Slots m₁ => vps)
+            (ι.ctors s c).nfields) :=
+        Reachable.of_pull (by simpa using hfields) (by simp)
+      have hbeta := Reachable.apps_lam_of_base
+        (leaf := fun slots => slots (Fin.natAdd m₁ f)) hfinal
+      exact (congrArg (fun fn => Aczel.apps fn vfds) hden).trans (by simpa using hbeta)
+    let args := model.ctorArgs s c vps vfds hstruct.recursive
+    have hargs : args ∈ (model.codeOf s c).argSet ∅ vps := by
+      have htail := CtorCode.packRecursive_mem (block := (∅ : ZFSet))
+        (fields := (model.ctors s c).source.recursiveCodes)
+        (rest := CtorCode.target (StrongCtorSource.targetIndex (model.ctors s c).target))
+        (level := model.toModel.level) (γ := Fin.append vps vfds)
+        (block₁ := model.toModel.block vps) (values := hstruct.recursive)
+        hstruct.no_recursive.elim (CtorCode.proof_mem_argSet_target (Fin.append vps vfds))
+      simpa [args, ctorArgs, codeOf_eq, recursiveRest, vfds, major] using
+        SemTele.pack_mem hfields htail
+    have htarget : (model.codeOf s c).targetIndex vps args = sortKey s.val (encode vis) := by
       rw [model.codeOf_targetIndex]
-      exact congrArg (sortKey s.val)
-        (congrArg encode (funext hstruct.no_indices.elim))
-    have hiota := model.recLeaf_iota hdecl hrule hE hB s u
-      ((I.recAllowed_map total.sigs ls u).mp (hstruct.recAllowed ls u))
-      (RecSlots.args vps vms vminsVal vis ε₂[γ₁]⟦maj₁⟧) hreach c
-      hargs
-      (by simpa [RecSlots.args] using hkey)
-      hrebuild.symm
-    simp [RecSlots.args] at hiota
-    rw [model.applyMinor_ctorApplication s c vps vfds hstruct.recursive hstruct.no_recursive.elim,
-      Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr, Fin.decodeSigma_encodeSigma,
-      show vminsVal s c = _ from hcaseValue] at hiota
-    have hlamApp := Reachable.apps_lam_of_base
-      (leaf := fun slots => slots (Fin.natAdd m₁ f))
-      (Reachable.of_pull (by rwa [Slots.pull_append])
-        (funext fun base => Fin.append_left γ₁ vfds base) :
-        Fin.append γ₁ vfds ∈ Reachable {γ₁}
-          ((model.ctors s c).source.ordinary.sem.pull
-            (fun _ : Slots m₁ => vps) (ι.ctors s c).nfields))
-    simp only [Fin.append_right] at hlamApp
-    rw [hlamApp] at hiota
-    rw [hstruct.projTerm_eq_recr]
-    change ε₂[γ₁]⟦Expr.recr η s ls u ps₁ mot
-      (hstruct.projectionCases η ls ps₁ f mot) hstruct.indices maj₁⟧ = _
-    rw [Expr.denote, funext hmsDen, hindices]
-    exact (hrecr₂ s _ vps _ _ vis ε₂[γ₁]⟦maj₁⟧).trans hiota
+      exact congrArg (sortKey s.val) (congrArg encode (funext hstruct.no_indices.elim))
+    have hmajor : major = entryValue (tagOf s c) args := by
+      change ε₂[γ₁]⟦maj₁⟧ = _
+      rw [← hrebuild, ctorResult, propVal_of_ne_zero hlevel]
+    have happly : (model.codeOf s c).applyMinor model.toModel.level ∅ vps
+        [zf|$(minorFamily (RecSlots.args vps vms vmins vis major).cases) $(encode (tagOf s c))]
+        args = vfds f := by
+      have hminor : [zf|$(minorFamily (RecSlots.args vps vms vmins vis major).cases)
+          $(encode (tagOf s c))] =
+          (RecSlots.args vps vms vmins vis major).cases (Fin.encodeSigma ι.nctors ⟨s, c⟩) :=
+        app_minorFamily _ (Fin.encodeSigma ι.nctors ⟨s, c⟩)
+      rw [hminor]
+      dsimp only [RecSlots.args]
+      rw [Fin.decodeSigma_encodeSigma]
+      rw [model.applyMinor_ctorApplication s c vps vfds hstruct.recursive hstruct.no_recursive.elim,
+        Aczel.apps_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_recursive),
+        Aczel.apps_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_recursive), hcase]
+    have hiota := recGraph_iota_of_empty (model.mapsTo vps)
+      (motive := model.recrCaseMotive vps vms) (minors := minorFamily
+        (RecSlots.args vps vms vmins vis major).cases) hargs
+      (by
+        rw [happly, htarget, entry_eq, ← hmajor, recrCaseMotive,
+          fibre_bundleMotive_typed s vis hmajMem₁, hmotive]
+        exact htyped.1)
+    rw [happly, htarget, entry_eq, ← hmajor] at hiota
+    rw [hstruct.projTerm_eq_recr, Expr.denote, hrecr₂,
+      show (ε₂[γ₁]⟦hstruct.indices ·⟧) = vis from funext hstruct.no_indices.elim, recLeaf]
+    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
+      (model.recrState s (RecSlots.args vps vms vmins vis major))) = _
+    rw [recrState, recrMajorOf, propGet_of_ne_zero hlevel]
+    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
+      (pair (sortKey s.val (encode vis)) major)) = _
+    rw [show app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
+        (pair (sortKey s.val (encode vis)) major) = vfds f from hiota]
+    exact propVal_eq_self_of_mem htyped.2 htyped.1
 
 end
 
@@ -412,9 +317,9 @@ theorem etaStructRuleSound
       rw [ctorResult, hlevel, propVal_zero, hproof]
     have hfields (f) : ε₂[γ]⟦hstruct.projTerm η ls ps f maj⟧ =
         model.fieldsOf s c vps vis ε₂[γ]⟦maj⟧ f :=
-      model.projTerm_denotes_field hdecl hrule hE hB pre hatoms hsorts hctors hrecr hlevel
+      model.projTerm_denotes_field hdecl hrule hE hB pre hatoms hsorts hrecr hlevel
         hstruct vis f (model.paramsReachable pre hatoms hsorts hps)
-        (fun param => (hps param).mem) hmajMem
+        hmajMem
     simpa [hfields] using (model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
       hstruct.no_recursive vps vis _ hmajMem).2
   exact ⟨hrebuild, hrebuild.symm ▸ hmaj.mem⟩

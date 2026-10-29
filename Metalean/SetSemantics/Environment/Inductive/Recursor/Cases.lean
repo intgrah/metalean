@@ -34,76 +34,6 @@ variable {bound : Nat}
     ε₂ (.ctor η s c ls vps vfds vrecFds) = model.ctorResult s c vps vfds vrecFds)
   (l : Level 0)
 
-private theorem SemTele.piAt_lamAt
-    {a b : Nat} (tele : SemTele a b)
-    {domain : Dom b} (map leaf leaf' : DomAt b)
-    (h : ∀ final value, value ∈ domain final →
-      leaf final value = leaf' final (map final value))
-    (γ : Slots a) (fn : ZFSet) (hf : fn ∈ tele.pi domain γ) :
-    tele.piAt leaf γ fn =
-      tele.piAt leaf' γ (tele.lamAt map γ fn) := by
-  induction tele generalizing fn with
-  | nil => exact h γ fn hf
-  | snoc tele binder ih =>
-    apply ih
-    · intro current value hvalue
-      apply congrArg (Aczel.piMap (binder current))
-      apply ZFSet.map_congr
-      intro argument hargument
-      rw [Aczel.app_lam hargument]
-      have happ := Aczel.app_mem
-        (b := ZFSet.map (fun argument => domain (current.snoc argument))
-          (binder current)) hvalue hargument
-      rw [app_map hargument] at happ
-      exact h (current.snoc argument) [zf|value argument] happ
-    · exact hf
-
-private theorem StrongRecursiveFieldSource.ihType_eraseRecField
-    {nfields arity : Nat} {s : Fin ι.nsorts}
-    {Γ : Ctx ζ₁ 0 0 (ι.nparams + nfields)}
-    {base : StrongTeleModel E₁ ε₁ ![] Γ}
-    (recFd : RecField ζ₁ ι nfields arity s)
-    (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd)
-    (level : Nat) (vms : Fin ι.nsorts → ZFSet) (block : ZFSet)
-    (γ : Slots (ι.nparams + nfields)) (raw : ZFSet)
-    (hraw : raw ∈ recFieldSet
-      (StrongRecursiveFieldSource.code recFd source).tele
-      (StrongRecursiveFieldSource.code recFd source).index block γ) :
-    ihType (StrongRecursiveFieldSource.code recFd source).tele
-        (StrongRecursiveFieldSource.code recFd source).index
-        (bundleMotive level ι.nindices vms block) γ raw =
-      ihType (StrongRecursiveFieldSource.code recFd source).tele
-        (StrongRecursiveFieldSource.code recFd source).index
-        (bundleMotive level ι.nindices vms block) γ
-        (eraseRecField (StrongRecursiveFieldSource.code recFd source).tele
-          level γ raw) := by
-  let code := StrongRecursiveFieldSource.code recFd source
-  refine code.tele.piAt_lamAt
-    (domain := fun final => fibreOp block (code.index final))
-    (map := fun _ value => propVal level value)
-    (leaf := fun final value => fibreOp
-      (bundleMotive level ι.nindices vms block)
-      (pair (code.index final) value))
-    (leaf' := fun final value => fibreOp
-      (bundleMotive level ι.nindices vms block)
-      (pair (code.index final) value)) ?_ γ raw ?_
-  · intro final value hvalue
-    have hentry : pair (code.index final) value ∈ block := mem_fibre.mp hvalue
-    have htag : fst (fst (pair (code.index final) value)) =
-        numeral s.val := by
-      change fst (fst (pair
-        (pair (numeral s.val)
-          (encode (ε₁[final]⟦recFd.indices{ls} ·⟧)))
-        value)) = _
-      simp
-    have hright := fibre_bundleMotive_value (level := level)
-      (arities := ι.nindices) (vms := vms) s hentry htag
-    simp only [fst_pair, snd_pair] at hright
-    rw [fibre_bundleMotive (level := level) (arities := ι.nindices) (vms := vms) s hentry htag,
-      hright]
-    cases level <;> simp [motiveAt]
-  · exact hraw
-
 noncomputable def StrongInductiveModel.recrCaseDomain
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (γ : Slots (ι.nparams + ι.nsorts)) : ZFSet :=
@@ -157,9 +87,7 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
     Reachable.ofDoms_append hfields fun f => by
       simpa only [hfieldsBase] using eraseRecField_mem _ _ (hraw f)
   rw [hfieldsSlotsEq] at hrecFields
-  let fieldSlots := Fin.append (Fin.append (Fin.append vps vms) vfds) typed
   have hrec := model.recrCaseFieldsSem_reachable l s c vps vms vfds typed hms hrecFields
-  have hord := Reachable.base hrec
   have hihSlots : Fin.append (Fin.append (Fin.append (Fin.append vps vms) vfds) typed) ihs ∈
       Reachable
         (Reachable (Reachable (Reachable Set.univ model.paramsSem)
@@ -169,32 +97,23 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
       have hi := hihs f
       change ihs f ∈ ihType (fields f).2.tele (fields f).2.index
         (bundleMotive model.toModel.level ι.nindices vms (model.toModel.block vps)) γ₁ (raw f) at hi
-      dsimp only [fields, StrongCtorSource.recursiveCodes] at hi
-      rw [StrongRecursiveFieldSource.ihType_eraseRecField ((I.ctors s c).recursive f)
-        (source.recursive f) model.toModel.level vms (model.toModel.block vps) γ₁ (raw f) (hraw f)] at hi
+      rw [ihType_eraseRecField _ _ γ₁ (raw f) (hraw f)] at hi
       simpa [CaseSlots.ofValuation, CaseSlots.fieldValues, ← hfieldsSlotsEq,
         typed, fields, source, StrongCtorSource.recursiveCodes, recrCaseMotive] using hi
 
-  have hminor₁ : minor ∈ SemTele.pi
-      (SemTele.pi ((model.recrCaseIhSem s c).pi (model.recrCaseLeaf s c))
-        (model.recrCaseRecursiveSem s c)) (model.recrCaseOrdinarySem s c)
-      (Fin.append vps vms) := by
-    rw [StrongInductiveModel.recrCaseDomain, StrongInductiveModel.recrCaseTele,
-      StrongInductiveModel.recrCaseFieldsSem] at hminor
-    simpa [SemTele.pi, SemTele.fold, Tele.foldr_append] using hminor
-  have hordApp := Reachable.apps_mem_of_base hord (γ := Fin.append vps vms)
-    (by simp) hminor₁
-  have hrecApp := Reachable.apps_mem_of_base hrec (γ := Fin.append (Fin.append vps vms) vfds)
-    (by simp) (by simpa using hordApp)
-  have hleaf := Reachable.apps_mem_of_base hihSlots (γ := fieldSlots) (by simp [fieldSlots])
-    (by simpa using hrecApp)
-  simp only [Fin.append_right] at hleaf
+  have hleaf := Reachable.app_mem_of_base
+    (Δ := model.recrCaseTele s c) (Reachable.append hihSlots)
+    (γ := Fin.append vps vms) (fun v => by
+      change Fin.append (Fin.append (Fin.append (Fin.append vps vms) vfds) typed) ihs
+        (((v.castAdd _).castAdd _).castAdd _) = _
+      simp) hminor
+  simp [recrCaseTele, recrCaseFieldsSem, SemTele.app_append, SemTele.app_eq_apps] at hleaf
   have happlyMinor : (model.codeOf s c).applyMinor model.toModel.level
         graph vps minor vargs = [zf|minor vfds... typed... ihs...] := by
     rw [show model.codeOf s c = CtorCode.prependOrdinary fieldTele rest from rfl]
     unfold CtorCode.applyMinor
     rw [SemTele.applyFields_prependOrdinary, SemTele.applyIhs_prependOrdinary,
-      CtorCode.applyFields_prependRecursive, CtorCode.applyIhs_prependRecursive]
+      CtorCode.applyFields_prependRecursive, CtorCode.applyIhs_prependRecursive, SemTele.app_eq_apps]
   simp [recrCaseLeaf, CaseSlots.ofValuation, CaseSlots.fieldValues] at hleaf
   have hfieldsRaw : model.ordinaryOf s c vps vargs = γ₁ := rfl
   have hmaj : model.ctorResult s c vps vfds typed =

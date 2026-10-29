@@ -212,10 +212,10 @@ theorem realizes
     model.toModel.Interprets ε₂ ![] (I.map pre.sigs) η ls where
   level_eq := rfl
   params := by
-    simpa [paramsSem, Inductive.map] using model.tele.params.realizes_mapInst pre hatoms
+    simpa [paramsSem, Inductive.map] using model.tele.params.realizes.mapInst pre hatoms
   indicesRealizes s := by
     simpa [paramsSem, indicesSem, Inductive.map] using
-      (model.tele.indices s).realizes_mapInst pre hatoms
+      (model.tele.indices s).realizes.mapInst pre hatoms
   ctorRealizes s c vps hps := by
     let ctorModel := model.ctors s c
     let source := ctorModel.source
@@ -280,7 +280,8 @@ theorem ctorArgs_mem
   constructor
   · have htail : tail ∈ (model.recursiveRest s c).argSet
         (model.toModel.block vps) fieldSlots :=
-      CtorCode.packRecursive_mem hrecFields (CtorCode.proof_mem_argSet_target fieldSlots)
+      CtorCode.packRecursive_mem (fun f => recoverRecField_mem _ _ (hrecFields f))
+        (CtorCode.proof_mem_argSet_target fieldSlots)
     simpa [codeOf_eq] using SemTele.pack_mem hfields htail
   · unfold ordinaryOf
     rw [← hbase]
