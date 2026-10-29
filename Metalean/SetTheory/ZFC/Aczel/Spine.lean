@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetTheory.ZFC.Aczel
+public import Metalean.SetTheory.ZFC.Coding
 
 @[expose] public noncomputable section
 
@@ -32,5 +33,17 @@ theorem Aczel.apps_of_zero (hk : k = 0) (f : ZFSet) (args : Fin k → ZFSet) :
     apps f args = f := by
   subst hk
   rfl
+
+def Aczel.appTuple (f values : ZFSet) : Nat → ZFSet
+  | 0 => f
+  | k + 1 => app (appTuple f (fst values) k) (snd values)
+
+theorem Aczel.appTuple_encode (fn : ZFSet) (γ : Fin k → ZFSet) :
+    appTuple fn (encode γ) k = apps fn γ := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [appTuple, show encode γ = pair (encode (Fin.init γ)) (γ (Fin.last k)) from rfl,
+      fst_pair, snd_pair, ih, ← apps_snoc, Fin.snoc_init_self]
 
 end ZFSet

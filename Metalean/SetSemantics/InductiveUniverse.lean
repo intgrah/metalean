@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jeremy Chen
 -/
 module
+import Mathlib.Data.Fintype.Shrink
 
 public import Metalean.SetSemantics.InductiveBlock
 public import Metalean.SetTheory.ZFC.SmallSupport
@@ -27,9 +28,6 @@ theorem fibreOp_subset_type {block : ZFSet} (h : block ⊆ U_ level) (key : ZFSe
   have h' := snd_mem_type (h (mem_fibre.mp he))
   rwa [snd_pair] at h'
 
-abbrev SemTele.DomsIn (level : Nat) {a b : Nat} (Δ : SemTele a b) : Prop :=
-  Tele.Forall (fun _ domain => ∀ γ, domain γ ∈ U_ level) Δ
-
 inductive CtorCode.DomsIn (level : Nat) :
     {n : Nat} → CtorCode n → Prop
   | target {n : Nat} {index : Dom n} :
@@ -43,17 +41,6 @@ inductive CtorCode.DomsIn (level : Nat) :
     tele.DomsIn level →
     DomsIn level rest →
     DomsIn level (.recArg tele index rest)
-
-theorem SemTele.DomsIn.mono {level level' : Nat} (hle : level ≤ level')
-    {tele : SemTele a b} (h : tele.DomsIn level) : tele.DomsIn level' := by
-  induction h <;> constructor <;> solve_by_elim [type_mono]
-
-theorem SemTele.DomsIn.append {d : Nat} {base : SemTele a b}
-    {extension : SemTele b d} (hbase : base.DomsIn level) :
-    extension.DomsIn level →
-    SemTele.DomsIn level (base ++ extension)
-  | .nil => hbase
-  | .snoc htele hdomain => .snoc (append hbase htele) hdomain
 
 theorem CtorCode.DomsIn.mono {level level' : Nat} (hle : level ≤ level')
     {n : Nat} {code : CtorCode n} :
@@ -79,36 +66,6 @@ theorem CtorCode.DomsIn.prependRecursive {n count : Nat}
   | zero => exact hrest
   | succ count ih =>
     exact .recArg (hfields 0) (ih fun f => hfields f.succ)
-
-theorem SemTele.pi_mem_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
-    {cod : Dom b} (hcod : ∀ γ : Slots b, cod γ ∈ U_ level) (γ : Slots a) :
-    Δ.pi cod γ ∈ U_ level := by
-  induction hdoms with
-  | nil => exact hcod γ
-  | snoc _ hdomain ih =>
-    refine ih fun s => ?_
-    refine piMap_mem_type (hdomain s) fun d hd => ?_
-    rw [app_map hd]
-    exact hcod _
-
-theorem SemTele.support_mem_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
-    {leaf : Dom b} (hleaf : ∀ γ : Slots b, leaf γ ∈ U_ level)
-    (γ : Slots a) : Δ.support leaf γ ∈ U_ level := by
-  induction hdoms with
-  | nil => exact hleaf γ
-  | snoc _ hdomain ih => exact ih fun current => by grind only [zfBounds]
-
-theorem SemTele.pi_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
-    {cod : Dom b} (hcod : ∀ γ : Slots b, cod γ ⊆ U_ level) (γ : Slots a) :
-    Δ.pi cod γ ⊆ U_ level := by
-  induction hdoms with
-  | nil => exact hcod γ
-  | snoc _ hdomain ih =>
-    refine ih fun s f hf => ?_
-    refine type_mem_of_mem_piMap (hdomain s) hf fun d hd => ?_
-    have hv := Aczel.app_mem hf hd
-    rw [app_map hd] at hv
-    exact hcod _ hv
 
 theorem recFieldSet_subset_type {Δ : SemTele n b} (hdoms : Δ.DomsIn level)
     {index : Dom b} {block : ZFSet} (hblock : ∀ key, fibreOp block key ⊆ U_ level)
@@ -160,7 +117,7 @@ theorem support_mem_blockSupport (codes : (s : Fin m) → Fin (nctors s) → Cto
 
 theorem blockSupport_mem_type (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
     (hdoms : CodesDomsIn level codes) (γ : Slots n) : blockSupport codes γ ∈ U_ level :=
-  sUnion_mem_type (range_mem_type fun s => range_mem_type fun c =>
+  sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun s => range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun c =>
     CtorCode.support_mem_type (hdoms s c) γ)
 
 theorem image_snd_indOp_mem_type (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
@@ -174,7 +131,7 @@ theorem image_snd_indOp_mem_type (codes : (s : Fin m) → Fin (nctors s) → Cto
       pair_mem_type (numeral_mem_type level _) (mem_type_of_mem hargs hvargs)
   refine mem_type_of_subset
     (y := tagGraph (fun code => code.argSet block γ) (fun _ tag => entryValue tag) codes)
-    (sUnion_mem_type (range_mem_type fun s => sUnion_mem_type (range_mem_type (hvalues s))))
+    (sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun s => sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) (hvalues s))))
     fun value hvalue => ?_
   have ⟨entry', hentry, heq⟩ := mem_image.mp hvalue
   have ⟨s, c, vargs, hargs, hentry'⟩ := mem_indOp.mp hentry

@@ -150,52 +150,54 @@ theorem recGraph_congr_key
     rw [← indSet_unfold hmaps] at hentry
     have ⟨s₁, c₁, args, hargs, heq⟩ := mem_indOp.mp hentry
     exact ⟨s₁, c₁, args, hargs, heq.symm⟩
-  refine accSet_induction (p := fun key => ∀ left ∈ block, fst left = key →
-      ∀ right ∈ block, fst right = key → app graph left = app graph right)
-    (fun key hkey ih left hleft hleftKey right hright hrightKey => ?_)
-    (fst left) (model.large_key_accessible hdecl hrule hE hB hsubsingleton vps hps left hleft)
-    left hleft rfl right hright hkeys.symm
-  have ⟨s₁, c₁, leftArgs, hleftArgs, hleftEntry⟩ := hdecompose hleft
-  have ⟨s₂, c₂, rightArgs, hrightArgs, hrightEntry⟩ := hdecompose hright
-  have hleftTarget : (model.codeOf s₁ c₁).targetIndex vps leftArgs = key := by
-    rwa [hleftEntry, entry_eq, fst_pair] at hleftKey
-  have hrightTarget : (model.codeOf s₂ c₂).targetIndex vps rightArgs = key := by
-    rwa [hrightEntry, entry_eq, fst_pair] at hrightKey
-  have hleftIota : app graph left = (model.codeOf s₁ c₁).applyMinor model.toModel.level vps
-      [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s₁ c₁))]
-      ((model.codeOf s₁ c₁).argMap graph vps leftArgs) :=
-    hleftEntry ▸ recGraph_iota hmaps hstep hleftArgs
-  have hrightIota : app graph right = (model.codeOf s₂ c₂).applyMinor model.toModel.level vps
-      [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s₂ c₂))]
-      ((model.codeOf s₂ c₂).argMap graph vps rightArgs) :=
-    hrightEntry ▸ recGraph_iota hmaps hstep hrightArgs
-  cases model.large_target_separates hsubsingleton vps (hleftTarget.trans hrightTarget.symm)
-  have hagree := model.large_argAgree hdecl hrule hE hB
-    (hsubsingleton.eligible s₁ c₁)
-    vps hps block (fun _ h => h) hleftArgs hrightArgs
-    (hleftTarget.trans hrightTarget.symm)
-  have hmap {vargs : ZFSet}
-      (hargs : vargs ∈ (model.codeOf s₁ c₁).argSet block vps)
-      (htarget : (model.codeOf s₁ c₁).targetIndex vps vargs = key) :
-      (model.codeOf s₁ c₁).argMap lift vps vargs =
-        (model.codeOf s₁ c₁).argMap graph vps vargs :=
-    (model.codeOf s₁ c₁).argMap_congr_of_predecessors vps vargs hargs
-      fun predecessor hpredecessor => by
-        have hblock := (model.codeOf s₁ c₁).predecessors_mem_block vps vargs hargs
-          predecessor hpredecessor
-        have hrelation := model.mem_largeAccessRel_of_predecessor vps hargs htarget
-          predecessor hpredecessor
-        rw [model.app_liftLargeAccessGraph vps hblock]
-        exact ih (fst predecessor) (accSet_inv hkey _ (mem_image.mpr ⟨predecessor, hblock, rfl⟩)
-          hrelation) hrelation _ (model.largeAccessEntry_mem vps hblock)
-          (model.fst_largeAccessEntry vps _) predecessor hblock rfl
-  rw [hleftIota, hrightIota, ← hmap hleftArgs hleftTarget, ← hmap hrightArgs hrightTarget,
-    hlevel]
-  exact CtorCode.applyMinor_zero_argMap_congr_of_argAgree _ block lift
-    (fun key leftValue rightValue hleftValue hrightValue => by
-      rw [model.app_liftLargeAccessGraph vps hleftValue,
-        model.app_liftLargeAccessGraph vps hrightValue, fst_pair, fst_pair])
-    vps _ hleftArgs hrightArgs hagree
+  have hacc := (mem_sep.mp
+    (model.large_key_accessible hdecl hrule hE hB hsubsingleton vps hps left hleft)).2
+  generalize hleftKey : fst left = key at hacc
+  have hrightKey : fst right = key := hkeys.symm.trans hleftKey
+  clear hkeys
+  induction hacc generalizing left right with
+  | intro key h ih =>
+    have ⟨s₁, c₁, leftArgs, hleftArgs, hleftEntry⟩ := hdecompose hleft
+    have ⟨s₂, c₂, rightArgs, hrightArgs, hrightEntry⟩ := hdecompose hright
+    have hleftTarget : (model.codeOf s₁ c₁).targetIndex vps leftArgs = key := by
+      rwa [hleftEntry, entry_eq, fst_pair] at hleftKey
+    have hrightTarget : (model.codeOf s₂ c₂).targetIndex vps rightArgs = key := by
+      rwa [hrightEntry, entry_eq, fst_pair] at hrightKey
+    have hleftIota : app graph left = (model.codeOf s₁ c₁).applyMinor model.toModel.level vps
+        [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s₁ c₁))]
+        ((model.codeOf s₁ c₁).argMap graph vps leftArgs) :=
+      hleftEntry ▸ recGraph_iota hmaps hstep hleftArgs
+    have hrightIota : app graph right = (model.codeOf s₂ c₂).applyMinor model.toModel.level vps
+        [zf|$(minorFamily (RecSlots.casesOf γ)) $(encode (tagOf s₂ c₂))]
+        ((model.codeOf s₂ c₂).argMap graph vps rightArgs) :=
+      hrightEntry ▸ recGraph_iota hmaps hstep hrightArgs
+    cases model.large_target_separates hsubsingleton vps (hleftTarget.trans hrightTarget.symm)
+    have hagree := model.large_argAgree hdecl hrule hE hB
+      (hsubsingleton.eligible s₁ c₁)
+      vps hps block (fun _ h => h) hleftArgs hrightArgs
+      (hleftTarget.trans hrightTarget.symm)
+    have hmap {vargs : ZFSet}
+        (hargs : vargs ∈ (model.codeOf s₁ c₁).argSet block vps)
+        (htarget : (model.codeOf s₁ c₁).targetIndex vps vargs = key) :
+        (model.codeOf s₁ c₁).argMap lift vps vargs =
+          (model.codeOf s₁ c₁).argMap graph vps vargs :=
+      (model.codeOf s₁ c₁).argMap_congr_of_predecessors vps vargs hargs
+        fun predecessor hpredecessor => by
+          have hblock := (model.codeOf s₁ c₁).predecessors_mem_block vps vargs hargs
+            predecessor hpredecessor
+          have hrelation := model.mem_largeAccessRel_of_predecessor vps hargs htarget
+            predecessor hpredecessor
+          rw [model.app_liftLargeAccessGraph vps hblock]
+          exact ih (fst predecessor) ⟨mem_image.mpr ⟨predecessor, hblock, rfl⟩, hrelation⟩
+            (left := model.largeAccessEntry vps (fst predecessor)) (right := predecessor)
+            (model.largeAccessEntry_mem vps hblock) hblock (model.fst_largeAccessEntry vps _) rfl
+    rw [hleftIota, hrightIota, ← hmap hleftArgs hleftTarget, ← hmap hrightArgs hrightTarget,
+      hlevel]
+    exact CtorCode.applyMinor_zero_argMap_congr_of_argAgree _ block lift
+      (fun key leftValue rightValue hleftValue hrightValue => by
+        rw [model.app_liftLargeAccessGraph vps hleftValue,
+          model.app_liftLargeAccessGraph vps hrightValue, fst_pair, fst_pair])
+      vps _ hleftArgs hrightArgs hagree
 
 noncomputable def recLeaf (s : Fin ι.nsorts) (l : Level 0) :
     Dom (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1) :=
@@ -211,7 +213,7 @@ theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
     model.recLeaf s l γ ∈ ε₂[γ]⟦ι.recrBody s⟧ := by
   rw [model.recrBody_denotes s l γ hγ]
   have hmaps := model.mapsTo (RecSlots.paramsOf γ)
-  refine propVal_mem_propSet (recGraph_app_mem hmaps ?_)
+  refine propVal_mem_propSet ((recGraph_isApprox hmaps).app_mem ?_)
   rw [dom_recGraph hmaps (model.recrStepSound s l γ hγ)]
   exact model.recrState_mem s l γ hγ
 
@@ -254,7 +256,7 @@ theorem recLeaf_iota
         (pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs)) ∈
         fibreOp (model.recrCaseMotive (RecSlots.paramsOf γ) (RecSlots.motivesOf γ))
           (pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs)) :=
-      recGraph_app_mem hmaps (by rwa [dom_recGraph hmaps hstep])
+      (recGraph_isApprox hmaps).app_mem (by rwa [dom_recGraph hmaps hstep])
     have hcoherent :
         fibreOp (model.recrCaseMotive (RecSlots.paramsOf γ) (RecSlots.motivesOf γ))
           (pair (sortKey s.val (RecSlots.indicesOfSlots γ)) (entryValue (tagOf s c) vargs)) =
@@ -296,7 +298,7 @@ theorem recLeaf_eq_recGraph_app
         fibreOp (model.recrCaseMotive (RecSlots.paramsOf child) (RecSlots.motivesOf child))
           (model.recrState s₁ child) := by
       rw [hparams, hmotives, hstate]
-      exact recGraph_app_mem hmaps
+      exact (recGraph_isApprox hmaps).app_mem
         (by rwa [dom_recGraph hmaps (model.recrStepSound s l outer houter)])
     rw [model.recLeaf_eq_proof s₁ l hresult]
     exact (model.eq_proof_of_mem_fibre_motive s₁ l child hchild hresult hmem).symm

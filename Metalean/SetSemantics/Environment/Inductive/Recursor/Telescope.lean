@@ -176,7 +176,7 @@ theorem recrMotiveResult_mem_sort :
       (by simpa [final] using hmaj)
   have hsuffix : (fun f : Fin (ι.nindices s + 1) => final (Fin.natAdd ι.nparams f)) =
       Fin.snoc (RecSlots.indexValuesOf γ) (RecSlots.majorOfSlots γ) := by
-    simpa using Slots.natAdd_snoc (Fin.append (RecSlots.paramsOf γ) (RecSlots.indexValuesOf γ))
+    simpa [Function.comp_def] using Fin.snoc_comp_natAdd (Fin.append (RecSlots.paramsOf γ) (RecSlots.indexValuesOf γ))
       (RecSlots.majorOfSlots γ)
   have hmotive : RecSlots.motivesOf γ s ∈ model.recrMotiveValue s l (RecSlots.paramsOf γ) :=
     Reachable.ofDoms_mem (Reachable.of_append (Reachable.base (Reachable.of_append hprefix))) s

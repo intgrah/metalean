@@ -15,6 +15,11 @@ universe u v
 
 namespace Fin
 
+theorem comp_natAdd_eq_snoc {α : Sort*} {m n : Nat} (f : Fin (m + n + 1) → α) :
+    (fun i : Fin (n + 1) => f (natAdd m i)) =
+      snoc (fun i : Fin n => init f (natAdd m i)) (f (last (m + n))) := by
+  simpa [Function.comp_def] using snoc_comp_natAdd (init f) (f (last (m + n)))
+
 theorem emptyFun {α : Sort u} (f g : Fin 0 → α) : f = g :=
   funext nofun
 

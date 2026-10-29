@@ -89,7 +89,7 @@ theorem quotSoundValue_mem {ε : Atom ζ 0 → ZFSet.{u}}
   rw [app_map ha] at hra
   have hrab := Aczel.app_mem hra hb
   rw [app_map hb] at hrab
-  rw [quotientMk_eq_of_rel hα ha hb (eq_verum_of_mem hrab hwitness)]
+  rw [quotientMk_eq_of_rel ha hb (eq_verum_of_mem hrab hwitness)]
   exact heq.refl (quotientCarrier_mem_sort hα) (quotientMk_mem hb)
 
 theorem quotSound_valid (m : Env.Model.{u} E) (heq : (E.get ηeq).block = Eq.block)

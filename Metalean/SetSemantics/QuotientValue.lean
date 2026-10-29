@@ -6,6 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetTheory.ZFC.Quotient
+public import Metalean.SetTheory.ZFC.Aczel
+public import Metalean.Meta.ZF
 public import Metalean.SetTheory.ZFC.Universe.Sort
 import Metalean.SetTheory.ZFC.Erasure
 
@@ -49,36 +51,33 @@ theorem quotientCompat_respects {n : Nat} {equality : ZFSet → ZFSet → ZFSet 
   rw [app_map (hr ▸ proof_mem_verum)] at hhrel
   exact hseparates β hb _ hfx _ hfy _ hhrel
 
-noncomputable abbrev quotientClass (n : Nat) (α r a : ZFSet) : ZFSet :=
-  equivClosure α (U_ (n - 1)) r a
+noncomputable abbrev quotientClass (α r a : ZFSet) : ZFSet :=
+  equivClosure α (fun x y => [zf|r x y] = verum) a
 
-noncomputable abbrev quotientClasses (n : Nat) (α r : ZFSet) : ZFSet := quotient α (U_ (n - 1)) r
+noncomputable abbrev quotientClasses (α r : ZFSet) : ZFSet := quotient α (fun x y => [zf|r x y] = verum)
 
 noncomputable def quotientCarrier (n : Nat) (α r : ZFSet) : ZFSet :=
-  propSet n (quotientClasses n α r)
+  propSet n (quotientClasses α r)
 
 noncomputable def quotientMk (n : Nat) (α r a : ZFSet) : ZFSet :=
-  propVal n (quotientClass n α r a)
+  propVal n (quotientClass α r a)
 
 private theorem mem_type_pred {n : Nat} {α : ZFSet} (ha : α ∈ S_ n) : α ∈ U_ (n - 1) := by
   cases n with
   | zero => exact mem_type_of_mem_sort (by decide) ha
   | succ _ => exact ha
 
-private theorem subset_type_pred {n : Nat} {α : ZFSet} (ha : α ∈ S_ n) : α ⊆ U_ (n - 1) :=
-  fun _ hx => mem_type_of_mem (mem_type_pred ha) hx
-
-theorem quotientClass_eq_of_rel {n : Nat} {α r a₁ a₂ : ZFSet}
-    (ha : α ∈ S_ n) (hx : a₁ ∈ α) (hy : a₂ ∈ α)
+theorem quotientClass_eq_of_rel {α r a₁ a₂ : ZFSet}
+    (hx : a₁ ∈ α) (hy : a₂ ∈ α)
     (hr : [zf|r a₁ a₂] = verum) :
-    quotientClass n α r a₁ = quotientClass n α r a₂ :=
-  equivClosure_eq_of_rel (subset_type_pred ha) hx hy hr
+    quotientClass α r a₁ = quotientClass α r a₂ :=
+  equivClosure_eq_of_rel hx hy hr
 
 theorem quotientMk_eq_of_rel {n : Nat} {α r a₁ a₂ : ZFSet}
-    (ha : α ∈ S_ n) (hx : a₁ ∈ α) (hy : a₂ ∈ α)
+    (hx : a₁ ∈ α) (hy : a₂ ∈ α)
     (hr : [zf|r a₁ a₂] = verum) :
     quotientMk n α r a₁ = quotientMk n α r a₂ := by
-  simp [quotientMk, quotientClass_eq_of_rel ha hx hy hr]
+  simp [quotientMk, quotientClass_eq_of_rel hx hy hr]
 
 theorem quotientMk_mem {n : Nat} {α r a : ZFSet} (hx : a ∈ α) :
     quotientMk n α r a ∈ quotientCarrier n α r :=
@@ -91,12 +90,12 @@ theorem quotientCarrier_mem_sort {n : Nat} {α r : ZFSet} (ha : α ∈ S_ n) :
   | succ k =>
     exact image_mem_type (mem_type_pred ha) fun _ hx =>
       mem_type_of_mem (powerset_mem_type (mem_type_pred ha))
-        (ZFSet.mem_powerset.mpr (equivClosure_subset (subset_type_pred ha) hx))
+        (ZFSet.mem_powerset.mpr equivClosure_subset)
 
 theorem quotientCarrier_zero {α r : ZFSet} (ha : α ∈ S_ 0) : quotientCarrier 0 α r = α := by
   rw [quotientCarrier]
   rcases mem_truth.mp ha with rfl | rfl
-  · simp [show quotientClasses 0 falsum r = falsum from
+  · simp [show quotientClasses falsum r = falsum from
       (ZFSet.eq_empty _).mpr fun _ h => by
         simpa using (mem_quotient.mp h).choose_spec.1]
   · exact squash_eq_verum
@@ -119,7 +118,7 @@ theorem quotientCarrier_representation {n : Nat} {α r c : ZFSet}
     exact ⟨a, hx, by simpa [quotientMk, quotientClass] using hc⟩
 
 noncomputable def quotientLift (n : Nat) (fn c : ZFSet) : ZFSet :=
-  if n = 0 then [zf|fn c] else ZFSet.quotientLift fn c
+  if n = 0 then [zf|fn c] else ZFSet.quotientLift (fun x => [zf|fn x]) c
 
 theorem quotientLift_mk {n : Nat} {α r fn a : ZFSet} (ha : α ∈ S_ n)
     (hcompat : ∀ a₁ ∈ α, ∀ a₂ ∈ α, [zf|r a₁ a₂] = verum → [zf|fn a₁] = [zf|fn a₂])
@@ -128,7 +127,7 @@ theorem quotientLift_mk {n : Nat} {α r fn a : ZFSet} (ha : α ∈ S_ n)
   cases n with
   | zero => simp [quotientLift, quotientMk_zero ha hx]
   | succ k =>
-    exact quotientLift_equivClosure (subset_type_pred ha) hx hcompat
+    exact quotientLift_equivClosure hx hcompat
 
 theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
     (ha : α ∈ S_ n) (hf : fn ∈ quotientArrow α β)
@@ -144,7 +143,7 @@ theorem quotientLift_mem {n : Nat} {α r β fn c : ZFSet}
     rw [quotientCarrier] at hc
     rw [quotientLift]
     have ⟨a, hx, hc⟩ := mem_quotient.mp hc
-    rw [hc, quotientLift_equivClosure (subset_type_pred ha) hx hcompat]
+    rw [hc, quotientLift_equivClosure hx hcompat]
     have h := Aczel.app_mem hf hx
     rwa [app_map hx] at h
 

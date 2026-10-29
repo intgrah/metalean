@@ -10,6 +10,8 @@ public import Metalean.SetTheory.ZFC.Truth
 
 @[expose] public noncomputable section
 
+universe u
+
 namespace ZFSet
 
 attribute [local instance 2000] Classical.allZFSetDefinable
@@ -115,6 +117,35 @@ theorem pi_truth_id_eq_falsum : pi truth (fun x => x) = falsum :=
     have hmem := app_mem_of_mem_pi hf falsum_mem_truth
     rw [app_map falsum_mem_truth] at hmem
     exact notMem_empty _ hmem
+
+def indexedLam {ι : Type*} [Small.{u} ι] (key value : ι → ZFSet.{u}) : ZFSet.{u} :=
+  ⋃ i, image (pair (key i)) (value i)
+
+theorem app_indexedLam {ι : Type*} [Small.{u} ι] {key value : ι → ZFSet.{u}}
+    (hkey : Function.Injective key) (i : ι) :
+    app (indexedLam key value) (key i) = value i := by
+  ext z
+  rw [mem_app]
+  constructor
+  · rintro ⟨p, hp, hfst, rfl⟩
+    obtain ⟨j, hj⟩ := mem_iUnion.mp hp
+    obtain ⟨v, hv, rfl⟩ := mem_image.mp hj
+    rw [fst_pair] at hfst
+    cases hkey hfst
+    simpa using hv
+  · intro hz
+    exact ⟨pair (key i) z, mem_iUnion.mpr ⟨i, mem_image.mpr ⟨z, hz, rfl⟩⟩,
+      by simp, by simp⟩
+
+theorem app_indexedLam_eq_empty {ι : Type*} [Small.{u} ι]
+    {key value : ι → ZFSet.{u}} {x : ZFSet.{u}} (hx : ∀ i, key i ≠ x) :
+    app (indexedLam key value) x = ∅ := by
+  apply (eq_empty _).mpr
+  intro z hz
+  have ⟨p, hp, hfst, _⟩ := mem_app.mp hz
+  have ⟨i, hi⟩ := mem_iUnion.mp hp
+  obtain ⟨y, hy, rfl⟩ := mem_image.mp hi
+  exact hx i (by simpa using hfst)
 
 end Aczel
 

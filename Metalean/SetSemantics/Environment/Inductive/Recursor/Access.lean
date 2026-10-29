@@ -191,9 +191,9 @@ theorem large_key_accessible
     (vps : Slots ι.nparams)
     (hps : vps ∈ Reachable Set.univ model.paramsSem)
     (entry : ZFSet) (hentry : entry ∈ model.toModel.block vps) :
-    fst entry ∈ accSet (model.largeAccessDom vps) (model.largeAccessRel vps) := by
+    fst entry ∈ accSet (model.largeAccessDom vps) (fun b a => pair b a ∈ model.largeAccessRel vps) := by
   let block := model.toModel.block vps
-  let accessible := accSet (model.largeAccessDom vps) (model.largeAccessRel vps)
+  let accessible := accSet (model.largeAccessDom vps) (fun b a => pair b a ∈ model.largeAccessRel vps)
   let approximation := block.sep fun entry => fst entry ∈ accessible
   have happroximation : approximation ⊆ block := fun _ hentry =>
     (mem_sep.mp hentry).1

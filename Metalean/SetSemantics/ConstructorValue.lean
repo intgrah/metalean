@@ -109,7 +109,8 @@ theorem applyFields_prependOrdinary {level count : Nat}
       [zf|fn $(fun f : Fin (count + 1) =>
         Slots.snoc (values γ vargs Δ) (fst (SemTele.tail vargs Δ)) (Fin.natAdd n f))...]
       (snd (SemTele.tail vargs Δ))
-    rw [Slots.natAdd_snoc, Aczel.apps_snoc]
+    simp only [← Function.comp_def]
+    rw [Fin.snoc_comp_natAdd, Aczel.apps_snoc]
     rfl
 
 theorem applyIhs_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b)

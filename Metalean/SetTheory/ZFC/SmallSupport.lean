@@ -6,8 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetTheory.ZFC.Accessibility
+public import Metalean.SetTheory.ZFC.FixedPoint
 public import Metalean.SetTheory.ZFC.Universe.Type
-import Metalean.SetTheory.ZFC.Family
 
 public section
 
@@ -101,7 +101,7 @@ noncomputable def ordChildSet (T t : ZFSet) : ZFSet := image (ordSub T t) (ordCh
 def ordRel (T : ZFSet) : ZFSet :=
   (prod (ordTree T) (ordTree T)).sep fun z => fst z ∈ ordChildSet T (snd z)
 
-def ordSet (T : ZFSet) : ZFSet := accSet (ordTree T) (ordRel T)
+def ordSet (T : ZFSet) : ZFSet := accSet (ordTree T) (fun b a => pair b a ∈ ordRel T)
 
 theorem mem_ordTree : t ∈ ordTree T ↔ t ⊆ ordPath T ∧ ∅ ∈ t := by
   simp [ordTree]
@@ -184,25 +184,25 @@ noncomputable def stageStep (Φ : ZFSet → ZFSet) (α r γ a : ZFSet) : ZFSet :
   ⋃₀ image (stageBody Φ γ) (stagePred α r a)
 
 def stageOp (Φ : ZFSet → ZFSet) (α r β γ : ZFSet) : ZFSet :=
-  (prod (accSet α r) β).sep fun p => snd p ∈ stageStep Φ α r γ (fst p)
+  (prod (accSet α (fun b a => pair b a ∈ r)) β).sep fun p => snd p ∈ stageStep Φ α r γ (fst p)
 
-def stageSet (Φ : ZFSet → ZFSet) (α r β : ZFSet) : ZFSet :=
-  lfp (prod (accSet α r) β) (stageOp Φ α r β)
+noncomputable def stageSet (Φ : ZFSet → ZFSet) (α r β : ZFSet) : ZFSet :=
+  lfp (prod (accSet α (fun b a => pair b a ∈ r)) β) (stageOp Φ α r β)
 
 noncomputable def stageUnion (Φ : ZFSet → ZFSet) (α r β : ZFSet) : ZFSet :=
-  ⋃₀ image (stageBody Φ (stageSet Φ α r β)) (accSet α r)
+  ⋃₀ image (stageBody Φ (stageSet Φ α r β)) (accSet α (fun b a => pair b a ∈ r))
 
 theorem mem_stageStep :
     z ∈ stageStep Φ α r γ a ↔ ∃ b ∈ stagePred α r a, z ∈ stageBody Φ γ b :=
   mem_sUnion_image
 
 theorem mem_stageUnion :
-    z ∈ stageUnion Φ α r β ↔ ∃ a ∈ accSet α r, z ∈ stageBody Φ (stageSet Φ α r β) a :=
+    z ∈ stageUnion Φ α r β ↔ ∃ a ∈ accSet α (fun b a => pair b a ∈ r), z ∈ stageBody Φ (stageSet Φ α r β) a :=
   mem_sUnion_image
 
 theorem stageOp_mapsTo (α r β : ZFSet) :
-    Set.MapsTo (stageOp Φ α r β) (Set.Iic (prod (accSet α r) β))
-      (Set.Iic (prod (accSet α r) β)) :=
+    Set.MapsTo (stageOp Φ α r β) (Set.Iic (prod (accSet α (fun b a => pair b a ∈ r)) β))
+      (Set.Iic (prod (accSet α (fun b a => pair b a ∈ r)) β)) :=
   fun _ _ _ hz => (mem_sep.mp hz).1
 
 variable (hmono : Monotone Φ) (hUΦ : ∀ X, X ∈ U_ n → Φ X ∈ U_ n) (hα : α ∈ U_ n)
@@ -221,11 +221,11 @@ theorem stageStep_mono (h : γ ⊆ β) :
   mem_stageStep.mpr ⟨b, hb, stageBody_mono hmono h b hzb⟩
 
 theorem monotoneOn_stageOp (α r β : ZFSet) :
-    MonotoneOn (stageOp Φ α r β) (Set.Iic (prod (accSet α r) β)) :=
+    MonotoneOn (stageOp Φ α r β) (Set.Iic (prod (accSet α (fun b a => pair b a ∈ r)) β)) :=
   fun _ _ _ _ hγ _ hz => mem_sep.mpr ⟨(mem_sep.mp hz).1,
     stageStep_mono hmono hγ (mem_sep.mp hz).2⟩
 
-theorem stage_intro (ha : a ∈ accSet α r) (hz : z ∈ β)
+theorem stage_intro (ha : a ∈ accSet α (fun b a => pair b a ∈ r)) (hz : z ∈ β)
     (hstep : z ∈ stageStep Φ α r (stageSet Φ α r β) a) :
     z ∈ fibreOp (stageSet Φ α r β) a := by
   refine mem_fibre.mpr (lfp_closed (stageOp_mapsTo α r β) (monotoneOn_stageOp hmono α r β)
@@ -244,17 +244,21 @@ theorem stage_elim (hz : z ∈ fibreOp (stageSet Φ α r β) a) :
 include hUΦ hα
 
 theorem stage_mem_type :
-    ∀ a ∈ accSet α r, fibreOp (stageSet Φ α r (U_ n)) a ∈ U_ n := by
-  refine accSet_induction fun a ha ih => ?_
-  have hstepU : stageStep Φ α r (stageSet Φ α r (U_ n)) a ∈ U_ n := by
-    refine sUnion_mem_type (image_mem_type
-      (mem_type_of_subset hα fun b hb => (mem_sep.mp hb).1) fun b hb => ?_)
-    have hb' := mem_sep.mp hb
-    have hfib := ih b (accSet_inv ha b hb'.1 hb'.2) hb'.2
-    exact union_mem_type hfib (hUΦ _ hfib)
-  exact mem_type_of_subset hstepU fun z hz => stage_elim hmono hz
+    ∀ a ∈ accSet α (fun b a => pair b a ∈ r), fibreOp (stageSet Φ α r (U_ n)) a ∈ U_ n := by
+  intro a ha
+  have hacc := (mem_sep.mp ha).2
+  clear ha
+  induction hacc with
+  | intro a h ih =>
+    have hstepU : stageStep Φ α r (stageSet Φ α r (U_ n)) a ∈ U_ n := by
+      refine sUnion_mem_type (image_mem_type
+        (mem_type_of_subset hα fun b hb => (mem_sep.mp hb).1) fun b hb => ?_)
+      have hb' := mem_sep.mp hb
+      have hfib := ih b ⟨hb'.1, hb'.2⟩
+      exact union_mem_type hfib (hUΦ _ hfib)
+    exact mem_type_of_subset hstepU fun z hz => stage_elim hmono hz
 
-theorem stage_mono (hb : b ∈ accSet α r) (ha : a ∈ accSet α r) (hr : pair b a ∈ r) :
+theorem stage_mono (hb : b ∈ accSet α (fun b a => pair b a ∈ r)) (ha : a ∈ accSet α (fun b a => pair b a ∈ r)) (hr : pair b a ∈ r) :
     stageBody Φ (stageSet Φ α r (U_ n)) b ⊆ fibreOp (stageSet Φ α r (U_ n)) a := by
   intro z hz
   have hfb := stage_mem_type hmono hUΦ hα b hb
@@ -274,7 +278,7 @@ omit hmono hUΦ hα
 
 def stageIdxSet (Φ : ZFSet → ZFSet) (α r β X₀ : ZFSet) (g : ZFSet → ZFSet)
     (j : ZFSet) : ZFSet :=
-  (accSet α r).sep fun a => ∀ w ∈ X₀, w = g j → w ∈ stageBody Φ (stageSet Φ α r β) a
+  (accSet α (fun b a => pair b a ∈ r)).sep fun a => ∀ w ∈ X₀, w = g j → w ∈ stageBody Φ (stageSet Φ α r β) a
 
 include hmono hUΦ in
 theorem exists_stage_of_smallOver (hT : ordTree (⋃₀ Λ) ∈ U_ n)
@@ -285,8 +289,8 @@ theorem exists_stage_of_smallOver (hT : ordTree (⋃₀ Λ) ∈ U_ n)
   have ⟨i, hiΛ, g, hX₀g⟩ := hsm
   have hiT : i ⊆ ⋃₀ Λ := fun w hw => mem_sUnion.mpr ⟨i, hiΛ, hw⟩
   have hne : ∀ d, d ∈ i →
-      ∃ w, w ∈ app (fn i (stageIdxSet Φ (ordTree (⋃₀ Λ))
-        (ordRel (⋃₀ Λ)) (U_ n) X₀ g)) d := by
+      ∃ w, w ∈ app (map (stageIdxSet Φ (ordTree (⋃₀ Λ))
+        (ordRel (⋃₀ Λ)) (U_ n) X₀ g) i) d := by
     intro j hj
     rw [app_map hj]
     by_cases hgj : g j ∈ X₀

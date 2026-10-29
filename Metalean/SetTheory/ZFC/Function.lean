@@ -68,6 +68,23 @@ theorem isFunc_dom_image_snd
     subst a₂
     exact ⟨b₁, hc, fun b₂ hb₂ => huniq a₁ b₂ b₁ hb₂ hc⟩
 
+theorem isFunc_range_pair {ι : Type*} [Small.{u} ι] (key value : ι → ZFSet.{u})
+    (hkey : Function.Injective key) :
+    IsFunc (dom (range fun i => pair (key i) (value i)))
+      (image snd (range fun i => pair (key i) (value i)))
+      (range fun i => pair (key i) (value i)) := by
+  refine isFunc_dom_image_snd ?_ ?_
+  · intro p hp
+    obtain ⟨i, rfl⟩ := mem_range.mp hp
+    exact ⟨key i, value i, rfl⟩
+  · intro x y₁ y₂ h₁ h₂
+    have ⟨i, hi⟩ := mem_range.mp h₁
+    have ⟨j, hj⟩ := mem_range.mp h₂
+    have hi := pair_inj.mp hi
+    have hj := pair_inj.mp hj
+    cases hkey (hi.1.trans hj.1.symm)
+    exact hi.2.symm.trans hj.2
+
 def fibreOp (α a : ZFSet) : ZFSet :=
   (⋃₀ ⋃₀ α).sep fun b => pair a b ∈ α
 
@@ -172,11 +189,103 @@ theorem sigma_mono {α₁ α₂ β₁ β₂ : ZFSet} (hα : α₁ ⊆ α₂)
   obtain ⟨a, ha, b, hb, rfl⟩ := mem_sigma.mp hc
   exact mem_sigma.mpr ⟨a, hα ha, b, hβ a ha hb, rfl⟩
 
-end ZFSet
+@[simp] theorem dom_sUnion (s : ZFSet) : dom (⋃₀ s) = ⋃₀ image dom s := by
+  ext x
+  rw [mem_dom, mem_sUnion_image]
+  simp only [mem_sUnion, mem_dom]
+  constructor
+  · rintro ⟨p, ⟨f, hf, hp⟩, rfl⟩
+    exact ⟨f, hf, p, hp, rfl⟩
+  · rintro ⟨f, hf, p, hp, rfl⟩
+    exact ⟨p, ⟨f, hf, hp⟩, rfl⟩
 
-open ZFSet
+@[simp] theorem dom_union (f g : ZFSet) : dom (f ∪ g) = dom f ∪ dom g := by
+  ext x
+  simp only [mem_dom, mem_union]
+  constructor
+  · rintro ⟨p, hp | hp, rfl⟩
+    · exact .inl ⟨p, hp, rfl⟩
+    · exact .inr ⟨p, hp, rfl⟩
+  · rintro (⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩)
+    · exact ⟨p, .inl hp, rfl⟩
+    · exact ⟨p, .inr hp, rfl⟩
 
-namespace Metalean
+@[simp] theorem dom_singleton_pair (a b : ZFSet) : dom {pair a b} = {a} := by
+  ext x
+  simp
+
+theorem dom_mono {f g : ZFSet} (h : f ⊆ g) : dom f ⊆ dom g := by
+  intro x hx
+  obtain ⟨p, hp, rfl⟩ := mem_dom.mp hx
+  exact mem_dom.mpr ⟨p, h hp, rfl⟩
+
+theorem IsFunc.pair_mem (hf : IsFunc α β f) (ha : a ∈ dom f) : pair a (app f a) ∈ f := by
+  obtain ⟨p, hp, rfl⟩ := mem_dom.mp ha
+  obtain ⟨x, hx, y, hy, rfl⟩ := mem_prod.mp (hf.1 hp)
+  simpa [hf.app_eq hp] using hp
+
+theorem IsFunc.app_eq_of_subset {g α₁ β₁ : ZFSet} (hf : IsFunc α β f)
+    (hg : IsFunc α₁ β₁ g) (hfg : f ⊆ g) (ha : a ∈ dom f) : app g a = app f a :=
+  hg.app_eq (hfg (hf.pair_mem ha))
+
+theorem isFunc_sUnion {s : ZFSet}
+    (hf : ∀ f ∈ s, IsFunc (dom f) (image snd f) f)
+    (hcompat : ∀ f ∈ s, ∀ g ∈ s, ∀ x ∈ dom f, x ∈ dom g → app f x = app g x) :
+    IsFunc (dom (⋃₀ s)) (image snd (⋃₀ s)) (⋃₀ s) := by
+  refine isFunc_dom_image_snd ?_ ?_
+  · intro p hp
+    have ⟨f, hf', hp⟩ := mem_sUnion.mp hp
+    obtain ⟨a, _, b, _, heq⟩ := mem_prod.mp ((hf f hf').1 hp)
+    exact ⟨a, b, heq⟩
+  · intro x y₁ y₂ h₁ h₂
+    have ⟨f, hf', h₁⟩ := mem_sUnion.mp h₁
+    have ⟨g, hg, h₂⟩ := mem_sUnion.mp h₂
+    simpa [(hf f hf').app_eq h₁, (hf g hg).app_eq h₂] using
+      hcompat f hf' g hg x (pair_mem_dom h₁) (pair_mem_dom h₂)
+
+theorem IsFunc.union_singleton (hf : IsFunc α β f) (ha : a ∉ dom f) (b : ZFSet) :
+    IsFunc (dom (f ∪ {pair a b})) (image snd (f ∪ {pair a b})) (f ∪ {pair a b}) := by
+  refine isFunc_dom_image_snd ?_ ?_
+  · intro p hp
+    rcases mem_union.mp hp with hp | hp
+    · obtain ⟨x, _, y, _, heq⟩ := mem_prod.mp (hf.1 hp)
+      exact ⟨x, y, heq⟩
+    · exact ⟨a, b, mem_singleton.mp hp⟩
+  · intro x y₁ y₂ h₁ h₂
+    rcases mem_union.mp h₁ with h₁ | h₁
+    · rcases mem_union.mp h₂ with h₂ | h₂
+      · exact (hf.app_eq h₁).symm.trans (hf.app_eq h₂)
+      · exact (ha ((pair_inj.mp (mem_singleton.mp h₂)).1 ▸ pair_mem_dom h₁)).elim
+    · obtain ⟨rfl, rfl⟩ := pair_inj.mp (mem_singleton.mp h₁)
+      rcases mem_union.mp h₂ with h₂ | h₂
+      · exact (ha (pair_mem_dom h₂)).elim
+      · exact (pair_inj.mp (mem_singleton.mp h₂)).2.symm
+
+theorem mem_pi_of_isFunc {B : ZFSet} (hf : IsFunc α β f)
+    (hval : ∀ x y, pair x y ∈ f → y ∈ app B x) : f ∈ pi α B := by
+  have hsigma : f ⊆ σ α B := by
+    intro p hp
+    obtain ⟨x, hx, y, _, rfl⟩ := mem_prod.mp (hf.1 hp)
+    exact mem_sigma.mpr ⟨x, hx, y, hval x y hp, rfl⟩
+  refine mem_pi.mpr ⟨⟨?_, hf.2⟩, hsigma⟩
+  intro p hp
+  obtain ⟨x, hx, y, hy, rfl⟩ := mem_sigma.mp (hsigma hp)
+  exact pair_mem_prod.mpr ⟨hx, mem_sUnion_image.mpr ⟨x, hx, hy⟩⟩
+
+@[simp] theorem mem_fibre_sigma : b ∈ fibreOp (σ α β) a ↔ a ∈ α ∧ b ∈ app β a := by
+  simp
+
+@[simp] theorem mem_fibre_sigma_map {V : ZFSet → ZFSet} :
+    b ∈ fibreOp (σ α (map V α)) a ↔ a ∈ α ∧ b ∈ V a := by
+  rw [mem_fibre_sigma]
+  exact and_congr_right fun ha => by rw [app_map ha]
+
+@[simp] theorem fibre_iUnion {ι : Type*} [Small.{u} ι] (f : ι → ZFSet.{u}) (a : ZFSet.{u}) :
+    fibreOp (⋃ i, f i) a = ⋃ i, fibreOp (f i) a := by
+  ext b
+  simp
+
+
 
 theorem fibre_empty (a : ZFSet) : fibreOp ∅ a = ∅ :=
   (eq_empty _).2 fun _ he => notMem_empty _ (mem_fibre.mp he)
@@ -194,4 +303,4 @@ theorem empty_union (set : ZFSet) : ∅ ∪ set = set := by
   ext
   simp
 
-end Metalean
+end ZFSet
