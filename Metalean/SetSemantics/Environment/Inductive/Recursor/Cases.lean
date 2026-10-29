@@ -154,9 +154,7 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
       (source.recursiveSem (fun current => model.toModel.block fun param =>
         current (param.castLE (Nat.le_add_right _ _))) model.toModel.level) :=
     Reachable.ofDoms_append hfields fun f => by
-      simp only [typedRecFieldSetDep_apply]
-      rw [hfieldsBase]
-      exact eraseRecField_mem _ _ (hraw f)
+      simpa only [hfieldsBase] using eraseRecField_mem _ _ (hraw f)
   rw [hfieldsSlotsEq] at hrecFields
   let fieldSlots := Fin.append (Fin.append (Fin.append vps vms) vfds) typed
   have hrec := model.recrCaseFieldsSem_reachable l s c vps vms vfds typed hms hrecFields
@@ -167,10 +165,15 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
           (model.recrMotivesSem l)) (model.recrCaseFieldsSem s c))
         (model.recrCaseIhSem s c) :=
     Reachable.ofDoms_append (Reachable.append hrec) fun f => by
-      simpa [← hfieldsSlotsEq] using
-        StrongRecursiveFieldSource.ihType_eraseRecField ((I.ctors s c).recursive f)
-          (source.recursive f) model.toModel.level vms (model.toModel.block vps) γ₁ (raw f) (hraw f) ▸
-          hihs f
+      have hi := hihs f
+      change ihs f ∈ ihType (fields f).2.tele (fields f).2.index
+        (bundleMotive model.toModel.level ι.nindices vms (model.toModel.block vps)) γ₁ (raw f) at hi
+      dsimp only [fields, StrongCtorSource.recursiveCodes] at hi
+      rw [StrongRecursiveFieldSource.ihType_eraseRecField ((I.ctors s c).recursive f)
+        (source.recursive f) model.toModel.level vms (model.toModel.block vps) γ₁ (raw f) (hraw f)] at hi
+      simpa [CaseSlots.ofValuation, CaseSlots.fieldValues, ← hfieldsSlotsEq,
+        typed, fields, source, StrongCtorSource.recursiveCodes, recrCaseMotive] using hi
+
   have hminor₁ : minor ∈ SemTele.pi
       (SemTele.pi ((model.recrCaseIhSem s c).pi (model.recrCaseLeaf s c))
         (model.recrCaseRecursiveSem s c)) (model.recrCaseOrdinarySem s c)
@@ -191,8 +194,7 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
     unfold CtorCode.applyMinor
     rw [SemTele.applyFields_prependOrdinary, SemTele.values_forgetIhs, SemTele.tail_forgetIhs,
       happlyFields, SemTele.applyIhs_prependOrdinary, happlyIhs]
-  simp only [recrCaseLeaf, Fin.append_left, recrCaseParams_append, recrCaseMotives_append,
-    recrCaseOrdinary_append, recrCaseRecursive_append] at hleaf
+  simp [recrCaseLeaf, CaseSlots.ofValuation, CaseSlots.fieldValues] at hleaf
   let rawArgs := (model.codeOf s c).forgetIhs vargs
   have hfieldsRaw : model.ordinaryOf s c vps rawArgs = γ₁ :=
     fieldTele.values_forgetIhs rest vps vargs
@@ -242,8 +244,8 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
         ε₂[δ]⟦((I.map pre.sigs).ctors s c).targetIndex ls
           (sig.caseParams ps) sig.caseOrdinary i⟧ =
         model.targetValues s c
-          (Fin.append (model.recrCaseParams s c fieldSlots)
-            (model.recrCaseOrdinary s c fieldSlots)) i := by
+          (Fin.append ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).params)
+            ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).ordinary)) i := by
       have h := (Expr.denote_map pre.sigs hatoms _ _).trans
         (ctorModel.target.denotes _ hsource i)
       rw [Expr.map_instL] at h
@@ -253,12 +255,12 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
     simp only [Inductive.caseType, Inductive.motiveResult, Expr.denote, Expr.denote_apps,
       CtorSig.caseParams, CtorSig.caseOrdinary, CtorSig.caseRecursive,
       CtorSig.fieldParams, CtorSig.fieldOrdinary, CtorSig.fieldRecursive, Expr.var_wkN]
-    change [zf|$(model.recrCaseMotives s c fieldSlots s)
+    change [zf|$((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).motives s)
       $((ε₂[δ]⟦((I.map pre.sigs).ctors s c).targetIndex ls
         (sig.caseParams ps) sig.caseOrdinary ·⟧))...
-      $(ε₂ (.ctor η s c ls (model.recrCaseParams s c fieldSlots)
-        (model.recrCaseOrdinary s c fieldSlots)
-        (model.recrCaseRecursive s c fieldSlots)))] = _
+      $(ε₂ (.ctor η s c ls ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).params)
+        ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).ordinary)
+        ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).recursive)))] = _
     rw [funext htarget, hctors]
     rfl
   exact ((model.recrCaseFieldsSem_realizes pre hatoms hsorts l s c).append

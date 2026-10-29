@@ -387,12 +387,13 @@ theorem projTerm_denotes_field
     have hiota := model.recLeaf_iota hdecl hrule hE hB s u
       ((I.recAllowed_map total.sigs ls u).mp (hstruct.recAllowed ls u))
       (RecSlots.args vps vms vminsVal vis ε₂[γ₁]⟦maj₁⟧) hreach c
-      (by simpa using hargs)
-      (by simpa [RecSlots.indicesOfSlots] using hkey)
-      ((RecSlots.majorOfSlots_args ..).trans hrebuild.symm)
-    rw [RecSlots.casesOf_args, RecSlots.paramsOf_args,
-      model.applyMinor_ctorApplication s c vps vfds hreachFds hstruct.recursive hstruct.no_recursive.elim,
-      Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr, show vminsVal s c = _ from hcaseValue] at hiota
+      hargs
+      (by simpa [RecSlots.args] using hkey)
+      hrebuild.symm
+    simp [RecSlots.args] at hiota
+    rw [model.applyMinor_ctorApplication s c vps vfds hreachFds hstruct.recursive hstruct.no_recursive.elim,
+      Aczel.apps_of_zero hnr, Aczel.apps_of_zero hnr, Fin.decodeSigma_encodeSigma,
+      show vminsVal s c = _ from hcaseValue] at hiota
     have hlamApp := Reachable.apps_lam_of_base
       (leaf := fun slots => slots (Fin.natAdd m₁ f))
       (Reachable.of_pull (by rwa [Slots.pull_append])

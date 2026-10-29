@@ -28,6 +28,48 @@ variable {bound : Nat}
   (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
   (hsorts : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis)
 
+structure CaseSlots (ι : IndSig) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) where
+  params : Slots.{u} ι.nparams
+  motives : Slots.{u} ι.nsorts
+  ordinary : Slots.{u} (ι.ctors s c).nfields
+  recursive : Slots.{u} (ι.ctors s c).nrecFields
+
+namespace CaseSlots
+
+variable {ι : IndSig} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
+
+def valuation (γ : CaseSlots.{u} ι s c) :
+    Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields) :=
+  Fin.append (Fin.append (Fin.append γ.params γ.motives) γ.ordinary) γ.recursive
+
+def ofValuation
+    (γ : Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) :
+    CaseSlots.{u} ι s c where
+  params p := γ (((p.castAdd ι.nsorts).castAdd (ι.ctors s c).nfields).castAdd
+    (ι.ctors s c).nrecFields)
+  motives s₁ := γ (((s₁.natAdd ι.nparams).castAdd (ι.ctors s c).nfields).castAdd
+    (ι.ctors s c).nrecFields)
+  ordinary f := γ ((f.natAdd (ι.nparams + ι.nsorts)).castAdd (ι.ctors s c).nrecFields)
+  recursive f := γ (f.natAdd (ι.nparams + ι.nsorts + (ι.ctors s c).nfields))
+
+def fieldValues (γ : CaseSlots.{u} ι s c) : Slots (ι.nparams + (ι.ctors s c).nfields) :=
+  Fin.append γ.params γ.ordinary
+
+theorem fieldValues_ofValuation
+    (γ : Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) :
+    (ofValuation (ι := ι) (s := s) (c := c) γ).fieldValues =
+      Slots.pull (fun base param => base (param.castAdd ι.nsorts))
+        (fun v => γ (v.castAdd (ι.ctors s c).nrecFields)) := by
+  funext v
+  cases v using Fin.addCases <;> simp [ofValuation, fieldValues, Slots.pull]
+
+@[simp] theorem ofValuation_valuation (γ : CaseSlots.{u} ι s c) :
+    ofValuation γ.valuation = γ := by
+  cases γ
+  simp [ofValuation, valuation]
+
+end CaseSlots
+
 namespace StrongInductiveModel
 
 noncomputable def recrMotiveTele (s : Fin ι.nsorts) :
@@ -79,42 +121,6 @@ theorem recrMotivesRealizes (l : Level 0) :
 noncomputable def recrCaseMotive (vps : Slots ι.nparams) (vms : Fin ι.nsorts → ZFSet) : ZFSet :=
   bundleMotive model.toModel.level ι.nindices vms (model.toModel.block vps)
 
-noncomputable def _root_.Metalean.StrongCtorSource.recursiveSem
-    (block : Dom (ι.nparams + csig.nfields)) (level : Nat) :
-    SemTele (ι.nparams + csig.nfields) (ι.nparams + csig.nfields + csig.nrecFields) :=
-  SemTele.ofDoms fun f =>
-    typedRecFieldSetDep (source.recursiveCodes f).2.tele (source.recursiveCodes f).2.index block
-      level
-
-include hatoms in
-theorem _root_.Metalean.StrongCtorSource.recursiveSem_realizes
-    {block : Dom (ι.nparams + csig.nfields)} {level : Nat}
-    {reach : Set (Slots (ι.nparams + csig.nfields))}
-    (hreaches : reach ⊆ Reachable Set.univ (params.append source.ordinary).sem)
-    (sortValues : (s : Fin ι.nsorts) → Slots ι.nparams → Slots (ι.nindices s) → ZFSet)
-    (hsortValues : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = sortValues s vps vis)
-    (happlyRecursive : ∀ f : Fin csig.nrecFields,
-      ∀ γ ∈ Reachable reach
-        (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
-      sortValues (csig.recursiveTarget f)
-          (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-          (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
-        propSet level (fibreOp
-          (block fun current : Fin (ι.nparams + csig.nfields) =>
-            γ (current.castLE (StrongRecursiveFieldSource.code (ctor.recursive f)
-              (source.recursive f)).tele.le))
-          ((StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).index γ))) :
-    Realizes ε₂ ![] reach
-      ((ctor.map pre.sigs).recursiveFieldTele η ls
-        (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
-          Expr ζ₂ 0 (ι.nparams + csig.nfields)))
-        (Expr.boundVars ι.nparams csig.nfields 0))
-      (source.recursiveSem block level) :=
-  Realizes.ofTypes fun f γ hγ => by
-    have hden := StrongRecursiveFieldSource.denotesDepMapEnv pre hatoms (ctor.recursive f)
-      (source.recursive f) hreaches (hsortValues (csig.recursiveTarget f)) (happlyRecursive f) γ hγ
-    simp at hden ⊢
-    exact hden
 
 section
 variable (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -136,12 +142,6 @@ noncomputable def recrCaseFieldsSem :
     SemTele (ι.nparams + ι.nsorts)
       (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields) :=
   model.recrCaseOrdinarySem s c ++ model.recrCaseRecursiveSem s c
-
-def recrCaseFieldBase (_model : StrongInductiveModel E₁ ε₁ I ls)
-    (γ : Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) :
-    Slots (ι.nparams + (ι.ctors s c).nfields) :=
-  Slots.pull (fun γ param => γ (param.castAdd ι.nsorts)) fun v =>
-    γ (v.castAdd (ι.ctors s c).nrecFields)
 
 end
 
@@ -173,10 +173,12 @@ variable (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (l : Level 0)
 include hγ
 
 theorem recrCaseFieldsSem_base :
-    model.recrCaseFieldBase s c γ ∈
+    (CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ).fieldValues ∈
       Reachable Set.univ (model.tele.params.append (model.ctors s c).source.ordinary).sem :=
-  Reachable.append (Reachable.pull (Reachable.base (Reachable.of_append hγ))
-    fun _ hbase => Reachable.base hbase)
+  by
+    rw [CaseSlots.fieldValues_ofValuation]
+    exact Reachable.append (Reachable.pull (Reachable.base (Reachable.of_append hγ))
+      fun _ hbase => Reachable.base hbase)
 
 theorem recrCaseFieldsSem_recursive_mem (f : Fin (ι.ctors s c).nrecFields) :
     γ (Fin.natAdd (ι.nparams + ι.nsorts + (ι.ctors s c).nfields) f) ∈ typedRecFieldSetDep
@@ -185,8 +187,9 @@ theorem recrCaseFieldsSem_recursive_mem (f : Fin (ι.ctors s c).nrecFields) :
       (StrongRecursiveFieldSource.code ((I.ctors s c).recursive f)
         ((model.ctors s c).source.recursive f)).index
       (fun current => model.toModel.block fun param => current (param.castLE (by omega)))
-      model.toModel.level (model.recrCaseFieldBase s c γ) := by
-  simpa [recrCaseFieldBase, StrongCtorSource.recursiveCodes] using
+      model.toModel.level ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ).fieldValues) := by
+  rw [CaseSlots.fieldValues_ofValuation, typedRecFieldSetDep_apply]
+  simpa [StrongCtorSource.recursiveCodes] using
     Reachable.ofDoms_mem (Reachable.pull (Reachable.of_append hγ) fun _ hbase =>
       Reachable.pull hbase fun _ hbase => Reachable.base hbase) f
 
@@ -228,81 +231,25 @@ theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (�
 
 section
 variable (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-  (γ : Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields))
-
-def recrCaseParams (_model : StrongInductiveModel E₁ ε₁ I ls) : Slots ι.nparams :=
-  fun param => γ (((param.castAdd ι.nsorts).castAdd
-    (ι.ctors s c).nfields).castAdd (ι.ctors s c).nrecFields)
-
-def recrCaseMotives (_model : StrongInductiveModel E₁ ε₁ I ls) : Fin ι.nsorts → ZFSet :=
-  fun s₁ => γ (((Fin.natAdd ι.nparams s₁).castAdd
-    (ι.ctors s c).nfields).castAdd (ι.ctors s c).nrecFields)
-
-def recrCaseOrdinary (_model : StrongInductiveModel E₁ ε₁ I ls) :
-    Fin (ι.ctors s c).nfields → ZFSet :=
-  fun f => γ ((Fin.natAdd (ι.nparams + ι.nsorts) f).castAdd (ι.ctors s c).nrecFields)
-
-def recrCaseRecursive (_model : StrongInductiveModel E₁ ε₁ I ls) :
-    Fin (ι.ctors s c).nrecFields → ZFSet :=
-  fun f => γ (Fin.natAdd (ι.nparams + ι.nsorts + (ι.ctors s c).nfields) f)
-
-end
-
-section
-variable (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-  (vms : Fin ι.nsorts → ZFSet)
-  (vfds : Fin (ι.ctors s c).nfields → ZFSet) (vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet)
-
-@[simp] theorem recrCaseParams_append :
-    model.recrCaseParams s c (Fin.append (Fin.append (Fin.append vps vms) vfds) vrecFds) = vps :=
-  funext fun _ => by simp [recrCaseParams]
-
-@[simp] theorem recrCaseMotives_append :
-    model.recrCaseMotives s c (Fin.append (Fin.append (Fin.append vps vms) vfds) vrecFds) = vms :=
-  funext fun _ => by simp [recrCaseMotives]
-
-@[simp] theorem recrCaseOrdinary_append :
-    model.recrCaseOrdinary s c (Fin.append (Fin.append (Fin.append vps vms) vfds) vrecFds) = vfds :=
-  funext fun _ => by simp [recrCaseOrdinary]
-
-@[simp] theorem recrCaseRecursive_append :
-    model.recrCaseRecursive s c (Fin.append (Fin.append (Fin.append vps vms) vfds) vrecFds) =
-      vrecFds :=
-  funext fun _ => by simp [recrCaseRecursive]
-
-end
-
-section
-variable (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 
 noncomputable def recrCaseLeaf :
     Dom (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields +
       (ι.ctors s c).nrecFields) :=
   fun γ =>
-    let fields := fun v => γ (v.castAdd (ι.ctors s c).nrecFields)
-    let vps := model.recrCaseParams s c fields
-    let vfds := model.recrCaseOrdinary s c fields
-    [zf|$(model.recrCaseMotives s c fields s) $(model.targetValues s c (Fin.append vps vfds))...
-      $(model.ctorResult s c vps vfds (model.recrCaseRecursive s c fields))]
-
-theorem recrCaseFieldBase_eq_append
-    (γ : Slots (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields)) :
-    model.recrCaseFieldBase s c γ =
-      Fin.append (model.recrCaseParams s c γ) (model.recrCaseOrdinary s c γ) := by
-  funext current
-  cases current using Fin.addCases <;>
-    simp [recrCaseFieldBase, recrCaseParams, recrCaseOrdinary]
+    let fields := CaseSlots.ofValuation (ι := ι) (s := s) (c := c)
+      (fun v => γ (v.castAdd (ι.ctors s c).nrecFields))
+    [zf|$(fields.motives s) $(model.targetValues s c fields.fieldValues)...
+      $(model.ctorResult s c fields.params fields.ordinary fields.recursive)]
 
 noncomputable def recrCaseIhSem :
     SemTele (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields)
       (ι.nparams + ι.nsorts + (ι.ctors s c).nfields + (ι.ctors s c).nrecFields +
         (ι.ctors s c).nrecFields) :=
   SemTele.ofDoms fun f γ =>
+    let fields := CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ
     ihType ((model.ctors s c).source.recursiveCodes f).2.tele
       ((model.ctors s c).source.recursiveCodes f).2.index
-      (model.recrCaseMotive (model.recrCaseParams s c γ) (model.recrCaseMotives s c γ))
-      (Fin.append (model.recrCaseParams s c γ) (model.recrCaseOrdinary s c γ))
-      (model.recrCaseRecursive s c γ f)
+      (model.recrCaseMotive fields.params fields.motives) fields.fieldValues (fields.recursive f)
 
 noncomputable def recrCaseTele :
     SemTele (ι.nparams + ι.nsorts)
@@ -325,28 +272,26 @@ theorem recrCaseIhSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nc
   let C := I.ctors s c
   let source := (model.ctors s c).source.recursive f
   let code := StrongRecursiveFieldSource.code (C.recursive f) source
-  let vps := model.recrCaseParams s c γ
-  let vms := model.recrCaseMotives s c γ
-  let δ := model.recrCaseFieldBase s c γ
+  let fields := CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ
+  let vps := fields.params
+  let vms := fields.motives
+  let δ := fields.fieldValues
   let ms : Fin ι.nsorts → Expr ζ₂ 0 (ι.nparams + ι.nsorts + sig.nfields + sig.nrecFields) :=
     fun s => .var ⟨ι.nparams + s.val, by omega⟩
   let ps : Fin ι.nparams → Expr ζ₂ 0 (ι.nparams + ι.nsorts) := fun p => .var (p.castAdd ι.nsorts)
   let σ := Fin.append (sig.fieldParams ps) (sig.fieldOrdinary (n := ι.nparams + ι.nsorts))
-  have hproject : δ = Fin.append vps (model.recrCaseOrdinary s c γ) :=
-    model.recrCaseFieldBase_eq_append s c γ
   have hden := StrongRecursiveFieldSource.ihType_denotes (C.recursive f) source pre hatoms γ δ
     (model.recrCaseFieldsSem_base s c l γ hγ)
     (σ := σ) (ms := ms) (e := sig.fieldRecursive f) (motive := model.recrCaseMotive vps vms)
     (by
       funext v
       cases v using Fin.addCases <;>
-        simp! [σ, ps, δ, sig, CtorSig.fieldParams, CtorSig.fieldOrdinary, recrCaseFieldBase,
-          Slots.pull])
+        simp! [σ, ps, δ, sig, CtorSig.fieldParams, CtorSig.fieldOrdinary, CaseSlots.ofValuation, CaseSlots.fieldValues, fields, Slots.pull])
     (hleaf := fun final hfinal value hvalue => by
       have hps : (fun param : Fin ι.nparams =>
           final ((param.castAdd sig.nfields).castLE code.tele.le)) = vps :=
         funext fun param => (hfinal (param.castAdd sig.nfields)).trans
-          ((congrFun hproject (param.castAdd sig.nfields)).trans (Fin.append_left ..))
+          (Fin.append_left ..)
       change value ∈ propSet model.toModel.level
         (fibreOp (model.toModel.block fun p => final ((p.castAdd sig.nfields).castLE code.tele.le))
           (code.index final)) at hvalue
@@ -356,7 +301,6 @@ theorem recrCaseIhSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (ι.nc
       exact (fibre_bundleMotive_typed (vms := vms) (sig.recursiveTarget f)
         (ε₁[final]⟦(C.recursive f).indices{ls} ·⟧) hvalue).symm)
     (model.recrCaseFieldsSem_recursive_mem s c l γ hγ f)
-  rw [hproject] at hden
   simp [Ctor.ihType] at hden ⊢
   exact hden
 

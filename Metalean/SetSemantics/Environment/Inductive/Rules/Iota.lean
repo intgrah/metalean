@@ -96,148 +96,59 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
 namespace StrongInductiveModel
 
 theorem recursiveIotaLeaf
-    {l : Level 0}
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (f : Fin (ι.ctors s c).nrecFields)
-    (outer : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors +
-      ι.nindices s + 1))
-    (houter : outer ∈ Reachable Set.univ (model.recrTeleSem s l))
-    (fieldSlots : Slots
-      (ι.nparams + (ι.ctors s c).nfields))
-    (hfields : fieldSlots ∈ Reachable {RecSlots.paramsOf outer}
-      (model.ctors s c).source.ordinary.sem)
-    (vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet)
-    (hrecFields : ∀ current, vrecFds current ∈ typedRecFieldSet
-      (StrongRecursiveFieldSource.code
-        ((I.ctors s c).recursive current)
-        ((model.ctors s c).source.recursive current)).tele
-      (StrongRecursiveFieldSource.code
-        ((I.ctors s c).recursive current)
-        ((model.ctors s c).source.recursive current)).index
-      (model.toModel.block (RecSlots.paramsOf outer)) model.toModel.level fieldSlots)
-    (final : Slots (ι.nparams + (ι.ctors s c).nfields +
-      (ι.ctors s c).recursiveArity f))
-    (hfinal : final ∈ Reachable {fieldSlots}
-      (StrongRecursiveFieldSource.code
-        ((I.ctors s c).recursive f)
-        ((model.ctors s c).source.recursive f)).tele) :
-    let recFd := (I.ctors s c).recursive f
-    let code := StrongRecursiveFieldSource.code recFd ((model.ctors s c).source.recursive f)
-    let vmaj := [zf|$(vrecFds f) $(fun argument => final (Fin.natAdd
-      (ι.nparams + (ι.ctors s c).nfields) argument))...]
-    let raw := [zf|$(recoverRecField code.tele code.index
-        (model.toModel.block (RecSlots.paramsOf outer)) model.toModel.level fieldSlots
-        (vrecFds f)) $(fun argument => final (Fin.natAdd
-        (ι.nparams + (ι.ctors s c).nfields) argument))...]
+    {l : Level 0} (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (f : Fin (ι.ctors s c).nrecFields) (outer : RecSlots ι s)
+    (houter : outer.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
+    (fieldSlots : Slots (ι.nparams + (ι.ctors s c).nfields))
+    (hfields : fieldSlots ∈ Reachable {outer.params} (model.ctors s c).source.ordinary.sem)
+    (value : ZFSet)
+    (hvalue : value ∈ typedRecFieldSet (model.recCode s c f).tele
+      (model.recCode s c f).index (model.toModel.block outer.params)
+      model.toModel.level fieldSlots)
+    (final : Slots (ι.nparams + (ι.ctors s c).nfields + (ι.ctors s c).recursiveArity f))
+    (hfinal : final ∈ Reachable {fieldSlots} (model.recCode s c f).tele) :
+    let code := model.recCode s c f
+    let arguments := fun argument => final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument)
     model.recLeaf ((ι.ctors s c).recursiveTarget f) l
-      (RecSlots.args (RecSlots.paramsOf outer)
-        (RecSlots.motivesOf outer)
-        (fun target c => RecSlots.casesOf outer
-          (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-        (ε₁[final]⟦recFd.indices{ls} ·⟧) vmaj) =
-      app (model.recrGraph s outer) (pair (code.index final) raw) := by
+      (RecSlots.mk outer.params outer.motives outer.cases
+        (ε₁[final]⟦((I.ctors s c).recursive f).indices{ls} ·⟧) (Aczel.apps value arguments)) =
+      app (model.recrGraph s outer)
+        (pair (code.index final)
+          (Aczel.apps (recoverRecField code.tele code.index (model.toModel.block outer.params)
+            model.toModel.level fieldSlots value) arguments)) := by
   dsimp only
-  let source := (model.ctors s c).source
   let recFd := (I.ctors s c).recursive f
-  let recSource := source.recursive f
-  let code := StrongRecursiveFieldSource.code recFd recSource
-  let vmaj := [zf|$(vrecFds f) $(fun argument => final (Fin.natAdd
-    (ι.nparams + (ι.ctors s c).nfields) argument))...]
-  let vis := (ε₁[final]⟦recFd.indices{ls} ·⟧)
-  let child : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors +
-      ι.nindices ((ι.ctors s c).recursiveTarget f) + 1) :=
-    RecSlots.childOf outer vis vmaj
-  let raw := [zf|$(recoverRecField code.tele code.index
-      (model.toModel.block (RecSlots.paramsOf outer)) model.toModel.level fieldSlots
-      (vrecFds f)) $(fun argument => final (Fin.natAdd
-      (ι.nparams + (ι.ctors s c).nfields) argument))...]
-  have hchild : child ∈ Reachable Set.univ
-      (model.recrTeleSem ((ι.ctors s c).recursiveTarget f) l) := by
-    have hprefix : RecSlots.prefixOf outer ∈ Reachable Set.univ (model.recrPrefixSem l) := by
-      change (fun current => Fin.init outer (current.castLE (by omega))) ∈
-        Reachable Set.univ (model.recrPrefixSem l)
-      simpa using Reachable.base (Reachable.of_append (Reachable.init houter))
-    have hpsOuter : RecSlots.paramsOf outer ∈ Reachable Set.univ model.paramsSem :=
-      model.recrParamsReachable s l outer houter
-    have hvalues := StrongRecursiveFieldSource.valuesReachable
-      recFd recSource model.paramsSem
-      (model.indicesSem ((ι.ctors s c).recursiveTarget f))
-      (model.tele.indices ((ι.ctors s c).recursiveTarget f)).realizes
-      (Set.singleton_subset_iff.mpr
-        (Reachable.append (Reachable.mono hfields (Set.singleton_subset_iff.mpr hpsOuter))))
-      (Set.mapsTo_singleton.mpr
-        ((Set.eq_of_mem_singleton (Reachable.base hfields)) ▸ hpsOuter))
-      final hfinal
-    rw [show (fun param : Fin ι.nparams => final (param.castLE (by omega))) =
-        RecSlots.paramsOf outer by
-      funext param
-      rw [show param.castLE (by omega) =
-          (param.castLE (Nat.le_add_right _ _)).castLE code.tele.le from rfl,
-        congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal))
-          (param.castLE (Nat.le_add_right _ _))]
-      exact congrFun (Set.eq_of_mem_singleton (Reachable.base hfields)) param] at hvalues
-    have his : RecSlots.withIndices outer vis ∈ Reachable (Reachable Set.univ
-        (model.recrPrefixSem l))
-        (model.recrIndicesSem ((ι.ctors s c).recursiveTarget f)) := by
-      apply Reachable.of_pull
-      · rw [RecSlots.pull_recrParams_withIndices]
-        simpa [vis] using hvalues
-      · simpa using hprefix
-    refine Reachable.snoc (by simpa [child] using Reachable.append his) ?_
-    simp only [child, Fin.init_snoc]
-    have hmaj : vmaj ∈ propSet model.toModel.level
-        (fibreOp (model.toModel.block (RecSlots.paramsOf outer))
-          (code.index final)) := by
-      apply Reachable.apps_mem_of_base hfinal
-        (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal)))
-      simpa [typedRecFieldSet, code] using hrecFields f
-    unfold recrMajorDomain InductiveModel.sortValue
-    rw [RecSlots.withIndices_params]
-    simpa [code, vis] using hmaj
-  rw [show RecSlots.args (RecSlots.paramsOf outer)
-      (RecSlots.motivesOf outer)
-      (fun target c => RecSlots.casesOf outer
-        (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-      (ε₁[final]⟦recFd.indices{ls} ·⟧) vmaj = child by
-    simp [RecSlots.args, child, vis, RecSlots.append_params_motives_cases]]
-  let fields := source.recursiveCodes
-  let vargs := source.ordinary.sem.pack fieldSlots
-    (CtorCode.packRecursive (model.toModel.block (RecSlots.paramsOf outer)) fields
-      model.toModel.level fieldSlots vrecFds proof)
-  have htail : CtorCode.packRecursive (model.toModel.block (RecSlots.paramsOf outer)) fields
-      model.toModel.level fieldSlots vrecFds proof ∈ (model.recursiveRest s c).argSet
-        (model.toModel.block (RecSlots.paramsOf outer)) fieldSlots :=
-    CtorCode.packRecursive_mem hrecFields (CtorCode.proof_mem_argSet_target fieldSlots)
-  have hargs := SemTele.pack_mem hfields htail
-  rw [Set.eq_of_mem_singleton (Reachable.base hfields)] at hargs
-  apply model.recLeaf_eq_recGraph_app outer houter child hchild
-    (RecSlots.paramsOf_childOf ..) (RecSlots.motivesOf_childOf ..) (RecSlots.casesOf_childOf ..)
-  · refine (model.codeOf s c).predecessors_mem_block
-      (RecSlots.paramsOf outer) vargs hargs (pair (code.index final) raw) ?_
-    rw [model.codeOf_eq s c, StrongInductiveModel.recursiveRest,
-      ← Set.eq_of_mem_singleton (Reachable.base hfields), SemTele.predecessors_prependOrdinary,
-      SemTele.tail_pack, SemTele.values_pack]
-    simpa [fields, code, StrongCtorSource.recursiveCodes] using
-      CtorCode.mem_predecessors_packRecursive
-        (model.toModel.block (RecSlots.paramsOf outer)) fields
-        (StrongCtorSource.targetIndex (model.ctors s c).target)
-        fieldSlots vrecFds f final hfinal
-  · let leaf : DomAt
-        (ι.nparams + (ι.ctors s c).nfields +
-          (ι.ctors s c).recursiveArity f) :=
-      fun current value => propGet model.toModel.level
-        (fibreOp (model.toModel.block (RecSlots.paramsOf outer))
-          (code.index current)) value
-    have happ := congrArg (fun function => [zf|function $(fun argument =>
-      final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument))...])
-      (SemTele.lam_applyAt code.tele leaf fieldSlots (vrecFds f))
-    rw [Reachable.apps_lam_of_base hfinal
-      (leaf := fun current => leaf current [zf|$(vrecFds f) $(fun argument =>
-        current (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument))...])] at happ
-    unfold recrState recrMajorOf
-    rw [RecSlots.paramsOf_childOf, RecSlots.indicesOfSlots_childOf, RecSlots.majorOfSlots_childOf]
-    exact congrArg (pair (code.index final))
-      (show leaf final vmaj = raw by simpa [recoverRecField, raw] using happ)
+  let source := (model.ctors s c).source.recursive f
+  let code := model.recCode s c f
+  let indices := (ε₁[final]⟦recFd.indices{ls} ·⟧)
+  let arguments := fun argument => final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument)
+  have hparams : (fun param : Fin ι.nparams => final (param.castLE (by omega))) = outer.params := by
+    funext param
+    exact (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal))
+      (param.castLE (Nat.le_add_right _ _))).trans
+      (congrFun (Set.eq_of_mem_singleton (Reachable.base hfields)) param)
+  have hps := model.recrParamsReachable s l outer houter
+  have his := StrongRecursiveFieldSource.valuesReachable recFd source model.paramsSem
+    (model.indicesSem ((ι.ctors s c).recursiveTarget f))
+    (model.tele.indices ((ι.ctors s c).recursiveTarget f)).realizes
+    (Set.singleton_subset_iff.mpr
+      (Reachable.append (Reachable.mono hfields (Set.singleton_subset_iff.mpr hps))))
+    (Set.mapsTo_singleton.mpr ((Set.eq_of_mem_singleton (Reachable.base hfields)) ▸ hps))
+    final hfinal
+  rw [hparams] at his
+  have hmajor := Reachable.apps_mem_of_base hfinal
+    (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal))) hvalue
+  have hraw := Reachable.apps_mem_of_base hfinal
+    (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal)))
+    (recoverRecField_mem code.tele code.index hvalue)
+  have hchild := model.recrChildReachable s l outer houter indices his
+    (Aczel.apps value arguments) hmajor
+  apply model.recLeaf_eq_recGraph_app outer houter indices (Aczel.apps value arguments)
+    hchild _ (mem_fibre.mp hraw)
+  change pair (code.index final)
+    (propGet model.toModel.level (fibreOp (model.toModel.block outer.params) (code.index final))
+      (Aczel.apps value arguments)) = _
+  exact congrArg (pair (code.index final)) (recoverRecField_apps hfinal).symm
 
 theorem iotaRuleSound
     (hdecl : SemDecls E₁ ε₁ ![]) (hsourceRule : SemDeclRules E₁ ε₁ ![])
@@ -287,7 +198,7 @@ theorem iotaRuleSound
   let outer := RecSlots.args (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧)
     (ε₂[γ]⟦((I.map pre.sigs).ctors s c).targetIndex ls ps fds ·⟧)
     ε₂[γ]⟦.ctor η s c ls ps fds recFds⟧
-  have houter : outer ∈ Reachable Set.univ (model.recrTeleSem s l) :=
+  have houter : outer.valuation ∈ Reachable Set.univ (model.recrTeleSem s l) :=
     model.recrArgs_reachable pre hatoms hsorts hctors l
       (fun p => (hps p).mem) (fun s => (hms s).mem) (fun s c => (hmins s c).mem)
       (fun i => (model.targetIndexInterp pre hatoms hsorts
@@ -297,42 +208,44 @@ theorem iotaRuleSound
   have ⟨hargs, hordinary⟩ := model.ctorArgs_mem s c _ vfds hfieldsReach vrecFds hrecFieldsMem
   have htarget : (model.codeOf s c).targetIndex (ε₂[γ]⟦ps ·⟧)
       (model.ctorArgs s c (ε₂[γ]⟦ps ·⟧) vfds vrecFds) =
-      sortKey s.val (RecSlots.indicesOfSlots outer) := by
-    rw [model.codeOf_targetIndex, hordinary,
-      RecSlots.indicesOfSlots, RecSlots.indexValuesOf_args]
+      sortKey s.val (encode (RecSlots.indices outer)) := by
+    rw [model.codeOf_targetIndex, hordinary]
     congr 2
     funext index
     exact model.targetIndexDenotes pre hatoms hparamReach hfieldsReach index |>.symm
-  have hmajEntry : RecSlots.majorOfSlots outer =
+  have hmajEntry : RecSlots.major outer =
       propVal model.toModel.level (entryValue (tagOf s c)
         (model.ctorArgs s c (ε₂[γ]⟦ps ·⟧) vfds vrecFds)) :=
-    (RecSlots.majorOfSlots_args ..).trans (hctors s c _ vfds vrecFds)
-  have hvps : (ε₂[γ]⟦ps ·⟧) = RecSlots.paramsOf outer := (RecSlots.paramsOf_args ..).symm
+    hctors s c _ vfds vrecFds
+  have hvps : (ε₂[γ]⟦ps ·⟧) = RecSlots.params outer := rfl
   rw [hvps] at hfieldsReach hrecFieldsMem hargs htarget hmajEntry
   have hleaf := model.recLeaf_iota hdecl hsourceRule hE hB s l
     ((I.recAllowed_map pre.sigs ls l).mp hallowed) outer houter c hargs htarget hmajEntry
   have hlhsDen : ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ = _ :=
     (show ε₂[γ]⟦(I.map pre.sigs).iotaLhs η ls l ps ms mins s c fds recFds⟧ =
       model.recLeaf s l outer by rw [Inductive.iotaLhs, Expr.denote, hrecr]).trans hleaf
-  have hps' : ∀ param, ε₂[γ]⟦ps param⟧ = RecSlots.paramsOf outer param := by simp [outer]
-  have hms' : ∀ s, ε₂[γ]⟦ms s⟧ = RecSlots.motivesOf outer s := by simp [outer]
-  have hmins' : ∀ s c,
-      ε₂[γ]⟦mins s c⟧ = RecSlots.casesOf outer (Fin.encodeSigma ι.nctors ⟨s, c⟩) := by
-    simp [outer]
+  have hps' (param) : ε₂[γ]⟦ps param⟧ = RecSlots.params outer param := by simp [outer, RecSlots.args]
+  have hms' (s) : ε₂[γ]⟦ms s⟧ = RecSlots.motives outer s := by simp [outer, RecSlots.args]
+  have hmins' (s) (c) :
+      ε₂[γ]⟦mins s c⟧ = RecSlots.cases outer (Fin.encodeSigma ι.nctors ⟨s, c⟩) := by
+    change ε₂[γ]⟦mins s c⟧ =
+      (let ⟨s₁, c₁⟩ := Fin.decodeSigma ι.nctors (Fin.encodeSigma ι.nctors ⟨s, c⟩)
+       ε₂[γ]⟦mins s₁ c₁⟧)
+    rw [Fin.decodeSigma_encodeSigma]
   have hrhsDen : ε₂[γ]⟦(I.map pre.sigs).iotaRhs η ls l ps ms mins s c fds recFds⟧ =
-      (model.codeOf s c).applyMinor model.toModel.level (RecSlots.paramsOf outer)
-        (RecSlots.casesOf outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))
-        ((model.codeOf s c).argMap (model.recrGraph s outer) (RecSlots.paramsOf outer)
-          (model.ctorArgs s c (RecSlots.paramsOf outer) vfds vrecFds)) := by
-    let fieldSlots := Fin.append (RecSlots.paramsOf outer) vfds
-    have hparamReach' : RecSlots.paramsOf outer ∈ Reachable Set.univ model.paramsSem := by
+      (model.codeOf s c).applyMinor model.toModel.level (RecSlots.params outer)
+        (RecSlots.cases outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))
+        ((model.codeOf s c).argMap (model.recrGraph s outer) (RecSlots.params outer)
+          (model.ctorArgs s c (RecSlots.params outer) vfds vrecFds)) := by
+    let fieldSlots := Fin.append (RecSlots.params outer) vfds
+    have hparamReach' : RecSlots.params outer ∈ Reachable Set.univ model.paramsSem := by
       grind only [reachability]
     have hih (f) : ε₂[γ]⟦(I.map pre.sigs).iotaIHs η ls l ps ms mins
           s c fds recFds f⟧ =
         recMap (model.recCode s c f).tele (model.recCode s c f).index
           (model.recrGraph s outer) fieldSlots
           (recoverRecField (model.recCode s c f).tele (model.recCode s c f).index
-            (model.toModel.block (RecSlots.paramsOf outer)) model.toModel.level
+            (model.toModel.block (RecSlots.params outer)) model.toModel.level
             fieldSlots (vrecFds f)) := by
       refine StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         ((I.ctors s c).recursive f) ((model.ctors s c).source.recursive f)
@@ -342,19 +255,21 @@ theorem iotaRuleSound
         ((Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧).trans
           (congrArg (Fin.append · _) (funext hps')))
         fun final hfinal => ?_
-      simpa [hps', hms', hmins'] using (hrecr ((ι.ctors s c).recursiveTarget f) l
-        (RecSlots.paramsOf outer) (RecSlots.motivesOf outer)
-        (fun target c => RecSlots.casesOf outer
-          (Fin.encodeSigma ι.nctors ⟨target, c⟩))
-        (ε₁[final]⟦((I.ctors s c).recursive f).indices{ls} ·⟧)
-        [zf|$(vrecFds f) $(fun argument =>
-          final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument))...]).trans
-        (model.recursiveIotaLeaf s c f outer houter fieldSlots
-          hfieldsReach vrecFds hrecFieldsMem final hfinal)
+      have hcases : (fun tag =>
+          let ⟨target, c₁⟩ := Fin.decodeSigma ι.nctors tag
+          outer.cases (Fin.encodeSigma ι.nctors ⟨target, c₁⟩)) = outer.cases := by
+        funext tag
+        change outer.cases (Fin.encodeSigma ι.nctors (Fin.decodeSigma ι.nctors tag)) = _
+        rw [Fin.encodeSigma_decodeSigma]
+      simp only [hps', hms', hmins', hrecr]
+      change model.recLeaf _ l (RecSlots.mk _ _ _ _ _) = _
+      rw [hcases]
+      exact model.recursiveIotaLeaf s c f outer houter fieldSlots
+        hfieldsReach (vrecFds f) (hrecFieldsMem f) final hfinal
     rw [model.applyMinor_ctorApplication s c
-      (RecSlots.paramsOf outer) vfds hfieldsReach vrecFds
+      (RecSlots.params outer) vfds hfieldsReach vrecFds
       hrecFieldsMem (model.recrGraph s outer)
-      (RecSlots.casesOf outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))]
+      (RecSlots.cases outer (Fin.encodeSigma ι.nctors ⟨s, c⟩))]
     simp [Inductive.iotaRhs, hmins', hih]
     rfl
   refine ⟨hlhsDen.trans hrhsDen.symm, ?_⟩

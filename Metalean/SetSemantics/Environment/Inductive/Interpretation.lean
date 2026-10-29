@@ -236,85 +236,29 @@ theorem CtorCode.Interprets.map
     exact .recArg (fun γ hρ => (Expr.denote_map pre.sigs hatoms _ _).trans (hA γ hρ))
       (by simpa using ih)
 
-inductive RecursivePhaseRealizes (ε₁ : Atom ζ₁ ℓ → ZFSet) (ν : Param ℓ → Nat) {base : Nat}
-    (block : Dom base) (level : Nat) :
-    {scope : Nat} → (Slots scope → Slots base) →
-      Set (Slots scope) →
-    {count : Nat} → (Fin count → CtorRecCode.Packed base) →
-      {endScope : Nat} → (Slots endScope → Slots base) →
-      Set (Slots endScope) → Ctx ζ₁ ℓ scope endScope → Prop
-  | nil {scope : Nat} {project : Slots scope → Slots base}
-      {reach : Set (Slots scope)} :
-    RecursivePhaseRealizes ε₁ ν block level project reach
-      ![] project reach .nil
-  | cons {scope count : Nat} {project : Slots scope → Slots base}
-      {reach : Set (Slots scope)}
-      {fields : Fin (count + 1) → CtorRecCode.Packed base}
-      {endScope : Nat} {projectEnd : Slots endScope → Slots base}
-      {reachEnd : Set (Slots endScope)} {t : Expr ζ₁ ℓ scope}
-      {Θ : Ctx ζ₁ ℓ (scope + 1) endScope} :
-    (∀ γ ∈ reach,
-      ε₁[ν; γ]⟦t⟧ = typedRecFieldSetDep (fields 0).2.tele (fields 0).2.index
-          block level (project γ)) →
-    RecursivePhaseRealizes ε₁ ν block level
-      (fun γ => project (Fin.init γ))
-      {γ | Fin.init γ ∈ reach ∧
-        γ (Fin.last scope) ∈
-          typedRecFieldSetDep (fields 0).2.tele (fields 0).2.index
-            block level (project (Fin.init γ))}
-      (fun f => fields f.succ)
-      projectEnd reachEnd Θ →
-    RecursivePhaseRealizes ε₁ ν block level project reach
-      fields projectEnd reachEnd (#t[t] ++ Θ)
-
-section
-
-variable {base : Nat} {project : Slots n → Slots base} {reach : Set (Slots n)}
-  {fields : Fin count → CtorRecCode.Packed base} {projectEnd : Slots m → Slots base}
-  {reachEnd : Set (Slots m)} {t : Expr ζ₁ ℓ m}
-
-theorem RecursivePhaseRealizes.prepend
-    (hphase : RecursivePhaseRealizes ε₁ ν (fun _ => block) level
-      project reach fields projectEnd reachEnd Δ)
+theorem CtorCode.Interprets.prependRecursive
+    {base scope count : Nat} {project : Slots scope → Slots base}
+    {reach : Set (Slots scope)} {fields : Fin count → CtorRecCode.Packed base}
+    {Δ : Ctx ζ₁ ℓ scope (scope + count)} {t : Expr ζ₁ ℓ (scope + count)}
     {rest : CtorCode base}
-    (hrest : CtorCode.Interprets ε₁ ν block level projectEnd reachEnd t rest) :
+    (hfields : Realizes ε₁ ν reach Δ (SemTele.ofDoms fun f γ =>
+      typedRecFieldSet (fields f).2.tele (fields f).2.index block level (project γ)))
+    (hrest : CtorCode.Interprets ε₁ ν block level
+      (fun γ => project fun v => γ (v.castAdd count))
+      (Reachable reach (SemTele.ofDoms fun f γ =>
+        typedRecFieldSet (fields f).2.tele (fields f).2.index block level (project γ))) t rest) :
     CtorCode.Interprets ε₁ ν block level project reach (Ctx.pi t Δ)
       (CtorCode.prependRecursive count fields rest) := by
-  induction hphase with
-  | nil => simpa! using hrest
-  | cons hA htail ih =>
-    simpa! [Ctx.pi, Tele.foldr_append] using
-      CtorCode.Interprets.recArg hA (ih hrest)
-
-theorem RecursivePhaseRealizes.snoc {block : Dom base}
-    (hphase : RecursivePhaseRealizes (base := base) ε₁ ν block level
-      project reach fields projectEnd reachEnd Δ)
-    (f : CtorRecCode.Packed base)
-    (ht : ∀ γ ∈ reachEnd,
-      ε₁[ν; γ]⟦t⟧ = typedRecFieldSetDep f.2.tele f.2.index block level (projectEnd γ)) :
-    RecursivePhaseRealizes (base := base) ε₁ ν block level project reach
-      (Fin.snoc fields f)
-      (fun γ => projectEnd (Fin.init γ))
-      {γ | Fin.init γ ∈ reachEnd ∧
-        γ (Fin.last m) ∈
-          typedRecFieldSetDep f.2.tele f.2.index block level (projectEnd (Fin.init γ))}
-      (Δ.snoc t) := by
-  induction hphase with
-  | nil =>
-    rw [Fin.snoc_zero]
-    exact (show Fin.cons f ![] = fun _ => f from
-      funext (Fin.cases rfl fun i => i.elim0)) ▸ RecursivePhaseRealizes.cons
-        (fields := Fin.cons f ![]) (Θ := .nil) ht .nil
-  | @cons _ count₁ _ _ fields₁ _ _ _ _ _ hhead _ ih =>
-    have hresult := RecursivePhaseRealizes.cons
-      (fields := Fin.cons (fields₁ 0) (Fin.snoc (fun i => fields₁ i.succ) f)) hhead
-      (by rw [Fin.cons_zero]; exact ih ht)
-    rw [Fin.cons_snoc_eq_snoc_cons,
-      show Fin.cons (fields₁ 0) (fun i => fields₁ i.succ) = fields₁ from
-        Fin.cons_self_tail fields₁] at hresult
-    simpa using hresult
-
-end
+  induction count generalizing rest with
+  | zero =>
+    have .nil := hfields
+    exact hrest.monoReach fun _ hγ => .nil hγ
+  | succ count ih =>
+    have .snoc hprefix hlast := hfields
+    rw [← Fin.snoc_init_self fields, CtorCode.prependRecursive_snoc]
+    apply ih hprefix
+    refine .recArg hlast ?_
+    exact hrest.monoReach fun _ ⟨hγ, hvalue⟩ => .snoc hγ hvalue
 
 end
 

@@ -326,64 +326,44 @@ theorem code_targetIndex_mem_type (source : StrongCtorSource E₁ ε₁ I ls cto
   exact sortKey_mem_type (encode_fin_mem_type fun index =>
     type_mono hlevel (Classical.choose_spec model.bounded _ index))
 
-theorem recursivePhaseAux
+noncomputable def recursiveSem
+    (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
+    (block : Dom (ι.nparams + csig.nfields)) (level : Nat) :
+    SemTele (ι.nparams + csig.nfields) (ι.nparams + csig.nfields + csig.nrecFields) :=
+  SemTele.ofDoms fun f γ =>
+    typedRecFieldSet (source.recursiveCodes f).2.tele (source.recursiveCodes f).2.index (block γ)
+      level γ
+
+theorem recursiveSem_realizes
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
     (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    {block : Dom (ι.nparams + csig.nfields)}
+    {block : Dom (ι.nparams + csig.nfields)} {level : Nat}
     {reach : Set (Slots (ι.nparams + csig.nfields))}
     (hreaches : reach ⊆ Reachable Set.univ (params.append source.ordinary).sem)
-    (sortValues : (s₁ : Fin ι.nsorts) → Slots ι.nparams → Slots (ι.nindices s₁) → ZFSet)
-    (hsortValues : ∀ s₁ vps vis, ε₂ (.ind η s₁ ls vps vis) = sortValues s₁ vps vis)
+    (sortValues : (s : Fin ι.nsorts) → Slots ι.nparams → Slots (ι.nindices s) → ZFSet)
+    (hsortValues : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = sortValues s vps vis)
     (happlyRecursive : ∀ f : Fin csig.nrecFields,
       ∀ γ ∈ Reachable reach
-          (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
+        (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
       sortValues (csig.recursiveTarget f)
-        (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-        (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
+          (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
+          (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
         propSet level (fibreOp
           (block fun current : Fin (ι.nparams + csig.nfields) =>
             γ (current.castLE (StrongRecursiveFieldSource.code (ctor.recursive f)
               (source.recursive f)).tele.le))
-          ((StrongRecursiveFieldSource.code (ctor.recursive f)
-            (source.recursive f)).index γ)))
-    (count : Nat) (hcount : count ≤ csig.nrecFields) :
-    ∃ reachEnd : Set (Slots (ι.nparams + csig.nfields + count)),
-      RecursivePhaseRealizes ε₂ ![] block level id reach
-        (fun f => source.recursiveCodes (f.castLE hcount))
-        (fun γ f => γ (f.castAdd count)) reachEnd
-        ((ctor.map pre.sigs).recursiveFieldTeleAux η ls
-          (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
-            Expr ζ₂ 0 (ι.nparams + csig.nfields)))
-          (Expr.boundVars ι.nparams csig.nfields 0) count hcount) ∧
-      Set.MapsTo (fun γ f => γ (f.castAdd count)) reachEnd reach := by
-  induction count with
-  | zero =>
-    refine ⟨reach, ?_, fun _ h => h⟩
-    convert RecursivePhaseRealizes.nil using 1 <;> rfl
-  | succ count ih =>
-    have ⟨reachEnd, hphase, hreach⟩ := ih (by omega)
-    let f : Fin csig.nrecFields := ⟨count, by omega⟩
-    let code := StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)
-    have hphase₁ := hphase.snoc ⟨csig.recursiveArity f, code⟩
-      (t := (((ctor.map pre.sigs).recursive f).instantiatedType η ls
-        (fun param => .var (param.castLE (Nat.le_add_right _ _))) Subst.id).wkN count)
-      fun γ hγ => by
-        have h := StrongRecursiveFieldSource.denotesDepMapEnv
-          pre hatoms (ctor.recursive f) (source.recursive f) hreaches
-          (hsortValues (csig.recursiveTarget f)) (happlyRecursive f)
-          _ (hreach hγ)
-        simpa [Ctor.map, -RecField.instantiatedType_wkN] using h
-    refine ⟨{γ | Fin.init γ ∈ reachEnd ∧
-        γ (Fin.last (ι.nparams + csig.nfields + count)) ∈
-          typedRecFieldSetDep code.tele code.index block level
-            fun f => Fin.init γ (f.castAdd count)},
-      ?_, fun _ hγ => hreach hγ.1⟩
-    convert hphase₁ using 1
-    · exact (Fin.snoc_init_self
-        fun f : Fin (count + 1) => source.recursiveCodes (f.castLE hcount)).symm
-    · rfl
-    · simp [Ctor.recursiveFieldTeleAux]
-      rfl
+          ((StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).index γ))) :
+    Realizes ε₂ ![] reach
+      ((ctor.map pre.sigs).recursiveFieldTele η ls
+        (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
+          Expr ζ₂ 0 (ι.nparams + csig.nfields)))
+        (Expr.boundVars ι.nparams csig.nfields 0))
+      (source.recursiveSem block level) :=
+  Realizes.ofTypes fun f γ hγ => by
+    have hden := StrongRecursiveFieldSource.denotesDepMapEnv pre hatoms (ctor.recursive f)
+      (source.recursive f) hreaches (hsortValues (csig.recursiveTarget f)) (happlyRecursive f) γ hγ
+    simp at hden ⊢
+    exact hden
 
 theorem realizes
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
@@ -433,17 +413,17 @@ theorem realizes
           (model.denotes γ (hreaches hγ) index),
       hsortValues]
     exact happlyTarget γ hγ
-  have ⟨reachEnd, hphase, hreach⟩ :=
-    recursivePhaseAux (block := fun _ => block) (level := level)
-      pre hatoms source hreaches sortValues hsortValues
-      (by simpa using happlyRecursive) csig.nrecFields le_rfl
   have hfields := CtorCode.Interprets.prependOrdinary (block := block) (level := level)
     (Δ := (ctor.map pre.sigs).ordinaryTele{ls})
     (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map pre.sigs ctor _ _) ▸
       Realizes.mapInst (source.ordinary.realizes.monoReach
         (Set.singleton_subset_iff.mpr hps)) pre hatoms)
-    (hphase.prepend (rest := .target (targetIndex model))
-      (.target fun γ hγ => (Expr.denote_wkN γ _).trans (htarget _ (hreach hγ))))
+    (CtorCode.Interprets.prependRecursive
+      (by simpa [recursiveSem, typedRecFieldSetDep_apply] using
+        (source.recursiveSem_realizes (block := fun _ => block) (level := level) pre hatoms hreaches sortValues hsortValues
+          (by simpa using happlyRecursive)))
+      (.target fun γ hγ => (Expr.denote_wkN γ _).trans
+        (htarget _ (Reachable.base hγ))))
   rw [(ctor.map pre.sigs).targetType_fields η ls] at hfields
   simpa [Fin.castAdd, Ctor.fieldTele, Ctx.pi, Tele.foldr_append, code,
     show (ctor.map pre.sigs).ordinaryTele{ls} =

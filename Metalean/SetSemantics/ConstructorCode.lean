@@ -47,6 +47,16 @@ noncomputable def recoverRecField (Δ : SemTele n b) (index : Dom b)
     (fun final value => propGet level (fibreOp block (index final)) value)
     γ value
 
+theorem recoverRecField_apps {k : Nat} {Δ : SemTele n (n + k)} {index : Dom (n + k)}
+    {block value : ZFSet} {level : Nat} {γ : Slots n} {final : Slots (n + k)}
+    (hfinal : final ∈ Reachable {γ} Δ) :
+    Aczel.apps (recoverRecField Δ index block level γ value)
+        (fun f => final (Fin.natAdd n f)) =
+      propGet level (fibreOp block (index final))
+        (Aczel.apps value (fun f => final (Fin.natAdd n f))) := by
+  rw [recoverRecField, ← SemTele.lam_applyAt]
+  exact Reachable.apps_lam_of_base hfinal
+
 noncomputable def eraseRecField (Δ : SemTele n b) (level : Nat)
     (γ : Slots n) (value : ZFSet) : ZFSet :=
   Δ.lamAt (fun _ value => propVal level value) γ value
@@ -210,6 +220,16 @@ def prependRecursive {n : Nat} :
     let head := descriptors 0
     .recArg head.2.tele head.2.index
       (prependRecursive count (fun field => descriptors field.succ) rest)
+
+theorem prependRecursive_snoc (fields : Fin n → CtorRecCode.Packed b)
+    (field : CtorRecCode.Packed b) (rest : CtorCode b) :
+    prependRecursive (n + 1) (Fin.snoc fields field) rest =
+      prependRecursive n fields (.recArg field.2.tele field.2.index rest) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [← Fin.cons_self_tail fields, ← Fin.cons_snoc_eq_snoc_cons]
+    exact congrArg (CtorCode.recArg (fields 0).2.tele (fields 0).2.index) (ih (Fin.tail fields))
 
 variable {blockW : ZFSet} {γ : Slots n} {vargs : ZFSet}
 
