@@ -49,8 +49,8 @@ theorem RawTyped.motiveSpine (ht' : InductiveWF E₂ (E₂.get η).block) (h : I
   have pcode : RawInterpretationProperties T t' :=
     .forallE ht .sortDF pt (RawInterpretationProperties.sort (T.extension ht) l)
   let σ₁ : Γ₁.as ⟶ T.as := ⟨Fin.append Subst.id is, by
-    apply TeleWF.extendFamily hΔ (SubstWF.id Γ₁.as.wf)
-    simpa using h.index⟩
+    apply SubstWF.append (SubstWF.id Γ₁.as.wf)
+    simpa [Δ] using h.index⟩
   have hover : σ₁ ≫ RawCtx.Hom.teleProjection (Γ := Γ₁.as) hΔ = 𝟙 Γ₁.as :=
     RawCtx.Hom.ext (funext fun _ => Fin.append_left _ _ _)
   have pσ₁ (i) : RawInterpretationProperties Γ₁ (σ₁.subst (Fin.natAdd Γ₁.as.len i)) := by

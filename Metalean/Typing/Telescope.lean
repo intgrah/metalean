@@ -114,8 +114,8 @@ theorem Defeq.substitution_congr (hΓ : E[Γ₁] ⊢ ok) {σ₁ σ₂ : Subst ζ
     E[Γ₂] ⊢ e₁.subst σ₁ ≡ e₂.subst σ₂ : t.subst σ₁ :=
   TeleWF.substitution_congr hΓ.teleWF hσ
 
-theorem TeleWF.extendFamily {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ ℓ 0 b}
-    {Δ : Ctx ζ ℓ a (a + k)} (hΔ : TeleWF E P Γ₀ Δ) {σ : Subst ζ ℓ a b} {xs : Fin k → Expr ζ ℓ b} :
+theorem SubstWF.append {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ ℓ 0 b}
+    {Δ : Ctx ζ ℓ a (a + k)} {σ : Subst ζ ℓ a b} {xs : Fin k → Expr ζ ℓ b} :
     E[Γ] ⊢ σ ⊣ Γ₀ →
     (∀ p, E[Γ] ⊢ xs p :
       (Δ.entry (by omega) (by omega)).subst
@@ -126,7 +126,6 @@ theorem TeleWF.extendFamily {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ 
   induction Δ using Tele.addInduction with
   | nil => simpa using hσ
   | snoc k Δ t ih =>
-    have .snoc hΔ hA := hΔ
     have hprefix (p : Fin k) : E[Γ] ⊢ xs p.castSucc :
       (Ctx.entry Δ (by omega) (by omega)).subst
         (Fin.append σ fun previous : Fin p.val =>
@@ -135,7 +134,7 @@ theorem TeleWF.extendFamily {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ 
     have hlast := hxs (Fin.last k)
     simpa [Subst.extend, ← Fin.append_snoc,
       show Fin.snoc (fun previous : Fin k => xs (previous.castLE (Nat.le_succ k))) (xs (Fin.last k)) = xs from Fin.snoc_init_self xs] using
-      (show E[Γ] ⊢ _ ⊣ _ from (ih hΔ hprefix).extend hlast)
+      (show E[Γ] ⊢ _ ⊣ _ from (ih hprefix).extend hlast)
 
 theorem TeleWF.entry_isType {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ ℓ 0 b}
     {Δ : Ctx ζ ℓ a (a + k)} (hΔ : TeleWF E P Γ₀ Δ) {σ : Subst ζ ℓ a b}
@@ -167,7 +166,7 @@ theorem TeleWF.entry_isType {a b k : Nat} {Γ₀ : Ctx ζ ℓ 0 a} {Γ : Ctx ζ 
               xs (previous.castLE q.castSucc.isLt.le)) := by
         simpa using
           hxs q.castSucc (by simp)
-      have hfam := TeleWF.extendFamily (xs := fun q => xs q.castSucc) hΔ hσ hprefix
+      have hfam := SubstWF.append (xs := fun q => xs q.castSucc) hσ hprefix
       have ⟨u, _, ht⟩ := hA
       refine ⟨u, ?_⟩
       have := ht.substitution hfam
@@ -338,7 +337,7 @@ theorem Ctx.pi_applyFamily {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
     have hid : E[Γ] ⊢ Subst.id ⊣ Γ := fun v => by
       simp
       exact hΓ.var v
-    have hσ := TeleWF.extendFamily hΔ hid fun p => (hprefix p).left
+    have hσ := SubstWF.append hid fun p => (hprefix p).left
     have hΔt₁ : TeleWF E (fun _ => True) (Γ ++ Δ₀) #t[t₁] :=
       .snoc .nil ⟨u₁, trivial, ht₁⟩
     have htσ := ht.substitution (hσ.liftN hΔt₁)
@@ -385,7 +384,7 @@ theorem Ctx.lam_applyFamily {k : Nat} {Δ : Ctx ζ ℓ n (n + k)}
     have hid : E[Γ] ⊢ Subst.id ⊣ Γ := fun v => by
       rw [Expr.subst_id]
       exact hΓ.var v
-    have hσ := TeleWF.extendFamily hΔ hid hprefix
+    have hσ := SubstWF.append hid hprefix
     have ht₁σ := ht₁.substitution hσ
     have hΔt₁ : TeleWF E (fun _ => True) (Γ ++ Δ₀) #t[t₁] :=
       .snoc .nil ⟨u₁, trivial, ht₁⟩

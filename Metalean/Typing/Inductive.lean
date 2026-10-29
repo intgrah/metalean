@@ -1467,7 +1467,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
   rw [Ctx.pi_subst, hΔrecSubst] at hA
   have hσA : E[Γ] ⊢ Fin.append Subst.id fds ⊣
       Γ ++ ((E.get η).block.ctors s c).ordinaryFieldTele η ls ps :=
-    TeleWF.extendFamily hΔord (fun v => by rw [Expr.subst_id]; exact hΓ.var v) hxsA
+    SubstWF.append (fun v => by rw [Expr.subst_id]; exact hΓ.var v) hxsA
   have hΔrecWF : TeleWF E (fun _ => True) Γ
       (((E.get η).block.ctors s c).recursiveFieldTele η ls ps fds) := by
     have h := hΔrec.substitution hσA
@@ -1513,7 +1513,7 @@ theorem InductiveWF.iotaRhs_hasType {η : Head ζ (.inductive ι)} (hB : Inducti
         ((E.get η).block.ctors s c).recursiveFieldTele η ls
           (fun i => (ps i).wkN (ι.ctors s c).nfields)
           (Expr.boundVars n (ι.ctors s c).nfields 0) :=
-    TeleWF.extendFamily hΔrec hσA hxsB'
+    SubstWF.append hσA hxsB'
   have hxsC : ∀ f : Fin (ι.ctors s c).nrecFields, E[Γ] ⊢
       (E.get η).block.iotaIHs η ls l ps ms mins s c fds recFds f :
       ((Ctx.substN (Fin.append (Fin.append Subst.id fds) recFds) (ι.ctors s c).nrecFields
