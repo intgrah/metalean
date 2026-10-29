@@ -30,26 +30,22 @@ abbrev RawActionFamily (Γ₁ : CtxCat E ℓ) :=
 noncomputable instance {Γ₁ : CtxCat E ℓ} : PartialOrder (RawActionFamily Γ₁) :=
   inferInstanceAs (PartialOrder (Functor.HomObj _ _ _))
 
-noncomputable instance {Γ₁ : CtxCat E ℓ} : SupSet (RawActionFamily Γ₁) := ⟨fun S => {
-  app X σ := Preord.ofHom {
-    toFun ρ := (⨆ B ∈ S, B.app X σ ρ : RawAction X.unop)
-    monotone' ρ ρ' h :=
-      have hmono : ∀ B ∈ S, B.app X σ ρ ≤ B.app X σ ρ' :=
-        fun B _ => (B.app X σ).hom.monotone h
-      iSup₂_mono hmono }
-  naturality f σ := Preord.ext fun ρ => by
-    change (⨆ B ∈ S, B.app _ (σ ≫ f) (ρ.pullback f.unop) : RawAction _) =
-      (RawAction.presheaf E ℓ).map f (⨆ B ∈ S, B.app _ σ ρ)
-    rw [RawAction.map_iSup]
-    refine iSup_congr fun B => ?_
-    rw [RawAction.map_iSup]
-    exact iSup_congr fun _ => B.naturality_apply f σ ρ }⟩
+noncomputable instance {Γ₁ : CtxCat E ℓ} : CompleteLattice (RawActionFamily Γ₁) :=
+  Functor.HomObj.completeLattice (G := (RawAction.monotone E ℓ).toFunctor)
+    (lattice := fun X => inferInstanceAs (CompleteLattice (RawAction X.unop)))
+    (fun f => ((RawAction.presheaf E ℓ).map f).hom.monotone) fun f S => by
+      change (RawAction.presheaf E ℓ).map f (sSup S) = sSup ((RawAction.presheaf E ℓ).map f '' S)
+      rw [sSup_eq_iSup, sSup_image]
+      exact (RawAction.map_iSup f _).trans (iSup_congr fun _ => RawAction.map_iSup f _)
 
 namespace RawActionFamily
 
 theorem app_sSup {Γ₁ : CtxCat E ℓ} (S : Set (RawActionFamily Γ₁)) (X : (CtxCat E ℓ)ᵒᵖ)
     (σ : op Γ₁ ⟶ X) (ρ : RawValuation X.unop) :
-    (sSup S).app X σ ρ = ⨆ B ∈ S, B.app X σ ρ := rfl
+    (sSup S).app X σ ρ = ⨆ B ∈ S, B.app X σ ρ := by
+  change (⨆ B ∈ S, (B.app X σ).hom) ρ = _
+  rw [OrderHom.iSup_apply]
+  exact iSup_congr fun B => OrderHom.iSup_apply _ ρ
 
 @[simp] theorem iSup_app {ι : Sort*} {Γ₁ : CtxCat E ℓ} (B : ι → RawActionFamily Γ₁)
     (X : (CtxCat E ℓ)ᵒᵖ) (σ : op Γ₁ ⟶ X) (ρ : RawValuation X.unop) :
@@ -58,20 +54,6 @@ theorem app_sSup {Γ₁ : CtxCat E ℓ} (S : Set (RawActionFamily Γ₁)) (X : (
   rw [app_sSup, iSup_range]
 
 end RawActionFamily
-
-noncomputable instance {Γ₁ : CtxCat E ℓ} : CompleteLattice (RawActionFamily Γ₁) where
-  bot := {
-    app _ _ := Preord.ofHom (OrderHom.const _ ⊥)
-    naturality f _ := Preord.ext fun _ => RawAction.ext fun _ _ _ => rfl }
-  bot_le B := fun X σ ρ => @bot_le (RawAction X.unop) _ _ (B.app X σ ρ)
-  __ := completeLatticeOfSup (RawActionFamily Γ₁) fun S => by
-    constructor
-    · intro B hB X σ ρ
-      apply le_iSup₂_of_le B hB le_rfl
-    · intro B hB X σ ρ
-      apply iSup₂_le
-      intro C hC
-      apply hB hC
 
 variable (D : CodeAssignment E ℓ)
 
