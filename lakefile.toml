@@ -18,6 +18,7 @@ globs = ["Metalean"]
 [[require]]
 scope = "leanprover-community"
 name = "mathlib"
+rev = "v4.35.0"
 
 [[lean_exe]]
 name = "metalean"

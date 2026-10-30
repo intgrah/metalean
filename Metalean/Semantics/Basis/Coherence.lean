@@ -306,8 +306,8 @@ theorem reindex (σ : Γ₂ ⟶ Γ₁) {a : Shape Γ₁} (h : IsCoherent Γ₁ a
   induction h with
   | forallE _ hd _ _ ih ihi iho => exact .forallE ih (hd.reindexHom σ) ihi iho
   | lam hd _ _ ihi iho => exact .lam (hd.reindexHom σ) ihi iho
-  | ind _ ih => exact .ind ih
-  | _ => constructor <;> solve_by_elim
+  | bot | sort | quot => constructor
+  | ind | ctor | quotMk => constructor; solve_by_elim
 
 theorem compatible_self {a : Shape Γ₁} (σ : Γ₂ ⟶ Γ₁) :
     IsCoherent Γ₁ a → Compatible σ a a

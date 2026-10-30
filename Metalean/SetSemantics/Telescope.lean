@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Mathlib.Algebra.Order.Ring.Nat
-public import Mathlib.Data.Nat.SuccPred
+public import Mathlib.Order.SuccPred.Nat
 public import Metalean.Meta.ZF
 public import Metalean.Data.Tele
 public import Metalean.Data.Fin
