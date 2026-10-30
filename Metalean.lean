@@ -203,7 +203,6 @@ public import Metalean.SetSemantics.Eliminator
 public import Metalean.SetSemantics.Environment.Inductive.Constructor
 public import Metalean.SetSemantics.Environment.Inductive.Interpretation
 public import Metalean.SetSemantics.Environment.Inductive.Model
-public import Metalean.SetSemantics.Environment.Inductive.Recursor.Case
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Cases
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope

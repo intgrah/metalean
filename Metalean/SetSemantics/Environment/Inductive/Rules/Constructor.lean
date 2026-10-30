@@ -100,29 +100,27 @@ theorem recFieldsMem
     ∀ f, ε₂[γ]⟦recFds₁ f⟧ ∈ model.recFieldSet s c f (ε₂[γ]⟦ps ·⟧)
       (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) := by
   intro f
-  have hdomain := StrongRecursiveFieldSource.denotesDepMapEnv
-    (I := I) (block := fun _ => model.toModel.block (ε₂[γ]⟦ps ·⟧))
-    (level := model.toModel.level) pre hatoms ((I.ctors s c).recursive f)
-    ((model.ctors s c).source.recursive f)
-    (fun _ hcurrent =>
-      Reachable.append (Reachable.mono hcurrent (Set.singleton_subset_iff.mpr hparamReach)))
-    (hsorts _)
+  have hdomain := StrongRecursiveFieldSource.type_denotes ((I.ctors s c).recursive f)
+    ((model.ctors s c).source.recursive f) pre hatoms
+    (block := fun _ => model.toModel.block (ε₂[γ]⟦ps ·⟧)) (level := model.toModel.level)
+    (σ := Fin.append ps fds) γ (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
+    (Reachable.append (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach)))
+    (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧) (hsorts _)
     (fun δ hδ => by
-      have hpsEq :
-          (fun param : Fin ι.nparams =>
-            δ (param.castLE (by omega))) = (ε₂[γ]⟦ps ·⟧) := by
+      have hpsEq : (fun param : Fin ι.nparams => δ (param.castLE (by omega))) =
+          (ε₂[γ]⟦ps ·⟧) := by
         funext param
-        simpa using
-          congrFun (Set.eq_of_mem_singleton (Reachable.base (Reachable.base hδ))) param
+        have h := congrFun (Set.eq_of_mem_singleton (Reachable.base hδ))
+          (param.castAdd (ι.ctors s c).nfields)
+        rw [Fin.append_left] at h
+        exact h
       rw [← hpsEq]
       exact model.recursiveField_apply s c f δ)
-    (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) hfieldsReach
-  suffices heq : _ = model.recFieldSet s c f (ε₂[γ]⟦ps ·⟧)
-      (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) from heq ▸ (hrecFields f).mem
-  simpa [recFieldSet, codeOf, StrongCtorSource.code, Inductive.map, Ctor.map] using
-    (Expr.denote_subst γ (Fin.append ps fds) _).trans
-      ((congrArg (fun δ => ε₂[δ]⟦_⟧)
-        (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧)).trans hdomain)
+  simp only [Fin.append_left] at hdomain
+  have hmem := (hrecFields f).mem
+  simp only [Inductive.map, Ctor.map] at hmem
+  rw [hdomain] at hmem
+  exact hmem
 
 include hatoms hparamReach hfieldsReach in
 theorem targetIndexDenotes (index : Fin (ι.nindices s)) :

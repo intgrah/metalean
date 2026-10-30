@@ -163,6 +163,14 @@ theorem Realizes.ofTypes {count : Nat} {types : Fin count → Expr ζ ℓ a}
     exact .snoc (ih fun f => h f.castSucc) fun γ hγ =>
       (Expr.denote_wkN γ _).trans (h (Fin.last count) _ (Reachable.base hγ))
 
+theorem Expr.denote_pi_ofTypes {count : Nat} (types : Fin count → Expr ζ ℓ a)
+    (e : Expr ζ ℓ (a + count)) (γ : Slots a) :
+    ε[ν; γ]⟦(Ctx.ofTypes types).pi e⟧ =
+      Aczel.pis (fun i => ε[ν; γ]⟦types i⟧) (fun values => ε[ν; Fin.append γ values]⟦e⟧) := by
+  have h := Realizes.ofTypes (ε := ε) (ν := ν) (reach := Set.univ)
+    (types := types) (domains := fun i δ => ε[ν; δ]⟦types i⟧) (fun _ _ _ => rfl)
+  exact (h.denotes_pi (Set.mem_univ γ) (fun _ _ => rfl)).trans (SemTele.pi_ofDoms _ _ _)
+
 @[expose] noncomputable def Ctx.denote (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) :
     Ctx ζ ℓ a b → SemTele a b :=
   Tele.map fun _ t γ => ε[ν; γ]⟦t⟧

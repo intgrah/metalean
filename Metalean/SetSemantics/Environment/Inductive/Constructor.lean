@@ -60,36 +60,44 @@ noncomputable abbrev code (recFd : RecField ζ₁ ι nfields arity s₁)
       sortKey s₁.val (encode (ε₁[γ]⟦recFd.indices{ls} ·⟧)) :=
   rfl
 
-theorem denotesDepMapEnv
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
+theorem type_denotes
     (recFd : RecField ζ₁ ι nfields arity s₁)
     (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd)
+    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
+    {n : Nat} {σ : Subst ζ₂ 0 (ι.nparams + nfields) n}
     {block : Dom (ι.nparams + nfields)}
     {sortValue : Slots ι.nparams → Slots (ι.nindices s₁) → ZFSet}
-    {reach : Set (Slots (ι.nparams + nfields))}
-    (hreaches : reach ⊆ Reachable Set.univ base.sem)
-    (hF : ∀ vps vis, ε₂ (.ind η s₁ ls vps vis) = sortValue vps vis)
-    (happly : ∀ γ ∈ Reachable reach (code recFd source).tele,
-      sortValue (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-        (ε₁[γ]⟦recFd.indices{ls} ·⟧) =
+    (γ : Slots n) (δ : Slots (ι.nparams + nfields))
+    (hδ : δ ∈ Reachable Set.univ base.sem)
+    (hσ : (ε₂[γ]⟦σ ·⟧) = δ)
+    (hsort : ∀ vps vis, ε₂ (.ind η s₁ ls vps vis) = sortValue vps vis)
+    (happly : ∀ final ∈ Reachable {δ} (code recFd source).tele,
+      sortValue (fun param : Fin ι.nparams => final (param.castLE (by omega)))
+        (ε₁[final]⟦recFd.indices{ls} ·⟧) =
         propSet level (fibreOp
-          (block fun current : Fin (ι.nparams + nfields) =>
-            γ (current.castLE (code recFd source).tele.le))
-          ((code recFd source).index γ)))
-    (γ : Slots (ι.nparams + nfields)) (hγ : γ ∈ reach) :
+          (block fun current => final (current.castLE (code recFd source).tele.le))
+          ((code recFd source).index final))) :
     ε₂[γ]⟦(recFd.map pre.sigs).instantiatedType η ls
-        (fun param => .var (param.castLE (Nat.le_add_right _ _))) Subst.id⟧ =
-      typedRecFieldSetDep (code recFd source).tele (code recFd source).index block level γ := by
+        (fun param => σ (param.castAdd nfields)) σ⟧ =
+      typedRecFieldSet (code recFd source).tele (code recFd source).index (block δ) level δ := by
+  have htype := RecField.instantiatedType_subst (recFd.map pre.sigs) η ls
+    (fun param => .var (param.castAdd nfields)) Subst.id σ
+  simp only [Expr.subst, Subst.id_comp] at htype
+  rw [← htype, Expr.denote_subst, hσ]
+  unfold typedRecFieldSet
+  rw [← (code recFd source).tele.pi_base
+    (fun current final => propSet level (fibreOp (block current) ((code recFd source).index final))) δ]
   simp only [RecField.map, RecField.instantiatedType, RecField.instantiatedTelescope_id]
-  apply Realizes.denotes_pi hγ
+  apply Realizes.denotes_pi (Set.mem_singleton δ)
   · intro final hfinal
     have his (index : Fin (ι.nindices s₁)) :=
       Expr.denote_map (ν := ![]) pre.sigs hatoms final (recFd.indices index){ls}
     simp only [Expr.map_instL] at his
     simp! only [RecField.instantiatedIndices_id, InstLevel.inst_apply, Expr.denote_wkN]
-    rw [funext his, hF]
+    rw [funext his, hsort]
     exact happly final hfinal
-  · exact Realizes.mapInst (source.extension.realizes.monoReach hreaches) pre hatoms
+  · exact Realizes.mapInst
+      (source.extension.realizes.monoReach (Set.singleton_subset_iff.mpr hδ)) pre hatoms
 
 theorem ihType_denotes
     (recFd : RecField ζ₁ ι nfields arity s₁)
@@ -286,45 +294,6 @@ theorem code_targetIndex_mem_type (source : StrongCtorSource E₁ ε₁ I ls cto
     (γ : Slots ι.nparams) (vargs : ZFSet) :
     source.code.targetIndex γ vargs ∈ U_ level :=
   sortKey_mem_type (encode_fin_mem_type (hvalues _))
-
-noncomputable def recursiveSem
-    (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (block : Dom (ι.nparams + csig.nfields)) (level : Nat) :
-    SemTele (ι.nparams + csig.nfields) (ι.nparams + csig.nfields + csig.nrecFields) :=
-  SemTele.ofDoms fun f γ =>
-    typedRecFieldSet (source.code.recursive f).tele (source.code.recursive f).index (block γ)
-      level γ
-
-theorem recursiveSem_realizes
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
-    (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    {block : Dom (ι.nparams + csig.nfields)} {level : Nat}
-    {reach : Set (Slots (ι.nparams + csig.nfields))}
-    (hreaches : reach ⊆ Reachable Set.univ (params.append source.ordinary).sem)
-    (sortValues : (s : Fin ι.nsorts) → Slots ι.nparams → Slots (ι.nindices s) → ZFSet)
-    (hsortValues : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = sortValues s vps vis)
-    (happlyRecursive : ∀ f : Fin csig.nrecFields,
-      ∀ γ ∈ Reachable reach
-        (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
-      sortValues (csig.recursiveTarget f)
-          (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-          (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
-        propSet level (fibreOp
-          (block fun current : Fin (ι.nparams + csig.nfields) =>
-            γ (current.castLE (StrongRecursiveFieldSource.code (ctor.recursive f)
-              (source.recursive f)).tele.le))
-          ((StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).index γ))) :
-    Realizes ε₂ ![] reach
-      ((ctor.map pre.sigs).recursiveFieldTele η ls
-        (fun param => (.var (param.castLE (Nat.le_add_right _ _)) :
-          Expr ζ₂ 0 (ι.nparams + csig.nfields)))
-        (Expr.boundVars ι.nparams csig.nfields 0))
-      (source.recursiveSem block level) :=
-  Realizes.ofTypes fun f γ hγ => by
-    have hden := StrongRecursiveFieldSource.denotesDepMapEnv pre hatoms (ctor.recursive f)
-      (source.recursive f) hreaches (hsortValues (csig.recursiveTarget f)) (happlyRecursive f) γ hγ
-    simp at hden ⊢
-    exact hden
 
 end StrongCtorSource
 

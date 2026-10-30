@@ -118,6 +118,21 @@ noncomputable def fold (former : ZFSet → (ZFSet → ZFSet) → ZFSet) :
 noncomputable def pi : Dom b → SemTele a b → Dom a := fold Aczel.pi
 noncomputable def lam : Dom b → SemTele a b → Dom a := fold Aczel.lam
 
+theorem pi_ofDoms {count : Nat} (domains : Fin count → Dom a)
+    (leaf : Dom (a + count)) (γ : Slots a) :
+    (ofDoms domains).pi leaf γ = Aczel.pis (fun i => domains i γ)
+      (fun values => leaf (Fin.append γ values)) := by
+  induction count with
+  | zero => simp [ofDoms, pi, fold, Aczel.pis]
+  | succ count ih =>
+    change (ofDoms fun i => domains i.castSucc).pi (fun current =>
+      Aczel.pi (domains (Fin.last count) fun base => current (base.castAdd count))
+        fun value => leaf (current.snoc value)) γ = _
+    rw [ih]
+    congr 1
+    funext values
+    simp [Fin.append_snoc]
+
 noncomputable def app : {b : Nat} → SemTele a b → Slots b → ZFSet → ZFSet
   | _, .nil => fun _ fn => fn
   | _, .snoc Δ _ => fun γ fn => Aczel.app (app Δ (Fin.init γ) fn) (γ (Fin.last _))

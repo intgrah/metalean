@@ -220,9 +220,6 @@ theorem recrStepSound :
   rw [recrPrefixSem] at hprefix
   have hcaseReach := Reachable.mono (Reachable.of_append hprefix)
     (fun _ hbase => Reachable.of_append hbase)
-  have hmsReach : Fin.append γ.params γ.motives ∈
-      Reachable (Reachable Set.univ model.paramsSem) (model.recrMotivesSem l) := by
-    simpa [RecSlots.prefixValues] using Reachable.base hcaseReach
   intro approximation happroximation graph hgraph s₁ c vargs hargs
   have hminor : RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) ∈
       model.recrCaseDomain s₁ c (Fin.append γ.params γ.motives) :=
@@ -232,7 +229,7 @@ theorem recrStepSound :
       RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) :=
     app_minorFamily (vmins := RecSlots.cases γ) (Fin.encodeSigma ι.nctors ⟨s₁, c⟩)
   rw [hminorEq]
-  exact model.recrCase_applyMinor_mem l s₁ c _ _ hmsReach _ hminor approximation happroximation graph hgraph vargs hargs
+  exact model.recrCase_applyMinor_mem s₁ c _ _ _ hminor approximation happroximation graph hgraph vargs hargs
 
 end StrongInductiveModel
 

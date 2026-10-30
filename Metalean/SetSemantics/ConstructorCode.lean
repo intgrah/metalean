@@ -30,18 +30,6 @@ noncomputable def typedRecFieldSet (Δ : SemTele n b) (index : Dom b)
     (block : ZFSet) (level : Nat) : Dom n :=
   Δ.pi fun γ => propSet level (fibreOp block (index γ))
 
-noncomputable def typedRecFieldSetDep (Δ : SemTele n b) (index : Dom b)
-    (block : Dom n) (level : Nat) : Dom n :=
-  Δ.pi fun γ => propSet level
-    (fibreOp (block fun field => γ (field.castLE Δ.le)) (index γ))
-
-@[simp] theorem typedRecFieldSetDep_apply (Δ : SemTele n b) (index : Dom b)
-    (block : Dom n) (level : Nat) (γ : Slots n) :
-    typedRecFieldSetDep Δ index block level γ =
-      typedRecFieldSet Δ index (block γ) level γ :=
-  Δ.pi_base (fun base final =>
-    propSet level (fibreOp (block base) (index final))) γ
-
 noncomputable def recoverRecField (Δ : SemTele n b) (index : Dom b)
     (block : ZFSet) (level : Nat) (γ : Slots n) (value : ZFSet) : ZFSet :=
   Δ.lamAt
@@ -138,6 +126,16 @@ theorem recFieldSet_mono (Δ : SemTele n b) (index : Dom b) (h : block₁ ⊆ bl
 
 noncomputable def ihType (Δ : SemTele n b) (index : Dom b) (motive : ZFSet) : DomAt n :=
   Δ.piAt fun γ value => fibreOp motive [zf|($(index γ), value)]
+
+theorem ihType_eraseRecField {level : Nat} {motive : ZFSet} (Δ : SemTele n b) (index : Dom b)
+    (h : ∀ key value, pair key value ∈ block →
+      fibreOp motive (pair key value) = fibreOp motive (pair key (propVal level value)))
+    (γ : Slots n) (raw : ZFSet) (hraw : raw ∈ recFieldSet Δ index block γ) :
+    ihType Δ index motive γ raw = ihType Δ index motive γ (eraseRecField Δ level γ raw) := by
+  apply Δ.piAt_lamAt
+    (domain := fun final => fibreOp block (index final))
+    (map := fun _ value => propVal level value) _ _ ?_ γ raw hraw
+  exact fun final value hvalue => h _ _ (mem_fibre.mp hvalue)
 
 noncomputable def recMap (Δ : SemTele n b) (index : Dom b) (graph : ZFSet) : DomAt n :=
   Δ.lamAt fun γ value => app graph [zf|($(index γ), value)]
@@ -243,6 +241,36 @@ noncomputable def applyMinor (level : Nat) (graph : ZFSet) (code : CtorCode n)
   [zf|$(SemTele.app code.ordinary final minor)
     $(fun f => eraseRecField (code.recursive f).tele level final (fields f))...
     $(fun f => recMap (code.recursive f).tele (code.recursive f).index graph final (fields f))...]
+
+noncomputable def minorType (level : Nat) (block motive : ZFSet) (code : CtorCode n)
+    (leaf : Slots (n + code.nfields) → Slots code.nrecFields → ZFSet) : Dom n :=
+  code.ordinary.pi fun final =>
+    Aczel.pis (fun f => typedRecFieldSet (code.recursive f).tele
+      (code.recursive f).index block level final) fun fields =>
+      Aczel.pis (fun f => ihType (code.recursive f).tele (code.recursive f).index
+        motive final (fields f)) fun _ => leaf final fields
+
+theorem applyMinor_mem {code : CtorCode n} {level : Nat} {motive : ZFSet}
+    {leaf : Slots (n + code.nfields) → Slots code.nrecFields → ZFSet}
+    {γ : Slots n} {minor graph vargs : ZFSet}
+    (hminor : minor ∈ code.minorType level block₂ motive leaf γ)
+    (hblock : block₁ ⊆ block₂)
+    (hgraph : ∀ value ∈ block₁, app graph value ∈ fibreOp motive value)
+    (hmotive : ∀ key value, pair key value ∈ block₂ →
+      fibreOp motive (pair key value) = fibreOp motive (pair key (propVal level value)))
+    (hargs : vargs ∈ code.argSet block₁ γ) :
+    code.applyMinor level graph γ minor vargs ∈ leaf (code.ordinary.values γ vargs)
+      (fun f => eraseRecField (code.recursive f).tele level (code.ordinary.values γ vargs)
+        (tupleValues code.nrecFields (code.ordinary.tail vargs) f)) := by
+  obtain ⟨hfinal, htail, _⟩ := SemTele.mem_sigma.mp hargs
+  have hfields := (mem_tupleSet.mp htail).1
+  have hraw (f) := recFieldSet_mono (code.recursive f).tele (code.recursive f).index
+    hblock _ (hfields f)
+  have hminor := Reachable.app_mem hfinal hminor
+  have hminor := Aczel.apps_mem_pis hminor (fun f => eraseRecField_mem _ _ (hraw f))
+  exact Aczel.apps_mem_pis hminor fun f => by
+    rw [← ihType_eraseRecField _ _ hmotive _ _ (hraw f)]
+    exact recMap_mem _ _ hgraph _ _ (hfields f)
 
 theorem applyMinor_congr {level : Nat} (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
     (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet)
