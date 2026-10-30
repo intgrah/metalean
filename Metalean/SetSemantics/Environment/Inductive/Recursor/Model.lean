@@ -66,13 +66,22 @@ theorem recGraph_congr_key
     change (model.codeOf s₁ c₁).targetIndex vps args₁ =
       (model.codeOf s₂ c₂).targetIndex vps args₂ at hkeys
     cases model.large_target_separates hsubsingleton vps hkeys
-    have hagree := model.large_argAgree hdecl hrule hE hB
+    have hfields := model.large_ordinary_eq hdecl hrule hE hB
       (hsubsingleton.eligible s₁ c₁) vps (model.recrParamsReachable s l γ hγ)
       good hgood hargs₁ hargs₂ hkeys
     rw [hiota hargs₁', hiota hargs₂, hlevel]
-    exact CtorCode.applyMinor_zero_congr_of_argAgree _ good block graph
+    have htail₁ := CtorCode.tail_mem_argSet hargs₁
+    have htail₂ := CtorCode.tail_mem_argSet hargs₂
+    rw [show (model.ctors s₁ c₁).source.ordinary.sem.values vps args₁ =
+      (model.ctors s₁ c₁).source.ordinary.sem.values vps args₂ from hfields] at htail₁
+    rw [codeOf, StrongCtorSource.code, CtorCode.applyMinor, CtorCode.applyMinor,
+      SemTele.applyFields_prependOrdinary, SemTele.applyFields_prependOrdinary,
+      SemTele.applyIhs_prependOrdinary, SemTele.applyIhs_prependOrdinary,
+      show (model.ctors s₁ c₁).source.ordinary.sem.values vps args₁ =
+        (model.ctors s₁ c₁).source.ordinary.sem.values vps args₂ from hfields]
+    exact CtorCode.applyMinor_zero_congr _ _ (block₁ := good) (block₂ := block)
       (fun key value₁ value₂ h₁ h₂ => (mem_sep.mp h₁).2 _ h₂ (by simp))
-      vps _ hargs₁ hargs₂ hagree
+      _ _ htail₁ htail₂
   have hblock : block ⊆ good := lfp_least (fun _ h => lfp_subset (hgood h)) hclosed
   exact (mem_sep.mp (hblock hleft)).2 right hright hkeys
 

@@ -7,7 +7,6 @@ module
 
 public import Metalean.SetSemantics.Consistency.Environment
 public import Metalean.SetSemantics.QuotientValue
-import Metalean.SetSemantics.InductiveComputation
 
 public section
 
@@ -72,18 +71,28 @@ theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Eq.sig,
     exact (congrFun hvis ⟨0, by decide⟩).symm
   refl {level α x} hα hx := by
     have ⟨w, hclause⟩ := h level
-    have hps := reachable hclause hα hx
-    have hctor := hclause.realizes.ctorRealizes ⟨0, by decide⟩ ⟨0, by decide⟩ ![α, x] hps
-    generalize hcodeEq : w.codes ⟨0, by decide⟩ ⟨0, by decide⟩ = concreteCode at hctor
-    have .target htarget := hctor
-    have hfibre := entryValue_mem_fibre <| entry_mem_indSet
-      (hclause.realizes.bounded ![α, x])
-      (hcodeEq ▸ CtorCode.proof_mem_argSet_target ![α, x])
-    have ⟨vargs, hargs, hkeyEq⟩ := hclause.uniqueCtor_of_mem_fibre
-      ⟨0, by decide⟩ ⟨0, by decide⟩ Fin.eq_zero Fin.eq_zero ![α, x] hfibre
+    have hps (p : Fin 2) : ε[![α, x]] ⊨
+        (Expr.var p : Expr ζ 0 2) ≡ .var p :
+        (E.get η).block.paramType (fun _ => level) Expr.var p := by
+      rw [hclause.block_eq]
+      refine Fin.cases ?_ ?_ p
+      · exact ⟨rfl, hα⟩
+      · intro p
+        obtain rfl := Fin.eq_zero p
+        exact ⟨rfl, hx⟩
+    have hctor := hclause.rules.ctor (E₂ := E) (ε₂ := ε) .refl
+      (funext fun a => congrArg ε ((Atom.functor _).map_id_apply _ a))
+      (γ := ![α, x]) (s := ⟨0, by decide⟩) (c := ⟨0, by decide⟩)
+      (ps₁ := Expr.var) (ps₂ := Expr.var)
+      (fds₁ := ![]) (fds₂ := ![]) (recFds₁ := ![]) (recFds₂ := ![])
+      hps nofun nofun
+    have hmem : ε (.ctor η 0 0 (fun _ => level) ![α, x] ![] ![]) ∈
+        ε (.ind η 0 (fun _ => level) ![α, x] ![x]) := by
+      simpa! [Env.Prefix.sigs, Head.map, hclause.block_eq, ctorDecl, Ctor.targetIndex,
+        Fin.fun_vecEmpty, Fin.const_fin_one] using hctor.mem
     rw [hclause.sortAtom, InductiveModel.sortValue,
-      show w.level = 0 by simpa using hclause.realizes.level_eq, ← target hclause hps hargs hkeyEq]
-    exact proof_mem_squash hfibre
+      show w.level = 0 by simpa using hclause.realizes.level_eq] at hmem ⊢
+    exact propVal_mem_propSet (level := 0) (propGet_mem hmem)
 
 theorem of_model (m : Env.Model.{u} E)
     (hblock : (E.get η).block = Eq.block) :

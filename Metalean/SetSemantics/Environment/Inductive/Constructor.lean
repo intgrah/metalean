@@ -279,56 +279,39 @@ noncomputable def recursiveCodes (source : StrongCtorSource E₁ ε₁ I ls ctor
     (f : Fin csig.nrecFields) : CtorRecCode.Packed (ι.nparams + csig.nfields) :=
   ⟨csig.recursiveArity f, StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)⟩
 
-structure Target (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) : Type (u + 1) where
-  values (γ : Slots (ι.nparams + csig.nfields)) : Fin (ι.nindices s) → ZFSet
-  interp : ∀ γ ∈ Reachable Set.univ (params.append source.ordinary).sem,
-    (i : Fin (ι.nindices s)) →
-    ε₁[γ] ⊨ (ctor.targetIndices i){ls} ≡ (ctor.targetIndices i){ls} :
-      I.indexType ls s (fun param => .var ⟨param.val, by omega⟩)
-        ctor.targetIndices{ls} i
-  denotes : ∀ γ ∈ Reachable Set.univ (params.append source.ordinary).sem,
-    (i : Fin (ι.nindices s)) →
-    ε₁[γ]⟦(ctor.targetIndices i){ls}⟧ = values γ i
-  bounded : ∃ level, ∀ γ index, values γ index ∈ U_ level
+open scoped Classical in
+noncomputable def targetValues (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
+    (γ : Slots (ι.nparams + csig.nfields)) (i : Fin (ι.nindices s)) : ZFSet :=
+  if γ ∈ Reachable Set.univ (params.append source.ordinary).sem then
+    ε₁[γ]⟦(ctor.targetIndices i){ls}⟧ else ∅
 
-noncomputable def targetIndex {source : StrongCtorSource E₁ ε₁ I ls ctor params bound}
-    (model : Target source) : Dom (ι.nparams + csig.nfields) :=
-  fun γ => sortKey s.val (encode (model.values γ))
+theorem targetValues_denotes (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
+    (γ : Slots (ι.nparams + csig.nfields))
+    (hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem) (i : Fin (ι.nindices s)) :
+    ε₁[γ]⟦(ctor.targetIndices i){ls}⟧ = source.targetValues γ i := by
+  simp [targetValues, hγ]
 
-theorem Target.valuesReachable {source : StrongCtorSource E₁ ε₁ I ls ctor params bound}
-    (model : Target source)
-    (indicesSem : SemTele ι.nparams (ι.nparams + ι.nindices s))
-    (his : Realizes ε₁ ![] (Reachable Set.univ params.sem)
-      (I.indices s){ls} indicesSem)
-    (fieldSlots : Slots (ι.nparams + csig.nfields))
-    (hfields : fieldSlots ∈ Reachable Set.univ (params.append source.ordinary).sem) :
-    Fin.append (fun param : Fin ι.nparams => fieldSlots (param.castLE (Nat.le_add_right _ _)))
-        (model.values fieldSlots) ∈
-      Reachable (Reachable Set.univ params.sem) indicesSem :=
-  (funext (model.denotes fieldSlots hfields)) ▸ indexValuesReachable (Nat.le_add_right _ _) his
-    ctor.targetIndices{ls}
-    fieldSlots (Reachable.base (Reachable.of_append hfields)) (model.interp fieldSlots hfields)
+noncomputable def targetIndex (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
+    Dom (ι.nparams + csig.nfields) :=
+  fun γ => sortKey s.val (encode (source.targetValues γ))
 
-noncomputable def code (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (targetIndex : Dom (ι.nparams + csig.nfields)) : CtorCode ι.nparams :=
+noncomputable def code (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
+    CtorCode ι.nparams :=
   CtorCode.prependOrdinary source.ordinary.sem
-    (CtorCode.prependRecursive csig.nrecFields source.recursiveCodes (.target targetIndex))
+    (CtorCode.prependRecursive csig.nrecFields source.recursiveCodes (.target source.targetIndex))
 
-theorem codeDomsIn (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (targetIndex : Dom (ι.nparams + csig.nfields)) :
-    (source.code targetIndex).DomsIn bound :=
+theorem codeDomsIn (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
+    source.code.DomsIn bound :=
   CtorCode.DomsIn.prependOrdinary source.ordinary.bounded
     (CtorCode.DomsIn.prependRecursive
-      (fun f => (source.recursive f).extension.bounded)
-      (CtorCode.DomsIn.target))
+      (fun f => (source.recursive f).extension.bounded) .target)
 
 theorem code_targetIndex_mem_type (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (model : Target source) (hlevel : Classical.choose model.bounded ≤ level)
+    (hvalues : ∀ γ i, source.targetValues γ i ∈ U_ level)
     (γ : Slots ι.nparams) (vargs : ZFSet) :
-    (source.code (targetIndex model)).targetIndex γ vargs ∈ U_ level := by
+    source.code.targetIndex γ vargs ∈ U_ level := by
   rw [code, SemTele.targetIndex_prependOrdinary, CtorCode.targetIndex_prependRecursive]
-  exact sortKey_mem_type (encode_fin_mem_type fun index =>
-    type_mono hlevel (Classical.choose_spec model.bounded _ index))
+  exact sortKey_mem_type (encode_fin_mem_type (hvalues _))
 
 noncomputable def recursiveSem
     (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
@@ -369,136 +352,53 @@ theorem recursiveSem_realizes
     simp at hden ⊢
     exact hden
 
-theorem realizes
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
-    (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (model : Target source)
-    {block : ZFSet}
-    (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ params.sem)
-    (sortValues : (s₁ : Fin ι.nsorts) → Slots ι.nparams → Slots (ι.nindices s₁) → ZFSet)
-    (hsortValues : ∀ s₁ vps vis, ε₂ (.ind η s₁ ls vps vis) = sortValues s₁ vps vis)
-    (happlyTarget : ∀ γ ∈ Reachable {vps} source.ordinary.sem,
-      sortValues s (fun param : Fin ι.nparams => γ (param.castLE (by omega))) (model.values γ) =
-        propSet level (fibreOp block (targetIndex model γ)))
-    (happlyRecursive : ∀ f : Fin csig.nrecFields,
-      ∀ γ ∈ Reachable (Reachable {vps} source.ordinary.sem)
-          (StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)).tele,
-      sortValues (csig.recursiveTarget f)
-        (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-        (ε₁[γ]⟦(ctor.recursive f).indices{ls} ·⟧) =
-        propSet level (fibreOp block
-          ((StrongRecursiveFieldSource.code (ctor.recursive f)
-            (source.recursive f)).index γ))) :
-    CtorCode.Interprets ε₂ ![] block level (fun γ => γ) {vps}
-      (let ps : Fin ι.nparams → Expr ζ₂ 0 ι.nparams := fun param => .var param
-       Ctx.pi
-         (.ind η s ls (csig.fieldParams ps)
-           fun index => (ctor.map pre.sigs).targetIndex ls
-             (csig.fieldParams ps) csig.fieldOrdinary index)
-         ((ctor.map pre.sigs).fieldTele η ls ps))
-      (source.code (targetIndex model)) := by
-  let := Subst.category ζ₂ 0
-  have hreaches : Reachable {vps} source.ordinary.sem ⊆
-      Reachable Set.univ (params.append source.ordinary).sem := fun _ hγ =>
-    Reachable.append (Reachable.mono hγ (Set.singleton_subset_iff.mpr hps))
-  have htarget (γ : Slots (ι.nparams + csig.nfields))
-      (hγ : γ ∈ Reachable {vps} source.ordinary.sem) :
-      ε₂[γ]⟦.ind η s ls
-          (fun param => .var
-            (param.castLE (Nat.le_add_right _ _)))
-          (ctor.map pre.sigs).targetIndices{ls}⟧ = propSet level (fibreOp block
-          (targetIndex model γ)) := by
-    simp only [Expr.denote, InstLevel.inst_apply]
-    rw [funext fun index : Fin (ι.nindices s) => show
-        ε₂[γ]⟦((ctor.map pre.sigs).targetIndices index){ls}⟧ = model.values γ index by
-      simpa [Ctor.map, -Expr.denote_instL] using
-        (Expr.denote_map pre.sigs hatoms γ (ctor.targetIndices index){ls}).trans
-          (model.denotes γ (hreaches hγ) index),
-      hsortValues]
-    exact happlyTarget γ hγ
-  have hfields := CtorCode.Interprets.prependOrdinary (block := block) (level := level)
-    (Δ := (ctor.map pre.sigs).ordinaryTele{ls})
-    (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map pre.sigs ctor _ _) ▸
-      Realizes.mapInst (source.ordinary.realizes.monoReach
-        (Set.singleton_subset_iff.mpr hps)) pre hatoms)
-    (CtorCode.Interprets.prependRecursive
-      (by simpa [recursiveSem, typedRecFieldSetDep_apply] using
-        (source.recursiveSem_realizes (block := fun _ => block) (level := level) pre hatoms hreaches sortValues hsortValues
-          (by simpa using happlyRecursive)))
-      (.target fun γ hγ => (Expr.denote_wkN γ _).trans
-        (htarget _ (Reachable.base hγ))))
-  rw [(ctor.map pre.sigs).targetType_fields η ls] at hfields
-  simpa [Fin.castAdd, Ctor.fieldTele, Ctx.pi, Tele.foldr_append, code,
-    show (ctor.map pre.sigs).ordinaryTele{ls} =
-      (ctor.map pre.sigs).ordinaryFieldTele η ls fun param => .var param from
-        ((Ctx.substFunctor _).map_id_apply _ _).symm] using hfields
-
 end StrongCtorSource
-
-open scoped Classical in
-theorem CtorWF.targetModel (hdecl : SemDecls E₁ ε₁ ![])
-    (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hctor : CtorWF E₁ I ctor)
-    (indices : StrongTeleExtension E₁ ε₁ ![] params (I.indices s){ls} bound₁)
-    (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
-    Nonempty (StrongCtorSource.Target source) := by
-  let sourceModel := params.append source.ordinary
-  have htarget (index : Fin (ι.nindices s)) :=
-    (hctor.targetIndices index).instLevel ls
-  rw [Ctx.instL_append] at htarget
-  have interp (γ : Slots (ι.nparams + csig.nfields))
-      (hγ : γ ∈ Reachable Set.univ sourceModel.sem)
-      (index : Fin (ι.nindices s)) :
-      ε₁[γ] ⊨ (ctor.targetIndices index){ls} ≡
-        (ctor.targetIndices index){ls} :
-        I.indexType ls s
-          (fun param => .var ⟨param.val, by omega⟩)
-          ctor.targetIndices{ls} index := by
-    simpa! using
-      soundness hdecl hrule hE (htarget index) γ (sourceModel.semCtx γ hγ)
-  let vis (γ : Slots (ι.nparams + csig.nfields))
-      (index : Fin (ι.nindices s)) : ZFSet :=
-    if γ ∈ Reachable Set.univ sourceModel.sem then
-      ε₁[γ]⟦(ctor.targetIndices index){ls}⟧
-    else ∅
-  have hdenotes γ (hγ : γ ∈ Reachable Set.univ sourceModel.sem) index :
-      ε₁[γ]⟦(ctor.targetIndices index){ls}⟧ = vis γ index := by
-    simp [vis, hγ]
-  refine ⟨vis, interp, hdenotes, bound₁, fun γ index => ?_⟩
-  by_cases hγ : γ ∈ Reachable Set.univ sourceModel.sem
-  · have hreach := indexValuesReachable (Nat.le_add_right _ _) indices.realizes
-      ctor.targetIndices{ls} γ
-      (Reachable.base (Reachable.of_append hγ)) (interp γ hγ)
-    simpa [vis, hγ] using Reachable.mem_type_of_domsIn hreach indices.bounded (Fin.natAdd ι.nparams index)
-      (by simp)
-  · simpa [vis, hγ] using empty_mem_type
 
 structure StrongCtorModel (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
     (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level 0) (ctor : Ctor ζ₁ ι s csig)
     (params : StrongTeleModel E ε ![] I.params{ls}) : Type (u + 1) where
   bound : Nat
   source : StrongCtorSource E ε I ls ctor params bound
-  target : StrongCtorSource.Target source
-  localDoms (level : Nat) :
-    I.level{ls}.eval ![] = level + 1 →
-    (source.code (StrongCtorSource.targetIndex target)).DomsIn level
+  targetInterp : ∀ γ ∈ Reachable Set.univ (params.append source.ordinary).sem,
+    ∀ i, ε[γ] ⊨ (ctor.targetIndices i){ls} ≡ (ctor.targetIndices i){ls} :
+      I.indexType ls s (fun param => .var ⟨param.val, by omega⟩) ctor.targetIndices{ls} i
+  targetBounded : ∃ level, ∀ γ i, source.targetValues γ i ∈ U_ level
+  localDoms : ∀ level,
+    I.level{ls}.eval ![] = level + 1 → source.code.DomsIn level
 
+open scoped Classical in
 theorem CtorWF.model (hdecl : SemDecls E₁ ε₁ ![])
     (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hctor : CtorWF E₁ I ctor)
     (params : StrongTeleModel E₁ ε₁ ![] I.params{ls})
     (indices : StrongTeleExtension E₁ ε₁ ![] params (I.indices s){ls} bound₁) :
     Nonempty (StrongCtorModel E₁ ε₁ I ls ctor params) := by
+  have make {bound : Nat} (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
+      (hlocal : ∀ level, I.level{ls}.eval ![] = level + 1 → source.code.DomsIn level) :
+      Nonempty (StrongCtorModel E₁ ε₁ I ls ctor params) := by
+    have htarget (i : Fin (ι.nindices s)) := (hctor.targetIndices i).instLevel ls
+    rw [Ctx.instL_append] at htarget
+    have interp (γ : Slots (ι.nparams + csig.nfields))
+        (hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem) (i : Fin (ι.nindices s)) :
+        ε₁[γ] ⊨ (ctor.targetIndices i){ls} ≡ (ctor.targetIndices i){ls} :
+          I.indexType ls s (fun param => .var ⟨param.val, by omega⟩) ctor.targetIndices{ls} i := by
+      simpa! using soundness hdecl hrule hE (htarget i) γ
+        ((params.append source.ordinary).semCtx γ hγ)
+    refine ⟨bound, source, interp, ⟨bound₁, fun γ i => ?_⟩, hlocal⟩
+    by_cases hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem
+    · have hreach := indexValuesReachable (Nat.le_add_right _ _) indices.realizes
+        ctor.targetIndices{ls} γ (Reachable.base (Reachable.of_append hγ)) (interp γ hγ)
+      simpa [StrongCtorSource.targetValues, hγ] using
+        Reachable.mem_type_of_domsIn hreach indices.bounded (Fin.natAdd ι.nparams i) (by simp)
+    · simpa [StrongCtorSource.targetValues, hγ] using empty_mem_type
   cases hlevel : I.level{ls}.eval ![] with
   | zero =>
     have ⟨bound, source⟩ := hctor.source hdecl hrule hE params
-    have ⟨targetModel⟩ := hctor.targetModel hdecl hrule hE indices source
-    exact ⟨_, source, targetModel, fun _ _ => by omega⟩
+    exact make source fun _ _ => by omega
   | succ level =>
     have ⟨source⟩ : Nonempty (StrongCtorSource E₁ ε₁ I ls ctor params level) :=
       hctor.sourceAt hdecl hrule hE params (by simpa using hlevel)
-    have ⟨targetModel⟩ := hctor.targetModel hdecl hrule hE indices source
-    refine ⟨_, source, targetModel, fun level₁ hlevel₁ => ?_⟩
+    refine make source fun level₁ hlevel₁ => ?_
     obtain rfl : level₁ = level := by omega
-    exact source.codeDomsIn _
+    exact source.codeDomsIn
 
 end Metalean

@@ -48,17 +48,11 @@ noncomputable def codeOf (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) :
     CtorCode ι.nparams :=
   (model.ctors s c).source.code
-    (StrongCtorSource.targetIndex (model.ctors s c).target)
 
 noncomputable def recursiveRest (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     CtorCode (ι.nparams + (ι.ctors s c).nfields) :=
   CtorCode.prependRecursive (ι.ctors s c).nrecFields (model.ctors s c).source.recursiveCodes
-    (.target (StrongCtorSource.targetIndex (model.ctors s c).target))
-
-theorem codeOf_eq (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    model.codeOf s c =
-      CtorCode.prependOrdinary (model.ctors s c).source.ordinary.sem (model.recursiveRest s c) :=
-  rfl
+    (.target (StrongCtorSource.targetIndex (model.ctors s c).source))
 
 noncomputable def ordinaryOf (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vargs : ZFSet) :
@@ -69,7 +63,7 @@ def ctorBound : (s : Fin ι.nsorts) × Fin (ι.nctors s) → Nat
   | ⟨s, c⟩ => (model.ctors s c).bound
 
 noncomputable def targetBound : (s : Fin ι.nsorts) × Fin (ι.nctors s) → Nat
-  | ⟨s, c⟩ => Classical.choose (model.ctors s c).target.bounded
+  | ⟨s, c⟩ => Classical.choose (model.ctors s c).targetBounded
 
 noncomputable def bound : Nat :=
   max (Finset.univ.sup (ctorBound model)) (Finset.univ.sup (targetBound model))
@@ -78,8 +72,7 @@ theorem codeOf_domsIn (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     (codeOf model s c).DomsIn (bound model) := by
   have hle : (model.ctors s c).bound ≤ bound model :=
     (Finset.le_sup (f := ctorBound model) (Finset.mem_univ ⟨s, c⟩)).trans (Nat.le_max_left _ _)
-  exact (model.ctors s c).source.codeDomsIn
-    (StrongCtorSource.targetIndex (model.ctors s c).target) |>.mono hle
+  exact (model.ctors s c).source.codeDomsIn.mono hle
 
 theorem codeOf_localDoms {level : Nat} (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (hlevel : I.level{ls}.eval ![] = level + 1) :
@@ -88,10 +81,12 @@ theorem codeOf_localDoms {level : Nat} (s : Fin ι.nsorts) (c : Fin (ι.nctors s
 
 theorem codeOf_targetIndex_mem_type (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (γ : Slots ι.nparams) (vargs : ZFSet) :
-    (codeOf model s c).targetIndex γ vargs ∈ U_ (bound model) :=
-  (model.ctors s c).source.code_targetIndex_mem_type (model.ctors s c).target
-    ((Finset.le_sup (f := targetBound model) (Finset.mem_univ (Sigma.mk s c))).trans
-      (Nat.le_max_right _ _)) γ vargs
+    (codeOf model s c).targetIndex γ vargs ∈ U_ (bound model) := by
+  have hle : Classical.choose (model.ctors s c).targetBounded ≤ bound model :=
+    (Finset.le_sup (f := targetBound model) (Finset.mem_univ ⟨s, c⟩)).trans
+      (Nat.le_max_right _ _)
+  exact (model.ctors s c).source.code_targetIndex_mem_type
+    (fun γ i => type_mono hle (Classical.choose_spec (model.ctors s c).targetBounded γ i)) γ vargs
 
 def paramsSem : SemTele 0 ι.nparams := model.tele.params.sem
 
@@ -103,10 +98,10 @@ def sortSem (s : Fin ι.nsorts) :
     SemTele 0 (ι.nparams + ι.nindices s) :=
   paramsSem model ++ indicesSem model s
 
-def targetValues (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+noncomputable def targetValues (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     Slots (ι.nparams + (ι.ctors s c).nfields) →
       Fin (ι.nindices s) → ZFSet :=
-  (model.ctors s c).target.values
+  (model.ctors s c).source.targetValues
 
 noncomputable abbrev toModel : InductiveModel ι where
   paramsSem := model.paramsSem
@@ -176,7 +171,7 @@ theorem targetRealizes (s : Fin ι.nsorts)
     (index : Fin (ι.nindices s)) :
     ε₁[ordinaryOf model s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
       targetValues model s c (ordinaryOf model s c vps vargs) index :=
-  (model.ctors s c).target.denotes _
+  (model.ctors s c).source.targetValues_denotes _
     (Reachable.append (model.ordinaryOf_reachable s c vps hps vargs hargs)) index
 
 theorem fieldsRealize (s : Fin ι.nsorts)
@@ -206,37 +201,14 @@ theorem recursiveField_apply
   simp [InductiveModel.sortValue]
 
 theorem realizes
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
-    (hsorts : ∀ s vps vis,
-      ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis) :
-    model.toModel.Interprets ε₂ ![] (I.map pre.sigs) η ls where
+    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
+    model.toModel.Interprets ε₂ ![] (I.map pre.sigs) ls where
   level_eq := rfl
   params := by
     simpa [paramsSem, Inductive.map] using model.tele.params.realizes.mapInst pre hatoms
   indicesRealizes s := by
     simpa [paramsSem, indicesSem, Inductive.map] using
       (model.tele.indices s).realizes.mapInst pre hatoms
-  ctorRealizes s c vps hps := by
-    let ctorModel := model.ctors s c
-    let source := ctorModel.source
-    let target := ctorModel.target
-    have hctor := source.realizes pre hatoms target vps hps
-      model.toModel.sortValue hsorts (happlyTarget := by
-      intro fieldSlots hfields
-      have hbase := Reachable.base hfields
-      have hpsEq : (fun param : Fin ι.nparams =>
-        fieldSlots (param.castLE (Nat.le_add_right _ _))) = vps := hbase
-      rw [hpsEq]
-      rfl) (happlyRecursive := by
-      intro f γ hγ
-      have hpsEq :
-          (fun param : Fin ι.nparams => γ (param.castLE (by omega))) =
-            vps := by
-        funext param
-        simpa using
-          congrFun (Set.eq_of_mem_singleton (Reachable.base (Reachable.base hγ))) param
-      simpa [hpsEq] using recursiveField_apply model s c f γ)
-    simpa [codeOf, Inductive.map] using hctor
   ordinaryOf_castLE := model.ordinaryOf_castLE
   targetIndex_eq := model.codeOf_targetIndex
   targetRealizes s c vps hps vargs hargs index := by
@@ -282,7 +254,7 @@ theorem ctorArgs_mem
         (model.toModel.block vps) fieldSlots :=
       CtorCode.packRecursive_mem (fun f => recoverRecField_mem _ _ (hrecFields f))
         (CtorCode.proof_mem_argSet_target fieldSlots)
-    simpa [codeOf_eq] using SemTele.pack_mem hfields htail
+    simpa [codeOf, StrongCtorSource.code, recursiveRest] using SemTele.pack_mem hfields htail
   · unfold ordinaryOf
     rw [← hbase]
     exact source.ordinary.sem.values_pack fieldSlots tail
@@ -350,7 +322,7 @@ theorem ordinary_eq_proof
   rw [hzero] at hsorted
   exact mem_verum.mp (eq_verum_of_mem hsorted hslot ▸ hslot)
 
-theorem large_argAgree
+theorem large_ordinary_eq
     (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
@@ -366,13 +338,10 @@ theorem large_argAgree
       (model.toModel.block vps) vps)
     (htarget : (model.codeOf s c).targetIndex vps leftArgs =
       (model.codeOf s c).targetIndex vps rightArgs) :
-    (model.codeOf s c).ArgAgree leftArgs rightArgs := by
+    model.ordinaryOf s c vps leftArgs = model.ordinaryOf s c vps rightArgs := by
   let ordinary := (model.ctors s c).source.ordinary.sem
-  let rest := model.recursiveRest s c
   have hleftReach := SemTele.reachable_values hleftArgs (Set.mem_singleton vps)
   have hrightReach := SemTele.reachable_values hrightArgs (Set.mem_singleton vps)
-  have hleftTail := CtorCode.tail_mem_argSet hleftArgs
-  have hrightTail := CtorCode.tail_mem_argSet hrightArgs
   have hleftDenotes := model.targetRealizes s c vps hps leftArgs
     (CtorCode.argSet_mono happroximation (model.codeOf s c) vps hleftArgs)
   have hrightDenotes := model.targetRealizes s c vps hps rightArgs hrightArgs
@@ -381,41 +350,30 @@ theorem large_argAgree
     Encode.injective (congrArg Prod.snd (sortKey_injective (by
       rwa [← model.codeOf_targetIndex s c vps leftArgs,
         ← model.codeOf_targetIndex s c vps rightArgs])))
-  have hfields : model.ordinaryOf s c vps leftArgs =
-      model.ordinaryOf s c vps rightArgs := by
-    funext slot
-    cases slot using Fin.addCases with
-    | left param =>
-      exact (model.ordinaryOf_castLE s c vps leftArgs param).trans
-        (model.ordinaryOf_castLE s c vps rightArgs param).symm
-    | right f =>
-      cases heligible.ordinary f with
-      | inl hzero =>
-        have hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0 := by
-          simp [hzero]
-        have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
-            Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
-          model.ordinary_eq_proof hdecl hrule hE hB s c vps hps _ hreach f hzero
-        exact (heq leftArgs hleftReach).trans (heq rightArgs hrightReach).symm
-      | inr hindex =>
-        have ⟨index, hindex⟩ := hindex
-        have hvar : (I.ctors s c).targetIndices index =
-            .var (Fin.natAdd ι.nparams f) := by
-          apply Expr.eq_var_of_isVar
-          simpa using hindex
-        have hleftValue := hleftDenotes index
-        have hrightValue := hrightDenotes index
-        rw [hvar] at hleftValue hrightValue
-        exact hleftValue.trans ((congrFun htargetValues index).trans hrightValue.symm)
-  rw [← show ordinary.values vps leftArgs = ordinary.values vps rightArgs from hfields]
-    at hrightTail
-  exact CtorCode.argAgree_prependOrdinary ordinary rest vps
-    (CtorCode.argAgree_prependRecursive (model.ctors s c).source.recursiveCodes
-      (StrongCtorSource.targetIndex (model.ctors s c).target)
-      (model.toModel.block vps) (model.ordinaryOf s c vps leftArgs)
-      (CtorCode.argSet_mono happroximation rest (model.ordinaryOf s c vps leftArgs) hleftTail)
-      hrightTail)
-    hfields
+  funext slot
+  cases slot using Fin.addCases with
+  | left param =>
+    exact (model.ordinaryOf_castLE s c vps leftArgs param).trans
+      (model.ordinaryOf_castLE s c vps rightArgs param).symm
+  | right f =>
+    cases heligible.ordinary f with
+    | inl hzero =>
+      have hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0 := by
+        simp [hzero]
+      have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
+          Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
+        model.ordinary_eq_proof hdecl hrule hE hB s c vps hps _ hreach f hzero
+      exact (heq leftArgs hleftReach).trans (heq rightArgs hrightReach).symm
+    | inr hindex =>
+      have ⟨index, hindex⟩ := hindex
+      have hvar : (I.ctors s c).targetIndices index =
+          .var (Fin.natAdd ι.nparams f) := by
+        apply Expr.eq_var_of_isVar
+        simpa using hindex
+      have hleftValue := hleftDenotes index
+      have hrightValue := hrightDenotes index
+      rw [hvar] at hleftValue hrightValue
+      exact hleftValue.trans ((congrFun htargetValues index).trans hrightValue.symm)
 
 end StrongInductiveModel
 

@@ -75,7 +75,7 @@ public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
     (congrFun hatoms₁ _).trans (hrecr s l vps vms vmins vis vmaj)
   exact ⟨current.toModel,
     { block_eq := rfl
-      realizes := current.realizes step hatoms hsorts
+      realizes := current.realizes step hatoms
       sortAtom := hsorts
       rules :=
       { ind := fun suffix hatoms₁ =>

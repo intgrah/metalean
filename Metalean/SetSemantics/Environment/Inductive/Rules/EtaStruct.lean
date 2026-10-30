@@ -232,11 +232,11 @@ theorem projTerm_denotes_field
     have hargs : args ∈ (model.codeOf s c).argSet ∅ vps := by
       have htail := CtorCode.packRecursive_mem (block := (∅ : ZFSet))
         (fields := (model.ctors s c).source.recursiveCodes)
-        (rest := CtorCode.target (StrongCtorSource.targetIndex (model.ctors s c).target))
+        (rest := CtorCode.target (StrongCtorSource.targetIndex (model.ctors s c).source))
         (level := model.toModel.level) (γ := Fin.append vps vfds)
         (block₁ := model.toModel.block vps) (values := hstruct.recursive)
         hstruct.no_recursive.elim (CtorCode.proof_mem_argSet_target (Fin.append vps vfds))
-      simpa [args, ctorArgs, codeOf_eq, recursiveRest, vfds, major] using
+      simpa [args, ctorArgs, codeOf, StrongCtorSource.code, recursiveRest, vfds, major] using
         SemTele.pack_mem hfields htail
     have htarget : (model.codeOf s c).targetIndex vps args = sortKey s.val (encode vis) := by
       rw [model.codeOf_targetIndex]
@@ -318,7 +318,7 @@ theorem etaStructRuleSound
     have hfields (f) : ε₂[γ]⟦hstruct.projTerm η ls ps f maj⟧ =
         model.fieldsOf s c vps vis ε₂[γ]⟦maj⟧ f :=
       model.projTerm_denotes_field hdecl hrule hE hB pre hatoms hsorts hrecr hlevel
-        hstruct vis f (model.paramsReachable pre hatoms hsorts hps)
+        hstruct vis f (model.paramsReachable pre hatoms hps)
         hmajMem
     simpa [hfields] using (model.ctorResult_of_mem_sortValue hstruct.sort_unique hstruct.ctor_unique
       hstruct.no_recursive vps vis _ hmajMem).2

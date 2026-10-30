@@ -171,7 +171,7 @@ theorem eraseRecField_recoverRecField {b level : Nat}
     eraseRecField tele level γ
         (recoverRecField tele index block level γ value) = value := by
   calc
-    _ = _ := tele.lamAt_comp _ _ (fun _ _ => propGet_mem) γ value hfield
+    _ = _ := tele.lamAt_comp _ _ γ value
     _ = _ := tele.lamAt_congr (fun _ _ => propVal_propGet) γ value hfield
     _ = value := tele.lamAt_id
       (fun final => propSet level (fibreOp block (index final)))
@@ -267,80 +267,34 @@ theorem packRecursive_erase {fields : Fin count → CtorRecCode.Packed n} {index
       rw [herase, hrecover]
       exact ih (fields := Fin.tail fields) (build := fun tail => build (pair value tail)) htail
 
-private theorem applyFields_zero_congr {n : Nat}
-    {code : CtorCode n} {block₁ block₂ : ZFSet}
-    {γ : Slots n} (minor : ZFSet) {left right : ZFSet}
-    (hleft : left ∈ code.argSet block₁ γ)
-    (hright : right ∈ code.argSet block₂ γ)
-    (h : code.ArgAgree left right) :
-    code.applyFields 0 γ minor left =
-      code.applyFields 0 γ minor right := by
-  induction h generalizing minor with
-  | target => rfl
-  | arg hfst _ ih =>
-    obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
-    obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
-    simp at hfst ih
-    subst hfst
-    simpa! using ih _ hleftTail hrightTail
-  | @recArg _ _ tele index _ _ _ _ ih =>
-    obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
-    obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
-    simp only [snd_pair] at ih
-    simp only [applyFields, fst_pair, snd_pair]
-    rw [eraseRecField_zero_eq tele index index block₁ block₂ γ hleftField hrightField]
-    exact ih _ hleftTail hrightTail
-
-private theorem applyIhs_key_congr {n : Nat}
-    {code : CtorCode n} {block₁ block₂ graph : ZFSet}
-    (hgraph : ∀ key leftValue rightValue,
-      pair key leftValue ∈ block₁ → pair key rightValue ∈ block₂ →
-      app graph (pair key leftValue) = app graph (pair key rightValue))
-    {γ : Slots n} (minor : ZFSet) {left right : ZFSet}
-    (hleft : left ∈ code.argSet block₁ γ)
-    (hright : right ∈ code.argSet block₂ γ)
-    (h : code.ArgAgree left right) :
-    code.applyIhs graph γ minor left =
-      code.applyIhs graph γ minor right := by
-  induction h generalizing minor with
-  | target => rfl
-  | arg hfst _ ih =>
-    obtain ⟨leftValue, leftTail, _, hleftTail, rfl⟩ := argSet_arg_inv hleft
-    obtain ⟨rightValue, rightTail, _, hrightTail, rfl⟩ := argSet_arg_inv hright
-    simp only [fst_pair, snd_pair] at hfst ih
-    subst hfst
-    simpa! using ih _ hleftTail hrightTail
-  | @recArg _ _ tele index _ _ _ _ ih =>
-    obtain ⟨leftField, leftTail, hleftField, hleftTail, rfl⟩ := argSet_recArg_inv hleft
-    obtain ⟨rightField, rightTail, hrightField, hrightTail, rfl⟩ := argSet_recArg_inv hright
-    simp only [snd_pair] at ih
-    simp only [applyIhs, fst_pair, snd_pair]
-    have hmap : recMap tele index graph γ leftField = recMap tele index graph γ rightField := by
-      rw [recFieldSet] at hleftField hrightField
-      apply tele.lamAt_eq_of_mem
-        (leftDomain := fun final => fibreOp block₁ (index final))
-        (rightDomain := fun final => fibreOp block₂ (index final))
-        (hleft := hleftField) (hright := hrightField)
-      intro final leftValue rightValue hleftValue hrightValue
-      exact hgraph _ _ _ (mem_fibre.mp hleftValue) (mem_fibre.mp hrightValue)
-    rw [hmap]
-    exact ih _ hleftTail hrightTail
-
-theorem applyMinor_zero_congr_of_argAgree
-    {n : Nat} (code : CtorCode n)
-    (block₁ block₂ graph : ZFSet)
-    (hgraph : ∀ key leftValue rightValue,
-      pair key leftValue ∈ block₁ → pair key rightValue ∈ block₂ →
-      app graph (pair key leftValue) = app graph (pair key rightValue))
+theorem applyMinor_zero_congr
+    (fields : Fin count → CtorRecCode.Packed n) (index : Dom n)
+    {block₁ block₂ graph : ZFSet}
+    (hgraph : ∀ key value₁ value₂,
+      pair key value₁ ∈ block₁ → pair key value₂ ∈ block₂ →
+      app graph (pair key value₁) = app graph (pair key value₂))
     (γ : Slots n) (minor : ZFSet) {left right : ZFSet}
-    (hleft : left ∈ code.argSet block₁ γ)
-    (hright : right ∈ code.argSet block₂ γ)
-    (h : code.ArgAgree left right) :
-    code.applyMinor 0 graph γ minor left =
-      code.applyMinor 0 graph γ minor right := by
-  unfold applyMinor
-  rw [applyFields_zero_congr minor hleft hright h]
-  exact applyIhs_key_congr hgraph _ hleft hright h
+    (hleft : left ∈ (prependRecursive count fields (.target index)).argSet block₁ γ)
+    (hright : right ∈ (prependRecursive count fields (.target index)).argSet block₂ γ) :
+    (prependRecursive count fields (.target index)).applyMinor 0 graph γ minor left =
+      (prependRecursive count fields (.target index)).applyMinor 0 graph γ minor right := by
+  have hl := recursiveValues_mem hleft
+  have hr := recursiveValues_mem hright
+  have hfields : (fun f => eraseRecField (fields f).2.tele 0 γ (tupleValues count left f)) =
+      fun f => eraseRecField (fields f).2.tele 0 γ (tupleValues count right f) :=
+    funext fun f => eraseRecField_zero_eq _ _ _ _ _ _ (hl f) (hr f)
+  have hihs : (fun f => recMap (fields f).2.tele (fields f).2.index graph γ
+        (tupleValues count left f)) =
+      fun f => recMap (fields f).2.tele (fields f).2.index graph γ
+        (tupleValues count right f) := by
+    funext f
+    apply (fields f).2.tele.lamAt_eq_of_mem
+      (leftDomain := fun final => fibreOp block₁ ((fields f).2.index final))
+      (rightDomain := fun final => fibreOp block₂ ((fields f).2.index final))
+      (hleft := hl f) (hright := hr f)
+    exact fun _ _ _ h₁ h₂ => hgraph _ _ _ (mem_fibre.mp h₁) (mem_fibre.mp h₂)
+  simp only [applyMinor, applyFields_prependRecursive, applyIhs_prependRecursive]
+  rw [hfields, hihs]
 
 end CtorCode
 

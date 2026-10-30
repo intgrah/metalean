@@ -199,16 +199,6 @@ def prependRecursive {n : Nat} :
     .recArg head.2.tele head.2.index
       (prependRecursive count (fun field => descriptors field.succ) rest)
 
-theorem prependRecursive_snoc (fields : Fin n → CtorRecCode.Packed b)
-    (field : CtorRecCode.Packed b) (rest : CtorCode b) :
-    prependRecursive (n + 1) (Fin.snoc fields field) rest =
-      prependRecursive n fields (.recArg field.2.tele field.2.index rest) := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [← Fin.cons_self_tail fields, ← Fin.cons_snoc_eq_snoc_cons]
-    exact congrArg (CtorCode.recArg (fields 0).2.tele (fields 0).2.index) (ih (Fin.tail fields))
-
 variable {blockW : ZFSet} {γ : Slots n} {vargs : ZFSet}
 
 noncomputable def support {n : Nat} :
@@ -423,53 +413,6 @@ noncomputable def targetIndex {n : Nat} :
   | .arg _ rest => fun γ vargs =>
     targetIndex rest (γ.snoc [zf|vargs.1]) [zf|vargs.2]
   | .recArg _ _ rest => fun γ vargs => targetIndex rest γ [zf|vargs.2]
-
-inductive ArgAgree :
-    {n : Nat} → CtorCode n → ZFSet → ZFSet → Prop
-  | target {n : Nat} {index : Dom n} {vargs : ZFSet} :
-    ArgAgree (.target index) vargs vargs
-  | arg {n : Nat} {domain : Dom n}
-    {rest : CtorCode (n + 1)} {left right : ZFSet} :
-    fst left = fst right →
-    ArgAgree rest (snd left) (snd right) →
-    ArgAgree (.arg domain rest) left right
-  | recArg {n b : Nat} {tele : SemTele n b} {index : Dom b}
-    {rest : CtorCode n} {left right : ZFSet} :
-    ArgAgree rest (snd left) (snd right) →
-    ArgAgree (.recArg tele index rest) left right
-
-theorem argAgree_prependRecursive {count : Nat}
-    (fields : Fin count → CtorRecCode.Packed n) (index : Dom n)
-    (block : ZFSet) (γ : Slots n) {left right : ZFSet}
-    (hleft : left ∈ (prependRecursive count fields (.target index)).argSet
-      block γ)
-    (hright : right ∈ (prependRecursive count fields (.target index)).argSet
-      block γ) :
-    (prependRecursive count fields (.target index)).ArgAgree left right := by
-  induction count generalizing left right with
-  | zero =>
-    rw [eq_proof_of_mem_argSet_target hleft, eq_proof_of_mem_argSet_target hright]
-    exact .target
-  | succ count ih =>
-    obtain ⟨leftField, leftTail, _, hleftTail, rfl⟩ := argSet_recArg_inv hleft
-    obtain ⟨rightField, rightTail, _, hrightTail, rfl⟩ := argSet_recArg_inv hright
-    refine .recArg ?_
-    rw [snd_pair, snd_pair]
-    exact ih (fields := fun f => fields f.succ) hleftTail hrightTail
-
-theorem argAgree_prependOrdinary (Δ : SemTele n b) (rest : CtorCode b) (γ : Slots n)
-    {left right : ZFSet}
-    (htail : rest.ArgAgree (Δ.tail left) (Δ.tail right))
-    (hvalues : Δ.values γ left = Δ.values γ right) :
-    (prependOrdinary Δ rest).ArgAgree left right := by
-  induction Δ with
-  | nil => exact htail
-  | snoc Δ domain ih =>
-    have hlast := (Fin.snoc_last ..).symm.trans
-      ((congrFun hvalues (Fin.last _)).trans (Fin.snoc_last ..))
-    have hinit := (Fin.init_snoc ..).symm.trans
-      ((congrArg Fin.init hvalues).trans (Fin.init_snoc ..))
-    exact ih (.arg domain rest) (.arg hlast htail) hinit
 
 theorem tail_mem_argSet {Δ : SemTele n b} {rest : CtorCode b}
     (hargs : vargs ∈ (prependOrdinary Δ rest).argSet block γ) :

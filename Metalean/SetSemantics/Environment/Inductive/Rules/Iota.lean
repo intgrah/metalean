@@ -183,7 +183,7 @@ theorem iotaRuleSound
   intro hE hps hms hmins hfields hrecFields
   have hmajInterp := model.ctorRuleSound pre hatoms hblock hsorts hctors hps hfields hrecFields
   rw [hblock] at hallowed hps hms hmins hfields hrecFields hmajInterp ⊢
-  have hparamReach := model.paramsReachable pre hatoms hsorts hps
+  have hparamReach := model.paramsReachable pre hatoms hps
   let vfds : Fin (ι.ctors s c).nfields → ZFSet := (ε₂[γ]⟦fds ·⟧)
   let vrecFds := (ε₂[γ]⟦recFds ·⟧)
   have hfieldsReach := model.fieldSlotsReachable pre hatoms hparamReach hfields

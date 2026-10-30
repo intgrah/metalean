@@ -58,7 +58,7 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
   let fieldTele := source.ordinary.sem
   let fields := source.recursiveCodes
   let rest := CtorCode.prependRecursive (ι.ctors s c).nrecFields fields
-    (.target (StrongCtorSource.targetIndex (model.ctors s c).target))
+    (.target (StrongCtorSource.targetIndex (model.ctors s c).source))
   have hps : vps ∈ Reachable Set.univ model.paramsSem := by
     simpa using Reachable.base hms
   have hfields := SemTele.reachable_values (Δ := fieldTele)
@@ -166,7 +166,7 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
           (Fin.append ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).params)
             ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) fieldSlots).ordinary)) i := by
       have h := (Expr.denote_map pre.sigs hatoms _ _).trans
-        (ctorModel.target.denotes _ hsource i)
+        (ctorModel.source.targetValues_denotes _ hsource i)
       rw [Expr.map_instL] at h
       simp only [Ctor.targetIndex, Expr.denote_subst, Fin.append_comp, ps, CtorSig.caseParams,
         CtorSig.fieldParams, CtorSig.caseOrdinary, CtorSig.fieldOrdinary, Expr.var_wkN]
