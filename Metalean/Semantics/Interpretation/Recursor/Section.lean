@@ -10,7 +10,7 @@ public import Metalean.Typing.Structure
 public import Metalean.Semantics.Interpretation.Recursor.Fields
 public import Metalean.TypeTheory.Syntactic.Telescope
 import Metalean.TypeTheory.Syntactic.Comprehension
-import Metalean.Syntax.Structure.Projection
+public import Metalean.Syntax.Structure.Projection
 import Metalean.Syntax.Substitution
 
 @[expose] public section
@@ -102,229 +102,7 @@ include h in
 noncomputable abbrev CtxCat.majorCtx (hstruct : (E.get η).block.IsStructure s c) : CtxCat E ℓ :=
   Γ₁.extension (hstruct.indType h.param)
 
-variable (ls ps) in
-noncomputable def projField (hstruct : (E.get η).block.IsStructure s c)
-    (f : Fin (ι.ctors s c).nfields) : Expr ζ ℓ (Γ₁.as.len + 1) :=
-  hstruct.projTerm η ls (fun p => (ps p).wk) f (.var (Fin.last Γ₁.as.len))
-
-noncomputable def projSubst (hstruct : (E.get η).block.IsStructure s c) :
-    Subst ζ ℓ (CtxCat.ctorFields h s c).as.len (CtxCat.majorCtx h s c hstruct).as.len :=
-  Fin.append (Fin.append Subst.wk (projField ls ps s c hstruct)) hstruct.recursive
-
-theorem projSubst_base (hstruct : (E.get η).block.IsStructure s c) (v : Var Γ₁.as.len) :
-    projSubst h s c hstruct (baseVar h s c v) = .var v.castSucc :=
-  (Fin.append_left _ hstruct.recursive (v.castAdd (ι.ctors s c).nfields)).trans
-    (Fin.append_left Subst.wk (projField ls ps s c hstruct) v)
-
-theorem projSubst_ordinary (hstruct : (E.get η).block.IsStructure s c)
-    (f : Fin (ι.ctors s c).nfields) :
-    projSubst h s c hstruct (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f)) =
-      projField ls ps s c hstruct f :=
-  (Fin.append_left _ hstruct.recursive ⟨Γ₁.as.len + f.val, by omega⟩).trans
-    (Fin.append_right Subst.wk (projField ls ps s c hstruct) f)
-
-theorem ordinaryFieldExpr_projSubst (hstruct : (E.get η).block.IsStructure s c)
-    (f : Fin (ι.ctors s c).nfields) :
-    (((E.get η).block.ctors s c).ordinaryFieldExpr ls ((ι.ctors s c).fieldParams ps)
-        (ι.ctors s c).fieldOrdinary f).subst (projSubst h s c hstruct) =
-      ((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
-        (projField ls ps s c hstruct) f := by
-  rw [Ctor.ordinaryFieldExpr_subst]
-  congr 1
-  · exact funext fun p =>
-      ((Expr.wkN_subst_append _ _ _).trans (Expr.wkN_subst_append _ _ _)).trans (Expr.subst_wk (ps p))
-  · exact funext fun f =>
-      (Expr.wkN_subst_append _ _ _).trans (Fin.append_right Subst.wk (projField ls ps s c hstruct) f)
-
-theorem projSubstWF (hstruct : (E.get η).block.IsStructure s c) :
-    E[(CtxCat.majorCtx h s c hstruct).as.ctx] ⊢ projSubst h s c hstruct ⊣
-      (CtxCat.ctorFields h s c).as.ctx := by
-  intro v
-  cases v using Fin.addCases with
-  | left v =>
-    cases v using Fin.addCases with
-    | left v =>
-      simpa [projSubst, Subst.wk, Ctor.fieldTele, ← Tele.append_assoc, Expr.subst_wk] using
-        (CtxCat.majorCtx h s c hstruct).as.wf.var v.castSucc
-    | right f =>
-      change E[_] ⊢ projSubst h s c hstruct (fieldVar h s c (Fin.castAdd _ f)) :
-        (Ctx.get (fieldVar h s c (Fin.castAdd _ f)) _).subst _
-      rw [projSubst_ordinary h s c hstruct f, CtxCat.ctorFields_get_ordinary,
-        ordinaryFieldExpr_projSubst]
-      change E[_] ⊢ _ : ((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
-        (fun current => hstruct.projTerm η ls (fun p => (ps p).wk) current
-          (.var (Fin.last Γ₁.as.len))) _
-      rw [← Inductive.IsStructure.projType_eq]
-      exact hstruct.projTerm_generic h.block f Γ₁.as.wf h.param
-  | right f => exact hstruct.no_recursive.elim f
-
-noncomputable def projHom (hstruct : (E.get η).block.IsStructure s c) :
-    (CtxCat.majorCtx h s c hstruct).as ⟶ (CtxCat.ctorFields h s c).as where
-  subst := projSubst h s c hstruct
-  typed := projSubstWF h s c hstruct
-
-theorem map_projHom_varLabel_base (hstruct : (E.get η).block.IsStructure s c)
-    (v : Var Γ₁.as.len) :
-    (Tm E ℓ).map (RawCtx.toCtx.map (projHom h s c hstruct)).op
-        (Tm.varLabel (CtxCat.ctorFields h s c) (baseVar h s c v)) =
-      Tm.varLabel (CtxCat.majorCtx h s c hstruct) v.castSucc := by
-  exact Tm.label_eq_var _ (projSubst_base h s c hstruct v)
-
-theorem projHom_one_ordinary (hstruct : (E.get η).block.IsStructure s c)
-    {maj : Expr ζ ℓ Γ₁.as.len} (hmaj : E[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hstruct.indices)
-    (f : Fin (ι.ctors s c).nfields) :
-    (RawCtx.Hom.one ⟨_, hstruct.indType h.param⟩ hmaj ≫ projHom h s c hstruct).subst
-        (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f)) =
-      hstruct.projTerm η ls ps f maj := by
-  change (projSubst h s c hstruct (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f))).subst
-    (Subst.id.extend maj) = _
-  rw [projSubst_ordinary, projField]
-  simp [Expr.wk_subst_extend]
-
-theorem projHom_one_get_ordinary (hstruct : (E.get η).block.IsStructure s c)
-    {maj : Expr ζ ℓ Γ₁.as.len} (hmaj : E[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hstruct.indices)
-    (f : Fin (ι.ctors s c).nfields) :
-    (Ctx.get (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f))
-        (CtxCat.ctorFields h s c).as.ctx).subst
-      (RawCtx.Hom.one ⟨_, hstruct.indType h.param⟩ hmaj ≫ projHom h s c hstruct).subst =
-      hstruct.projType η ls ps f maj := by
-  rw [CtxCat.ctorFields_get_ordinary]
-  refine (Expr.subst_subst (projSubst h s c hstruct)
-    (RawCtx.Hom.one ⟨_, hstruct.indType h.param⟩ hmaj).subst _).symm.trans ?_
-  rw [ordinaryFieldExpr_projSubst]
-  change (((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
-    (fun current => hstruct.projTerm η ls (fun p => (ps p).wk) current
-      (.var (Fin.last Γ₁.as.len))) f).subst (Subst.id.extend maj) = _
-  rw [← Inductive.IsStructure.projType_eq]
-  simp [Expr.wk_subst_extend]
-
 end Fields
-
-structure CtorSection (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
-    (c : Fin (ι.nctors s)) (σ : Γ₂ ⟶ Γ₁) where
-  hom : Γ₂ ⟶ CtxCat.ctorFields h.toIndData s c
-  base (v : Var Γ₁.as.len) :
-    (Tm E ℓ).map hom.op
-        (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) (baseVar h.toIndData s c v)) =
-      (Tm E ℓ).map σ.op (Tm.varLabel Γ₁ v)
-
-namespace CtorSection
-
-variable {h : RecData Γ₁ η ls l ps ms mins} {σ₁ σ₂ : Γ₂ ⟶ Γ₁}
-
-noncomputable def names (sect : CtorSection h s c σ₁) :
-    Fin (CtorHead.mk η s c).arity → Tm_ Γ₂ :=
-  fun i => (Tm E ℓ).map sect.hom.op
-    (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) (fieldVar h.toIndData s c i))
-
-noncomputable def ihName (sect : CtorSection h s c σ₁) (f : Fin (ι.ctors s c).nrecFields) :
-    Tm_ Γ₂ :=
-  (Tm E ℓ).map sect.hom.op ((CtorInstance.generic h.toIndData s c).ihName (h.fields s c) f)
-
-def congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂) : CtorSection h s c σ₂ where
-  hom := sect.hom
-  base v := by cases hσ; exact sect.base v
-
-@[simp] theorem names_congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂) :
-    (sect.congr hσ).names = sect.names := rfl
-
-@[simp] theorem ihName_congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂)
-    (f : Fin (ι.ctors s c).nrecFields) : (sect.congr hσ).ihName f = sect.ihName f := rfl
-
-def pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) : CtorSection h s c (σ₃ ≫ σ₁) where
-  hom := σ₃ ≫ sect.hom
-  base v := by
-    rw [op_comp, Functor.map_comp_apply, sect.base v, ← Functor.map_comp_apply, ← op_comp]
-
-@[simp] theorem hom_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) :
-    (sect.pullback σ₃).hom = σ₃ ≫ sect.hom :=
-  rfl
-
-@[simp] theorem names_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) :
-    (sect.pullback σ₃).names = fun i => (Tm E ℓ).map σ₃.op (sect.names i) := by
-  funext i
-  simp [names]
-
-@[simp] theorem ihName_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂)
-    (f : Fin (ι.ctors s c).nrecFields) :
-    (sect.pullback σ₃).ihName f = (Tm E ℓ).map σ₃.op (sect.ihName f) := by
-  rw [ihName, ihName, hom_pullback, op_comp, Functor.map_comp_apply]
-
-@[ext] theorem ext {sect sect₁ : CtorSection h s c σ₁} (hhom : sect.hom = sect₁.hom) :
-    sect = sect₁ := by
-  cases sect
-  cases sect₁
-  cases hhom
-  rfl
-
-theorem eq_of_names_eq {sect sect₁ : CtorSection h s c σ₁} (hn : sect.names = sect₁.names) :
-    sect = sect₁ := by
-  apply CtorSection.ext
-  apply Tm.hom_ext
-  intro v
-  cases v using Fin.addCases with
-  | left v =>
-    cases v using Fin.addCases with
-    | left v => exact (sect.base v).trans (sect₁.base v).symm
-    | right f => exact congrFun hn (f.castAdd _)
-  | right f => simpa [CtorSection.names, fieldVar_natAdd] using congrFun hn (Fin.natAdd _ f)
-
-noncomputable def ofMajor (hstruct : (E.get η).block.IsStructure s c)
-    {majorName : Tm_ Γ₂} (msect : Raw.ContextSection (hstruct.indType h.param) σ₁ majorName) :
-    CtorSection h s c σ₁ where
-  hom := msect.hom ≫ RawCtx.toCtx.map (projHom h.toIndData s c hstruct)
-  base v := by
-    rw [op_comp, Functor.map_comp_apply, map_projHom_varLabel_base,
-      ← Tm.map_rawProjection_varLabel, ← Functor.map_comp_apply, ← op_comp, msect.over]
-
-def ProjectsFrom (sect : CtorSection h s c σ₁) (hstruct : (E.get η).block.IsStructure s c)
-    (majorName : Tm_ Γ₂) : Prop :=
-  ∃ msect : Raw.ContextSection (hstruct.indType h.param) σ₁ majorName,
-    sect.hom = msect.hom ≫ RawCtx.toCtx.map (projHom h.toIndData s c hstruct)
-
-theorem ProjectsFrom.pullback {sect : CtorSection h s c σ₁}
-    {hstruct : (E.get η).block.IsStructure s c} {majorName : Tm_ Γ₂}
-    (hp : sect.ProjectsFrom hstruct majorName) (σ₃ : Γ₃ ⟶ Γ₂) :
-    (sect.pullback σ₃).ProjectsFrom hstruct ((Tm E ℓ).map σ₃.op majorName) :=
-  have ⟨msect, hm⟩ := hp
-  ⟨msect.pullback σ₃, by rw [CtorSection.hom_pullback, hm]; exact (Category.assoc _ _ _).symm⟩
-
-theorem ProjectsFrom.congr {sect : CtorSection h s c σ₁}
-    {hstruct : (E.get η).block.IsStructure s c} {majorName : Tm_ Γ₂}
-    (hp : sect.ProjectsFrom hstruct majorName) (hσ : σ₁ = σ₂) :
-    (sect.congr hσ).ProjectsFrom hstruct majorName := by
-  subst hσ
-  exact hp
-
-theorem eq_of_projectsFrom {majorName : Tm_ Γ₂}
-    {hstruct : (E.get η).block.IsStructure s c} (sect sect₁ : CtorSection h s c σ₁)
-    (hp : sect.ProjectsFrom hstruct majorName) (hp₁ : sect₁.ProjectsFrom hstruct majorName) :
-    sect = sect₁ := by
-  have ⟨msect, hm⟩ := hp
-  have ⟨msect₁, hm₁⟩ := hp₁
-  exact CtorSection.ext (by rw [hm, hm₁, Section.hom_eq msect msect₁])
-
-theorem proj_name (sect : CtorSection h s c σ₁) (hs : (E.get η).block.IsStructure s c)
-    {maj : Expr ζ ℓ Γ₁.as.len} (hmaj : E[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hs.indices)
-    (hp : sect.ProjectsFrom hs ((Tm E ℓ).map σ₁.op (Tm.label Γ₁.as hmaj)))
-    (f : Fin (ι.ctors s c).nfields) :
-    sect.names (Fin.castAdd (ι.ctors s c).nrecFields f) =
-      (Tm E ℓ).map σ₁.op (Tm.label Γ₁.as
-        (hs.projTerm_hasType h.block f Γ₁.as.wf h.param hmaj)) := by
-  let hA := hs.indType h.param
-  let ν := RawCtx.Hom.one (⟨_, hA⟩ : E[Γ₁.as.ctx] ⊢ _ typ) hmaj
-  let mcanon := (Raw.ContextSection.ofTerm hA hmaj).pullbackId σ₁
-  have ⟨msect, hm⟩ := hp
-  have hhom : sect.hom = σ₁ ≫ RawCtx.toCtx.map (ν ≫ projHom h.toIndData s c hs) := by
-    rw [hm, Section.hom_eq msect mcanon]
-    exact (Category.assoc ..).trans (congrArg (σ₁ ≫ ·) (RawCtx.toCtx.map_comp _ _).symm)
-  rw [CtorSection.names, hhom, op_comp, Functor.map_comp_apply, Tm.map_varLabel]
-  apply congrArg ((Tm E ℓ).map σ₁.op)
-  congr 1
-  · exact projHom_one_get_ordinary h.toIndData s c hs hmaj f
-  · exact projHom_one_ordinary h.toIndData s c hs hmaj f
-
-end CtorSection
 
 namespace CtorInstance
 
@@ -418,6 +196,186 @@ theorem map_fieldsHom_fieldVar (i : Fin (CtorHead.mk η s c).arity) :
     · exact inst.fieldsSubst_recursive h σ f
 
 end Subst
+
+noncomputable def ofStructure (hstruct : (E.get η).block.IsStructure s c) (h : IndData Γ₂ η ls ps₂)
+    {maj : Expr ζ ℓ Γ₂.as.len} (hmaj : E[Γ₂.as.ctx] ⊢ maj : .ind η s ls ps₂ hstruct.indices) :
+    CtorInstance Γ₂ η s c ls ps₂ where
+  fds f := hstruct.projTerm η ls ps₂ f maj
+  recFds := hstruct.recursive
+  typed := ⟨fun f => hstruct.projType_eq η ls ps₂ f maj ▸
+    hstruct.projTerm_hasType h.block f Γ₂.as.wf h.param hmaj, hstruct.no_recursive.elim⟩
+
+end CtorInstance
+
+noncomputable def projHom (h : IndData Γ₁ η ls ps) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (hstruct : (E.get η).block.IsStructure s c) :
+    (CtxCat.majorCtx h s c hstruct).as ⟶ (CtxCat.ctorFields h s c).as :=
+  (CtorInstance.ofStructure hstruct ⟨h.block, hstruct.wkParams h.param⟩
+    (hstruct.varMajor Γ₁.as.wf h.param)).fieldsHom h (CtxCat.projectionRaw Γ₁ _)
+    fun p => Expr.subst_wk (ps p)
+
+theorem map_projHom_baseVar (h : IndData Γ₁ η ls ps) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (hstruct : (E.get η).block.IsStructure s c) (v : Var Γ₁.as.len) :
+    (Tm E ℓ).map (RawCtx.toCtx.map (projHom h s c hstruct)).op
+        (Tm.varLabel (CtxCat.ctorFields h s c) (baseVar h s c v)) =
+      (Tm E ℓ).map (CtxCat.rawProjection Γ₁ (hstruct.indType h.param)).op (Tm.varLabel Γ₁ v) :=
+  CtorInstance.map_fieldsHom_baseVar _ h _ _ v
+
+theorem projHom_ordinary (h : IndData Γ₁ η ls ps) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (hstruct : (E.get η).block.IsStructure s c) (f : Fin (ι.ctors s c).nfields) :
+    (projHom h s c hstruct).subst (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f)) =
+      hstruct.projTerm η ls (fun p => (ps p).wk) f (.var (Fin.last Γ₁.as.len)) :=
+  CtorInstance.fieldsSubst_ordinary _ h _ f
+
+theorem projHom_get_ordinary (h : IndData Γ₁ η ls ps) (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (hstruct : (E.get η).block.IsStructure s c) (f : Fin (ι.ctors s c).nfields) :
+    (Ctx.get (fieldVar h s c (Fin.castAdd (ι.ctors s c).nrecFields f))
+        (CtxCat.ctorFields h s c).as.ctx).subst (projHom h s c hstruct).subst =
+      ((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
+        (fun current => hstruct.projTerm η ls (fun p => (ps p).wk) current
+          (.var (Fin.last Γ₁.as.len))) f := by
+  rw [CtxCat.ctorFields_get_ordinary]
+  exact CtorInstance.ordinaryFieldExpr_fieldsSubst _ _ (fun p => Expr.subst_wk (ps p)) f
+
+structure CtorSection (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
+    (c : Fin (ι.nctors s)) (σ : Γ₂ ⟶ Γ₁) where
+  hom : Γ₂ ⟶ CtxCat.ctorFields h.toIndData s c
+  base (v : Var Γ₁.as.len) :
+    (Tm E ℓ).map hom.op
+        (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) (baseVar h.toIndData s c v)) =
+      (Tm E ℓ).map σ.op (Tm.varLabel Γ₁ v)
+
+namespace CtorSection
+
+variable {h : RecData Γ₁ η ls l ps ms mins} {σ₁ σ₂ : Γ₂ ⟶ Γ₁}
+
+noncomputable def names (sect : CtorSection h s c σ₁) :
+    Fin (CtorHead.mk η s c).arity → Tm_ Γ₂ :=
+  fun i => (Tm E ℓ).map sect.hom.op
+    (Tm.varLabel (CtxCat.ctorFields h.toIndData s c) (fieldVar h.toIndData s c i))
+
+noncomputable def ihName (sect : CtorSection h s c σ₁) (f : Fin (ι.ctors s c).nrecFields) :
+    Tm_ Γ₂ :=
+  (Tm E ℓ).map sect.hom.op ((CtorInstance.generic h.toIndData s c).ihName (h.fields s c) f)
+
+def congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂) : CtorSection h s c σ₂ where
+  hom := sect.hom
+  base v := by cases hσ; exact sect.base v
+
+@[simp] theorem names_congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂) :
+    (sect.congr hσ).names = sect.names := rfl
+
+@[simp] theorem ihName_congr (sect : CtorSection h s c σ₁) (hσ : σ₁ = σ₂)
+    (f : Fin (ι.ctors s c).nrecFields) : (sect.congr hσ).ihName f = sect.ihName f := rfl
+
+def pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) : CtorSection h s c (σ₃ ≫ σ₁) where
+  hom := σ₃ ≫ sect.hom
+  base v := by
+    rw [op_comp, Functor.map_comp_apply, sect.base v, ← Functor.map_comp_apply, ← op_comp]
+
+@[simp] theorem hom_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) :
+    (sect.pullback σ₃).hom = σ₃ ≫ sect.hom :=
+  rfl
+
+@[simp] theorem names_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂) :
+    (sect.pullback σ₃).names = fun i => (Tm E ℓ).map σ₃.op (sect.names i) := by
+  funext i
+  simp [names]
+
+@[simp] theorem ihName_pullback (sect : CtorSection h s c σ₁) (σ₃ : Γ₃ ⟶ Γ₂)
+    (f : Fin (ι.ctors s c).nrecFields) :
+    (sect.pullback σ₃).ihName f = (Tm E ℓ).map σ₃.op (sect.ihName f) := by
+  rw [ihName, ihName, hom_pullback, op_comp, Functor.map_comp_apply]
+
+@[ext] theorem ext {sect sect₁ : CtorSection h s c σ₁} (hhom : sect.hom = sect₁.hom) :
+    sect = sect₁ := by
+  cases sect
+  cases sect₁
+  cases hhom
+  rfl
+
+theorem eq_of_names_eq {sect sect₁ : CtorSection h s c σ₁} (hn : sect.names = sect₁.names) :
+    sect = sect₁ := by
+  apply CtorSection.ext
+  apply Tm.hom_ext
+  intro v
+  cases v using Fin.addCases with
+  | left v =>
+    cases v using Fin.addCases with
+    | left v => exact (sect.base v).trans (sect₁.base v).symm
+    | right f => exact congrFun hn (f.castAdd _)
+  | right f => simpa [CtorSection.names, fieldVar_natAdd] using congrFun hn (Fin.natAdd _ f)
+
+noncomputable def ofMajor (hstruct : (E.get η).block.IsStructure s c)
+    {majorName : Tm_ Γ₂} (msect : Raw.ContextSection (hstruct.indType h.param) σ₁ majorName) :
+    CtorSection h s c σ₁ where
+  hom := msect.hom ≫ RawCtx.toCtx.map (projHom h.toIndData s c hstruct)
+  base v := by
+    rw [op_comp, Functor.map_comp_apply, map_projHom_baseVar, ← Functor.map_comp_apply, ← op_comp]
+    exact congrArg (fun τ => (Tm E ℓ).map τ.op (Tm.varLabel Γ₁ v)) msect.over
+
+def ProjectsFrom (sect : CtorSection h s c σ₁) (hstruct : (E.get η).block.IsStructure s c)
+    (majorName : Tm_ Γ₂) : Prop :=
+  ∃ msect : Raw.ContextSection (hstruct.indType h.param) σ₁ majorName,
+    sect.hom = msect.hom ≫ RawCtx.toCtx.map (projHom h.toIndData s c hstruct)
+
+theorem ProjectsFrom.pullback {sect : CtorSection h s c σ₁}
+    {hstruct : (E.get η).block.IsStructure s c} {majorName : Tm_ Γ₂}
+    (hp : sect.ProjectsFrom hstruct majorName) (σ₃ : Γ₃ ⟶ Γ₂) :
+    (sect.pullback σ₃).ProjectsFrom hstruct ((Tm E ℓ).map σ₃.op majorName) :=
+  have ⟨msect, hm⟩ := hp
+  ⟨msect.pullback σ₃, by rw [CtorSection.hom_pullback, hm]; exact (Category.assoc _ _ _).symm⟩
+
+theorem ProjectsFrom.congr {sect : CtorSection h s c σ₁}
+    {hstruct : (E.get η).block.IsStructure s c} {majorName : Tm_ Γ₂}
+    (hp : sect.ProjectsFrom hstruct majorName) (hσ : σ₁ = σ₂) :
+    (sect.congr hσ).ProjectsFrom hstruct majorName := by
+  subst hσ
+  exact hp
+
+theorem eq_of_projectsFrom {majorName : Tm_ Γ₂}
+    {hstruct : (E.get η).block.IsStructure s c} (sect sect₁ : CtorSection h s c σ₁)
+    (hp : sect.ProjectsFrom hstruct majorName) (hp₁ : sect₁.ProjectsFrom hstruct majorName) :
+    sect = sect₁ := by
+  have ⟨msect, hm⟩ := hp
+  have ⟨msect₁, hm₁⟩ := hp₁
+  exact CtorSection.ext (by rw [hm, hm₁, Section.hom_eq msect msect₁])
+
+theorem proj_name (sect : CtorSection h s c σ₁) (hs : (E.get η).block.IsStructure s c)
+    {maj : Expr ζ ℓ Γ₁.as.len} (hmaj : E[Γ₁.as.ctx] ⊢ maj : .ind η s ls ps hs.indices)
+    (hp : sect.ProjectsFrom hs ((Tm E ℓ).map σ₁.op (Tm.label Γ₁.as hmaj)))
+    (f : Fin (ι.ctors s c).nfields) :
+    sect.names (Fin.castAdd (ι.ctors s c).nrecFields f) =
+      (Tm E ℓ).map σ₁.op (Tm.label Γ₁.as
+        (hs.projTerm_hasType h.block f Γ₁.as.wf h.param hmaj)) := by
+  let hA := hs.indType h.param
+  let ν := RawCtx.Hom.one (⟨_, hA⟩ : E[Γ₁.as.ctx] ⊢ _ typ) hmaj
+  let mcanon := (Raw.ContextSection.ofTerm hA hmaj).pullbackId σ₁
+  have ⟨msect, hm⟩ := hp
+  have hhom : sect.hom = σ₁ ≫ RawCtx.toCtx.map (ν ≫ projHom h.toIndData s c hs) := by
+    rw [hm, Section.hom_eq msect mcanon]
+    exact (Category.assoc ..).trans (congrArg (σ₁ ≫ ·) (RawCtx.toCtx.map_comp _ _).symm)
+  rw [CtorSection.names, hhom, op_comp, Functor.map_comp_apply, Tm.map_varLabel]
+  apply congrArg ((Tm E ℓ).map σ₁.op)
+  congr 1
+  · refine (Expr.subst_subst (projHom h.toIndData s c hs).subst
+      (RawCtx.Hom.one ⟨_, hs.indType h.param⟩ hmaj).subst _).symm.trans ?_
+    rw [projHom_get_ordinary]
+    change (((E.get η).block.ctors s c).ordinaryFieldExpr ls (fun p => (ps p).wk)
+      (fun current => hs.projTerm η ls (fun p => (ps p).wk) current
+        (.var (Fin.last Γ₁.as.len))) f).subst (Subst.id.extend maj) = _
+    rw [← Inductive.IsStructure.projType_eq]
+    simp [Expr.wk_subst_extend]
+  · change ((projHom h.toIndData s c hs).subst (fieldVar h.toIndData s c (Fin.castAdd _ f))).subst
+      (Subst.id.extend maj) = _
+    rw [projHom_ordinary]
+    simp [Expr.wk_subst_extend]
+
+end CtorSection
+
+namespace CtorInstance
+
+variable {ps₂ : Fin ι.nparams → Expr ζ ℓ Γ₂.as.len} (inst : CtorInstance Γ₂ η s c ls ps₂)
 
 variable (h : RecData Γ₁ η ls l ps ms mins) (σ : Γ₂.as ⟶ Γ₁.as) (hps : ∀ p, (ps p).subst σ.subst = ps₂ p)
 
