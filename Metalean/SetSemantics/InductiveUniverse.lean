@@ -28,44 +28,13 @@ theorem fibreOp_subset_type {block : ZFSet} (h : block ⊆ U_ level) (key : ZFSe
   have h' := snd_mem_type (h (mem_fibre.mp he))
   rwa [snd_pair] at h'
 
-inductive CtorCode.DomsIn (level : Nat) :
-    {n : Nat} → CtorCode n → Prop
-  | target {n : Nat} {index : Dom n} :
-    DomsIn level (.target index)
-  | arg {n : Nat} {domain : Dom n} {rest : CtorCode (n + 1)} :
-    (∀ γ : Slots n, domain γ ∈ U_ level) →
-    DomsIn level rest →
-    DomsIn level (.arg domain rest)
-  | recArg {n b : Nat} {tele : SemTele n b} {index : Dom b}
-      {rest : CtorCode n} :
-    tele.DomsIn level →
-    DomsIn level rest →
-    DomsIn level (.recArg tele index rest)
+structure CtorCode.DomsIn (level : Nat) (code : CtorCode n) : Prop where
+  ordinary : code.ordinary.DomsIn level
+  recursive : ∀ f, (code.recursive f).tele.DomsIn level
 
-theorem CtorCode.DomsIn.mono {level level' : Nat} (hle : level ≤ level')
-    {n : Nat} {code : CtorCode n} :
-    code.DomsIn level →
-    code.DomsIn level'
-  | .target => .target
-  | .arg hdomain hrest => .arg (fun γ => type_mono hle (hdomain γ)) (mono hle hrest)
-  | .recArg htele hrest => .recArg (htele.mono hle) (mono hle hrest)
-
-theorem CtorCode.DomsIn.prependOrdinary {Δ : SemTele n b} (hΔ : Δ.DomsIn level)
-    {rest : CtorCode b} (hrest : rest.DomsIn level) :
-    (CtorCode.prependOrdinary Δ rest).DomsIn level := by
-  induction hΔ with
-  | nil => exact hrest
-  | snoc _ hdomain ih => exact ih (.arg hdomain hrest)
-
-theorem CtorCode.DomsIn.prependRecursive {n count : Nat}
-    {fields : Fin count → CtorRecCode.Packed n}
-    (hfields : ∀ f, (fields f).2.tele.DomsIn level)
-    {rest : CtorCode n} (hrest : rest.DomsIn level) :
-    (CtorCode.prependRecursive count fields rest).DomsIn level := by
-  induction count with
-  | zero => exact hrest
-  | succ count ih =>
-    exact .recArg (hfields 0) (ih fun f => hfields f.succ)
+theorem CtorCode.DomsIn.mono {level₁ level₂ : Nat} (hle : level₁ ≤ level₂)
+    {code : CtorCode n} (h : code.DomsIn level₁) : code.DomsIn level₂ :=
+  ⟨h.ordinary.mono hle, fun f => (h.recursive f).mono hle⟩
 
 theorem recFieldSet_subset_type {Δ : SemTele n b} (hdoms : Δ.DomsIn level)
     {index : Dom b} {block : ZFSet} (hblock : ∀ key, fibreOp block key ⊆ U_ level)
@@ -82,32 +51,23 @@ theorem CtorCode.support_card_lt {code : CtorCode.{u} n}
     Cardinal.mk (code.Support γ) < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
   have hκ := Cardinal.inaccessible_isInaccessible.{u} level
   have hreg : (Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level)).IsRegular := hκ.isRegular.lift
-  induction hdoms with
-  | target => simp [Support, hκ.pos]
-  | arg hdomain _ ih =>
-    rw [Support, Cardinal.mk_sigma]
-    refine Cardinal.sum_lt_of_isRegular hreg ?_ fun current => ih (γ.snoc current.1)
-    rw [ZFSet.cardinalMk_coe_sort]
-    exact Cardinal.lift_lt.mpr (card_lt_of_mem_vonNeumann hκ (hdomain γ))
-  | recArg htele _ ih =>
-    simp only [Support, Cardinal.mk_sum, Cardinal.lift_id]
-    exact Cardinal.add_lt_of_lt hreg.aleph0_le
-      (Reachable.card_lt hκ htele (by
-        rw [Cardinal.mk_singleton]
-        exact Cardinal.one_lt_aleph0.trans_le hreg.aleph0_le)) (ih γ)
+  have hbase : Cardinal.mk ({γ} : Set (Slots n)) < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
+    rw [Cardinal.mk_singleton]
+    exact Cardinal.one_lt_aleph0.trans_le hreg.aleph0_le
+  rw [CtorCode.Support.cardinalMk]
+  refine Cardinal.sum_lt_of_isRegular hreg
+    (Reachable.card_lt hκ hdoms.ordinary hbase) fun final => ?_
+  exact Cardinal.sum_lt_lift_of_isRegular hreg
+    (lt_of_lt_of_le (by simp) hreg.aleph0_le)
+    fun f => Reachable.card_lt hκ (hdoms.recursive f) (by simpa using hbase)
 
 theorem CtorCode.argSet_mem_type {code : CtorCode n}
     (hdoms : code.DomsIn level) {block : ZFSet}
     (hblock : ∀ key, fibreOp block key ∈ U_ level) (γ : Slots n) :
-    code.argSet block γ ∈ U_ level := by
-  induction hdoms with
-  | target => exact singleton_mem_type empty_mem_type
-  | arg hdomain _ ih =>
-    simp only [CtorCode.argSet]
-    grind only [zfBounds]
-  | recArg htele _ ih =>
-    simp only [CtorCode.argSet]
-    grind only [zfBounds, recFieldSet_mem_type htele hblock γ]
+    code.argSet block γ ∈ U_ level :=
+  code.ordinary.sigma_mem_type hdoms.ordinary
+    (fun final => tupleSet_mem_vonNeumann Cardinal.ord_inaccessible_isSuccLimit
+      fun f => recFieldSet_mem_type (hdoms.recursive f) hblock final) γ
 
 abbrev CodesDomsIn (level : Nat) (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) : Prop :=
   ∀ s c, (codes s c).DomsIn level
@@ -210,18 +170,11 @@ theorem fibreOp_indSet_mem_type {codes : (s : Fin m) → Fin (nctors s) → Ctor
 theorem CtorCode.argSet_subset_type {code : CtorCode n}
     (hdoms : code.DomsIn level)
     {block : ZFSet} (hblock : ∀ key, fibreOp block key ⊆ U_ level) (γ : Slots n) :
-    argSet block code γ ⊆ U_ level := by
-  intro t ht
-  induction hdoms generalizing t with
-  | target =>
-    simp! at ht
-    exact ht ▸ empty_mem_type
-  | arg hdomain _ ih =>
-    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma_map.mp ht
-    exact pair_mem_type (mem_type_of_mem (hdomain γ) hvalue) (ih _ hw)
-  | recArg htele _ ih =>
-    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma_map.mp ht
-    exact pair_mem_type (recFieldSet_subset_type htele hblock γ hvalue) (ih _ hw)
+    code.argSet block γ ⊆ U_ level :=
+  code.ordinary.sigma_subset_type hdoms.ordinary (fun final _ hv =>
+    let ⟨hvalues, heq⟩ := mem_tupleSet.mp hv
+    heq ▸ tuple_mem_vonNeumann Cardinal.ord_inaccessible_isSuccLimit
+      (fun f => recFieldSet_subset_type (hdoms.recursive f) hblock final (hvalues f))) γ
 
 theorem indOp_subset_type {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
     (hdoms : CodesDomsIn level codes)

@@ -7,6 +7,7 @@ module
 
 public import Metalean.SetSemantics.SemanticTelescope
 public import Metalean.SetTheory.ZFC.Erasure
+public import Metalean.SetTheory.ZFC.Coding
 import Metalean.Data.Fin
 
 @[expose] public section
@@ -84,6 +85,19 @@ theorem recoverRecField_mem (Δ : SemTele n b) (index : Dom b)
     (fun _ _ hvalue => propGet_mem hvalue) γ value hfield
   exact h
 
+theorem eraseRecField_recoverRecField {b level : Nat}
+    (tele : SemTele n b) (index : Dom b) (block : ZFSet)
+    (γ : Slots n) (value : ZFSet)
+    (hfield : value ∈ typedRecFieldSet tele index block level γ) :
+    eraseRecField tele level γ
+        (recoverRecField tele index block level γ value) = value := by
+  calc
+    _ = _ := tele.lamAt_comp _ _ γ value
+    _ = _ := tele.lamAt_congr (fun _ _ => propVal_propGet) γ value hfield
+    _ = value := tele.lamAt_id
+      (fun final => propSet level (fibreOp block (index final)))
+      γ value hfield
+
 theorem recoverRecField_of_ne_zero {level : Nat} (hlevel : level ≠ 0)
     (Δ : SemTele n b) (index : Dom b) (block : ZFSet)
     (γ : Slots n) (value : ZFSet)
@@ -142,220 +156,105 @@ theorem recMap_mem (Δ : SemTele n b) (index : Dom b)
   refine Δ.lamAt_mem_piAt ?_ γ value hfield
   exact fun _ _ hvalue => hgraph _ (mem_fibre.mp hvalue)
 
-inductive CtorCode : Nat → Type (u + 1)
-  | target {n : Nat} (index : Dom n) : CtorCode n
-  | arg {n : Nat} (domain : Dom n)
-    (rest : CtorCode (n + 1)) :
-    CtorCode n
-  | recArg {n b : Nat} (tele : SemTele n b)
-    (index : Dom b) (rest : CtorCode n) :
-    CtorCode n
-
-structure CtorRecCode (n arity : Nat) : Type (u + 1) where
+structure CtorRecCode (n : Nat) : Type (u + 1) where
+  arity : Nat
   tele : SemTele n (n + arity)
   index : Dom (n + arity)
 
-abbrev CtorRecCode.Packed (n : Nat) := Σ arity, CtorRecCode n arity
-
-namespace SemTele
-
-noncomputable def tail {b : Nat} (vargs : ZFSet) : SemTele n b → ZFSet
-  | .nil => vargs
-  | .snoc Δ _ => snd (tail vargs Δ)
-
-noncomputable def values {b : Nat} (γ : Slots n) (vargs : ZFSet) : SemTele n b → Slots b
-  | .nil => γ
-  | .snoc Δ _ => Fin.snoc (values γ vargs Δ) (fst (tail vargs Δ))
-
-theorem values_base (Δ : SemTele n b) (γ : Slots n) (vargs : ZFSet) (base : Fin n) :
-    Δ.values γ vargs (base.castLE Δ.le) = γ base := by
-  induction Δ with
-  | nil => rfl
-  | snoc Δ domain ih =>
-    exact (Fin.snoc_castSucc (α := fun _ => ZFSet) (p := values γ vargs Δ)
-      (i := base.castLE Δ.le) ..).trans ih
-
-theorem values_eq_append {count : Nat} (Δ : SemTele n (n + count)) (γ : Slots n)
-    (vargs : ZFSet) :
-    Δ.values γ vargs = Fin.append γ fun f => Δ.values γ vargs (Fin.natAdd n f) :=
-  Fin.append_castAdd_natAdd.symm.trans
-    (congrArg (Fin.append · _) (funext (Δ.values_base γ vargs)))
-
-end SemTele
+structure CtorCode (n : Nat) : Type (u + 1) where
+  nfields : Nat
+  nrecFields : Nat
+  ordinary : SemTele n (n + nfields)
+  recursive : Fin nrecFields → CtorRecCode (n + nfields)
+  target : Dom (n + nfields)
 
 namespace CtorCode
 
-def prependOrdinary (Δ : SemTele n b) (rest : CtorCode b) : CtorCode n :=
-  Tele.foldr CtorCode.arg rest Δ
+noncomputable def argSet (block : ZFSet) (code : CtorCode n) : Dom n :=
+  code.ordinary.sigma (fun final => tupleSet fun f =>
+    recFieldSet (code.recursive f).tele (code.recursive f).index block final)
 
-def prependRecursive {n : Nat} :
-    (count : Nat) → (Fin count → CtorRecCode.Packed n) →
-      CtorCode n → CtorCode n
-  | 0, _, rest => rest
-  | count + 1, descriptors, rest =>
-    let head := descriptors 0
-    .recArg head.2.tele head.2.index
-      (prependRecursive count (fun field => descriptors field.succ) rest)
+structure Support (code : CtorCode.{u} n) (γ : Slots.{u} n) : Type (u + 1) where
+  ordinary : Reachable {γ} code.ordinary
+  field : Fin code.nrecFields
+  recursive : Reachable {ordinary.1} (code.recursive field).tele
 
-noncomputable def Support {n : Nat} : CtorCode.{u} n → Slots.{u} n → Type (u + 1)
-  | .target _ => fun _ => PEmpty
-  | .arg domain rest => fun γ => (value : domain γ) × rest.Support (γ.snoc value.1)
-  | .recArg tele _ rest => fun γ => Reachable {γ} tele ⊕ rest.Support γ
+private def Support.equiv (code : CtorCode.{u} n) (γ : Slots.{u} n) :
+    code.Support γ ≃ (final : Reachable {γ} code.ordinary) ×
+      (f : Fin code.nrecFields) × Reachable {final.1} (code.recursive f).tele where
+  toFun p := ⟨p.ordinary, p.field, p.recursive⟩
+  invFun p := ⟨p.1, p.2.1, p.2.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
-instance support_small (code : CtorCode.{u} n) (γ : Slots.{u} n) : Small.{u} (code.Support γ) := by
-  induction code with
-  | target => change Small.{u} PEmpty; infer_instance
-  | arg domain rest ih =>
-    have := ih
-    exact small_sigma _
-  | recArg tele index rest ih =>
-    have := ih
-    exact small_sum
+instance support_small (code : CtorCode.{u} n) (γ : Slots.{u} n) : Small.{u} (code.Support γ) :=
+  small_of_injective (Support.equiv code γ).injective
 
-noncomputable def readSupport {n : Nat} (code : CtorCode n) :
-    (γ : Slots n) → ZFSet → code.Support γ → ZFSet :=
-  code.rec
-    (fun _ _ _ point => point.elim)
-    (fun _ _ read γ vargs point =>
-      read (γ.snoc point.1.1) (snd vargs) point.2)
-    fun tele index _ read γ vargs point =>
-      point.elim
-        (fun final => pair (index final.1) (SemTele.app tele final.1 (fst vargs)))
-        (read γ (snd vargs))
+theorem Support.cardinalMk (code : CtorCode.{u} n) (γ : Slots.{u} n) :
+    Cardinal.mk (code.Support γ) = Cardinal.sum (fun final : Reachable {γ} code.ordinary =>
+      Cardinal.sum fun f : Fin code.nrecFields =>
+        Cardinal.mk (Reachable {final.1} (code.recursive f).tele)) := by
+  rw [Cardinal.mk_congr (Support.equiv code γ)]
+  simp [Cardinal.mk_sigma]
 
-noncomputable def argSet (block : ZFSet) {n : Nat} :
-    CtorCode n → Dom n
-  | .target _ => fun _ => verum
-  | .arg domain rest => fun γ =>
-    σ (domain γ) (map (fun value => rest.argSet block (γ.snoc value)) (domain γ))
-  | .recArg tele index rest => fun γ =>
-    let domain := recFieldSet tele index block γ
-    σ domain (map (fun _ => rest.argSet block γ) domain)
+noncomputable def readSupport (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
+    (point : code.Support γ) : ZFSet :=
+  let f := code.recursive point.field
+  pair (f.index point.recursive.1) (SemTele.app f.tele point.recursive.1
+    (tupleValues code.nrecFields (code.ordinary.tail vargs) point.field))
 
 variable {blockW : ZFSet} {γ : Slots n} {vargs : ZFSet}
 
 theorem argSet_mono (h : block₁ ⊆ block₂) (code : CtorCode n) (γ : Slots n) :
-    argSet block₁ code γ ⊆ argSet block₂ code γ := by
-  induction code with
-  | target => exact subset_refl _
-  | arg domain rest ih =>
-    refine sigma_mono (subset_refl _) fun value hvalue => ?_
-    rw [app_map hvalue, app_map hvalue]
-    exact ih _
-  | recArg tele index rest ih =>
-    have hdomain := recFieldSet_mono tele index h γ
-    refine sigma_mono hdomain fun value hvalue => ?_
-    rw [app_map hvalue, app_map (hdomain hvalue)]
-    exact ih _
+    code.argSet block₁ γ ⊆ code.argSet block₂ γ := by
+  apply code.ordinary.sigma_mono_cod
+  intro final value hvalue
+  obtain ⟨hfields, heq⟩ := mem_tupleSet.mp hvalue
+  exact mem_tupleSet.mpr ⟨fun f => recFieldSet_mono _ _ h _ (hfields f), heq⟩
 
 theorem argSet_inter (hw : ∀ value ∈ block₁, value ∈ block₂ → value ∈ blockW)
     (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
-    (h : vargs ∈ argSet block₁ code γ) (h' : vargs ∈ argSet block₂ code γ) :
-    vargs ∈ argSet blockW code γ := by
-  induction code generalizing vargs with
-  | target => exact h
-  | arg domain rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp h
-    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma_map.mp h'
-    have ⟨rfl, rfl⟩ := pair_inj.mp heq
-    exact pair_mem_sigma_map.mpr ⟨hvalue, ih _ tail htail htail'⟩
-  | recArg tele index rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp h
-    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma_map.mp h'
-    have ⟨rfl, rfl⟩ := pair_inj.mp heq
-    have hvalueW : value ∈ recFieldSet tele index blockW γ := tele.pi_inter_cod
-      (fun _ _ hv hv' => mem_fibre.mpr (hw _ (mem_fibre.mp hv) (mem_fibre.mp hv')))
-      γ value hvalue hvalue'
-    exact pair_mem_sigma_map.mpr ⟨hvalueW, ih _ tail htail htail'⟩
+    (h₁ : vargs ∈ code.argSet block₁ γ) (h₂ : vargs ∈ code.argSet block₂ γ) :
+    vargs ∈ code.argSet blockW γ := by
+  refine code.ordinary.sigma_inter_cod (fun final value h₁ h₂ => ?_) γ h₁ h₂
+  obtain ⟨h₁, heq⟩ := mem_tupleSet.mp h₁
+  have h₂ := (mem_tupleSet.mp h₂).1
+  exact mem_tupleSet.mpr ⟨fun f => (code.recursive f).tele.pi_inter_cod
+    (fun _ _ hv₁ hv₂ => mem_fibre.mpr (hw _ (mem_fibre.mp hv₁) (mem_fibre.mp hv₂)))
+    final _ (h₁ f) (h₂ f), heq⟩
 
 theorem argSet_mem_of_support
     (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
     (hargs : vargs ∈ code.argSet block₁ γ)
     (hsupport : ∀ point : code.Support γ,
-      code.readSupport γ vargs point ∈ block₁ →
-        code.readSupport γ vargs point ∈ block₂) :
+      code.readSupport γ vargs point ∈ block₁ → code.readSupport γ vargs point ∈ block₂) :
     vargs ∈ code.argSet block₂ γ := by
-  induction code generalizing vargs with
-  | target => exact hargs
-  | arg domain rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
-    refine pair_mem_sigma_map.mpr ⟨hvalue, ih (γ.snoc value) tail htail ?_⟩
-    exact fun point => by simpa [readSupport] using hsupport ⟨⟨value, hvalue⟩, point⟩
-  | recArg tele index rest ih =>
-    obtain ⟨field, hfield, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
-    refine pair_mem_sigma_map.mpr ⟨(tele.pi_mem_iff γ field hfield).mpr ?_, ih γ tail htail ?_⟩
-    · exact fun final hfinal => mem_fibre.mpr (by
-        simpa [readSupport] using hsupport (.inl ⟨final, hfinal⟩)
-          (by simpa [readSupport] using mem_fibre.mp (Reachable.app_mem hfinal hfield)))
-    · exact fun point => by simpa [readSupport] using hsupport (.inr point)
+  obtain ⟨hfinal, htail, hpack⟩ := SemTele.mem_sigma.mp hargs
+  obtain ⟨hfields, htuple⟩ := mem_tupleSet.mp htail
+  refine SemTele.mem_sigma.mpr ⟨hfinal, mem_tupleSet.mpr ⟨fun f => ?_, htuple⟩, hpack⟩
+  refine ((code.recursive f).tele.pi_mem_iff _ _ (hfields f)).mpr fun final hreach => ?_
+  exact mem_fibre.mpr (hsupport ⟨⟨_, hfinal⟩, f, ⟨final, hreach⟩⟩
+    (mem_fibre.mp (Reachable.app_mem hreach (hfields f))))
 
-theorem eq_proof_of_mem_argSet_prependRecursive {count : Nat}
-    {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
-    (hcount : IsEmpty (Fin count))
-    (h : vargs ∈ argSet block (prependRecursive count fields (.target index)) γ) :
-    vargs = proof := by
-  obtain rfl : count = 0 := Fin.eq_zero_of_isEmpty hcount
-  exact mem_verum.mp h
-
-noncomputable def applyFields (level : Nat) {n : Nat} :
-    (code : CtorCode n) → Slots n → ZFSet → ZFSet → ZFSet
-  | .target _ => fun _ minor _ => minor
-  | .arg _ rest => fun γ minor vargs =>
-    applyFields level rest (γ.snoc [zf|vargs.1]) [zf|minor vargs.1] [zf|vargs.2]
-  | .recArg tele _ rest => fun γ minor vargs =>
-    applyFields level rest γ [zf|minor $(eraseRecField tele level γ [zf|vargs.1])]
-      [zf|vargs.2]
-
-noncomputable def applyIhs (graph : ZFSet) {n : Nat} :
-    CtorCode n → Slots n → ZFSet → ZFSet → ZFSet
-  | .target _ => fun _ minor _ => minor
-  | .arg _ rest => fun γ minor vargs =>
-    applyIhs graph rest (γ.snoc [zf|vargs.1]) minor [zf|vargs.2]
-  | .recArg tele index rest => fun γ minor vargs =>
-    applyIhs graph rest γ [zf|minor $(recMap tele index graph γ [zf|vargs.1])] [zf|vargs.2]
-
-noncomputable def applyMinor (level : Nat) (graph : ZFSet) {n : Nat}
-    (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet) : ZFSet :=
-  applyIhs graph code γ (applyFields level code γ minor vargs) vargs
-
-theorem applyIhs_congr (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
-    (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet)
-    (hargs : vargs ∈ argSet block code γ) :
-    applyIhs graph₁ code γ minor vargs = applyIhs graph₂ code γ minor vargs := by
-  induction code generalizing minor vargs with
-  | target => rfl
-  | arg domain rest ih =>
-    obtain ⟨value, _, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
-    simpa! using ih (γ.snoc value) minor tail htail
-  | recArg tele index rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
-    simp only [applyIhs, fst_pair, snd_pair]
-    rw [recMap_congr tele index h γ value hvalue]
-    exact ih γ _ tail htail
+noncomputable def applyMinor (level : Nat) (graph : ZFSet) (code : CtorCode n)
+    (γ : Slots n) (minor vargs : ZFSet) : ZFSet :=
+  let final := code.ordinary.values γ vargs
+  let fields := tupleValues code.nrecFields (code.ordinary.tail vargs)
+  [zf|$(SemTele.app code.ordinary final minor)
+    $(fun f => eraseRecField (code.recursive f).tele level final (fields f))...
+    $(fun f => recMap (code.recursive f).tele (code.recursive f).index graph final (fields f))...]
 
 theorem applyMinor_congr {level : Nat} (h : ∀ value ∈ block, app graph₁ value = app graph₂ value)
     (code : CtorCode n) (γ : Slots n) (minor vargs : ZFSet)
-    (hargs : vargs ∈ argSet block code γ) :
-    applyMinor level graph₁ code γ minor vargs = applyMinor level graph₂ code γ minor vargs :=
-  applyIhs_congr h code γ _ vargs hargs
+    (hargs : vargs ∈ code.argSet block γ) :
+    code.applyMinor level graph₁ γ minor vargs = code.applyMinor level graph₂ γ minor vargs := by
+  dsimp only [applyMinor]
+  congr 1
+  funext f
+  exact recMap_congr _ _ h _ _ ((mem_tupleSet.mp (SemTele.mem_sigma.mp hargs).2.1).1 f)
 
-noncomputable def targetIndex {n : Nat} :
-    CtorCode n → Slots n → ZFSet → ZFSet
-  | .target index => fun γ _ => index γ
-  | .arg _ rest => fun γ vargs =>
-    targetIndex rest (γ.snoc [zf|vargs.1]) [zf|vargs.2]
-  | .recArg _ _ rest => fun γ vargs => targetIndex rest γ [zf|vargs.2]
-
-theorem tail_mem_argSet {Δ : SemTele n b} {rest : CtorCode b}
-    (hargs : vargs ∈ (prependOrdinary Δ rest).argSet block γ) :
-    Δ.tail vargs ∈ rest.argSet block (Δ.values γ vargs) := by
-  induction Δ with
-  | nil => exact hargs
-  | snoc Δ domain ih =>
-    have ⟨_, _, _, htail, heq⟩ := mem_sigma_map.mp (ih hargs)
-    change snd (SemTele.tail vargs Δ) ∈ rest.argSet block
-      (Fin.snoc (SemTele.values γ vargs Δ) (fst (SemTele.tail vargs Δ)))
-    rwa [heq, fst_pair, snd_pair]
+noncomputable def targetIndex (code : CtorCode n) (γ : Slots n) (vargs : ZFSet) : ZFSet :=
+  code.target (code.ordinary.values γ vargs)
 
 end CtorCode
 

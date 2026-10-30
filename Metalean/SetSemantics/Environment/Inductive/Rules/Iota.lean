@@ -92,12 +92,12 @@ theorem recursiveIotaLeaf
     (fieldSlots : Slots (ι.nparams + (ι.ctors s c).nfields))
     (hfields : fieldSlots ∈ Reachable {outer.params} (model.ctors s c).source.ordinary.sem)
     (value : ZFSet)
-    (hvalue : value ∈ typedRecFieldSet (model.recCode s c f).tele
-      (model.recCode s c f).index (model.toModel.block outer.params)
+    (hvalue : value ∈ typedRecFieldSet ((model.codeOf s c).recursive f).tele
+      ((model.codeOf s c).recursive f).index (model.toModel.block outer.params)
       model.toModel.level fieldSlots)
     (final : Slots (ι.nparams + (ι.ctors s c).nfields + (ι.ctors s c).recursiveArity f))
-    (hfinal : final ∈ Reachable {fieldSlots} (model.recCode s c f).tele) :
-    let code := model.recCode s c f
+    (hfinal : final ∈ Reachable {fieldSlots} ((model.codeOf s c).recursive f).tele) :
+    let code := (model.codeOf s c).recursive f
     let arguments := fun argument => final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument)
     model.recLeaf ((ι.ctors s c).recursiveTarget f) l
       (RecSlots.mk outer.params outer.motives outer.cases
@@ -109,7 +109,7 @@ theorem recursiveIotaLeaf
   dsimp only
   let recFd := (I.ctors s c).recursive f
   let source := (model.ctors s c).source.recursive f
-  let code := model.recCode s c f
+  let code := (model.codeOf s c).recursive f
   let indices := (ε₁[final]⟦recFd.indices{ls} ·⟧)
   let arguments := fun argument => final (Fin.natAdd (ι.nparams + (ι.ctors s c).nfields) argument)
   have hparams : (fun param : Fin ι.nparams => final (param.castLE (by omega))) = outer.params := by
@@ -228,9 +228,9 @@ theorem iotaRuleSound
       grind only [reachability]
     have hih (f) : ε₂[γ]⟦(I.map pre.sigs).iotaIHs η ls l ps ms mins
           s c fds recFds f⟧ =
-        recMap (model.recCode s c f).tele (model.recCode s c f).index
+        recMap ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
           (model.recrGraph s outer) fieldSlots
-          (recoverRecField (model.recCode s c f).tele (model.recCode s c f).index
+          (recoverRecField ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
             (model.toModel.block (RecSlots.params outer)) model.toModel.level
             fieldSlots (vrecFds f)) := by
       refine StrongRecursiveFieldSource.iotaIH_denotes_of_leaf

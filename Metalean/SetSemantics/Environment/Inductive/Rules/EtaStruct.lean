@@ -44,19 +44,12 @@ theorem fieldsOf_ctorResult (hlevel : model.toModel.level ≠ 0) (s : Fin ι.nso
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams) (vis : Slots (ι.nindices s))
     (vfds : Slots (ι.ctors s c).nfields) (vrecFds : Slots (ι.ctors s c).nrecFields) :
     model.fieldsOf s c vps vis (model.ctorResult s c vps vfds vrecFds) = vfds := by
-  have hvalues := SemTele.values_pack
-    (model.ctors s c).source.ordinary.sem (Fin.append vps vfds)
-    (CtorCode.packRecursive (model.toModel.block vps)
-      (model.ctors s c).source.recursiveCodes
-      model.toModel.level (Fin.append vps vfds) vrecFds proof)
-  simp at hvalues
   unfold fieldsOf ctorResult
   rw [propGet_of_ne_zero hlevel, propVal_of_ne_zero hlevel]
-  change (fun f => (model.ctors s c).source.ordinary.sem.values vps
-    (snd (pair (numeral (tagOf s c))
-      (model.ctorArgs s c vps vfds vrecFds))) (Fin.natAdd ι.nparams f)) = vfds
-  rw [snd_pair, show model.ctorArgs s c vps vfds vrecFds =
-    (model.ctors s c).source.ordinary.sem.pack (Fin.append vps vfds) _ from rfl, hvalues]
+  change (fun f => (model.codeOf s c).ordinary.values vps
+    (snd (pair (numeral (tagOf s c)) ((model.codeOf s c).pack (model.toModel.block vps)
+      model.toModel.level vps vfds vrecFds))) (Fin.natAdd ι.nparams f)) = vfds
+  rw [snd_pair, (model.codeOf s c).values_pack]
   exact funext (Fin.append_right vps vfds)
 
 theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
@@ -81,9 +74,9 @@ theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     have h := congrArg snd hentryEq
     simp [entry_eq] at h
     exact h.symm
-  have htailProof : fieldTele.tail vargs = proof :=
-    CtorCode.eq_proof_of_mem_argSet_prependRecursive hrec
-      (CtorCode.tail_mem_argSet hargs)
+  have htailProof : fieldTele.tail vargs = ∅ := by
+    have h := (mem_tupleSet.mp (SemTele.mem_sigma.mp hargs).2.1).2.symm
+    rwa [tuple_of_isEmpty hrec] at h
   let vfds : Slots (ι.ctors s c).nfields :=
     fun f => fieldTele.values vps vargs (Fin.natAdd ι.nparams f)
   have hslotsEq : fieldTele.values vps vargs = Fin.append vps vfds :=
@@ -91,13 +84,13 @@ theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
   rw [show model.fieldsOf s c vps vis vmaj = vfds from by
     change (fun f => fieldTele.values vps (snd raw) (Fin.natAdd ι.nparams f)) = vfds
     rw [hrawEq, entryValue, snd_pair]]
-  refine ⟨hslotsEq ▸ SemTele.reachable_values hargs rfl, ?_⟩
+  refine ⟨hslotsEq ▸ (SemTele.mem_sigma.mp hargs).1, ?_⟩
   rw [ctorResult, show model.ctorArgs s c vps vfds vrecFds = vargs from by
     change fieldTele.pack (Fin.append vps vfds)
-      (CtorCode.packRecursive (model.toModel.block vps) (model.ctors s c).source.recursiveCodes
-        model.toModel.level (Fin.append vps vfds) vrecFds proof) = vargs
-    rw [CtorCode.packRecursive_of_isEmpty _ _ _ _ _ _ hrec, ← hslotsEq, ← htailProof]
-    exact SemTele.pack_values hargs, ← hrawEq, hvalue]
+      (tuple fun f => recoverRecField ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
+        (model.toModel.block vps) model.toModel.level (Fin.append vps vfds) (vrecFds f)) = vargs
+    rw [tuple_of_isEmpty hrec, ← hslotsEq, ← htailProof]
+    exact (SemTele.mem_sigma.mp hargs).2.2, ← hrawEq, hvalue]
 
 section
 
@@ -230,14 +223,17 @@ theorem projTerm_denotes_field
       exact (congrArg (fun fn => Aczel.apps fn vfds) hden).trans (by simpa using hbeta)
     let args := model.ctorArgs s c vps vfds hstruct.recursive
     have hargs : args ∈ (model.codeOf s c).argSet ∅ vps := by
-      have htail := CtorCode.packRecursive_mem (block := (∅ : ZFSet))
-        (fields := (model.ctors s c).source.recursiveCodes)
-        (rest := CtorCode.target (StrongCtorSource.targetIndex (model.ctors s c).source))
-        (level := model.toModel.level) (γ := Fin.append vps vfds)
-        (block₁ := model.toModel.block vps) (values := hstruct.recursive)
-        hstruct.no_recursive.elim proof_mem_verum
-      simpa [args, ctorArgs, codeOf, StrongCtorSource.code, recursiveRest, vfds, major] using
-        SemTele.pack_mem hfields htail
+      have htail : (tuple fun f => recoverRecField ((model.codeOf s c).recursive f).tele
+          ((model.codeOf s c).recursive f).index (model.toModel.block vps) model.toModel.level
+          (Fin.append vps vfds) (hstruct.recursive f)) ∈
+          tupleSet (fun f => Metalean.recFieldSet ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
+            ∅ (Fin.append vps vfds)) := tuple_mem_tupleSet hstruct.no_recursive.elim
+      have h := SemTele.pack_mem
+        (leaf := fun final => tupleSet fun f => Metalean.recFieldSet
+          ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index ∅ final)
+        hfields htail
+      rw [Set.eq_of_mem_singleton (Reachable.base hfields)] at h
+      exact h
     have htarget : (model.codeOf s c).targetIndex vps args = sortKey s.val (encode vis) := by
       rw [model.codeOf_targetIndex]
       exact congrArg (sortKey s.val) (congrArg encode (funext hstruct.no_indices.elim))

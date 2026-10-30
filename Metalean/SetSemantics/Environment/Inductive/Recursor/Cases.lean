@@ -56,36 +56,36 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
         (entry ((model.codeOf s c).targetIndex vps vargs) (tagOf s c) vargs) := by
   let source := (model.ctors s c).source
   let fieldTele := source.ordinary.sem
-  let fields := source.recursiveCodes
-  let rest := CtorCode.prependRecursive (ι.ctors s c).nrecFields fields
-    (.target (StrongCtorSource.targetIndex (model.ctors s c).source))
+  let fields : Fin (ι.ctors s c).nrecFields → CtorRecCode (ι.nparams + (ι.ctors s c).nfields) :=
+    source.code.recursive
   have hps : vps ∈ Reachable Set.univ model.paramsSem := by
     simpa using Reachable.base hms
-  have hfields := SemTele.reachable_values (Δ := fieldTele)
-    (reach := Reachable Set.univ model.paramsSem)
-    hargs hps
+  have hdecoded := SemTele.mem_sigma.mp hargs
+  have hfields := Reachable.mono hdecoded.1 (Set.singleton_subset_iff.mpr hps)
   let γ₁ := fieldTele.values vps vargs
   let vfds := fun f => γ₁ (Fin.natAdd ι.nparams f)
   have hfieldsBase : (fun param : Fin ι.nparams =>
       γ₁ (param.castLE fieldTele.le)) = vps :=
     funext <| fieldTele.values_base vps vargs
   let raw := tupleValues (ι.ctors s c).nrecFields (fieldTele.tail vargs)
-  have hvargs := CtorCode.tail_mem_argSet (Δ := fieldTele) (rest := rest) hargs
-  have hvargs' := CtorCode.argSet_mono happroximation rest γ₁ hvargs
-  have hraw := CtorCode.recursiveValues_mem hvargs'
-  let ihs := fun f => recMap (fields f).2.tele (fields f).2.index graph γ₁ (raw f)
-  have hihs (f) : ihs f ∈ ihType (fields f).2.tele (fields f).2.index
+  have hsource (f : Fin (ι.ctors s c).nrecFields) :
+      raw f ∈ recFieldSet (fields f).tele (fields f).index approximation γ₁ :=
+    (mem_tupleSet.mp hdecoded.2.1).1 f
+  have hraw (f) := recFieldSet_mono (fields f).tele (fields f).index happroximation γ₁ (hsource f)
+  let ihs := fun f => recMap (fields f).tele (fields f).index graph γ₁ (raw f)
+  have hihs (f) : ihs f ∈ ihType (fields f).tele (fields f).index
       (model.recrCaseMotive vps vms) γ₁ (raw f) :=
-    recMap_mem (fields f).2.tele (fields f).2.index hgraph γ₁ (raw f)
-      (CtorCode.recursiveValues_mem hvargs f)
-  let typed := fun f => eraseRecField (fields f).2.tele model.toModel.level γ₁ (raw f)
+    recMap_mem (fields f).tele (fields f).index hgraph γ₁ (raw f)
+      (hsource f)
+  let typed := fun f => eraseRecField (fields f).tele model.toModel.level γ₁ (raw f)
   have hfieldsSlotsEq : γ₁ = Fin.append vps vfds := fieldTele.values_eq_append vps vargs
   have hrecFields : Fin.append γ₁ typed ∈ Reachable
       (Reachable (Reachable Set.univ model.paramsSem) fieldTele)
       (source.recursiveSem (fun current => model.toModel.block fun param =>
         current (param.castLE (Nat.le_add_right _ _))) model.toModel.level) :=
     Reachable.ofDoms_append hfields fun f => by
-      simpa only [hfieldsBase] using eraseRecField_mem _ _ (hraw f)
+      simp only [hfieldsBase]
+      exact eraseRecField_mem _ _ (hraw f)
   rw [hfieldsSlotsEq] at hrecFields
   have hrec := model.recrCaseFieldsSem_reachable l s c vps vms vfds typed hms hrecFields
   have hihSlots : Fin.append (Fin.append (Fin.append (Fin.append vps vms) vfds) typed) ihs ∈
@@ -95,11 +95,11 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
         (model.recrCaseIhSem s c) :=
     Reachable.ofDoms_append (Reachable.append hrec) fun f => by
       have hi := hihs f
-      change ihs f ∈ ihType (fields f).2.tele (fields f).2.index
+      change ihs f ∈ ihType (fields f).tele (fields f).index
         (bundleMotive model.toModel.level ι.nindices vms (model.toModel.block vps)) γ₁ (raw f) at hi
       rw [ihType_eraseRecField _ _ γ₁ (raw f) (hraw f)] at hi
       simpa [CaseSlots.ofValuation, CaseSlots.fieldValues, ← hfieldsSlotsEq,
-        typed, fields, source, StrongCtorSource.recursiveCodes, recrCaseMotive] using hi
+        typed, fields, source, StrongCtorSource.code, recrCaseMotive] using hi
 
   have hleaf := Reachable.app_mem_of_base
     (Δ := model.recrCaseTele s c) (Reachable.append hihSlots)
@@ -110,20 +110,17 @@ theorem StrongInductiveModel.recrCase_applyMinor_mem
   simp [recrCaseTele, recrCaseFieldsSem, SemTele.app_append, SemTele.app_eq_apps] at hleaf
   have happlyMinor : (model.codeOf s c).applyMinor model.toModel.level
         graph vps minor vargs = [zf|minor vfds... typed... ihs...] := by
-    rw [show model.codeOf s c = CtorCode.prependOrdinary fieldTele rest from rfl]
-    unfold CtorCode.applyMinor
-    rw [SemTele.applyFields_prependOrdinary, SemTele.applyIhs_prependOrdinary,
-      CtorCode.applyFields_prependRecursive, CtorCode.applyIhs_prependRecursive, SemTele.app_eq_apps]
+    simp only [CtorCode.applyMinor, SemTele.app_eq_apps]
+    rfl
   simp [recrCaseLeaf, CaseSlots.ofValuation, CaseSlots.fieldValues] at hleaf
   have hfieldsRaw : model.ordinaryOf s c vps vargs = γ₁ := rfl
   have hmaj : model.ctorResult s c vps vfds typed =
       propVal model.toModel.level (entryValue (tagOf s c) vargs) := by
-    rw [show vargs = fieldTele.pack γ₁ (fieldTele.tail vargs) from
-      (SemTele.pack_values hargs).symm]
-    dsimp only [StrongInductiveModel.ctorResult, StrongInductiveModel.ctorArgs]
-    rw [← hfieldsSlotsEq]
-    exact CtorCode.packRecursive_erase hvargs' model.toModel.level (tagOf s c)
-      (fieldTele.pack γ₁)
+    change propVal model.toModel.level (entryValue (tagOf s c)
+      ((model.codeOf s c).pack (model.toModel.block vps) model.toModel.level
+        vps vfds typed)) = _
+    exact (model.codeOf s c).pack_erase (CtorCode.argSet_mono happroximation _ _ hargs)
+      model.toModel.level (tagOf s c)
   have htarget := model.codeOf_targetIndex s c vps vargs
   rw [hfieldsRaw, hfieldsSlotsEq] at htarget
   have hentry : _ ∈ model.toModel.block vps := entry_mem_indSet (model.mapsTo vps)

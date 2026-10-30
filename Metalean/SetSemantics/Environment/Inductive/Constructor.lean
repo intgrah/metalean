@@ -63,9 +63,10 @@ structure StrongRecursiveFieldSource (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSe
 
 namespace StrongRecursiveFieldSource
 
-noncomputable def code (recFd : RecField ζ₁ ι nfields arity s₁)
+noncomputable abbrev code (recFd : RecField ζ₁ ι nfields arity s₁)
     (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd) :
-    CtorRecCode (ι.nparams + nfields) arity where
+    CtorRecCode (ι.nparams + nfields) where
+  arity := arity
   tele := source.extension.sem
   index γ := sortKey s₁.val (encode (ε₁[γ]⟦recFd.indices{ls} ·⟧))
 
@@ -272,10 +273,6 @@ theorem StrongRecursiveFieldSource.valuesReachable (recFd : RecField ζ₁ ι nf
 
 namespace StrongCtorSource
 
-noncomputable def recursiveCodes (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
-    (f : Fin csig.nrecFields) : CtorRecCode.Packed (ι.nparams + csig.nfields) :=
-  ⟨csig.recursiveArity f, StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f)⟩
-
 open scoped Classical in
 noncomputable def targetValues (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
     (γ : Slots (ι.nparams + csig.nfields)) (i : Fin (ι.nindices s)) : ZFSet :=
@@ -292,30 +289,27 @@ noncomputable def targetIndex (source : StrongCtorSource E₁ ε₁ I ls ctor pa
     Dom (ι.nparams + csig.nfields) :=
   fun γ => sortKey s.val (encode (source.targetValues γ))
 
-noncomputable def code (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
+noncomputable abbrev code (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
     CtorCode ι.nparams :=
-  CtorCode.prependOrdinary source.ordinary.sem
-    (CtorCode.prependRecursive csig.nrecFields source.recursiveCodes (.target source.targetIndex))
+  ⟨csig.nfields, csig.nrecFields, source.ordinary.sem,
+    fun f => StrongRecursiveFieldSource.code (ctor.recursive f) (source.recursive f), source.targetIndex⟩
 
 theorem codeDomsIn (source : StrongCtorSource E₁ ε₁ I ls ctor params bound) :
     source.code.DomsIn bound :=
-  CtorCode.DomsIn.prependOrdinary source.ordinary.bounded
-    (CtorCode.DomsIn.prependRecursive
-      (fun f => (source.recursive f).extension.bounded) .target)
+  ⟨source.ordinary.bounded, fun f => (source.recursive f).extension.bounded⟩
 
 theorem code_targetIndex_mem_type (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
     (hvalues : ∀ γ i, source.targetValues γ i ∈ U_ level)
     (γ : Slots ι.nparams) (vargs : ZFSet) :
-    source.code.targetIndex γ vargs ∈ U_ level := by
-  rw [code, SemTele.targetIndex_prependOrdinary, CtorCode.targetIndex_prependRecursive]
-  exact sortKey_mem_type (encode_fin_mem_type (hvalues _))
+    source.code.targetIndex γ vargs ∈ U_ level :=
+  sortKey_mem_type (encode_fin_mem_type (hvalues _))
 
 noncomputable def recursiveSem
     (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
     (block : Dom (ι.nparams + csig.nfields)) (level : Nat) :
     SemTele (ι.nparams + csig.nfields) (ι.nparams + csig.nfields + csig.nrecFields) :=
   SemTele.ofDoms fun f γ =>
-    typedRecFieldSet (source.recursiveCodes f).2.tele (source.recursiveCodes f).2.index (block γ)
+    typedRecFieldSet (source.code.recursive f).tele (source.code.recursive f).index (block γ)
       level γ
 
 theorem recursiveSem_realizes

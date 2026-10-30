@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetTheory.ZFC.Universe.Type
+import Metalean.Data.Fin
 
 public section
 
@@ -22,6 +23,61 @@ noncomputable def tupleValues (count : Nat) (value : ZFSet.{u}) : Fin count → 
     tupleValues (n + 1) value = Fin.cons (fst value) (tupleValues n (snd value)) := by
   funext i
   cases i using Fin.cases <;> simp [tupleValues, Function.iterate_succ_apply]
+
+@[expose] noncomputable def tuple : {count : Nat} → (Fin count → ZFSet.{u}) → ZFSet.{u}
+  | 0, _ => ∅
+  | count + 1, values => pair (values 0) (tuple (fun i : Fin count => values i.succ))
+
+theorem tuple_of_isEmpty {count : Nat} (h : IsEmpty (Fin count)) (values : Fin count → ZFSet.{u}) :
+    tuple values = ∅ := by
+  obtain rfl := Fin.eq_zero_of_isEmpty h
+  rfl
+
+@[expose] noncomputable def tupleSet : {count : Nat} → (Fin count → ZFSet.{u}) → ZFSet.{u}
+  | 0, _ => {∅}
+  | count + 1, domains => prod (domains 0) (tupleSet (fun i : Fin count => domains i.succ))
+
+@[simp] theorem tupleValues_tuple {count : Nat} (values : Fin count → ZFSet) :
+    tupleValues count (tuple values) = values := by
+  induction count with
+  | zero => exact Subsingleton.elim _ _
+  | succ count ih =>
+    simp only [tuple, tupleValues_succ, fst_pair, snd_pair, ih]
+    exact Fin.cons_self_tail values
+
+theorem tuple_mem_tupleSet {count : Nat} {domains values : Fin count → ZFSet}
+    (h : ∀ i, values i ∈ domains i) : tuple values ∈ tupleSet domains := by
+  induction count with
+  | zero => simp [tuple, tupleSet]
+  | succ count ih => exact pair_mem_prod.mpr ⟨h 0, ih fun i => h i.succ⟩
+
+theorem mem_tupleSet {count : Nat} {domains : Fin count → ZFSet} {value : ZFSet} :
+    value ∈ tupleSet domains ↔
+      (∀ i, tupleValues count value i ∈ domains i) ∧ tuple (tupleValues count value) = value := by
+  constructor
+  · intro h
+    induction count generalizing value with
+    | zero => exact ⟨fun i => i.elim0, (mem_singleton.mp h).symm⟩
+    | succ count ih =>
+      obtain ⟨head, hhead, tail, htail, rfl⟩ := mem_prod.mp h
+      obtain ⟨htail, heq⟩ := ih htail
+      refine ⟨Fin.cases (by simpa using hhead) (fun i => by simpa using htail i), ?_⟩
+      simpa [tuple, tupleValues_succ] using congrArg (pair head) heq
+  · rintro ⟨h, heq⟩
+    rw [← heq]
+    exact tuple_mem_tupleSet h
+
+theorem tuple_mem_vonNeumann {count : Nat} {o : Ordinal.{u}} (ho : Order.IsSuccLimit o)
+    {values : Fin count → ZFSet.{u}} (h : ∀ i, values i ∈ V_ o) : tuple values ∈ V_ o := by
+  induction count with
+  | zero => exact empty_mem_vonNeumann ho.bot_lt
+  | succ count ih => exact pair_mem_vonNeumann ho (h 0) (ih fun i => h i.succ)
+
+theorem tupleSet_mem_vonNeumann {count : Nat} {o : Ordinal.{u}} (ho : Order.IsSuccLimit o)
+    {domains : Fin count → ZFSet.{u}} (h : ∀ i, domains i ∈ V_ o) : tupleSet domains ∈ V_ o := by
+  induction count with
+  | zero => exact singleton_mem_vonNeumann ho (empty_mem_vonNeumann ho.bot_lt)
+  | succ count ih => exact prod_mem_vonNeumann ho (h 0) (ih fun i => h i.succ)
 
 class Encode (α : Type v) where
   encode : α → ZFSet.{u}

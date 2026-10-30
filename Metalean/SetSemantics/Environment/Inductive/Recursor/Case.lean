@@ -189,7 +189,7 @@ theorem recrCaseFieldsSem_recursive_mem (f : Fin (ι.ctors s c).nrecFields) :
       (fun current => model.toModel.block fun param => current (param.castLE (by omega)))
       model.toModel.level ((CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ).fieldValues) := by
   rw [CaseSlots.fieldValues_ofValuation, typedRecFieldSetDep_apply]
-  simpa [StrongCtorSource.recursiveCodes] using
+  simpa [StrongCtorSource.code] using
     Reachable.ofDoms_mem (Reachable.pull (Reachable.of_append hγ) fun _ hbase =>
       Reachable.pull hbase fun _ hbase => Reachable.base hbase) f
 
@@ -211,7 +211,7 @@ theorem recrCaseFieldsSem_realizes (l : Level 0) (s : Fin ι.nsorts) (c : Fin (�
     (level := model.toModel.level)
     (reach := Reachable (Reachable Set.univ model.paramsSem) source.ordinary.sem)
     (fun _ => Reachable.append) model.toModel.sortValue hsorts
-    (fun f γ _ => by simpa using model.recursiveField_apply s c f γ)
+    (fun f γ _ => model.recursiveField_apply s c f γ)
   have hfields := source.ordinary.realizes.mapInst pre hatoms
   simp at hfields
   have hordTele : ((I.ctors s c).map pre.sigs).ordinaryTele{ls} =
@@ -247,8 +247,8 @@ noncomputable def recrCaseIhSem :
         (ι.ctors s c).nrecFields) :=
   SemTele.ofDoms fun f γ =>
     let fields := CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ
-    ihType ((model.ctors s c).source.recursiveCodes f).2.tele
-      ((model.ctors s c).source.recursiveCodes f).2.index
+    ihType ((model.ctors s c).source.code.recursive f).tele
+      ((model.ctors s c).source.code.recursive f).index
       (model.recrCaseMotive fields.params fields.motives) fields.fieldValues (fields.recursive f)
 
 noncomputable def recrCaseTele :

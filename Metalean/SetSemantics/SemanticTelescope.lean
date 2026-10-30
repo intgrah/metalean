@@ -363,6 +363,95 @@ theorem mem_collect (Δ : SemTele a b) (leaf : DomAt b) (γ : Slots a) (fn resul
 noncomputable def sigma : Dom b → SemTele a b → Dom a :=
   fold fun domain rest => σ domain (map rest domain)
 
+noncomputable def tail {b : Nat} (vargs : ZFSet) : SemTele a b → ZFSet
+  | .nil => vargs
+  | .snoc Δ _ => snd (tail vargs Δ)
+
+noncomputable def values {b : Nat} (γ : Slots a) (vargs : ZFSet) : SemTele a b → Slots b
+  | .nil => γ
+  | .snoc Δ _ => Fin.snoc (values γ vargs Δ) (fst (tail vargs Δ))
+
+theorem values_base (Δ : SemTele a b) (γ : Slots a) (vargs : ZFSet) (base : Fin a) :
+    Δ.values γ vargs (base.castLE Δ.le) = γ base := by
+  induction Δ with
+  | nil => rfl
+  | snoc Δ domain ih =>
+    exact (Fin.snoc_castSucc (α := fun _ => ZFSet) (p := values γ vargs Δ)
+      (i := base.castLE Δ.le) ..).trans ih
+
+theorem values_eq_append {count : Nat} (Δ : SemTele a (a + count)) (γ : Slots a)
+    (vargs : ZFSet) :
+    Δ.values γ vargs = Fin.append γ fun f => Δ.values γ vargs (Fin.natAdd a f) :=
+  Fin.append_castAdd_natAdd.symm.trans
+    (congrArg (Fin.append · _) (funext (Δ.values_base γ vargs)))
+
+noncomputable def pack {b : Nat} : SemTele a b → Slots b → ZFSet → ZFSet
+  | .nil => fun _ tail => tail
+  | .snoc Δ _ => fun γ tail => pack Δ (Fin.init γ) (pair (γ (Fin.last _)) tail)
+
+theorem tail_pack (Δ : SemTele a b) (γ : Slots b) (tail : ZFSet) :
+    Δ.tail (Δ.pack γ tail) = tail := by
+  induction Δ generalizing tail with
+  | nil => rfl
+  | snoc Δ domain ih => exact (congrArg snd (ih (Fin.init γ) _)).trans (snd_pair ..)
+
+theorem values_pack (Δ : SemTele a b) (γ : Slots b) (tail : ZFSet) :
+    Δ.values (fun base => γ (base.castLE Δ.le)) (Δ.pack γ tail) = γ := by
+  induction Δ generalizing tail with
+  | nil => rfl
+  | snoc Δ domain ih =>
+    change Slots.snoc
+      (values (fun base => Fin.init γ (base.castLE Δ.le))
+        (pack Δ (Fin.init γ) (pair (γ (Fin.last _)) tail)) Δ)
+      (fst (SemTele.tail (pack Δ (Fin.init γ) (pair (γ (Fin.last _)) tail)) Δ)) = γ
+    rw [ih, tail_pack, fst_pair]
+    exact Fin.snoc_init_self γ
+
+theorem pack_mem {Δ : SemTele a b} {leaf : Dom b}
+    {reach : Set (Slots a)} {final : Slots b} {tail : ZFSet}
+    (hfinal : final ∈ Reachable reach Δ) (htail : tail ∈ leaf final) :
+    Δ.pack final tail ∈ Δ.sigma leaf (fun base => final (base.castLE Δ.le)) := by
+  induction Δ generalizing tail with
+  | nil => exact htail
+  | snoc Δ domain ih =>
+    have .snoc hprefix hlast := hfinal
+    refine ih hprefix (pair_mem_sigma_map.mpr ⟨hlast, ?_⟩)
+    simpa [Slots.snoc] using htail
+
+theorem mem_sigma {Δ : SemTele a b} {leaf : Dom b} {γ : Slots a} {vargs : ZFSet} :
+    vargs ∈ Δ.sigma leaf γ ↔
+      Δ.values γ vargs ∈ Reachable {γ} Δ ∧
+      Δ.tail vargs ∈ leaf (Δ.values γ vargs) ∧
+      Δ.pack (Δ.values γ vargs) (Δ.tail vargs) = vargs := by
+  constructor
+  · intro h
+    induction Δ with
+    | nil => exact ⟨.nil rfl, h, rfl⟩
+    | snoc Δ domain ih =>
+      obtain ⟨hprior, htail, hpack⟩ := ih h
+      obtain ⟨value, hvalue, tail, htail, heq⟩ := mem_sigma_map.mp htail
+      simp only [values, SemTele.tail, pack, Fin.init_snoc, Fin.snoc_last]
+      rw [heq, fst_pair, snd_pair]
+      exact ⟨.snoc (by simpa using hprior) (by simpa using hvalue), htail, heq ▸ hpack⟩
+  · rintro ⟨hfinal, htail, hpack⟩
+    have hbase := Set.eq_of_mem_singleton (Reachable.base hfinal)
+    have h := pack_mem hfinal htail
+    rw [hbase] at h
+    exact hpack ▸ h
+
+theorem sigma_mono_cod {leaf₁ leaf₂ : Dom b} (Δ : SemTele a b)
+    (h : ∀ γ, leaf₁ γ ⊆ leaf₂ γ) (γ : Slots a) :
+    Δ.sigma leaf₁ γ ⊆ Δ.sigma leaf₂ γ := fun _ hv =>
+  let ⟨hreach, htail, hpack⟩ := SemTele.mem_sigma.mp hv
+  SemTele.mem_sigma.mpr ⟨hreach, h _ htail, hpack⟩
+
+theorem sigma_inter_cod {leaf₁ leaf₂ leaf₃ : Dom b} (Δ : SemTele a b)
+    (h : ∀ γ, ∀ value ∈ leaf₁ γ, value ∈ leaf₂ γ → value ∈ leaf₃ γ)
+    (γ : Slots a) {value : ZFSet} (h₁ : value ∈ Δ.sigma leaf₁ γ)
+    (h₂ : value ∈ Δ.sigma leaf₂ γ) : value ∈ Δ.sigma leaf₃ γ :=
+  let ⟨hreach, htail, hpack⟩ := SemTele.mem_sigma.mp h₁
+  SemTele.mem_sigma.mpr ⟨hreach, h _ _ htail (SemTele.mem_sigma.mp h₂).2.1, hpack⟩
+
 theorem pi_mem_iff {source target : Dom b} (Δ : SemTele a b)
     (γ : Slots a) (fn : ZFSet) (hf : fn ∈ Δ.pi source γ) :
     fn ∈ Δ.pi target γ ↔
@@ -541,6 +630,16 @@ theorem SemTele.sigma_mem_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
   induction hdoms with
   | nil => exact hleaf γ
   | snoc _ hdomain ih => exact ih fun current => by grind only [zfBounds]
+
+theorem SemTele.sigma_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
+    {leaf : Dom b} (hleaf : ∀ γ, leaf γ ⊆ U_ level) (γ : Slots a) :
+    Δ.sigma leaf γ ⊆ U_ level := by
+  induction hdoms with
+  | nil => exact hleaf γ
+  | snoc _ hdomain ih =>
+    refine ih fun current value hv => ?_
+    obtain ⟨head, hhead, tail, htail, rfl⟩ := mem_sigma_map.mp hv
+    exact pair_mem_type (mem_type_of_mem (hdomain current) hhead) (hleaf _ htail)
 
 theorem SemTele.pi_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
     {cod : Dom b} (hcod : ∀ γ : Slots b, cod γ ⊆ U_ level) (γ : Slots a) :

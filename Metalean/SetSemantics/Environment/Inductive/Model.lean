@@ -44,15 +44,10 @@ namespace StrongInductiveModel
 
 variable (model : StrongInductiveModel E₁ ε₁ I ls)
 
-noncomputable def codeOf (s : Fin ι.nsorts)
+noncomputable abbrev codeOf (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) :
     CtorCode ι.nparams :=
   (model.ctors s c).source.code
-
-noncomputable def recursiveRest (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    CtorCode (ι.nparams + (ι.ctors s c).nfields) :=
-  CtorCode.prependRecursive (ι.ctors s c).nrecFields (model.ctors s c).source.recursiveCodes
-    (.target (StrongCtorSource.targetIndex (model.ctors s c).source))
 
 noncomputable def ordinaryOf (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vargs : ZFSet) :
@@ -121,11 +116,8 @@ noncomputable def ctorArgs
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields)
     (vrecFds : Slots (ι.ctors s c).nrecFields) : ZFSet :=
-  let fieldSlots := Fin.append vps vfds
-  (model.ctors s c).source.ordinary.sem.pack fieldSlots
-    (CtorCode.packRecursive (model.toModel.block vps)
-      (model.ctors s c).source.recursiveCodes
-      model.toModel.level fieldSlots vrecFds proof)
+  (model.codeOf s c).pack (model.toModel.block vps) model.toModel.level
+    vps vfds vrecFds
 
 noncomputable def ctorResult
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -142,10 +134,7 @@ theorem ordinaryOf_castLE (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 theorem codeOf_targetIndex (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vargs : ZFSet) :
     (codeOf model s c).targetIndex vps vargs =
-      sortKey s.val (encode (targetValues model s c (ordinaryOf model s c vps vargs))) := by
-  rw [codeOf, StrongCtorSource.code, SemTele.targetIndex_prependOrdinary,
-    CtorCode.targetIndex_prependRecursive]
-  rfl
+      sortKey s.val (encode (targetValues model s c (ordinaryOf model s c vps vargs))) := rfl
 
 theorem ordinaryOf_reachable (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
@@ -156,10 +145,7 @@ theorem ordinaryOf_reachable (s : Fin ι.nsorts)
     ordinaryOf model s c vps vargs ∈
       Reachable (Reachable Set.univ model.tele.params.sem)
         (model.ctors s c).source.ordinary.sem := by
-  have hargs₁ : vargs ∈
-      (CtorCode.prependOrdinary (model.ctors s c).source.ordinary.sem
-        (model.recursiveRest s c)).argSet (model.toModel.block vps) vps := hargs
-  exact Reachable.mono (SemTele.reachable_values hargs₁ (Set.mem_singleton vps))
+  exact Reachable.mono (SemTele.mem_sigma.mp hargs).1
     (Set.singleton_subset_iff.mpr hps)
 
 theorem targetRealizes (s : Fin ι.nsorts)
@@ -239,25 +225,9 @@ theorem ctorArgs_mem
         (model.codeOf s c).argSet (model.toModel.block vps) vps ∧
       model.ordinaryOf s c vps (model.ctorArgs s c vps vfds vrecFds) =
         Fin.append vps vfds := by
-  let fieldSlots := Fin.append vps vfds
-  let source := (model.ctors s c).source
-  let fields := source.recursiveCodes
-  let tail := CtorCode.packRecursive (model.toModel.block vps) fields
-    model.toModel.level fieldSlots vrecFds proof
-  change source.ordinary.sem.pack fieldSlots tail ∈
-      (model.codeOf s c).argSet (model.toModel.block vps) vps ∧
-    model.ordinaryOf s c vps
-      (source.ordinary.sem.pack fieldSlots tail) = fieldSlots
-  have hbase := Set.eq_of_mem_singleton (Reachable.base hfields)
   constructor
-  · have htail : tail ∈ (model.recursiveRest s c).argSet
-        (model.toModel.block vps) fieldSlots :=
-      CtorCode.packRecursive_mem (fun f => recoverRecField_mem _ _ (hrecFields f))
-        proof_mem_verum
-    simpa [codeOf, StrongCtorSource.code, recursiveRest] using SemTele.pack_mem hfields htail
-  · unfold ordinaryOf
-    rw [← hbase]
-    exact source.ordinary.sem.values_pack fieldSlots tail
+  · exact (model.codeOf s c).pack_mem hfields hrecFields
+  · exact (model.codeOf s c).values_pack _ _ _ _ _
 
 theorem ctorResult_mem_sortValue
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
@@ -266,8 +236,8 @@ theorem ctorResult_mem_sortValue
       (model.ctors s c).source.ordinary.sem)
     (vrecFds : Slots (ι.ctors s c).nrecFields)
     (hrecFields : ∀ f, vrecFds f ∈ typedRecFieldSet
-      ((model.ctors s c).source.recursiveCodes f).2.tele
-      ((model.ctors s c).source.recursiveCodes f).2.index
+      ((model.ctors s c).source.code.recursive f).tele
+      ((model.ctors s c).source.code.recursive f).index
       (model.toModel.block vps) model.toModel.level (Fin.append vps vfds)) :
     model.ctorResult s c vps vfds vrecFds ∈ model.toModel.sortValue s vps
       (model.targetValues s c (Fin.append vps vfds)) := by
@@ -340,8 +310,8 @@ theorem large_ordinary_eq
       (model.codeOf s c).targetIndex vps rightArgs) :
     model.ordinaryOf s c vps leftArgs = model.ordinaryOf s c vps rightArgs := by
   let ordinary := (model.ctors s c).source.ordinary.sem
-  have hleftReach := SemTele.reachable_values hleftArgs (Set.mem_singleton vps)
-  have hrightReach := SemTele.reachable_values hrightArgs (Set.mem_singleton vps)
+  have hleftReach := (SemTele.mem_sigma.mp hleftArgs).1
+  have hrightReach := (SemTele.mem_sigma.mp hrightArgs).1
   have hleftDenotes := model.targetRealizes s c vps hps leftArgs
     (CtorCode.argSet_mono happroximation (model.codeOf s c) vps hleftArgs)
   have hrightDenotes := model.targetRealizes s c vps hps rightArgs hrightArgs

@@ -70,18 +70,9 @@ theorem recGraph_congr_key
       (hsubsingleton.eligible s₁ c₁) vps (model.recrParamsReachable s l γ hγ)
       good hgood hargs₁ hargs₂ hkeys
     rw [hiota hargs₁', hiota hargs₂, hlevel]
-    have htail₁ := CtorCode.tail_mem_argSet hargs₁
-    have htail₂ := CtorCode.tail_mem_argSet hargs₂
-    rw [show (model.ctors s₁ c₁).source.ordinary.sem.values vps args₁ =
-      (model.ctors s₁ c₁).source.ordinary.sem.values vps args₂ from hfields] at htail₁
-    rw [codeOf, StrongCtorSource.code, CtorCode.applyMinor, CtorCode.applyMinor,
-      SemTele.applyFields_prependOrdinary, SemTele.applyFields_prependOrdinary,
-      SemTele.applyIhs_prependOrdinary, SemTele.applyIhs_prependOrdinary,
-      show (model.ctors s₁ c₁).source.ordinary.sem.values vps args₁ =
-        (model.ctors s₁ c₁).source.ordinary.sem.values vps args₂ from hfields]
-    exact CtorCode.applyMinor_zero_congr _ _ (block₁ := good) (block₂ := block)
+    exact (model.codeOf s₁ c₁).applyMinor_zero_congr (block₁ := good) (block₂ := block)
       (fun key value₁ value₂ h₁ h₂ => (mem_sep.mp h₁).2 _ h₂ (by simp))
-      _ _ htail₁ htail₂
+      hargs₁ hargs₂ hfields _
   have hblock : block ⊆ good := lfp_least (fun _ h => lfp_subset (hgood h)) hclosed
   exact (mem_sep.mp (hblock hleft)).2 right hright hkeys
 

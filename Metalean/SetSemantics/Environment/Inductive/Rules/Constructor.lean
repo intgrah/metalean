@@ -30,17 +30,11 @@ namespace StrongInductiveModel
 
 variable (model : StrongInductiveModel E₁ ε₁ I ls)
 
-noncomputable def recCode
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (f : Fin (ι.ctors s c).nrecFields) :=
-  StrongRecursiveFieldSource.code ((I.ctors s c).recursive f)
-    ((model.ctors s c).source.recursive f)
-
 noncomputable def recFieldSet
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (f : Fin (ι.ctors s c).nrecFields) (vps : Slots ι.nparams)
     (fieldSlots : Slots (ι.nparams + (ι.ctors s c).nfields)) :=
-  typedRecFieldSet (model.recCode s c f).tele (model.recCode s c f).index
+  typedRecFieldSet ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
     (model.toModel.block vps) model.toModel.level fieldSlots
 
 section
@@ -120,11 +114,12 @@ theorem recFieldsMem
         funext param
         simpa using
           congrFun (Set.eq_of_mem_singleton (Reachable.base (Reachable.base hδ))) param
-      simpa [hpsEq] using model.recursiveField_apply s c f δ)
+      rw [← hpsEq]
+      exact model.recursiveField_apply s c f δ)
     (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) hfieldsReach
   suffices heq : _ = model.recFieldSet s c f (ε₂[γ]⟦ps ·⟧)
       (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) from heq ▸ (hrecFields f).mem
-  simpa [recFieldSet, recCode, Inductive.map, Ctor.map] using
+  simpa [recFieldSet, codeOf, StrongCtorSource.code, Inductive.map, Ctor.map] using
     (Expr.denote_subst γ (Fin.append ps fds) _).trans
       ((congrArg (fun δ => ε₂[δ]⟦_⟧)
         (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧)).trans hdomain)
@@ -237,27 +232,13 @@ theorem applyMinor_ctorApplication
     (model.codeOf s c).applyMinor model.toModel.level graph vps minor
         (model.ctorArgs s c vps vfds vrecFds) =
       [zf|minor vfds... vrecFds... $(fun f =>
-          recMap (model.recCode s c f).tele (model.recCode s c f).index graph
+          recMap ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index graph
             (Fin.append vps vfds)
-            (recoverRecField (model.recCode s c f).tele (model.recCode s c f).index
+            (recoverRecField ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
               (model.toModel.block vps) model.toModel.level (Fin.append vps vfds)
               (vrecFds f)))...] := by
-  let source := (model.ctors s c).source
-  let tele := source.ordinary.sem
-  let fields := source.recursiveCodes
-  let index := StrongCtorSource.targetIndex (model.ctors s c).source
-  let rest := CtorCode.prependRecursive (ι.ctors s c).nrecFields fields (.target index)
-  let tail := CtorCode.packRecursive (model.toModel.block vps) fields model.toModel.level
-    (Fin.append vps vfds) vrecFds proof
-  have hvalues := tele.values_pack (Fin.append vps vfds) tail
-  simp at hvalues
-  change (CtorCode.prependOrdinary tele rest).applyMinor model.toModel.level graph vps minor
-    (tele.pack (Fin.append vps vfds) tail) = _
-  rw [CtorCode.applyMinor, SemTele.applyFields_prependOrdinary,
-    SemTele.applyIhs_prependOrdinary, hvalues, tele.tail_pack, SemTele.app_eq_apps]
-  simp only [Fin.append_right]
-  rw [CtorCode.applyFields_packRecursive fields index _ (Fin.append vps vfds) vrecFds hrecFields]
-  exact CtorCode.applyIhs_packRecursive fields index _ graph (Fin.append vps vfds) vrecFds _
+  exact (model.codeOf s c).applyMinor_pack (model.toModel.block vps) graph model.toModel.level
+      vps vfds vrecFds hrecFields minor
 
 end StrongInductiveModel
 
