@@ -80,8 +80,8 @@ theorem ofSound (h : ∀ level, ∃ w : InductiveModel.{u} Eq.sig,
       · intro p
         obtain rfl := Fin.eq_zero p
         exact ⟨rfl, hx⟩
-    have hctor := hclause.rules.ctor (E₂ := E) (ε₂ := ε) .refl
-      (funext fun a => congrArg ε ((Atom.functor _).map_id_apply _ a))
+    have hctor := (hclause.rules (E₂ := E) (ε₂ := ε) .refl
+      (funext fun a => congrArg ε ((Atom.functor _).map_id_apply _ a))).ctor
       (γ := ![α, x]) (s := ⟨0, by decide⟩) (c := ⟨0, by decide⟩)
       (ps₁ := Expr.var) (ps₂ := Expr.var)
       (fds₁ := ![]) (fds₂ := ![]) (recFds₁ := ![]) (recFds₂ := ![])

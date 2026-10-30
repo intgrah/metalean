@@ -120,7 +120,7 @@ theorem recursiveIotaLeaf
   have hps := model.recrParamsReachable s l outer houter
   have his := StrongRecursiveFieldSource.valuesReachable recFd source model.paramsSem
     (model.indicesSem ((ι.ctors s c).recursiveTarget f))
-    (model.tele.indices ((ι.ctors s c).recursiveTarget f)).realizes
+    (model.indices ((ι.ctors s c).recursiveTarget f)).realizes
     (Set.singleton_subset_iff.mpr
       (Reachable.append (Reachable.mono hfields (Set.singleton_subset_iff.mpr hps))))
     (Set.mapsTo_singleton.mpr ((Set.eq_of_mem_singleton (Reachable.base hfields)) ▸ hps))

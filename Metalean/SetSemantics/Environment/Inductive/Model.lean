@@ -29,16 +29,21 @@ structure StrongInductiveModel
     (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSet.{u})
     (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level 0) :
     Type (u + 1) where
-  tele : BlockTeleModels E₁ ls ε₁ I
+  params : StrongTeleModel E₁ ε₁ ![] I.params{ls}
+  indicesBound (s : Fin ι.nsorts) : Nat
+  indices (s : Fin ι.nsorts) :
+    StrongTeleExtension E₁ ε₁ ![] params (I.indices s){ls} (indicesBound s)
   ctors (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    StrongCtorModel E₁ ε₁ I ls (I.ctors s c) tele.params
+    StrongCtorModel E₁ ε₁ I ls (I.ctors s c) params
 
 theorem InductiveWF.model (hdecl : SemDecls E₁ ε₁ ![])
     (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hB : InductiveWF E₁ I) :
-    Nonempty (StrongInductiveModel E₁ ε₁ I ls) :=
-  have ⟨tele⟩ := hB.teleModels hdecl hrule hE
-  ⟨⟨tele, fun s c => Classical.choice
-    ((hB.ctors s c).model hdecl hrule hE tele.params (tele.indices s))⟩⟩
+    Nonempty (StrongInductiveModel E₁ ε₁ I ls) := by
+  have ⟨params⟩ := (hB.params.instLevel ls fun _ => trivial).model hdecl hrule hE
+  let indices (s) := Classical.choice
+    ((hB.indices s).instLevel ls (fun _ => trivial) |>.modelExtension hdecl hrule hE params)
+  exact ⟨params, fun s => (indices s).1, fun s => (indices s).2,
+    fun s c => Classical.choice ((hB.ctors s c).model hdecl hrule hE params (indices s).2)⟩
 
 namespace StrongInductiveModel
 
@@ -83,11 +88,11 @@ theorem codeOf_targetIndex_mem_type (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
   exact (model.ctors s c).source.code_targetIndex_mem_type
     (fun γ i => type_mono hle (Classical.choose_spec (model.ctors s c).targetBounded γ i)) γ vargs
 
-def paramsSem : SemTele 0 ι.nparams := model.tele.params.sem
+def paramsSem : SemTele 0 ι.nparams := model.params.sem
 
 def indicesSem (s : Fin ι.nsorts) :
     SemTele ι.nparams (ι.nparams + ι.nindices s) :=
-  (model.tele.indices s).sem
+  (model.indices s).sem
 
 def sortSem (s : Fin ι.nsorts) :
     SemTele 0 (ι.nparams + ι.nindices s) :=
@@ -138,19 +143,19 @@ theorem codeOf_targetIndex (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 
 theorem ordinaryOf_reachable (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.tele.params.sem)
+    (hps : vps ∈ Reachable Set.univ model.params.sem)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
     ordinaryOf model s c vps vargs ∈
-      Reachable (Reachable Set.univ model.tele.params.sem)
+      Reachable (Reachable Set.univ model.params.sem)
         (model.ctors s c).source.ordinary.sem := by
   exact Reachable.mono (SemTele.mem_sigma.mp hargs).1
     (Set.singleton_subset_iff.mpr hps)
 
 theorem targetRealizes (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.tele.params.sem)
+    (hps : vps ∈ Reachable Set.univ model.params.sem)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps)
@@ -162,7 +167,7 @@ theorem targetRealizes (s : Fin ι.nsorts)
 
 theorem fieldsRealize (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.tele.params.sem)
+    (hps : vps ∈ Reachable Set.univ model.params.sem)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
@@ -191,10 +196,10 @@ theorem realizes
     model.toModel.Interprets ε₂ ![] (I.map pre.sigs) ls where
   level_eq := rfl
   params := by
-    simpa [paramsSem, Inductive.map] using model.tele.params.realizes.mapInst pre hatoms
+    simpa [paramsSem, Inductive.map] using model.params.realizes.mapInst pre hatoms
   indicesRealizes s := by
     simpa [paramsSem, indicesSem, Inductive.map] using
-      (model.tele.indices s).realizes.mapInst pre hatoms
+      (model.indices s).realizes.mapInst pre hatoms
   ordinaryOf_castLE := model.ordinaryOf_castLE
   targetIndex_eq := model.codeOf_targetIndex
   targetRealizes s c vps hps vargs hargs index := by

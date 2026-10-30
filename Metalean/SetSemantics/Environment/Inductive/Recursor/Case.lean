@@ -99,7 +99,7 @@ theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots �
       simpa! [Fin.natAdd, Fin.castAdd] using hsorts s
         (fun param => γ (param.castLE (Nat.le_add_right _ _))) fun index =>
           γ (Fin.natAdd ι.nparams index)
-    have hsnoc := Tele.Forall₂.snoc ((model.tele.indices s).realizes.mapInst pre hatoms) hlast
+    have hsnoc := Tele.Forall₂.snoc ((model.indices s).realizes.mapInst pre hatoms) hlast
     have hindexTele : ((I.map pre.sigs).indices s){ls} =
         (I.map pre.sigs).indexTele ls s fun param => Expr.var param :=
       ((Ctx.substFunctor _).map_id_apply _ _).symm
@@ -174,7 +174,7 @@ include hγ
 
 theorem recrCaseFieldsSem_base :
     (CaseSlots.ofValuation (ι := ι) (s := s) (c := c) γ).fieldValues ∈
-      Reachable Set.univ (model.tele.params.append (model.ctors s c).source.ordinary).sem :=
+      Reachable Set.univ (model.params.append (model.ctors s c).source.ordinary).sem :=
   by
     rw [CaseSlots.fieldValues_ofValuation]
     exact Reachable.append (Reachable.pull (Reachable.base (Reachable.of_append hγ))

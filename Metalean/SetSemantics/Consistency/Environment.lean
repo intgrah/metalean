@@ -174,18 +174,10 @@ theorem Env.Model.semDeclRules {E : Env ζ} (m : Env.Model.{u} E) :
     SemDeclRules E m.atoms ![] :=
   have hatoms : AtomsMap (𝟙 ζ) m.atoms m.atoms :=
     funext fun a => congrArg m.atoms ((Atom.functor _).map_id_apply _ a)
-  { ind _ := (m.sound.inductiveRules _ _).ind .refl hatoms
-    ctor _ := (m.sound.inductiveRules _ _).ctor .refl hatoms
-    recr _ := (m.sound.inductiveRules _ _).recr .refl hatoms
-    quot _ := (m.sound.quotientRules _).quot .refl hatoms
-    quotMk _ := (m.sound.quotientRules _).quotMk .refl hatoms
-    quotLift _ := (m.sound.quotientRules _).quotLift .refl hatoms
-    quotInd _ := (m.sound.quotientRules _).quotInd .refl hatoms
-    quotIota _ := (m.sound.quotientRules _).quotIota .refl hatoms
-    iota _ := (m.sound.inductiveRules _ _).iota .refl hatoms
+  { inductiveRules := fun _ {ι} η ls => m.sound.inductiveRules η ls .refl hatoms
+    quotientRules := fun _ η => (m.sound.quotientRules η).rules .refl hatoms
     delta := fun {_ _ _ η ls} _ =>
-      ⟨by simpa! using m.sound.defEq η ls, by simpa! using m.sound.constMem η ls⟩
-    etaStruct hstruct _ := (m.sound.inductiveRules _ _).etaStruct .refl hatoms hstruct }
+      ⟨by simpa! using m.sound.defEq η ls, by simpa! using m.sound.constMem η ls⟩ }
 
 def Env.Model.addConst {pre : Env ζ} {kind : ConstKind} {nlevels : Nat}
     {entry : Entry ζ (.const kind nlevels)} (m : Model.{u} pre)

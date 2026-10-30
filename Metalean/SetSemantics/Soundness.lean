@@ -27,96 +27,97 @@ def SemDecls (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) 
     (ls : Fin nlevels → Level ℓ),
   ε (.const η ls) ∈ ε[ν; ![]]⟦(E.get η).constType{ls}⟧
 
-structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) : Prop where
-  ind {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)} {s ls ps₁ ps₂ is₁ is₂} :
-    EnvWF E →
-    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
-    (∀ i, ε[ν; γ] ⊨ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) →
-    ε[ν; γ] ⊨ .ind η s ls ps₁ is₁ ≡ .ind η s ls ps₂ is₂ : .sort (E.get η).block.level{ls}
-  ctor {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
-      {s c ls ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂} :
-    EnvWF E →
-    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
-    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
+structure Inductive.SemRules (ε : Atom ζ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
+    {ι : IndSig} (I : Inductive ζ ι) (η : Head ζ (.inductive ι))
+    (ls : Fin ι.nlevels → Level ℓ) : Prop where
+  ind : ∀ {n : Nat} {γ : Slots n} {s ps₁ ps₂ is₁ is₂},
+    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
+    (∀ i, ε[ν; γ] ⊨ is₁ i ≡ is₂ i : I.indexType ls s ps₁ is₁ i) →
+    ε[ν; γ] ⊨ .ind η s ls ps₁ is₁ ≡ .ind η s ls ps₂ is₂ : .sort I.level{ls}
+  ctor : ∀ {n : Nat} {γ : Slots n}
+      {s c ps₁ ps₂ fds₁ fds₂ recFds₁ recFds₂},
+    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
+    (∀ f, ε[ν; γ] ⊨ fds₁ f ≡ fds₂ f : ((I.ctors s c).ordinary f).type{ls}.subst
       (Fin.append ps₁ fun previous : Fin f.val => fds₁ (previous.castLE f.isLt.le))) →
     (∀ f, ε[ν; γ] ⊨ recFds₁ f ≡ recFds₂ f :
-      (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps₁ (Fin.append ps₁ fds₁)) →
+      ((I.ctors s c).recursive f).instantiatedType η ls ps₁ (Fin.append ps₁ fds₁)) →
     ε[ν; γ] ⊨ .ctor η s c ls ps₁ fds₁ recFds₁ ≡ .ctor η s c ls ps₂ fds₂ recFds₂ :
-      .ind η s ls ps₁ (fun i => ((E.get η).block.ctors s c).targetIndex ls ps₁ fds₁ i)
-  recr {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
-      {s ls l ps₁ ps₂ ms₁ ms₂ mins₁ mins₂ is₁ is₂ maj₁ maj₂} :
-    EnvWF E →
-    (E.get η).block.RecAllowed ls l →
-    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : (E.get η).block.paramType ls ps₁ p) →
-    (∀ s, ε[ν; γ] ⊨ ms₁ s ≡ ms₂ s : (E.get η).block.motiveType η ls ps₁ l s) →
-    (∀ s c, ε[ν; γ] ⊨ mins₁ s c ≡ mins₂ s c : (E.get η).block.caseFnType η ls ps₁ ms₁ s c) →
-    (∀ i, ε[ν; γ] ⊨ is₁ i ≡ is₂ i : (E.get η).block.indexType ls s ps₁ is₁ i) →
+      .ind η s ls ps₁ (fun i => (I.ctors s c).targetIndex ls ps₁ fds₁ i)
+  recr : ∀ {n : Nat} {γ : Slots n}
+      {s l ps₁ ps₂ ms₁ ms₂ mins₁ mins₂ is₁ is₂ maj₁ maj₂},
+    I.RecAllowed ls l →
+    (∀ p, ε[ν; γ] ⊨ ps₁ p ≡ ps₂ p : I.paramType ls ps₁ p) →
+    (∀ s, ε[ν; γ] ⊨ ms₁ s ≡ ms₂ s : I.motiveType η ls ps₁ l s) →
+    (∀ s c, ε[ν; γ] ⊨ mins₁ s c ≡ mins₂ s c : I.caseFnType η ls ps₁ ms₁ s c) →
+    (∀ i, ε[ν; γ] ⊨ is₁ i ≡ is₂ i : I.indexType ls s ps₁ is₁ i) →
     ε[ν; γ] ⊨ maj₁ ≡ maj₂ : .ind η s ls ps₁ is₁ →
     ε[ν; γ] ⊨ .recr η s ls l ps₁ ms₁ mins₁ is₁ maj₁ ≡ .recr η s ls l ps₂ ms₂ mins₂ is₂ maj₂ :
       Inductive.motiveResult (ms₁ s) is₁ maj₁
-  quot {n : Nat} {γ : Slots n} {η : Head ζ .quot} {l α α' r r'} :
-    EnvWF E →
-    ε[ν; γ] ⊨ α ≡ α' : .sort l →
-    ε[ν; γ] ⊨ r ≡ r' : Quot.relType α →
-    ε[ν; γ] ⊨ .quot η l α r ≡ .quot η l α' r' : .sort l
-  quotMk {n : Nat} {γ : Slots n} {η : Head ζ .quot} {l α α' r r' a a'} :
-    EnvWF E →
-    ε[ν; γ] ⊨ α ≡ α' : .sort l →
-    ε[ν; γ] ⊨ r ≡ r' : Quot.relType α →
-    ε[ν; γ] ⊨ a ≡ a' : α →
-    ε[ν; γ] ⊨ .quotMk η l α r a ≡ .quotMk η l α' r' a' : .quot η l α r
-  quotLift {n : Nat} {γ : Slots n} {η : Head ζ .quot} {l₁ l₂ α α' r r' β β' f f' h h' a a'} :
-    EnvWF E →
-    ε[ν; γ] ⊨ α ≡ α' : .sort l₁ →
-    ε[ν; γ] ⊨ r ≡ r' : Quot.relType α →
-    ε[ν; γ] ⊨ β ≡ β' : .sort l₂ →
-    ε[ν; γ] ⊨ f ≡ f' : .forallE α β.wk →
-    ε[ν; γ] ⊨ h ≡ h' : Quot.compatType (E.get η).eqHead l₂ α r β f →
-    ε[ν; γ] ⊨ a ≡ a' : .quot η l₁ α r →
-    ε[ν; γ] ⊨ .quotLift η l₁ l₂ α r β f h a ≡ .quotLift η l₁ l₂ α' r' β' f' h' a' : β
-  quotInd {n : Nat} {γ : Slots n} {η : Head ζ .quot} {l α α' r r' β β' f f' a a'} :
-    EnvWF E →
-    ε[ν; γ] ⊨ α ≡ α' : .sort l →
-    ε[ν; γ] ⊨ r ≡ r' : Quot.relType α →
-    ε[ν; γ] ⊨ β ≡ β' : Quot.motiveType η l α r →
-    ε[ν; γ] ⊨ f ≡ f' : Quot.minorType η l α r β →
-    ε[ν; γ] ⊨ a ≡ a' : .quot η l α r →
-    ε[ν; γ] ⊨ .quotInd η l α r β f a ≡ .quotInd η l α' r' β' f' a' : .app β a
-  quotIota {n : Nat} {γ : Slots n} {η : Head ζ .quot} {l₁ l₂ α r β f h a} :
-    EnvWF E →
+  iota : ∀ {n : Nat} {γ : Slots n} {l ps ms mins s c fds recFds},
+    I.RecAllowed ls l →
+    (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : I.paramType ls ps p) →
+    (∀ s, ε[ν; γ] ⊨ ms s ≡ ms s : I.motiveType η ls ps l s) →
+    (∀ s c, ε[ν; γ] ⊨ mins s c ≡ mins s c : I.caseFnType η ls ps ms s c) →
+    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : ((I.ctors s c).ordinary f).type{ls}.subst
+      (Fin.append ps fun previous : Fin f.val => fds (previous.castLE f.isLt.le))) →
+    (∀ f, ε[ν; γ] ⊨ recFds f ≡ recFds f :
+      ((I.ctors s c).recursive f).instantiatedType η ls ps (Fin.append ps fds)) →
+    ε[ν; γ] ⊨ I.iotaLhs η ls l ps ms mins s c fds recFds ≡
+      I.iotaRhs η ls l ps ms mins s c fds recFds :
+      I.iotaType η ls ps ms s c fds recFds
+  etaStruct : ∀ {n : Nat} {γ : Slots n}
+      {s c ps is maj} (h : I.IsStructure s c),
+    (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : I.paramType ls ps p) →
+    ε[ν; γ] ⊨ maj ≡ maj : .ind η s ls ps is →
+    ε[ν; γ] ⊨ h.rebuildTerm η ls ps maj ≡ maj : .ind η s ls ps is
+
+structure Quot.SemRules (ε : Atom ζ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
+    (η : Head ζ .quot) (eqHead : Head ζ (.inductive Eq.sig)) : Prop where
+  quot : ∀ {n : Nat} {γ : Slots n} {l α₁ α₂ r₁ r₂},
+    ε[ν; γ] ⊨ α₁ ≡ α₂ : .sort l →
+    ε[ν; γ] ⊨ r₁ ≡ r₂ : Quot.relType α₁ →
+    ε[ν; γ] ⊨ .quot η l α₁ r₁ ≡ .quot η l α₂ r₂ : .sort l
+  quotMk : ∀ {n : Nat} {γ : Slots n} {l α₁ α₂ r₁ r₂ a₁ a₂},
+    ε[ν; γ] ⊨ α₁ ≡ α₂ : .sort l →
+    ε[ν; γ] ⊨ r₁ ≡ r₂ : Quot.relType α₁ →
+    ε[ν; γ] ⊨ a₁ ≡ a₂ : α₁ →
+    ε[ν; γ] ⊨ .quotMk η l α₁ r₁ a₁ ≡ .quotMk η l α₂ r₂ a₂ : .quot η l α₁ r₁
+  quotLift : ∀ {n : Nat} {γ : Slots n} {l₁ l₂ α₁ α₂ r₁ r₂ β₁ β₂ f₁ f₂ h₁ h₂ a₁ a₂},
+    ε[ν; γ] ⊨ α₁ ≡ α₂ : .sort l₁ →
+    ε[ν; γ] ⊨ r₁ ≡ r₂ : Quot.relType α₁ →
+    ε[ν; γ] ⊨ β₁ ≡ β₂ : .sort l₂ →
+    ε[ν; γ] ⊨ f₁ ≡ f₂ : .forallE α₁ β₁.wk →
+    ε[ν; γ] ⊨ h₁ ≡ h₂ : Quot.compatType eqHead l₂ α₁ r₁ β₁ f₁ →
+    ε[ν; γ] ⊨ a₁ ≡ a₂ : .quot η l₁ α₁ r₁ →
+    ε[ν; γ] ⊨ .quotLift η l₁ l₂ α₁ r₁ β₁ f₁ h₁ a₁ ≡ .quotLift η l₁ l₂ α₂ r₂ β₂ f₂ h₂ a₂ : β₁
+  quotInd : ∀ {n : Nat} {γ : Slots n} {l α₁ α₂ r₁ r₂ β₁ β₂ f₁ f₂ a₁ a₂},
+    ε[ν; γ] ⊨ α₁ ≡ α₂ : .sort l →
+    ε[ν; γ] ⊨ r₁ ≡ r₂ : Quot.relType α₁ →
+    ε[ν; γ] ⊨ β₁ ≡ β₂ : Quot.motiveType η l α₁ r₁ →
+    ε[ν; γ] ⊨ f₁ ≡ f₂ : Quot.minorType η l α₁ r₁ β₁ →
+    ε[ν; γ] ⊨ a₁ ≡ a₂ : .quot η l α₁ r₁ →
+    ε[ν; γ] ⊨ .quotInd η l α₁ r₁ β₁ f₁ a₁ ≡ .quotInd η l α₂ r₂ β₂ f₂ a₂ : .app β₁ a₁
+  quotIota : ∀ {n : Nat} {γ : Slots n} {l₁ l₂ α r β f h a},
     ε[ν; γ] ⊨ α ≡ α : .sort l₁ →
     ε[ν; γ] ⊨ r ≡ r : Quot.relType α →
     ε[ν; γ] ⊨ β ≡ β : .sort l₂ →
     ε[ν; γ] ⊨ f ≡ f : .forallE α β.wk →
-    ε[ν; γ] ⊨ h ≡ h : Quot.compatType (E.get η).eqHead l₂ α r β f →
+    ε[ν; γ] ⊨ h ≡ h : Quot.compatType eqHead l₂ α r β f →
     ε[ν; γ] ⊨ a ≡ a : α →
     ε[ν; γ] ⊨ .quotLift η l₁ l₂ α r β f h (.quotMk η l₁ α r a) ≡
       .quotLift η l₁ l₂ α r β f h (.quotMk η l₁ α r a) : β →
     ε[ν; γ] ⊨ .app f a ≡ .app f a : β →
     ε[ν; γ] ⊨ .quotLift η l₁ l₂ α r β f h (.quotMk η l₁ α r a) ≡ .app f a : β
-  iota {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)} {ls l ps ms mins s c fds recFds} :
-    EnvWF E →
-    (E.get η).block.RecAllowed ls l →
-    (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : (E.get η).block.paramType ls ps p) →
-    (∀ s, ε[ν; γ] ⊨ ms s ≡ ms s : (E.get η).block.motiveType η ls ps l s) →
-    (∀ s c, ε[ν; γ] ⊨ mins s c ≡ mins s c : (E.get η).block.caseFnType η ls ps ms s c) →
-    (∀ f, ε[ν; γ] ⊨ fds f ≡ fds f : (((E.get η).block.ctors s c).ordinary f).type{ls}.subst
-      (Fin.append ps fun previous : Fin f.val => fds (previous.castLE f.isLt.le))) →
-    (∀ f, ε[ν; γ] ⊨ recFds f ≡ recFds f :
-      (((E.get η).block.ctors s c).recursive f).instantiatedType η ls ps (Fin.append ps fds)) →
-    ε[ν; γ] ⊨ (E.get η).block.iotaLhs η ls l ps ms mins s c fds recFds ≡
-      (E.get η).block.iotaRhs η ls l ps ms mins s c fds recFds :
-      (E.get η).block.iotaType η ls ps ms s c fds recFds
-  delta {n : Nat} {γ : Slots n} {nlevels} {η : Head ζ (.const .def nlevels)} {ls} :
+
+structure SemDeclRules (E : Env ζ) (ε : Atom ζ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat) : Prop where
+  inductiveRules : EnvWF E → ∀ {ι} (η : Head ζ (.inductive ι)) (ls : Fin ι.nlevels → Level ℓ),
+    Inductive.SemRules ε ν (E.get η).block η ls
+  quotientRules : EnvWF E → ∀ η : Head ζ .quot, Quot.SemRules ε ν η (E.get η).eqHead
+  delta : ∀ {n : Nat} {γ : Slots n} {nlevels} {η : Head ζ (.const .def nlevels)} {ls},
     EnvWF E →
     ε[ν; γ] ⊨ .const η ls ≡ (E.get η).defValue{ls}.wkClosed :
       (E.get η).constType{ls}.wkClosed
-  etaStruct {n : Nat} {γ : Slots n} {ι} {η : Head ζ (.inductive ι)}
-      {s c ls ps is maj} (h : (E.get η).block.IsStructure s c) :
-    EnvWF E →
-    (∀ p, ε[ν; γ] ⊨ ps p ≡ ps p : (E.get η).block.paramType ls ps p) →
-    ε[ν; γ] ⊨ maj ≡ maj : .ind η s ls ps is →
-    ε[ν; γ] ⊨ h.rebuildTerm η ls ps maj ≡ maj : .ind η s ls ps is
+
 
 theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν) :
     EnvWF E →
@@ -192,28 +193,28 @@ theorem soundness (hdecl : SemDecls E ε ν) (hrule : SemDeclRules E ε ν) :
     refine ⟨rfl, ?_⟩
     simpa! using hdecl η ls
   | indDF _ _ ihps ihis =>
-    exact hrule.ind hE (fun p => ihps p γ hρ) fun i => ihis i γ hρ
+    exact (hrule.inductiveRules hE _ _).ind (fun p => ihps p γ hρ) fun i => ihis i γ hρ
   | ctorDF _ _ _ _ _ _ ihps ihfields ihrecFields _ _ _ =>
-    exact hrule.ctor hE (fun p => ihps p γ hρ) (fun f => ihfields f γ hρ)
+    exact (hrule.inductiveRules hE _ _).ctor (fun p => ihps p γ hρ) (fun f => ihfields f γ hρ)
       fun f => ihrecFields f γ hρ
   | recrDF hallowed _ _ _ _ _ _ ihps ihms ihmins ihis ihmaj _ =>
-    exact hrule.recr hE hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
+    exact (hrule.inductiveRules hE _ _).recr hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
       (fun s c => ihmins s c γ hρ) (fun i => ihis i γ hρ) (ihmaj γ hρ)
-  | quotDF _ _ ihα ihr => exact hrule.quot hE (ihα γ hρ) (ihr γ hρ)
+  | quotDF _ _ ihα ihr => exact (hrule.quotientRules hE _).quot (ihα γ hρ) (ihr γ hρ)
   | quotMkDF _ _ _ ihα ihr iha =>
-    exact hrule.quotMk hE (ihα γ hρ) (ihr γ hρ) (iha γ hρ)
+    exact (hrule.quotientRules hE _).quotMk (ihα γ hρ) (ihr γ hρ) (iha γ hρ)
   | quotLiftDF _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    exact hrule.quotLift hE (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
+    exact (hrule.quotientRules hE _).quotLift (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
   | quotIndDF _ _ _ _ _ _ ihα ihr ihβ ihf iha _ =>
-    exact hrule.quotInd hE (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (iha γ hρ)
+    exact (hrule.quotientRules hE _).quotInd (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (iha γ hρ)
   | quotIota _ _ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha ihlhs ihrhs =>
-    exact hrule.quotIota hE (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
+    exact (hrule.quotientRules hE _).quotIota (ihα γ hρ) (ihr γ hρ) (ihβ γ hρ) (ihf γ hρ) (ihh γ hρ) (iha γ hρ)
       (ihlhs γ hρ) (ihrhs γ hρ)
   | iota hallowed _ _ _ _ _ _ _ _ ihps ihms ihmins ihfields ihrecFields _ _ _ =>
-    exact hrule.iota hE hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
+    exact (hrule.inductiveRules hE _ _).iota hallowed (fun p => ihps p γ hρ) (fun s => ihms s γ hρ)
       (fun s c => ihmins s c γ hρ) (fun f => ihfields f γ hρ) fun f => ihrecFields f γ hρ
   | etaStruct h _ _ _ ihps ihmaj _ =>
-    exact hrule.etaStruct h hE (fun p => ihps p γ hρ) (ihmaj γ hρ)
+    exact (hrule.inductiveRules hE _ _).etaStruct h (fun p => ihps p γ hρ) (ihmaj γ hρ)
   | delta => exact hrule.delta hE
 
 @[simp] theorem Expr.denote_falseTy {ν : Param 0 → Nat}

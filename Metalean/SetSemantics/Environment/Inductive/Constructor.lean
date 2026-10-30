@@ -32,23 +32,6 @@ variable {nfields arity bound bound₁ level : Nat}
   {Γ : Ctx ζ₁ 0 0 (ι.nparams + nfields)} {base : StrongTeleModel E₁ ε₁ ![] Γ}
   {params : StrongTeleModel E₁ ε₁ ![] I.params{ls}}
 
-structure BlockTeleModels (E : Env ζ₁) (ls : Fin ι.nlevels → Level 0)
-    (ε : Atom ζ₁ 0 → ZFSet.{u}) (I : Inductive ζ₁ ι) : Type (u + 1) where
-  params : StrongTeleModel E ε ![] I.params{ls}
-  indicesBound (s : Fin ι.nsorts) : Nat
-  indices (s : Fin ι.nsorts) :
-    StrongTeleExtension E ε ![] params (I.indices s){ls} (indicesBound s)
-
-theorem InductiveWF.teleModels (hdecl : SemDecls E₁ ε₁ ![])
-    (hrule : SemDeclRules E₁ ε₁ ![]) (hE : EnvWF E₁) (hB : InductiveWF E₁ I) :
-    Nonempty (BlockTeleModels E₁ ls ε₁ I) := by
-  have ⟨paramsModel⟩ :=
-    (hB.params.instLevel ls fun _ => trivial).model hdecl hrule hE
-  have his (s) := Classical.choice
-    ((hB.indices s).instLevel ls (fun _ => trivial)
-      |>.modelExtension hdecl hrule hE paramsModel)
-  exact ⟨paramsModel, fun s => (his s).fst, fun s => (his s).snd⟩
-
 structure StrongRecursiveFieldSource (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
     (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level 0)
     (base : StrongTeleModel E ε ![] Γ)
