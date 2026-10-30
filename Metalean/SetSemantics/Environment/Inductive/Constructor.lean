@@ -144,11 +144,8 @@ theorem ihType_denotes
       simpa [Inductive.motiveResult, Expr.denote, his, -Expr.denote_instL] using
         hleaf (Fin.append δ values) (fun _ => by simp) _
           (Reachable.apps_mem_of_base hvalues (fun _ => by simp) hvalue))
-  have hfold := SemTele.fold_applyAt source.extension.sem Aczel.pi
-    (fun final value => fibreOp motive (pair ((code recFd source).index final) value))
-    δ ε₂[γ]⟦e⟧
-  simp only [SemTele.app_eq_apps] at hfold
-  exact hden.trans hfold
+  simp only [ihType, SemTele.piAt, SemTele.foldAt, SemTele.app_eq_apps]
+  exact hden
 
 end StrongRecursiveFieldSource
 

@@ -80,10 +80,8 @@ private theorem StrongRecursiveFieldSource.iotaIH_denotes_of_leaf
         rw [← Expr.map_instL]
         exact Expr.denote_map pre.sigs hatoms _ _
       simpa [Expr.denote, his, recovered, -Expr.denote_instL] using hatom (Fin.append δ values) hvalues)
-  have hfold := SemTele.fold_applyAt source.extension.sem Aczel.lam
-    (fun final value => app graph (pair ((code recFd source).index final) value)) δ recovered
-  simp only [SemTele.app_eq_apps] at hfold
-  exact hden.trans hfold
+  simp only [recMap, SemTele.lamAt, SemTele.foldAt, SemTele.app_eq_apps]
+  exact hden
 
 namespace StrongInductiveModel
 

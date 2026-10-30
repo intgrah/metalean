@@ -77,17 +77,24 @@ theorem recFieldSet_mem_type {Δ : SemTele n b} (hdoms : Δ.DomsIn level)
     (γ : Slots n) : recFieldSet Δ index block γ ∈ U_ level :=
   Δ.pi_mem_type hdoms (fun current => hblock (index current)) γ
 
-theorem CtorCode.support_mem_type {code : CtorCode n}
-    (hdoms : code.DomsIn level) (γ : Slots n) : code.support γ ∈ U_ level := by
+theorem CtorCode.support_card_lt {code : CtorCode.{u} n}
+    (hdoms : code.DomsIn level) (γ : Slots n) :
+    Cardinal.mk (code.Support γ) < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
+  have hκ := Cardinal.inaccessible_isInaccessible.{u} level
+  have hreg : (Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level)).IsRegular := hκ.isRegular.lift
   induction hdoms with
-  | target => exact empty_mem_type
+  | target => simp [Support, hκ.pos]
   | arg hdomain _ ih =>
-    simp only [CtorCode.support]
-    grind only [zfBounds]
+    rw [Support, Cardinal.mk_sigma]
+    refine Cardinal.sum_lt_of_isRegular hreg ?_ fun current => ih (γ.snoc current.1)
+    rw [ZFSet.cardinalMk_coe_sort]
+    exact Cardinal.lift_lt.mpr (card_lt_of_mem_vonNeumann hκ (hdomain γ))
   | recArg htele _ ih =>
-    have htele' := SemTele.support_mem_type htele (fun _ => singleton_mem_type empty_mem_type) γ
-    simp only [CtorCode.support]
-    grind only [zfBounds]
+    simp only [Support, Cardinal.mk_sum, Cardinal.lift_id]
+    exact Cardinal.add_lt_of_lt hreg.aleph0_le
+      (Reachable.card_lt hκ htele (by
+        rw [Cardinal.mk_singleton]
+        exact Cardinal.one_lt_aleph0.trans_le hreg.aleph0_le)) (ih γ)
 
 theorem CtorCode.argSet_mem_type {code : CtorCode n}
     (hdoms : code.DomsIn level) {block : ZFSet}
@@ -104,21 +111,6 @@ theorem CtorCode.argSet_mem_type {code : CtorCode n}
 
 abbrev CodesDomsIn (level : Nat) (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) : Prop :=
   ∀ s c, (codes s c).DomsIn level
-
-noncomputable def blockSupport (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n)
-    (γ : Slots n) : ZFSet.{u} :=
-  ⋃₀ range fun s => range fun c => (codes s c).support γ
-
-theorem support_mem_blockSupport (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (γ : Slots n) (s : Fin m) (c : Fin (nctors s)) :
-    (codes s c).support γ ∈ blockSupport codes γ :=
-  mem_sUnion.mpr ⟨_, mem_range_self (f := fun s => range fun c => (codes s c).support γ) s,
-    mem_range_self (f := fun c => (codes s c).support γ) c⟩
-
-theorem blockSupport_mem_type (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (hdoms : CodesDomsIn level codes) (γ : Slots n) : blockSupport codes γ ∈ U_ level :=
-  sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun s => range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun c =>
-    CtorCode.support_mem_type (hdoms s c) γ)
 
 theorem image_snd_indOp_mem_type (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
     (hdoms : CodesDomsIn level codes)
@@ -162,41 +154,40 @@ theorem bodyOp_mem_type {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
     mem_type_of_subset hbody fun _ hvalue =>
       (pair_mem_prod.mp (mem_fibre.mp hvalue)).2) γ
 
-theorem image_snd_indOp_support (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (bound : ZFSet) (γ : Slots n) {body value : ZFSet}
-    (hvalue : value ∈ image snd (indOp codes γ (prod bound body))) :
-    ∃ small, small ⊆ body ∧ SmallOver (blockSupport codes γ) small ∧
-      value ∈ image snd (indOp codes γ (prod bound small)) := by
-  have ⟨entry', hentry, heq⟩ := mem_image.mp hvalue
-  have ⟨s, c, vargs, hargs, hentry'⟩ := mem_indOp.mp hentry
-  let code := codes s c
-  let small :=
-    (image (fun point => snd (code.readSupport γ vargs point))
-      (code.support γ)).sep fun member => member ∈ body
-  refine ⟨small, fun member hmember => (mem_sep.mp hmember).2, ⟨code.support γ,
-      support_mem_blockSupport codes γ s c,
-      fun point => snd (code.readSupport γ vargs point),
-      fun _ hmember => (mem_sep.mp hmember).1⟩, ?_⟩
-  have hargs' : vargs ∈ code.argSet (prod bound small) γ := by
-    apply code.argSet_mem_of_support γ vargs hargs
-    intro point hpoint hmember
-    have ⟨key, hkey, member, hbody, hpair⟩ := mem_prod.mp hmember
-    have hsnd : snd (code.readSupport γ vargs point) = member := by
-      rw [hpair, snd_pair]
-    have hbody' : snd (code.readSupport γ vargs point) ∈ small :=
-      mem_sep.mpr ⟨mem_image.mpr ⟨point, hpoint, rfl⟩, hsnd ▸ hbody⟩
-    exact mem_prod.mpr ⟨key, hkey, member, hsnd ▸ hbody', hpair⟩
-  exact mem_image.mpr ⟨entry', mem_indOp.mpr ⟨s, c, vargs, hargs', hentry'⟩, heq⟩
-
-theorem exists_bodyOp_closed {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
+theorem exists_bodyOp_closed {codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n}
     (hdoms : CodesDomsIn level codes)
     (bound : ZFSet) (γ : Slots n) :
-    ∃ body, body ∈ U_ level ∧ bodyOp codes bound γ body ⊆ body :=
-  exists_closed_of_smallSupport (Cardinal.inaccessible_isInaccessible level)
+    ∃ body, body ∈ U_ level ∧ bodyOp codes bound γ body ⊆ body := by
+  let I := (s : Fin m) × (c : Fin (nctors s)) × (codes s c).Support γ
+  have hκ := Cardinal.inaccessible_isInaccessible.{u} level
+  have hI : Cardinal.mk I < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
+    simp only [I, Cardinal.mk_sigma]
+    refine Cardinal.sum_lt_lift_of_isRegular hκ.isRegular.lift
+      (lt_of_lt_of_le (by simp) hκ.isRegular.lift.aleph0_le) fun s => ?_
+    exact Cardinal.sum_lt_lift_of_isRegular hκ.isRegular.lift
+      (lt_of_lt_of_le (by simp) hκ.isRegular.lift.aleph0_le)
+      fun c => CtorCode.support_card_lt (hdoms s c) γ
+  have hsmall : Cardinal.lift.{u + 1} (Cardinal.mk (Shrink.{u} I)) <
+      Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
+    rwa [Cardinal.lift_mk_shrink'' I]
+  refine exists_closed_of_indexed_support hκ
     (fun _ _ h => bodyOp_mono h)
     (fun _ hbody => bodyOp_mem_type hdoms bound γ hbody)
-    (blockSupport_mem_type codes hdoms γ)
-    fun _ _ hvalue => image_snd_indOp_support codes bound γ hvalue
+    (ι := I) (Cardinal.lift_lt.mp hsmall) ?_
+  intro body value hvalue
+  obtain ⟨entry', hentry, heq⟩ := mem_image.mp hvalue
+  obtain ⟨s, c, vargs, hargs, hentry'⟩ := mem_indOp.mp hentry
+  let read : I → ZFSet := fun point =>
+    snd ((codes point.1 point.2.1).readSupport γ vargs point.2.2)
+  let small := (range read).sep (· ∈ body)
+  refine ⟨small, fun _ h => (mem_sep.mp h).2, ⟨read, sep_subset⟩, ?_⟩
+  refine mem_image.mpr ⟨entry', mem_indOp.mpr ⟨s, c, vargs, ?_, hentry'⟩, heq⟩
+  apply CtorCode.argSet_mem_of_support _ γ vargs hargs
+  intro point hpoint
+  obtain ⟨key, hkey, member, hmember, hpair⟩ := mem_prod.mp hpoint
+  have hsnd : read ⟨s, c, point⟩ = member := by simp [read, hpair]
+  exact mem_prod.mpr ⟨key, hkey, member,
+    mem_sep.mpr ⟨hsnd ▸ mem_range_self (f := read) ⟨s, c, point⟩, hmember⟩, hpair⟩
 
 theorem fibreOp_indSet_mem_type {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
     (hdoms : CodesDomsIn level codes)

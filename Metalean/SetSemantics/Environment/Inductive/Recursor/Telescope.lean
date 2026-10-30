@@ -202,14 +202,6 @@ theorem recrMotiveResult_mem_sort :
   simpa [hsuffix] using
     Reachable.apps_mem_of_base (k := ι.nindices s + 1) hfinal (by simp [final]) hmotive
 
-theorem eq_proof_of_mem_fibre_motive (hl : l.eval ![] = 0) {value : ZFSet}
-    (hvalue : value ∈ fibreOp
-      (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ)) (model.recrState s γ)) :
-    value = proof := by
-  have hsorted := model.recrMotiveResult_mem_sort s l γ hγ
-  rw [← model.fibre_motive_recrState s l γ hγ, hl] at hsorted
-  exact mem_verum.mp (eq_verum_of_mem hsorted hvalue ▸ hvalue)
-
 theorem recrBody_denotes :
     ε₂[γ]⟦ι.recrBody s⟧ = propSet (l.eval ![])
       (fibreOp (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))

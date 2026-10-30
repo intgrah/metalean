@@ -71,10 +71,7 @@ theorem Realizes.denotes_piAt {k : Nat}
       ε[ν; final]⟦e⟧ = leaf final [zf|fn $(fun f : Fin k => final (Fin.natAdd a f))...])
     (h : Realizes ε ν reach Δsyn Δsem) :
     ε[ν; s]⟦Δsyn.pi e⟧ = Δsem.piAt leaf s fn := by
-  have hd := h.denotes_pi hs he
-  simp only [SemTele.pi] at hd
-  exact hd.trans (by simpa only [SemTele.app_eq_apps, SemTele.piAt] using
-    SemTele.fold_applyAt Δsem Aczel.pi leaf s fn)
+  simpa only [SemTele.pi, SemTele.piAt, SemTele.foldAt, SemTele.app_eq_apps] using h.denotes_pi hs he
 
 theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
     DenotesOver ε ν reach Δsem e leaf →

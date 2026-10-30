@@ -89,11 +89,6 @@ noncomputable def recLeaf (s : Fin ι.nsorts) (l : Level 0) :
     RecSlots ι s → ZFSet :=
   fun γ => propVal (l.eval ![]) (app (model.recrGraph s γ) (model.recrState s γ))
 
-theorem recLeaf_eq_proof (s : Fin ι.nsorts) (l : Level 0) (hl : l.eval ![] = 0)
-    (γ : RecSlots ι s) :
-    model.recLeaf s l γ = proof := by
-  rw [recLeaf, hl, propVal_zero]
-
 theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
     (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l)) :
     model.recLeaf s l γ ∈ ε₂[γ]⟦ι.recrBody s⟧ := by
@@ -137,34 +132,33 @@ theorem recLeaf_iota
       show RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s, c⟩) = [zf|$(minorFamily (RecSlots.cases γ)) $(encode (tagOf s c))] from by exact (app_minorFamily (RecSlots.cases γ) (Fin.encodeSigma ι.nctors ⟨s, c⟩)).symm,
       ← htarget]
     exact recGraph_iota hmaps hstep hargs
+  have hcoherent :
+      fibreOp (model.recrCaseMotive γ.params γ.motives)
+        (pair (sortKey s.val (encode γ.indices)) (entryValue (tagOf s c) vargs)) =
+      fibreOp (model.recrCaseMotive γ.params γ.motives) (model.recrState s γ) := by
+    rw [recrCaseMotive, fibre_bundleMotive_propVal hentry,
+      fibre_bundleMotive_propVal hstateMem]
+    simp only [recrState, fst_pair, snd_pair]
+    rw [← hmaj, model.propVal_recrMajorOf s l γ hγ]
+  have hmem : app (model.recrGraph s γ)
+      (pair (sortKey s.val (encode γ.indices)) (entryValue (tagOf s c) vargs)) ∈
+      fibreOp (model.recrCaseMotive γ.params γ.motives) (model.recrState s γ) := by
+    rw [← hcoherent]
+    exact (recGraph_isApprox hmaps).app_mem (by rwa [dom_recGraph hmaps hstep])
+  have hsorted := model.recrMotiveResult_mem_sort s l γ hγ
+  rw [← model.fibre_motive_recrState s l γ hγ] at hsorted
+  rw [← hiota, ← propVal_eq_self_of_mem hsorted hmem]
   by_cases hresult : l.eval ![] = 0
-  · have hmem : app (model.recrGraph s γ)
-        (pair (sortKey s.val (encode (RecSlots.indices γ))) (entryValue (tagOf s c) vargs)) ∈
-        fibreOp (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-          (pair (sortKey s.val (encode (RecSlots.indices γ))) (entryValue (tagOf s c) vargs)) :=
-      (recGraph_isApprox hmaps).app_mem (by rwa [dom_recGraph hmaps hstep])
-    have hcoherent :
-        fibreOp (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-          (pair (sortKey s.val (encode (RecSlots.indices γ))) (entryValue (tagOf s c) vargs)) =
-        fibreOp (model.recrCaseMotive (RecSlots.params γ) (RecSlots.motives γ))
-          (model.recrState s γ) := by
-      rw [recrCaseMotive, fibre_bundleMotive_propVal hentry,
-        fibre_bundleMotive_propVal hstateMem]
-      simp only [recrState, fst_pair, snd_pair]
-      rw [← hmaj, model.propVal_recrMajorOf s l γ hγ]
-    rw [hiota, hcoherent] at hmem
-    rw [model.recLeaf_eq_proof s l hresult]
-    exact (model.eq_proof_of_mem_fibre_motive s l γ hγ hresult hmem).symm
-  rw [recLeaf, propVal_of_ne_zero hresult]
+  · simp [recLeaf, hresult]
+  simp only [recLeaf, propVal_of_ne_zero hresult]
   by_cases hlevel : model.toModel.level = 0
-  · rw [model.recGraph_congr_key hdecl hrule hE hB (hallowed.subsingleton hresult hlevel) hlevel s l γ hγ
-      hstateMem hentry (by rw [recrState, fst_pair, fst_pair])]
-    exact hiota
+  · exact model.recGraph_congr_key hdecl hrule hE hB
+      (hallowed.subsingleton hresult hlevel) hlevel s l γ hγ
+      hstateMem hentry (by rw [recrState, fst_pair, fst_pair])
   rw [recrState, show model.recrMajorOf s γ = entryValue (tagOf s c) vargs from by
     have h := model.propVal_recrMajorOf s l γ hγ
     rw [hmaj] at h
     simpa [propVal_of_ne_zero hlevel] using h]
-  exact hiota
 
 theorem recLeaf_eq_recGraph_app (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
     (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l)) :
