@@ -221,23 +221,6 @@ theorem ctorRuleSound
     exact model.ctorResult_mem_sortValue s c vps vfds hfieldsReach vrecFds
       (model.recFieldsMem pre hatoms hsorts hparamReach hfieldsReach hrecFields)
 
-theorem applyMinor_ctorApplication
-    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields)
-    (vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet)
-    (hrecFields : ∀ f, vrecFds f ∈ model.recFieldSet s c f vps (Fin.append vps vfds))
-    (graph minor : ZFSet) :
-    (model.codeOf s c).applyMinor model.toModel.level graph vps minor
-        (model.ctorArgs s c vps vfds vrecFds) =
-      [zf|minor vfds... vrecFds... $(fun f =>
-          recMap ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index graph
-            (Fin.append vps vfds)
-            (recoverRecField ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
-              (model.toModel.block vps) model.toModel.level (Fin.append vps vfds)
-              (vrecFds f)))...] := by
-  exact (model.codeOf s c).applyMinor_pack (model.toModel.block vps) graph model.toModel.level
-      vps vfds vrecFds hrecFields minor
-
 end StrongInductiveModel
 
 end Metalean

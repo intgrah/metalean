@@ -162,7 +162,7 @@ theorem projTerm_denotes_field
       ε₂ (.ind η target ls vps vis) = model.toModel.sortValue target vps vis)
     (hrecr₂ : ∀ target l vps vms vmins vis vmaj,
       ε₂ (.recr η target ls l vps vms vmins vis vmaj) =
-        model.recLeaf target l (RecSlots.args vps vms vmins vis vmaj))
+        model.recLeaf target l (RecSlots.mk vps vms vmins vis vmaj))
     (hlevel : model.toModel.level ≠ 0)
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (hstruct : (I.map total.sigs).IsStructure s c)
     (vis : Slots (ι.nindices s)) (f : Fin (ι.ctors s c).nfields)
@@ -222,18 +222,11 @@ theorem projTerm_denotes_field
         (leaf := fun slots => slots (Fin.natAdd m₁ f)) hfinal
       exact (congrArg (fun fn => Aczel.apps fn vfds) hden).trans (by simpa using hbeta)
     let args := model.ctorArgs s c vps vfds hstruct.recursive
-    have hargs : args ∈ (model.codeOf s c).argSet ∅ vps := by
-      have htail : (tuple fun f => recoverRecField ((model.codeOf s c).recursive f).tele
-          ((model.codeOf s c).recursive f).index (model.toModel.block vps) model.toModel.level
-          (Fin.append vps vfds) (hstruct.recursive f)) ∈
-          tupleSet (fun f => Metalean.recFieldSet ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index
-            ∅ (Fin.append vps vfds)) := tuple_mem_tupleSet hstruct.no_recursive.elim
-      have h := SemTele.pack_mem
-        (leaf := fun final => tupleSet fun f => Metalean.recFieldSet
-          ((model.codeOf s c).recursive f).tele ((model.codeOf s c).recursive f).index ∅ final)
-        hfields htail
-      rw [Set.eq_of_mem_singleton (Reachable.base hfields)] at h
-      exact h
+    have hargs := (model.ctorArgs_mem s c vps vfds hfields hstruct.recursive
+      hstruct.no_recursive.elim).1
+    have hargs : args ∈ (model.codeOf s c).argSet ∅ vps :=
+      CtorCode.argSet_mem_of_support _ vps args hargs
+        (fun point => hstruct.no_recursive.elim point.field)
     have htarget : (model.codeOf s c).targetIndex vps args = sortKey s.val (encode vis) := by
       rw [model.codeOf_targetIndex]
       exact congrArg (sortKey s.val) (congrArg encode (funext hstruct.no_indices.elim))
@@ -241,21 +234,14 @@ theorem projTerm_denotes_field
       change ε₂[γ₁]⟦maj₁⟧ = _
       rw [← hrebuild, ctorResult, propVal_of_ne_zero hlevel]
     have happly : (model.codeOf s c).applyMinor model.toModel.level ∅ vps
-        [zf|$(minorFamily (RecSlots.args vps vms vmins vis major).cases) $(encode (tagOf s c))]
-        args = vfds f := by
-      have hminor : [zf|$(minorFamily (RecSlots.args vps vms vmins vis major).cases)
-          $(encode (tagOf s c))] =
-          (RecSlots.args vps vms vmins vis major).cases (Fin.encodeSigma ι.nctors ⟨s, c⟩) :=
-        app_minorFamily _ (Fin.encodeSigma ι.nctors ⟨s, c⟩)
-      rw [hminor]
-      dsimp only [RecSlots.args]
-      rw [Fin.decodeSigma_encodeSigma]
-      rw [model.applyMinor_ctorApplication s c vps vfds hstruct.recursive hstruct.no_recursive.elim,
+        (vmins s c) args = vfds f := by
+      dsimp only [args, ctorArgs]
+      rw [(model.codeOf s c).applyMinor_pack (model.toModel.block vps) ∅
+        model.toModel.level vps vfds hstruct.recursive hstruct.no_recursive.elim,
         Aczel.apps_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_recursive),
         Aczel.apps_of_zero (Fin.eq_zero_of_isEmpty hstruct.no_recursive), hcase]
     have hiota := recGraph_iota_of_empty (model.mapsTo vps)
-      (motive := model.recrCaseMotive vps vms) (minors := minorFamily
-        (RecSlots.args vps vms vmins vis major).cases) hargs
+      (motive := model.recrCaseMotive vps vms) (minors := vmins) hargs
       (by
         rw [happly, htarget, entry_eq, ← hmajor, recrCaseMotive,
           fibre_bundleMotive_typed s vis hmajMem₁, hmotive]
@@ -263,12 +249,12 @@ theorem projTerm_denotes_field
     rw [happly, htarget, entry_eq, ← hmajor] at hiota
     rw [hstruct.projTerm_eq_recr, Expr.denote, hrecr₂,
       show (ε₂[γ₁]⟦hstruct.indices ·⟧) = vis from funext hstruct.no_indices.elim, recLeaf]
-    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
-      (model.recrState s (RecSlots.args vps vms vmins vis major))) = _
+    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.mk vps vms vmins vis major))
+      (model.recrState s (RecSlots.mk vps vms vmins vis major))) = _
     rw [recrState, recrMajorOf, propGet_of_ne_zero hlevel]
-    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
+    change propVal (u.eval ![]) (app (model.recrGraph s (RecSlots.mk vps vms vmins vis major))
       (pair (sortKey s.val (encode vis)) major)) = _
-    rw [show app (model.recrGraph s (RecSlots.args vps vms vmins vis major))
+    rw [show app (model.recrGraph s (RecSlots.mk vps vms vmins vis major))
         (pair (sortKey s.val (encode vis)) major) = vfds f from hiota]
     exact propVal_eq_self_of_mem htyped.2 htyped.1
 
@@ -282,7 +268,7 @@ theorem etaStructRuleSound
       ε₂ (.ctor η s c ls vps vfds vrecFds) = model.ctorResult s c vps vfds vrecFds)
     (hrecr : ∀ s l vps vms vmins vis vmaj,
       ε₂ (.recr η s ls l vps vms vmins vis vmaj) =
-        model.recLeaf s l (RecSlots.args vps vms vmins vis vmaj))
+        model.recLeaf s l (RecSlots.mk vps vms vmins vis vmaj))
     {n : Nat}
     {γ : Slots n} {s : Fin ι.nsorts}
     {c : Fin (ι.nctors s)} {ps : Fin ι.nparams → Expr ζ₂ 0 n}

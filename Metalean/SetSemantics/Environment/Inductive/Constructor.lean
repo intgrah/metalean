@@ -203,7 +203,7 @@ theorem CtorWF.source (hdecl : SemDecls E₁ ε₁ ![])
     (hctor.recursive f).recursiveSourceOf hdecl hrule hE params _
       ((Classical.choice (hsources f)).2.mono (hrecField f))⟩
 
-private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
+theorem Inductive.indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
     {paramsSem : SemTele 0 ι.nparams}
     {indicesSem : SemTele ι.nparams (ι.nparams + ι.nindices s)}
     (his : Realizes ε₁ ![]
@@ -242,25 +242,6 @@ private theorem indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
             Expr.subst σ (.var (Fin.natAdd ι.nparams i))) = is from
           funext fun i => by simp [σ]]
       exact (interp index).mem
-
-theorem StrongRecursiveFieldSource.valuesReachable (recFd : RecField ζ₁ ι nfields arity s₁)
-    (source : StrongRecursiveFieldSource E₁ ε₁ I ls base bound recFd)
-    (paramsSem : SemTele 0 ι.nparams)
-    (indicesSem : SemTele ι.nparams (ι.nparams + ι.nindices s₁))
-    (his : Realizes ε₁ ![] (Reachable Set.univ paramsSem)
-      (I.indices s₁){ls} indicesSem)
-    {reach : Set (Slots (ι.nparams + nfields))}
-    (hreaches : reach ⊆ Reachable Set.univ base.sem)
-    (hps : Set.MapsTo (fun γ param => γ (param.castLE (Nat.le_add_right _ _)))
-      reach (Reachable Set.univ paramsSem))
-    (γ : Slots (ι.nparams + nfields + arity))
-    (hγ : γ ∈ Reachable reach (StrongRecursiveFieldSource.code recFd source).tele) :
-    Fin.append (fun param : Fin ι.nparams => γ (param.castLE (by omega)))
-        (ε₁[γ]⟦recFd.indices{ls} ·⟧) ∈
-      Reachable (Reachable Set.univ paramsSem) indicesSem :=
-  indexValuesReachable (by omega) his recFd.indices{ls} γ
-    (hps (Reachable.base hγ))
-    fun index => ⟨rfl, source.mem γ (Reachable.mono hγ hreaches) index⟩
 
 namespace StrongCtorSource
 
@@ -328,7 +309,7 @@ theorem CtorWF.model (hdecl : SemDecls E₁ ε₁ ![])
         ((params.append source.ordinary).semCtx γ hγ)
     refine ⟨bound, source, interp, ⟨bound₁, fun γ i => ?_⟩, hlocal⟩
     by_cases hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem
-    · have hreach := indexValuesReachable (Nat.le_add_right _ _) indices.realizes
+    · have hreach := Inductive.indexValuesReachable (Nat.le_add_right _ _) indices.realizes
         ctor.targetIndices{ls} γ (Reachable.base (Reachable.of_append hγ)) (interp γ hγ)
       simpa [StrongCtorSource.targetValues, hγ] using
         Reachable.mem_type_of_domsIn hreach indices.bounded (Fin.natAdd ι.nparams i) (by simp)

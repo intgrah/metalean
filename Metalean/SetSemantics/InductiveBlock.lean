@@ -20,7 +20,8 @@ open ZFSet
 attribute [local instance 2000] Classical.allZFSetDefinable
 
 variable {n m level : Nat} {nctors : Fin m → Nat} {s : Fin m} {c : Fin (nctors s)}
-  {block blockW bound motive step graph minors z vargs : ZFSet}
+  {block blockW bound motive step graph z vargs : ZFSet}
+  {minors : (s : Fin m) → Fin (nctors s) → ZFSet}
   {γ : Slots n} {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
 
 def tagOf (s : Fin m) (c : Fin (nctors s)) : Nat :=
@@ -65,16 +66,16 @@ noncomputable def indSet
   lfp bound (indOp codes γ)
 
 noncomputable def stepGraph (level : Nat) (block graph : ZFSet.{u}) (γ : Slots.{u} n)
-    (minors : ZFSet.{u}) (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n) : ZFSet.{u} :=
+    (minors : (s : Fin m) → Fin (nctors s) → ZFSet.{u}) (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n) : ZFSet.{u} :=
   range fun p : (s : Fin m) × (c : Fin (nctors s)) × (codes s c).argSet block γ =>
     pair (entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2)
       ((codes p.1 p.2.1).applyMinor level graph γ
-        [zf|minors $(encode (tagOf p.1 p.2.1))] p.2.2)
+        (minors p.1 p.2.1) p.2.2)
 
 theorem app_stepGraph (hargs : vargs ∈ (codes s c).argSet block γ) :
     app (stepGraph level block graph γ minors codes)
         (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
-      (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs := by
+      (codes s c).applyMinor level graph γ (minors s c) vargs := by
   have hkey : Function.Injective
       (fun p : (s : Fin m) × (c : Fin (nctors s)) × (codes s c).argSet block γ =>
         entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2) := by
@@ -101,14 +102,16 @@ theorem stepGraph_app_congr {inner outer graph₁ graph₂ : ZFSet}
   exact CtorCode.applyMinor_congr hagree _ γ _ vargs hinnerArgs
 
 def StepSound (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (block motive : ZFSet) (level : Nat) (minors : ZFSet) (γ : Slots n) : Prop :=
+    (block motive : ZFSet) (level : Nat)
+    (minors : (s : Fin m) → Fin (nctors s) → ZFSet) (γ : Slots n) : Prop :=
   ∀ inner ⊆ block, ∀ graph, (∀ value ∈ inner, app graph value ∈ fibreOp motive value) →
   ∀ s c, ∀ vargs ∈ (codes s c).argSet inner γ,
-  (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs ∈
+  (codes s c).applyMinor level graph γ (minors s c) vargs ∈
     fibreOp motive (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)
 
 noncomputable def recGraph (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (bound motive : ZFSet) (level : Nat) (minors : ZFSet) (γ : Slots n) : ZFSet :=
+    (bound motive : ZFSet) (level : Nat)
+    (minors : (s : Fin m) → Fin (nctors s) → ZFSet) (γ : Slots n) : ZFSet :=
   ZFSet.recGraph (indOp codes γ) bound (fibreOp motive)
     (fun graph z => app (stepGraph level (indSet codes bound γ) graph γ minors codes) z)
 

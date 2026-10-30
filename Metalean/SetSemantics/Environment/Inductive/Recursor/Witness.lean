@@ -24,7 +24,7 @@ variable {ζ : Sigs} {E : Env ζ} {ε : Atom ζ 0 → ZFSet.{u}} {ι : IndSig}
 structure RecSlots (ι : IndSig) (s : Fin ι.nsorts) : Type (u + 1) where
   params : Slots.{u} ι.nparams
   motives : Slots.{u} ι.nsorts
-  cases : Slots.{u} (Fin.sum ι.nctors)
+  cases : (s : Fin ι.nsorts) → Slots.{u} (ι.nctors s)
   indices : Slots.{u} (ι.nindices s)
   major : ZFSet.{u}
 
@@ -33,7 +33,9 @@ namespace RecSlots
 variable (γ : RecSlots.{u} ι s)
 
 def prefixValues : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors) :=
-  Fin.append (Fin.append γ.params γ.motives) γ.cases
+  Fin.append (Fin.append γ.params γ.motives) fun tag =>
+    let ⟨s, c⟩ := Fin.decodeSigma ι.nctors tag
+    γ.cases s c
 
 def valuation : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1) :=
   Fin.snoc (Fin.append γ.prefixValues γ.indices) γ.major
@@ -42,22 +44,17 @@ instance : CoeFun (RecSlots.{u} ι s)
     (fun _ => Fin (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1) → ZFSet.{u}) :=
   ⟨valuation⟩
 
-def args (vps : Slots.{u} ι.nparams) (vms : Slots.{u} ι.nsorts)
-    (vmins : (s : Fin ι.nsorts) → Slots.{u} (ι.nctors s))
-    (vis : Slots.{u} (ι.nindices s)) (vmaj : ZFSet.{u}) : RecSlots.{u} ι s :=
-  ⟨vps, vms, (fun tag => let ⟨s, c⟩ := Fin.decodeSigma ι.nctors tag; vmins s c), vis, vmaj⟩
-
 theorem denote_recrSubst {ℓ n : Nat}
     (ε : Atom ζ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat) (γ : Slots n)
     (ps : Fin ι.nparams → Expr ζ ℓ n) (ms : Fin ι.nsorts → Expr ζ ℓ n)
     (mins : (s : Fin ι.nsorts) → Fin (ι.nctors s) → Expr ζ ℓ n)
     (is : Fin (ι.nindices s) → Expr ζ ℓ n) (maj : Expr ζ ℓ n) :
     (ε[ν; γ]⟦Inductive.recrSubst ps ms mins is maj ·⟧) =
-      (args (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦ms ·⟧) (ε[ν; γ]⟦mins · ·⟧)
+      (mk (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦ms ·⟧) (ε[ν; γ]⟦mins · ·⟧)
         (ε[ν; γ]⟦is ·⟧) ε[ν; γ]⟦maj⟧).valuation := by
   change Expr.denote ε ν γ ∘ Inductive.recrSubst _ _ _ _ _ = _
   rw [Inductive.recrSubst, Fin.comp_snoc]
-  simp [Function.comp_def, Fin.append_comp, args, valuation, prefixValues]
+  simp [Function.comp_def, Fin.append_comp, valuation, prefixValues]
 
 end RecSlots
 
@@ -69,7 +66,7 @@ theorem SemDefeq.recr
     (hleaf : ∀ γ : RecSlots ι s, γ.valuation ∈ Reachable Set.univ tele →
       leaf γ ∈ ε[γ]⟦ι.recrBody s⟧)
     (hatom : ∀ vps vms vmins vis vmaj,
-      ε (.recr η s ls l vps vms vmins vis vmaj) = leaf (RecSlots.args vps vms vmins vis vmaj))
+      ε (.recr η s ls l vps vms vmins vis vmaj) = leaf (RecSlots.mk vps vms vmins vis vmaj))
     {n : Nat} {γ : Slots n}
     {ps₁ ps₂ : Fin ι.nparams → Expr ζ 0 n}
     {ms₁ ms₂ : Fin ι.nsorts → Expr ζ 0 n}

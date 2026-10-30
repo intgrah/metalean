@@ -30,7 +30,7 @@ public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
     | .ind .here s ls vps vis => (model ls).toModel.sortValue s vps vis
     | .ctor .here s c ls vps vfds vrecFds => (model ls).ctorResult s c vps vfds vrecFds
     | .recr .here s ls l vps vms vmins vis vmaj =>
-      (model ls).recLeaf s l (RecSlots.args vps vms vmins vis vmaj)
+      (model ls).recLeaf s l (RecSlots.mk vps vms vmins vis vmaj)
     | _ => ∅
   let step : pre.as ⟶ (pre.snoc (.inductive I)).as := .step .refl
   have hatoms : AtomsMap step.sigs m.atoms (atomBelow m.atoms fresh) :=
@@ -62,7 +62,7 @@ public noncomputable def Env.Model.addInductive {pre : Env ζ} {ι : IndSig}
         congrFun hatoms₁ (.ctor .here s c ls vps vfds vrecFds)
       have hrecrAt (s l vps vms vmins vis vmaj) :
           ε₂ (.recr (Head.map suffix.sigs .here) s ls l vps vms vmins vis vmaj) =
-            current.recLeaf s l (RecSlots.args vps vms vmins vis vmaj) :=
+            current.recLeaf s l (RecSlots.mk vps vms vmins vis vmaj) :=
         congrFun hatoms₁ (.recr .here s ls l vps vms vmins vis vmaj)
       { ind :=
           current.indRuleSound (step ≫ suffix) (hblockAt suffix)

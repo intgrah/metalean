@@ -92,13 +92,6 @@ theorem fibre_bundleMotive_propVal (hentry : entry ∈ block) :
   have h₂ := mem_motiveDomain_value (level := level) hentry
   cases level <;> simp_all [motiveAt]
 
-noncomputable def minorFamily {count : Nat} (vmins : Slots.{u} count) : ZFSet.{u} :=
-  Aczel.indexedLam (fun i => numeral i.val) vmins
-
-@[simp] theorem app_minorFamily {count : Nat} (vmins : Slots count)
-    (tag : Fin count) :
-    [zf|$(minorFamily vmins) $(numeral tag.val)] = vmins tag :=
-  Aczel.app_indexedLam (value := vmins) (fun _ _ h => Fin.ext (numeral_injective h)) tag
 
 end
 

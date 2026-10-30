@@ -50,7 +50,7 @@ theorem recGraph_congr_key
       (hargs : args ∈ (model.codeOf s₁ c).argSet block vps) :
       app graph (entry ((model.codeOf s₁ c).targetIndex vps args) (tagOf s₁ c) args) =
         (model.codeOf s₁ c).applyMinor model.toModel.level graph vps
-          [zf|$(minorFamily γ.cases) $(encode (tagOf s₁ c))]
+          (γ.cases s₁ c)
           args :=
     recGraph_iota hmaps hstep hargs
   have hclosed : indOp model.toModel.codes vps good ⊆ good := by
@@ -104,7 +104,7 @@ theorem recLeaf_iota
       propVal model.toModel.level (entryValue (tagOf s c) vargs)) :
     model.recLeaf s l γ =
       (model.codeOf s c).applyMinor model.toModel.level (model.recrGraph s γ) (RecSlots.params γ)
-        (RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s, c⟩))
+        (RecSlots.cases γ s c)
         vargs := by
   have hmaps := model.mapsTo (RecSlots.params γ)
   have hstep := model.recrStepSound s l γ hγ
@@ -117,11 +117,9 @@ theorem recLeaf_iota
   have hiota : app (model.recrGraph s γ)
       (pair (sortKey s.val (encode (RecSlots.indices γ))) (entryValue (tagOf s c) vargs)) =
       (model.codeOf s c).applyMinor model.toModel.level (model.recrGraph s γ) (RecSlots.params γ)
-        (RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s, c⟩))
+        (RecSlots.cases γ s c)
         vargs := by
-    rw [
-      show RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s, c⟩) = [zf|$(minorFamily (RecSlots.cases γ)) $(encode (tagOf s c))] from by exact (app_minorFamily (RecSlots.cases γ) (Fin.encodeSigma ι.nctors ⟨s, c⟩)).symm,
-      ← htarget]
+    rw [← htarget]
     exact recGraph_iota hmaps hstep hargs
   have hcoherent :
       fibreOp (model.recrCaseMotive γ.params γ.motives)

@@ -98,7 +98,7 @@ theorem recrArgs_reachable {n : Nat} {γ : Slots n} {s : Fin ι.nsorts}
       ε₂[γ]⟦(I.map pre.sigs).caseFnType η ls ps ms target ctor⟧)
     (his : ∀ index, ε₂[γ]⟦is index⟧ ∈ ε₂[γ]⟦(I.map pre.sigs).indexType ls s ps is index⟧)
     (hmaj : ε₂[γ]⟦maj⟧ ∈ ε₂[γ]⟦.ind η s ls ps is⟧) :
-    (RecSlots.args (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧) (ε₂[γ]⟦is ·⟧) ε₂[γ]⟦maj⟧).valuation ∈
+    (RecSlots.mk (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧) (ε₂[γ]⟦is ·⟧) ε₂[γ]⟦maj⟧).valuation ∈
       Reachable Set.univ (model.recrTeleSem s l) :=
   RecSlots.denote_recrSubst ε₂ ![] γ ps ms mins is maj ▸
     SemDefeq.reachable (model.recrTeleRealizes pre hatoms hsorts hctors s l)
@@ -117,7 +117,7 @@ noncomputable def recrState : ZFSet :=
 noncomputable def recrGraph : ZFSet :=
   recGraph model.toModel.codes model.toModel.bound
     (model.recrCaseMotive γ.params γ.motives) model.toModel.level
-    (minorFamily γ.cases) γ.params
+    γ.cases γ.params
 
 variable (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
 
@@ -173,7 +173,7 @@ theorem fibre_motive_recrState :
           $(RecSlots.major γ)] := by
   rw [recrCaseMotive, fibre_bundleMotive_propVal (model.recrState_mem s l γ hγ), recrState,
     snd_pair, model.propVal_recrMajorOf s l γ hγ]
-  simpa [RecSlots.args] using
+  simpa using
     fibre_bundleMotive_typed s (RecSlots.indices γ) (model.recrMajorOf_erased s l γ hγ)
 
 theorem recrMotiveResult_mem_sort :
@@ -214,21 +214,16 @@ theorem recrBody_denotes :
 theorem recrStepSound :
     StepSound model.toModel.codes (model.toModel.block (RecSlots.params γ))
       (model.recrCaseMotive γ.params γ.motives) model.toModel.level
-      (minorFamily γ.cases) γ.params := by
+      γ.cases γ.params := by
   have hprefix : γ.prefixValues ∈ Reachable Set.univ (model.recrPrefixSem l) := by
     simpa [RecSlots.valuation] using Reachable.base (Reachable.of_append (Reachable.init hγ))
   rw [recrPrefixSem] at hprefix
   have hcaseReach := Reachable.mono (Reachable.of_append hprefix)
     (fun _ hbase => Reachable.of_append hbase)
   intro approximation happroximation graph hgraph s₁ c vargs hargs
-  have hminor : RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) ∈
-      model.recrCaseDomain s₁ c (Fin.append γ.params γ.motives) :=
-    by simpa [RecSlots.prefixValues] using
-      model.recrCasesSem_mem l γ.prefixValues hcaseReach s₁ c
-  have hminorEq : [zf|$(minorFamily (RecSlots.cases γ)) $(encode (tagOf s₁ c))] =
-      RecSlots.cases γ (Fin.encodeSigma ι.nctors ⟨s₁, c⟩) :=
-    app_minorFamily (vmins := RecSlots.cases γ) (Fin.encodeSigma ι.nctors ⟨s₁, c⟩)
-  rw [hminorEq]
+  have hminor := model.recrCasesSem_mem l γ.prefixValues hcaseReach s₁ c
+  simp only [RecSlots.prefixValues, Fin.append_left, Fin.append_right] at hminor
+  rw [Fin.decodeSigma_encodeSigma] at hminor
   exact model.recrCase_applyMinor_mem s₁ c _ _ _ hminor approximation happroximation graph hgraph vargs hargs
 
 end StrongInductiveModel

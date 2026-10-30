@@ -18,7 +18,8 @@ open ZFSet
 attribute [local instance 2000] Classical.allZFSetDefinable
 
 variable {n m level : Nat} {nctors : Fin m → Nat} {s : Fin m} {c : Fin (nctors s)}
-  {block bound motive step graph minors vargs : ZFSet} {γ : Slots n}
+  {block bound motive step graph vargs : ZFSet}
+  {minors : (s : Fin m) → Fin (nctors s) → ZFSet} {γ : Slots n}
   {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
 
 theorem recGraph_iota
@@ -28,7 +29,7 @@ theorem recGraph_iota
     app (recGraph codes bound motive level minors γ)
         (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
       (codes s c).applyMinor level (recGraph codes bound motive level minors γ) γ
-        [zf|minors $(encode (tagOf s c))] vargs := by
+        (minors s c) vargs := by
   have hdom : entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs ∈
       dom (recGraph codes bound motive level minors γ) := by
     rw [dom_recGraph hmaps hstep, ← indSet_unfold hmaps]
@@ -38,11 +39,11 @@ theorem recGraph_iota
 theorem recGraph_iota_of_empty
     (hmaps : Set.MapsTo (indOp codes γ) (Set.Iic bound) (Set.Iic bound))
     (hargs : vargs ∈ (codes s c).argSet ∅ γ)
-    (hvalue : (codes s c).applyMinor level ∅ γ [zf|minors $(encode (tagOf s c))] vargs ∈
+    (hvalue : (codes s c).applyMinor level ∅ γ (minors s c) vargs ∈
       fibreOp motive (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs)) :
     app (recGraph codes bound motive level minors γ)
         (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
-      (codes s c).applyMinor level ∅ γ [zf|minors $(encode (tagOf s c))] vargs := by
+      (codes s c).applyMinor level ∅ γ (minors s c) vargs := by
   have hargs' : vargs ∈ (codes s c).argSet (indSet codes bound γ) γ :=
     CtorCode.argSet_mono (empty_subset _) _ γ hargs
   have h := ZFSet.recGraph_app_of_empty
