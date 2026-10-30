@@ -155,13 +155,13 @@ theorem recursorBody_mono {V₁ V₂ : RecApprox E ℓ ι} (hV : V₁ ≤ V₂) 
   RawFamily.decode_mono_right D _ _
     (RawActionFamily.apply_mono (rawRecCaseFamily_mono _ _ (recursorHyp_mono D interp hd hV s)) _ _)
 
-theorem recursorBody_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).IsFinitary) {V : RecApprox E ℓ ι}
-    (hV : ∀ t, (V t).IsFinitary) (s : Fin ι.nsorts) : (recursorBody D interp hd V s).IsFinitary :=
+theorem recursorBody_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).IsFinitary) (V : RecApprox E ℓ ι)
+    (s : Fin ι.nsorts) : (recursorBody D interp hd V s).IsFinitary :=
   RawFamily.IsFinitary.decode D (hinterp _ _ _)
     (RawActionFamily.IsFinitary.apply
       (rawRecCaseFamily_isFinitary _ (fun _ => RawFamily.lookup_isFinitary _) fun _ _ =>
         RawFamily.IsFinitary.ctxLam hinterp (RawFamily.IsFinitary.ctxLam hinterp
-          (RawFamily.IsFinitary.closedApps (hV _) _ fun _ => hinterp _ _ _)))
+          (RawFamily.IsFinitary.closedApps _ _ fun _ => hinterp _ _ _)))
       (rawRecCaseFamily_isActionFinitary _ _ _)
       (recoverMajor_isFinitary _ _ _ _ _ _ (fun _ => RawFamily.lookup_isFinitary _)
         (RawFamily.lookup_isFinitary _)) _)
@@ -178,13 +178,6 @@ theorem recursorWith_unfold :
     recursorStep D interp hd (recursorWith D interp hd) = recursorWith D interp hd :=
   OrderHom.map_lfp _
 
-theorem recursorWith_isFinitary (hinterp : ∀ Γ₁ e he, (interp Γ₁ e he).IsFinitary) (s : Fin ι.nsorts) :
-    (recursorWith D interp hd s).IsFinitary :=
-  OrderHom.lfp_induction (p := fun V => ∀ t, (V t).IsFinitary) (recursorStep D interp hd)
-    (fun _ hV _ t => RawFamily.IsFinitary.ctxLam (hb := recrTele_headRank_lt η ls t) hinterp
-      (recursorBody_isFinitary D interp hd hinterp hV t))
-    (fun _ hS t => RawFamily.IsFinitary.iSup fun V => hS V.1 V.2 t) s
-
 theorem recursorStep_ωScottContinuous :
     OmegaCompletePartialOrder.ωScottContinuous (recursorStep D interp hd) := by
   refine OmegaCompletePartialOrder.ωScottContinuous.of_map_ωSup_of_orderHom fun C => ?_
@@ -200,7 +193,7 @@ theorem recursorStep_ωScottContinuous :
       (RawFamily.ctxLam_iSup_le fun _ _ hab => RawFamily.ctxLam_mono
         (RawFamily.closedApps_mono (C.monotone hab _) _ _))
     rw [RecApprox.iSup_apply]
-    exact RawFamily.closedApps_iSup_le _ _ _
+    exact RawFamily.closedApps_iSup_le (fun _ _ hab => C.monotone hab _) _ _
   refine le_trans ?_ (RawFamily.decode_apply_iSup_le D _ _
     (fun n => rawRecCaseFamily (RecTyping.generic hd s).toRecData _ (recursorHyp D interp hd (C n) s))
     _ _)

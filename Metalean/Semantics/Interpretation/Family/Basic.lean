@@ -252,6 +252,63 @@ theorem IsFinitary.decode (D : CodeAssignment E ℓ) {n : Tm_ Γ₁} {C X : RawF
 
 end RawFamily
 
+namespace RawValuation
+
+def tailN (ρ : RawValuation Γ₁) : Nat → RawValuation Γ₁
+  | 0 => ρ
+  | k + 1 => (ρ.tailN k).tail
+
+theorem tailN_apply (ρ : RawValuation Γ₁) (k j : Nat) : ρ.tailN k j = ρ (j + k) := by
+  induction k generalizing j with
+  | zero => rfl
+  | succ k ih =>
+    change ρ.tailN k (j + 1) = _
+    rw [ih]
+    congr 1
+    omega
+
+@[simp] theorem tailN_tailN (ρ : RawValuation Γ₁) (k j : Nat) :
+    (ρ.tailN k).tailN j = ρ.tailN (k + j) := by
+  funext i
+  simp [tailN_apply, Nat.add_comm, Nat.add_left_comm]
+
+@[simp] theorem pushFin_tailN (ρ : RawValuation Γ₁) (k : Nat) :
+    (ρ.tailN k).pushFin (fun i : Var k => ρ i.db) = ρ := by
+  induction k generalizing ρ with
+  | zero => rfl
+  | succ k ih =>
+    have htail : ρ.tail.tailN k = ρ.tailN (k + 1) :=
+      (tailN_tailN ρ 1 k).trans (congrArg ρ.tailN (Nat.add_comm 1 k))
+    simp [pushFin, ← htail]
+    change ((ρ.tail.tailN k).pushFin fun i : Var k => ρ.tail i.db).push (ρ 0) = ρ
+    rw [ih]
+    funext i
+    cases i <;> rfl
+
+end RawValuation
+
+namespace RawFamily
+
+theorem IsFinitary.head {F : RawFamily Γ₁} (hF : F.IsFinitary)
+    (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) :
+    ΩLower.IsFinitary fun I => F.app _ σ.op (ρ.push I) := by
+  simpa using hF σ 0 (ρ.push ⊥)
+
+theorem IsFinitary.compose_value {Γ₃ : CtxCat E ℓ} {B : RawFamily Γ₃}
+    (hB : B.IsFinitary) {X : RawFamily Γ₁} (hX : X.IsFinitary)
+    (σ₁ : Γ₂ ⟶ Γ₁) (σ₃ : Γ₂ ⟶ Γ₃) (i : ℕ) (ρ : RawValuation Γ₂) :
+    ΩLower.IsFinitary fun I => B.app _ σ₃.op
+      ((ρ.replace i I).push (X.app _ σ₁.op (ρ.replace i I))) :=
+  ΩLower.IsFinitary.apply
+    (fun J => by simpa using hB σ₃ (i + 1) (ρ.push J))
+    (fun J => hB.head σ₃ (ρ.replace i J)) (hX σ₁ i ρ)
+    (fun _ _ h J => (B.app _ σ₃.op).hom.monotone
+      (RawValuation.push_mono (RawValuation.replace_mono i le_rfl h) fun _ _ hx => hx))
+    (fun J _ _ h => (B.app _ σ₃.op).hom.monotone (RawValuation.push_mono le_rfl h))
+    ((X.app _ σ₁.op).hom.monotone.comp (Function.update_mono (f := ρ)))
+
+end RawFamily
+
 noncomputable abbrev RawAction.arguments (E : Env ζ) (ℓ : Nat) := Tm E ℓ ⊗ (ΩLower.presheaf (pointedOrder E ℓ) ⋙ forget Preord)
 
 @[implicit_reducible] def RawAction.monotone (E : Env ζ) (ℓ : Nat) :

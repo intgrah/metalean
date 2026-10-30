@@ -145,7 +145,6 @@ public import Metalean.Semantics.Interpretation.Binder.Support
 public import Metalean.Semantics.Interpretation.Computation
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.Semantics.Interpretation.Family.Basic
-public import Metalean.Semantics.Interpretation.Family.Substitution
 public import Metalean.Semantics.Interpretation.Inductive
 public import Metalean.Semantics.Interpretation.Quotient.Basic
 public import Metalean.Semantics.Interpretation.Recursor.Case

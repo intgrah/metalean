@@ -175,18 +175,6 @@ theorem rawApplication_iSup_le {Γ₂ : CtxCat E ℓ} {F X : Nat → RawValue Γ
     exact Or.inr ⟨label, hlabel, u, x, hF (le_max_left n₁ n₂) σ u hu,
       hX (le_max_right n₁ n₂) σ x hx, hy⟩
 
-theorem rawApplication_iSup_le_const {Γ₂ : CtxCat E ℓ} {F : Nat → RawValue Γ₂}
-    (Q : Set (Tm_ Γ₂)) (X : RawValue Γ₂) :
-    rawApplication (⨆ n, F n) Q X ≤ ⨆ n, rawApplication (F n) Q X := by
-  intro Γ₃ σ y hy
-  rw [mem_rawApplication] at hy
-  rcases hy with hy | ⟨label, hlabel, u, x, hu, hx, hy⟩
-  · exact (ΩLower.mem_iSup ..).mpr (Or.inl hy)
-  · have ⟨n, hu⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hu
-    refine (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, ?_⟩
-    rw [mem_rawApplication]
-    exact Or.inr ⟨label, hlabel, u, x, hu, hx, hy⟩
-
 end Application
 
 section Application
@@ -310,28 +298,6 @@ theorem rawApps_iSup_le {F : Nat → RawValue Γ₁} (hF : Monotone F)
     have hy₂ := rawApplication_iSup_le
       (fun a b hab => rawApps_mono (hF hab) _ fun i => hargs i.castSucc hab)
       (hargs (Fin.last k)) {names (Fin.last k)} σ y hy₁
-    have ⟨n, hy₂⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hy₂
-    refine (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, ?_⟩
-    rwa [rawApps_last]
-
-theorem rawApps_iSup_le_const {F : Nat → RawValue Γ₁} (names : Fin k → Tm_ Γ₁)
-    (args : Fin k → RawValue Γ₁) :
-    rawApps (⨆ n, F n) names args ≤ ⨆ n, rawApps (F n) names args := by
-  induction k with
-  | zero =>
-    intro Γ₂ σ y hy
-    rw [rawApps_zero] at hy
-    have ⟨n, hy⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hy
-    refine (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, ?_⟩
-    rwa [rawApps_zero]
-  | succ k ih =>
-    intro Γ₂ σ y hy
-    rw [rawApps_last] at hy
-    have hy₁ := rawApplication_mono
-      (ih (fun i => names i.castSucc) fun i => args i.castSucc) subset_rfl
-      (fun _ _ hz => hz) σ y hy
-    have hy₂ := rawApplication_iSup_le_const
-      {names (Fin.last k)} (args (Fin.last k)) σ y hy₁
     have ⟨n, hy₂⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hy₂
     refine (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, ?_⟩
     rwa [rawApps_last]

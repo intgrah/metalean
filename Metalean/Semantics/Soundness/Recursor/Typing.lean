@@ -325,8 +325,7 @@ theorem RawSound.recr_value (hrel : l.rel = true)
     (recrTele_headRank_lt η ls s)
     (recursorBody (piLimit E₂ ℓ) (fun Γ e _ => rawInterpret (piLimit E₂ ℓ) Γ e) hd
       (recursor (piLimit E₂ ℓ) hd) s)
-    (recursorBody_isFinitary _ _ hd (fun Γ e _ => rawInterpret_isFinitary _ Γ e)
-      (recursorWith_isFinitary _ _ hd fun Γ e _ => rawInterpret_isFinitary _ Γ e) s)
+    (recursorBody_isFinitary _ _ hd (fun Γ e _ => rawInterpret_isFinitary _ Γ e) _ s)
     (hsound.recursorBody_isDirected hB hblock hd s hrel
       (hsound.recursor_isDirected hB hblock hd hrel))
     (σ ≫ RawCtx.toCtx.map h.recrHom) (fun _ => ⊥)

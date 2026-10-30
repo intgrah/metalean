@@ -375,8 +375,12 @@ theorem rawRecCase_le_iSup (minValue : (c₁ : Fin (ι.nctors s)) → RawFamily 
             ⨆ n, (ihs n c₁ j).app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂) := by
           rw [← RawFamily.iSup_app]
           exact hle c₁ j _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)
-        exact fun _ g z hz => rawApps_iSup_le_const sect.names _ g z
-          (rawApps_mono hfamily sect.names (fun _ {_} _ _ hw => hw) g z hz)
+        have hm : Monotone fun n => (ihs n c₁ j).app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂) :=
+          fun _ _ hab => hmono c₁ j hab _ _ _
+        have h := @rawApps_iSup_le _ _ _ _ _ _ hm sect.names
+          (fun _ j => (principalIdeal (fields j)).val) fun _ => monotone_const
+        simp only [iSup_const] at h
+        exact fun _ g z hz => h g z (rawApps_mono hfamily sect.names (fun _ {_} _ _ hw => hw) g z hz)
     have hmono' : ∀ idx, Monotone fun n =>
         caseArgs (fun f => (ihs n c₁ f).app _ (σ₂ ≫ σ₁).op (ρ.pullback σ₂)) sect.names
           (fun j => (principalIdeal (fields j)).val) idx :=

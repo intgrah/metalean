@@ -10,7 +10,6 @@ public import Metalean.Typing.Telescope
 public import Metalean.Semantics.Domain.Constructors
 public import Metalean.Semantics.Interpretation.Family.Application
 public import Metalean.Semantics.Interpretation.Family.Basic
-public import Metalean.Semantics.Interpretation.Family.Substitution
 public import Metalean.Semantics.Syntax.Rank
 import Mathlib.Order.Filter.Finite
 
@@ -259,14 +258,13 @@ open CategoryTheory Presheaf
 
 noncomputable def RawFamily.closedApps {Γ : CtxCat E ℓ} {k : Nat} (F : RawFamily (CtxCat.nil E ℓ))
     (names : Fin k → Tm_ Γ) (args : Fin k → RawFamily Γ) : RawFamily Γ :=
-  (F.substitute (CtxCat.toNil Γ) (ValuationMap.ofFin Fin.elim0)).apps args fun i => {names i}
+  (RawFamily.constant (F.app _ (CtxCat.toNil Γ).op fun _ => ⊥)).apps args fun i => {names i}
 
-theorem RawFamily.IsFinitary.closedApps {Γ : CtxCat E ℓ} {k : Nat} {F : RawFamily (CtxCat.nil E ℓ)}
-    (hF : F.IsFinitary) (names : Fin k → Tm_ Γ)
+theorem RawFamily.IsFinitary.closedApps {Γ : CtxCat E ℓ} {k : Nat} (F : RawFamily (CtxCat.nil E ℓ))
+    (names : Fin k → Tm_ Γ)
     {args : Fin k → RawFamily Γ} (ha : ∀ i, (args i).IsFinitary) :
     (RawFamily.closedApps F names args).IsFinitary :=
-  RawFamily.IsFinitary.apps
-    (RawFamily.IsFinitary.substitute hF _ fun i => i.elim0) ha _
+  RawFamily.IsFinitary.apps (RawFamily.constant_isFinitary _) ha _
 
 theorem RawFamily.closedApps_value {Γ₁ : CtxCat E ℓ} {k : Nat} (F : RawFamily (CtxCat.nil E ℓ))
     (names : Fin k → Tm_ Γ₁) (args : Fin k → RawFamily Γ₁)
@@ -274,7 +272,8 @@ theorem RawFamily.closedApps_value {Γ₁ : CtxCat E ℓ} {k : Nat} (F : RawFami
     (RawFamily.closedApps F names args).app _ σ.op ρ =
       rawApps (F.app _ (σ ≫ CtxCat.toNil Γ₁).op fun _ => ⊥)
         (fun i => (Tm E ℓ).map σ.op (names i)) fun i => (args i).app _ σ.op ρ :=
-  RawFamily.apps_named_value _ args names σ ρ
+  (RawFamily.apps_named_value _ args names σ ρ).trans
+    (congrArg (rawApps · _ _) (RawFamily.app_pullback F _ σ fun _ => ⊥))
 
 theorem RawFamily.closedApps_mono {Γ : CtxCat E ℓ} {k : Nat} {F₁ F₂ : RawFamily (CtxCat.nil E ℓ)}
     (hF : F₁ ≤ F₂) (names : Fin k → Tm_ Γ) (args : Fin k → RawFamily Γ) :
@@ -286,15 +285,20 @@ theorem RawFamily.closedApps_mono {Γ : CtxCat E ℓ} {k : Nat} {F₁ F₂ : Raw
   rw [RawFamily.closedApps_value, RawFamily.closedApps_value]
   exact rawApps_mono (hF _ _ _) _ fun _ {_} _ _ hz => hz
 
-theorem RawFamily.closedApps_iSup_le {Γ : CtxCat E ℓ} {k : Nat} (F : Nat → RawFamily (CtxCat.nil E ℓ))
-    (names : Fin k → Tm_ Γ) (args : Fin k → RawFamily Γ) :
+theorem RawFamily.closedApps_iSup_le {Γ : CtxCat E ℓ} {k : Nat} {F : Nat → RawFamily (CtxCat.nil E ℓ)}
+    (hF : Monotone F) (names : Fin k → Tm_ Γ) (args : Fin k → RawFamily Γ) :
     RawFamily.closedApps (⨆ n, F n) names args ≤ ⨆ n, RawFamily.closedApps (F n) names args := by
   intro X σ ρ
   induction X using Opposite.rec with | op Γ₂ =>
   change (RawFamily.closedApps (⨆ n, F n) names args).app _ σ.unop.op ρ ≤
     (⨆ n, RawFamily.closedApps (F n) names args).app _ σ.unop.op ρ
   simp only [RawFamily.iSup_app, RawFamily.closedApps_value]
-  exact rawApps_iSup_le_const _ _
+  have hm : Monotone fun n => (F n).app _ (σ.unop ≫ CtxCat.toNil Γ).op fun _ => ⊥ :=
+    fun _ _ hab => hF hab _ _ _
+  have h := @rawApps_iSup_le _ _ _ _ _ _ hm (fun i => (Tm E ℓ).map σ.unop.op (names i))
+    (fun _ i => (args i).app _ σ.unop.op ρ) fun _ => monotone_const
+  simp only [iSup_const] at h
+  exact fun _ => h
 
 end CoherentShape
 

@@ -9,7 +9,6 @@ public import Metalean.Semantics.Interpretation.Binder.Abstraction
 public import Metalean.Semantics.Interpretation.Binder.Pi
 public import Metalean.Semantics.Interpretation.Family.Basic
 public import Metalean.Semantics.Interpretation.Family.Application
-public import Metalean.Semantics.Interpretation.Family.Substitution
 public import Metalean.Semantics.Interpretation.Inductive
 public import Metalean.Semantics.Interpretation.Quotient.Basic
 public import Metalean.Semantics.Interpretation.Recursor.Fixpoint
@@ -276,15 +275,15 @@ theorem rawInterpret_isFinitary (t : Expr ζ ℓ Γ₁.as.len) :
   | case2 Γ₁ l => exact RawFamily.sort_isFinitary l
   | case3 _ _ _ _ ih | case20 _ _ _ _ ih => exact ih
   | case4 | case5 | case16 => exact RawFamily.bottom_isFinitary
-  | case6 _ _ _ _ _ _ _ ihinterp ihparam =>
+  | case6 _ _ _ _ _ _ _ _ ihparam =>
     exact RawFamily.IsFinitary.iSup fun h => RawFamily.IsFinitary.iSup fun _ =>
-      RawFamily.ind_isFinitary h.code fun c => RawFamily.IsFinitary.closedApps (ihinterp h c) _ ihparam
+      RawFamily.ind_isFinitary h.code fun c => RawFamily.IsFinitary.closedApps _ _ ihparam
   | case7 | case9 | case12 => exact RawFamily.bottom_isFinitary
   | case8 _ _ _ _ _ _ _ _ _ _ ih =>
     exact RawFamily.IsFinitary.iSup fun h => RawFamily.IsFinitary.ctor _ _ ih
-  | case10 _ _ _ _ _ _ _ _ _ _ _ _ ihinterp ihargs =>
+  | case10 _ _ _ _ _ _ _ _ _ _ _ _ _ ihargs =>
     exact RawFamily.IsFinitary.iSup fun h =>
-      RawFamily.IsFinitary.closedApps (recursorWith_isFinitary D _ _ ihinterp _) _ (ihargs h)
+      RawFamily.IsFinitary.closedApps _ _ (ihargs h)
   | case11 => exact RawFamily.IsFinitary.iSup fun h => RawFamily.quot_isFinitary (h.code _)
   | case13 _ _ _ _ _ _ _ ih =>
     exact RawFamily.IsFinitary.iSup fun ha => RawFamily.IsFinitary.quotMk _ _ ih

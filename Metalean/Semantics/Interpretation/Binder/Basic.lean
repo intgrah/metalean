@@ -13,7 +13,6 @@ public import Metalean.Semantics.Domain.Decoder.Extension
 public import Metalean.Semantics.Interpretation.Family.Basic
 import Mathlib.Order.Filter.Basic
 import Mathlib.Order.Filter.Finite
-import Metalean.Semantics.Interpretation.Family.Substitution
 
 @[expose] public section
 
