@@ -37,13 +37,9 @@ theorem SemCtx.snoc {t : Expr ζ ℓ n} {x : ZFSet}
 
 theorem Realizes.semCtx {reach : Set (Slots 0)} {Δ : SemTele 0 n}
     (h : Realizes ε ν reach Γ Δ) (γ : Slots n) (hγ : γ ∈ Reachable reach Δ) :
-    ε[ν] ⊨ γ : Γ := by
-  induction h with
-  | nil => exact SemCtx.nil
-  | snoc _ hdomain ih =>
-    have .snoc hprefix hlast := hγ
-    rw [← hdomain _ hprefix] at hlast
-    simpa using (ih (Fin.init γ) hprefix).snoc hlast
+    ε[ν] ⊨ γ : Γ := fun v => by
+  rw [Ctx.get_eq_entry_rename _ _ v.val v.isLt rfl, Expr.denote_rename]
+  exact ((h.reachable_iff γ).mp hγ).2 v (Nat.zero_le _)
 
 theorem Realizes.reachable_of_semCtx
     {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Set (Slots a)}
@@ -52,8 +48,11 @@ theorem Realizes.reachable_of_semCtx
     (γ : Slots b) (hγ : ε[ν] ⊨ γ : (Γ ++ Δsyn))
     (hbase : (fun base => γ (base.castLE Δsem.le)) ∈ reach) :
     γ ∈ Reachable reach Δsem :=
-  h.reachable_subst Subst.id γ hbase (fun _ => rfl) fun slot _ => by
-    simpa using hγ slot
+  (h.reachable_iff γ).mpr ⟨hbase, fun v hv => by
+    have hmem := hγ v
+    rw [Ctx.get_eq_entry_rename _ _ v.val v.isLt rfl,
+      Ctx.entry_append_right _ _ (Nat.zero_le _) hv v.isLt, Expr.denote_rename] at hmem
+    exact hmem⟩
 
 theorem Expr.denote_lam_mem_pi {b : Nat} {Δ : Ctx ζ ℓ n b} {body leaf : Expr ζ ℓ b}
     (hleaf : ∀ slots ∈ Reachable {γ} (Δ.denote ε ν),
@@ -91,8 +90,8 @@ theorem reachable {m : Nat} {Δsyn : Ctx ζ ℓ 0 m}
     (hrealizes : Realizes ε ν Set.univ Δsyn Δsem)
     (hargs : ∀ f, ε[ν; γ] ⊨ left f ≡ right f : (Ctx.get f Δsyn).subst left) :
     (ε[ν; γ]⟦left ·⟧) ∈ Reachable Set.univ Δsem :=
-  hrealizes.reachable_subst (Γ := .nil) left (ε[ν; γ]⟦left ·⟧) trivial (fun _ => rfl)
-    fun f _ => by simpa using (hargs f).mem
+  hrealizes.reachable_of_semCtx (Γ := #t[]) _
+    (fun f => by simpa only [Expr.denote_subst, Tele.nil_append] using (hargs f).mem) trivial
 
 end SemDefeq
 
@@ -105,20 +104,10 @@ theorem Realizes.slot_interp
     (hσ : ∀ v, ε[ν; γ₂]⟦σ₁ v⟧ = γ₁ v)
     (v : Fin b) (hv : a ≤ v.val) :
     ε[ν; γ₂] ⊨ σ₁ v ≡ σ₁ v : (Ctx.get v (Γ ++ Δsyn)).subst σ₁ := by
-  induction h generalizing n with
-  | nil => have := v.isLt; omega
-  | @snoc scope Δsyn Δsem t domain _ hdomain ih =>
-    have hprefix := Reachable.init hreach
-    let σ₂ : Subst ζ ℓ scope n := Subst.wk.comp σ₁
-    cases v using Fin.lastCases with
-    | last =>
-      refine ⟨rfl, ?_⟩
-      rw [Tele.append_snoc, Ctx.get_last, Expr.wk_subst,
-        Expr.denote_subst, show (ε[ν; γ₂]⟦σ₂ ·⟧) = Fin.init γ₁ from
-          funext fun w => hσ w.castSucc, hdomain _ hprefix, hσ]
-      exact Reachable.last hreach
-    | cast v =>
-      rw [Tele.append_snoc, Ctx.get_castSucc, Expr.wk_subst]
-      exact ih σ₂ (Fin.init γ₁) hprefix (fun w => hσ w.castSucc) v hv
+  refine ⟨rfl, ?_⟩
+  rw [Expr.denote_subst, funext hσ, hσ,
+    Ctx.get_eq_entry_rename _ _ v.val v.isLt rfl,
+    Ctx.entry_append_right _ _ (Nat.zero_le _) hv v.isLt, Expr.denote_rename]
+  exact ((h.reachable_iff γ₁).mp hreach).2 v hv
 
 end Metalean

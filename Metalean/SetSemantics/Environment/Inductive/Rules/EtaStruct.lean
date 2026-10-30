@@ -202,25 +202,20 @@ theorem projTerm_denotes_field
           exact congrArg _ (funext hstruct.no_indices.elim), Aczel.app_lam hmajMem₁]
       rw [← Expr.denote_inst γ₁ maj₁]
       simp [Expr.inst, Expr.wk_subst_extend]
-    have hord := ((congrArg (Realizes ε₂ ![] _ · _)
-      (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map total.sigs (I.ctors s c) _ _))).mp
-      ((model.ctors s c).source.ordinary.realizes.mapInst total hatoms)).pull
-      (reach₁ := {γ₁}) ps₁ (fun _ => vps)
-      (fun _ _ => hvps) (fun _ hγ _ => by subst hγ; rfl)
+    have hord := (model.ctors s c).source.ordinary.realizes.mapInst total hatoms
+    simp at hord
     have hcase : [zf|$(vmins s c) vfds...] = vfds f := by
       change Aczel.apps ε₂[γ₁]⟦hstruct.projectionCases η ls ps₁ f mot s c⟧ vfds = _
       rw [hstruct.projectionCases_self]
-      have hden := hord.denotes_lam (e := Expr.boundVars m₁ (ι.ctors s c).nfields 0 f)
-        (leaf := fun slots => slots (Fin.natAdd m₁ f))
-        (Set.mem_singleton γ₁)
-        (fun _ _ => rfl)
-      have hfinal : Fin.append γ₁ vfds ∈ Reachable {γ₁}
-          ((model.ctors s c).source.ordinary.sem.pull (fun _ : Slots m₁ => vps)
-            (ι.ctors s c).nfields) :=
-        Reachable.of_pull (by simpa using hfields) (by simp)
+      have hden := hord.denotes_fold_subst Expr.lam Aczel.lam (fun _ _ _ => rfl)
+        (fun _ _ _ h => Aczel.lam_congr h) ps₁ γ₁ vps hvps rfl
+        (e := Expr.boundVars m₁ (ι.ctors s c).nfields 0 f)
+        (leaf := fun slots => slots (Fin.natAdd ι.nparams f))
+        (fun values _ => by simp [Expr.boundVars, Expr.denote])
       have hbeta := Reachable.apps_lam_of_base
-        (leaf := fun slots => slots (Fin.natAdd m₁ f)) hfinal
-      exact (congrArg (fun fn => Aczel.apps fn vfds) hden).trans (by simpa using hbeta)
+        (leaf := fun slots => slots (Fin.natAdd ι.nparams f)) hfields
+      simp only [Fin.append_right] at hbeta
+      exact (congrArg (fun fn => Aczel.apps fn vfds) hden).trans hbeta
     let args := model.ctorArgs s c vps vfds hstruct.recursive
     have hargs := (model.ctorArgs_mem s c vps vfds hfields hstruct.recursive
       hstruct.no_recursive.elim).1

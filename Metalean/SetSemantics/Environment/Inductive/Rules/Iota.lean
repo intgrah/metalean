@@ -142,11 +142,13 @@ theorem iotaRuleSound
             exact (congrFun (Set.eq_of_mem_singleton (Reachable.base hvalues))
               (param.castAdd (ι.ctors s c).nfields)).trans
               (congrFun (Set.eq_of_mem_singleton (Reachable.base hfieldsReach)) param)
-          have his := Inductive.indexValuesReachable (by omega)
-            (model.indices ((ι.ctors s c).recursiveTarget f)).realizes recFd.indices{ls} final
-            (by rw [hparams]; exact hparamReach)
+          have his := Inductive.indexValuesReachable
+            (model.indices ((ι.ctors s c).recursiveTarget f)).realizes
+            (fun param => .var (param.castLE (by omega))) recFd.indices{ls} final
+            (by simp only [Expr.denote]; rw [hparams]; exact hparamReach)
             (fun i => ⟨rfl, source.mem final
               (Reachable.mono hvalues (Set.singleton_subset_iff.mpr hfields)) i⟩)
+          simp only [Expr.denote] at his
           rw [hparams] at his
           have hmajor := Reachable.apps_mem_of_base hvalues
             (congrFun (Set.eq_of_mem_singleton (Reachable.base hvalues))) (hrecFieldsMem f)

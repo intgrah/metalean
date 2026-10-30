@@ -20,9 +20,9 @@ open ZFSet
 
 attribute [local instance 2000] Classical.allZFSetDefinable
 
-variable {ζ : Sigs} {E : Env ζ} {ℓ ℓ' : Nat}
+variable {ζ : Sigs} {ℓ : Nat}
   {ε : Atom ζ ℓ → ZFSet} {ν : Param ℓ → Nat}
-  {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Set (Slots a)}
+  {a b : Nat} {reach : Set (Slots a)}
   {Δsyn : Ctx ζ ℓ a b} {Δsem : SemTele a b} {s : Slots a}
 
 @[expose] def DenotesOver (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) {a b : Nat}
@@ -179,18 +179,44 @@ theorem Realizes.denote : Realizes ε ν reach Δsyn (Δsyn.denote ε ν) := by
   | nil => exact .nil
   | snoc _ _ ih => exact .snoc ih fun _ _ => rfl
 
+theorem Realizes.reachable_iff (h : Realizes ε ν reach Δsyn Δsem) (γ : Slots b) :
+    γ ∈ Reachable reach Δsem ↔
+      (fun base => γ (base.castLE Δsem.le)) ∈ reach ∧
+        ∀ v hv, γ v ∈ ε[ν; fun x => γ (x.castLE v.isLt.le)]⟦Δsyn.entry hv v.isLt⟧ := by
+  induction h with
+  | nil =>
+    constructor
+    · exact fun h => ⟨Reachable.base h, fun v hv => (Nat.not_le_of_gt v.isLt hv).elim⟩
+    · exact fun h => .nil (by simpa using h.1)
+  | @snoc scope Δsyn Δsem t domain _ hdomain ih =>
+    constructor
+    · intro h
+      have .snoc hprefix hlast := h
+      refine ⟨Reachable.base h, fun v hv => ?_⟩
+      cases v using Fin.lastCases with
+      | last =>
+        rw [Ctx.entry_snoc_self]
+        exact (hdomain _ hprefix).symm ▸ hlast
+      | cast v =>
+        rw [Ctx.entry_snoc_of_lt _ _ _ _ v.isLt]
+        exact ((ih _).mp hprefix).2 v hv
+    · rintro ⟨hbase, hmem⟩
+      have hprefix : Fin.init γ ∈ Reachable reach Δsem := by
+        refine (ih _).mpr ⟨by simpa [Fin.init] using hbase, fun v hv => ?_⟩
+        have hv := hmem v.castSucc hv
+        rw [Ctx.entry_snoc_of_lt _ _ _ _ v.isLt] at hv
+        exact hv
+      refine .snoc hprefix ?_
+      have hlast := hmem (Fin.last scope) Δsem.le
+      rw [Ctx.entry_snoc_self] at hlast
+      change γ (Fin.last scope) ∈ ε[ν; Fin.init γ]⟦t⟧ at hlast
+      rwa [hdomain _ hprefix] at hlast
+
 theorem Reachable.of_denote (h : Realizes ε ν reach Δsyn Δsem) {γ : Slots a} (hγ : γ ∈ reach)
     {slots : Slots b} (hslots : slots ∈ Reachable {γ} (Δsyn.denote ε ν)) :
     slots ∈ Reachable reach Δsem := by
-  induction h with
-  | nil =>
-    have .nil hbase := hslots
-    exact .nil (hbase ▸ hγ)
-  | snoc _ hdomain ih =>
-    have .snoc hprefix hlast := hslots
-    have hprefix := ih hprefix
-    refine .snoc hprefix ?_
-    rwa [← hdomain _ hprefix]
+  have hs := (Realizes.denote.reachable_iff slots).mp hslots
+  exact (h.reachable_iff slots).mpr ⟨Set.eq_of_mem_singleton hs.1 ▸ hγ, hs.2⟩
 
 theorem Realizes.monoReach {reach₁ reach₂ : Set (Slots a)}
     (h : Realizes ε ν reach₁ Δsyn Δsem)
@@ -201,31 +227,32 @@ theorem Realizes.monoReach {reach₁ reach₂ : Set (Slots a)}
   | snoc hrest hdomain ih =>
     exact .snoc ih fun γ hγ => hdomain γ (Reachable.mono hγ hreaches)
 
-theorem Realizes.reachable_subst
-    {n : Nat} {γ : Slots n}
+theorem Realizes.reachable_subst {n count : Nat} {γ : Slots n}
+    {Δsyn : Ctx ζ ℓ a (a + count)} {Δsem : SemTele a (a + count)}
     (h : Realizes ε ν reach Δsyn Δsem)
-    (σ : Subst ζ ℓ b n) (γ₁ : Slots b)
-    (hbase : (fun base => γ₁ (base.castLE Δsem.le)) ∈ reach)
-    (hσ : ∀ v, ε[ν; γ]⟦σ v⟧ = γ₁ v)
-    (hmem : ∀ v, a ≤ v.val →
-      γ₁ v ∈ ε[ν; γ]⟦(Ctx.get v (Γ ++ Δsyn)).subst σ⟧) :
-    γ₁ ∈ Reachable reach Δsem := by
-  induction h with
-  | nil => exact .nil (by simpa using hbase)
-  | @snoc scope Δsyn Δsem t domain hrest hdomain ih =>
-    let σ' : Subst ζ ℓ scope n := Subst.wk.comp σ
-    have hprefix : Fin.init γ₁ ∈ Reachable reach Δsem := by
-      refine ih σ' (Fin.init γ₁) (by simpa [Fin.init] using hbase) (fun v => hσ v.castSucc)
-        fun v hv => ?_
-      simpa [Expr.wk_subst, σ', Fin.init] using hmem v.castSucc hv
-    refine .snoc hprefix ?_
-    have hvalues : (ε[ν; γ]⟦σ' ·⟧) = Fin.init γ₁ :=
-      funext fun v => hσ v.castSucc
-    have hdomain' : ε[ν; γ]⟦t.subst σ'⟧ = domain (Fin.init γ₁) := by
-      rw [Expr.denote_subst, hvalues]
-      exact hdomain (Fin.init γ₁) hprefix
-    have hlast := hmem (Fin.last scope) Δsem.le
-    rwa [Tele.append_snoc, Ctx.get_last, Expr.wk_subst, hdomain'] at hlast
+    (ps : Subst ζ ℓ a n) (args : Fin count → Expr ζ ℓ n)
+    (hbase : (ε[ν; γ]⟦ps ·⟧) ∈ reach)
+    (hargs : ∀ f, ε[ν; γ]⟦args f⟧ ∈ ε[ν; γ]⟦(Δsyn.proj f).subst
+      (Fin.append ps fun previous => args (previous.castLE f.isLt.le))⟧) :
+    Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) ∈ Reachable reach Δsem := by
+  apply (h.reachable_iff _).mpr
+  refine ⟨?_, fun v hv => ?_⟩
+  · change (fun base => Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) (base.castAdd count)) ∈ reach
+    simpa using hbase
+  cases v using Fin.addCases with
+  | left v => exact (Nat.not_le_of_gt v.isLt hv).elim
+  | right f =>
+    have hf := hargs f
+    rw [Expr.denote_subst, Fin.append_comp] at hf
+    rw [← Ctx.proj_eq_entry]
+    have hvalues : (fun v : Fin (a + f.val) =>
+        Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) (v.castLE (by omega))) =
+          Fin.append (ε[ν; γ]⟦ps ·⟧) (fun previous => ε[ν; γ]⟦args (previous.castLE f.isLt.le)⟧) := by
+      funext v
+      cases v using Fin.addCases <;> simp
+    rw [← hvalues] at hf
+    rw [Fin.append_right]
+    exact hf
 
 theorem Realizes.map {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
     {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet}

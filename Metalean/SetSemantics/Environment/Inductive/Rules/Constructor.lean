@@ -63,33 +63,12 @@ theorem fieldSlotsReachable
           fds (previous.castLE f.isLt.le))) :
     Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
       Reachable {(ε₂[γ]⟦ps ·⟧)} (model.ctors s c).source.ordinary.sem := by
-  have hsourceMap : Realizes ε₂ ![]
-      {(ε₂[γ]⟦ps ·⟧)}
-      ((I.ctors s c).map pre.sigs).ordinaryTele{ls}
-      (model.ctors s c).source.ordinary.sem :=
-    (congrArg (fun Δ => Realizes ε₂ ![] _ Δ _)
-      ((Ctx.map_instL pre.sigs ls (I.ctors s c).ordinaryTele).trans
-        (congrArg (·{ls}) (Ctor.ordinaryTeleAux_map pre.sigs (I.ctors s c) _ _)))).mp
-          (((model.ctors s c).source.ordinary.realizes.monoReach
-            (reach₂ := {(ε₂[γ]⟦ps ·⟧)})
-            (Set.singleton_subset_iff.mpr hparamReach)).map pre hatoms)
-  apply hsourceMap.reachable_subst (γ := γ) (Γ := (I.map pre.sigs).params{ls})
-    (Fin.append ps fds) (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
-  · simp
-  · intro v
-    cases v using Fin.addCases <;> simp
-  · intro f hfield
-    cases f using Fin.addCases with
-    | left param => exact ((Nat.not_le_of_gt param.isLt) hfield).elim
-    | right current =>
-      rw [Ctx.get_subst _ _ (Fin.natAdd ι.nparams current)
-        (ι.nparams + current.val) (by omega) (by simp),
-        Ctx.entry_append_right
-          (I.map pre.sigs).params{ls}
-          ((I.ctors s c).map pre.sigs).ordinaryTele{ls}
-          (by omega) (by omega) (by omega),
-        ← Ctx.entry_instL]
-      simpa [Inductive.map] using (hfields current).mem
+  have hsourceMap := (model.ctors s c).source.ordinary.realizes.mapInst pre hatoms
+  simp [Ctor.ordinaryTele] at hsourceMap
+  apply (hsourceMap.monoReach (Set.singleton_subset_iff.mpr hparamReach)).reachable_subst ps fds (by simp)
+  intro f
+  rw [Ctx.proj_eq_entry, ← Ctx.entry_instL, Ctor.ordinaryTeleAux_entry]
+  exact (hfields f).mem
 
 include hatoms hsorts hparamReach hfieldsReach in
 theorem recFieldsMem

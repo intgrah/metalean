@@ -204,45 +204,19 @@ theorem CtorWF.source (hdecl : SemDecls E₁ ε₁ ![])
     (hctor.recursive f).recursiveSourceOf hdecl hrule hE params _
       ((Classical.choice (hsources f)).2.mono (hrecField f))⟩
 
-theorem Inductive.indexValuesReachable {m : Nat} (hm : ι.nparams ≤ m)
+theorem Inductive.indexValuesReachable {m : Nat}
     {paramsSem : SemTele 0 ι.nparams}
     {indicesSem : SemTele ι.nparams (ι.nparams + ι.nindices s)}
-    (his : Realizes ε₁ ![]
-      (Reachable Set.univ paramsSem)
-      (I.indices s){ls} indicesSem)
-    (is : Fin (ι.nindices s) → Expr ζ₁ 0 m) (γ : Slots m)
-    (hps : (fun param => γ (param.castLE hm)) ∈ Reachable Set.univ paramsSem)
-    (interp : ∀ index, ε₁[γ] ⊨ is index ≡ is index :
-      I.indexType ls s (fun param => .var (param.castLE hm)) is index) :
-    Fin.append (fun param : Fin ι.nparams => γ (param.castLE hm)) (ε₁[γ]⟦is ·⟧) ∈
+    (his : Realizes ε₁ ![] (Reachable Set.univ paramsSem) (I.indices s){ls} indicesSem)
+    (ps : Fin ι.nparams → Expr ζ₁ 0 m) (is : Fin (ι.nindices s) → Expr ζ₁ 0 m) (γ : Slots m)
+    (hps : (ε₁[γ]⟦ps ·⟧) ∈ Reachable Set.univ paramsSem)
+    (interp : ∀ index, ε₁[γ] ⊨ is index ≡ is index : I.indexType ls s ps is index) :
+    Fin.append (ε₁[γ]⟦ps ·⟧) (ε₁[γ]⟦is ·⟧) ∈
       Reachable (Reachable Set.univ paramsSem) indicesSem := by
-  let := Subst.category ζ₁ 0
-  let vps : Slots ι.nparams := fun param => γ (param.castLE hm)
-  let σ : Subst ζ₁ 0 (ι.nparams + ι.nindices s) m :=
-    Fin.append (fun param => .var (param.castLE hm)) is
-  let γ₁ : Slots (ι.nparams + ι.nindices s) := Fin.append vps (ε₁[γ]⟦is ·⟧)
-  apply his.reachable_subst (Γ := I.params{ls}) (γ := γ) σ γ₁
-  · simpa [γ₁] using hps
-  · intro v
-    cases v using Fin.addCases with
-    | left param => simp! [σ, γ₁, vps]
-    | right index => simp [σ, γ₁]
-  · intro v hv
-    cases v using Fin.addCases with
-    | left param =>
-      exact ((Nat.not_le_of_gt param.isLt) (by simpa using hv)).elim
-    | right index =>
-      simp only [γ₁, Fin.append_right]
-      rw [show (I.indices s){ls} = I.indexTele ls s fun param => .var param from
-        ((Ctx.substFunctor _).map_id_apply _ _).symm,
-        I.indexTele_get, Inductive.indexType_subst,
-        show (fun param : Fin ι.nparams => Expr.subst σ ((Expr.var param).wkN (ι.nindices s))) =
-          fun param => (Expr.var (param.castLE hm) : Expr ζ₁ 0 m) from
-            funext fun param => by simp [σ],
-        show (fun i : Fin (ι.nindices s) =>
-            Expr.subst σ (.var (Fin.natAdd ι.nparams i))) = is from
-          funext fun i => by simp [σ]]
-      exact (interp index).mem
+  apply his.reachable_subst ps is hps
+  intro index
+  rw [Ctx.proj_eq_entry, ← Ctx.entry_instL, ← Ctx.proj_eq_entry]
+  exact (interp index).mem
 
 namespace StrongCtorSource
 
@@ -310,8 +284,9 @@ theorem CtorWF.model (hdecl : SemDecls E₁ ε₁ ![])
         ((params.append source.ordinary).semCtx γ hγ)
     refine ⟨bound, source, interp, ⟨bound₁, fun γ i => ?_⟩, hlocal⟩
     by_cases hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem
-    · have hreach := Inductive.indexValuesReachable (Nat.le_add_right _ _) indices.realizes
-        ctor.targetIndices{ls} γ (Reachable.base (Reachable.of_append hγ)) (interp γ hγ)
+    · have hreach := Inductive.indexValuesReachable indices.realizes
+        (fun param => .var (param.castAdd csig.nfields)) ctor.targetIndices{ls} γ
+        (by exact Reachable.base (Reachable.of_append hγ)) (interp γ hγ)
       simpa [StrongCtorSource.targetValues, hγ] using
         Reachable.mem_type_of_domsIn hreach indices.bounded (Fin.natAdd ι.nparams i) (by simp)
     · simpa [StrongCtorSource.targetValues, hγ] using empty_mem_type
