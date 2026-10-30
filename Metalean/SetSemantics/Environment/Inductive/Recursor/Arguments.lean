@@ -62,8 +62,8 @@ theorem SemDefeq.recr
     {l : Level 0}
     {tele : SemTele.{u} 0 (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s + 1)}
     {leaf : RecSlots.{u} ι s → ZFSet.{u}}
-    (hrealizes : Realizes ε ![] Set.univ ((E.get η).block.recrTele η s ls l) tele)
-    (hleaf : ∀ γ : RecSlots ι s, γ.valuation ∈ Reachable Set.univ tele →
+    (hrealizes : Realizes ε ![] ⊤ ((E.get η).block.recrTele η s ls l) tele)
+    (hleaf : ∀ γ : RecSlots ι s, Reachable ⊤ tele γ.valuation →
       leaf γ ∈ ε[γ]⟦ι.recrBody s⟧)
     (hatom : ∀ vps vms vmins vis vmaj,
       ε (.recr η s ls l vps vms vmins vis vmaj) = leaf (RecSlots.mk vps vms vmins vis vmaj))

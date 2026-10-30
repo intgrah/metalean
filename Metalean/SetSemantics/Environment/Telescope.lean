@@ -25,23 +25,23 @@ structure StrongTeleModel (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ ℓ → ZFSet.{
     (Γ : Ctx ζ₁ ℓ 0 n) : Type (u + 1) where
   sem : SemTele.{u} 0 n
   bounded : ∃ level, sem.DomsIn level
-  realizes : Realizes ε₁ ν Set.univ Γ sem
+  realizes : Realizes ε₁ ν ⊤ Γ sem
 
 structure StrongTeleExtension (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
     (base : StrongTeleModel E₁ ε₁ ν Γ) (Δ : Ctx ζ₁ ℓ n m) (bound : Nat) : Type (u + 1) where
   sem : SemTele.{u} n m
   bounded : sem.DomsIn bound
-  realizes : Realizes ε₁ ν (Reachable Set.univ base.sem) Δ sem
+  realizes : Realizes ε₁ ν (Reachable ⊤ base.sem) Δ sem
 
 variable {base : StrongTeleModel E₁ ε₁ ν Γ}
 
 theorem StrongTeleModel.semCtx (model : StrongTeleModel E₁ ε₁ ν Γ)
-    (γ : Slots n) (hγ : γ ∈ Reachable Set.univ model.sem) :
+    (γ : Slots n) (hγ : Reachable ⊤ model.sem γ) :
     ε₁[ν] ⊨ γ : Γ :=
   model.realizes.semCtx γ hγ
 
 theorem StrongTeleExtension.semCtx (extension : StrongTeleExtension E₁ ε₁ ν base Δ bound)
-    (γ : Slots m) (hγ : γ ∈ Reachable (Reachable Set.univ base.sem) extension.sem) :
+    (γ : Slots m) (hγ : Reachable (Reachable ⊤ base.sem) extension.sem γ) :
     ε₁[ν] ⊨ γ : (Γ ++ Δ) :=
   (base.realizes.append extension.realizes).semCtx γ (.append hγ)
 
@@ -54,14 +54,14 @@ def StrongTeleExtension.mono (extension : StrongTeleExtension E₁ ε₁ ν base
 
 open scoped Classical in
 private theorem SemDefeq.exists_domain {t : Expr ζ₁ ℓ m}
-    {reach : Set (Slots.{u} m)} {l : Level ℓ}
-    (interp : ∀ γ ∈ reach, ε₁[ν; γ] ⊨ t ≡ t : .sort l)
+    {reach : Slots.{u} m → Prop} {l : Level ℓ}
+    (interp : ∀ γ, reach γ → ε₁[ν; γ] ⊨ t ≡ t : .sort l)
     (hlevel : l.eval ν ≤ bound + 1) :
     ∃ domain : Dom.{u} m, (∀ γ, domain γ ∈ U_ bound) ∧
-      ∀ γ ∈ reach, ε₁[ν; γ]⟦t⟧ = domain γ := by
-  refine ⟨fun γ => if γ ∈ reach then ε₁[ν; γ]⟦t⟧ else ∅,
+      ∀ γ, reach γ → ε₁[ν; γ]⟦t⟧ = domain γ := by
+  refine ⟨fun γ => if reach γ then ε₁[ν; γ]⟦t⟧ else ∅,
     fun γ => ?_, fun γ hγ => by simp [hγ]⟩
-  by_cases hγ : γ ∈ reach
+  by_cases hγ : reach γ
   · simpa [hγ] using mem_type_of_mem_sort hlevel (interp γ hγ).mem
   · simpa [hγ] using empty_mem_type
 

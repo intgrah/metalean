@@ -35,19 +35,19 @@ theorem SemCtx.snoc {t : Expr ζ ℓ n} {x : ZFSet}
   | last => simpa using hx
   | cast v => simpa using hΓ v
 
-theorem Realizes.semCtx {reach : Set (Slots 0)} {Δ : SemTele 0 n}
-    (h : Realizes ε ν reach Γ Δ) (γ : Slots n) (hγ : γ ∈ Reachable reach Δ) :
+theorem Realizes.semCtx {reach : Slots 0 → Prop} {Δ : SemTele 0 n}
+    (h : Realizes ε ν reach Γ Δ) (γ : Slots n) (hγ : Reachable reach Δ γ) :
     ε[ν] ⊨ γ : Γ := fun v => by
   rw [Ctx.get_eq_entry_rename _ _ v.val v.isLt rfl, Expr.denote_rename]
   exact ((h.reachable_iff γ).mp hγ).2 v (Nat.zero_le _)
 
 theorem Realizes.reachable_of_semCtx
-    {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Set (Slots a)}
+    {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Slots a → Prop}
     {Δsyn : Ctx ζ ℓ a b} {Δsem : SemTele a b}
     (h : Realizes ε ν reach Δsyn Δsem)
     (γ : Slots b) (hγ : ε[ν] ⊨ γ : (Γ ++ Δsyn))
-    (hbase : (fun base => γ (base.castLE Δsem.le)) ∈ reach) :
-    γ ∈ Reachable reach Δsem :=
+    (hbase : reach fun base => γ (base.castLE Δsem.le)) :
+    Reachable reach Δsem γ :=
   (h.reachable_iff γ).mpr ⟨hbase, fun v hv => by
     have hmem := hγ v
     rw [Ctx.get_eq_entry_rename _ _ v.val v.isLt rfl,
@@ -55,7 +55,7 @@ theorem Realizes.reachable_of_semCtx
     exact hmem⟩
 
 theorem Expr.denote_lam_mem_pi {b : Nat} {Δ : Ctx ζ ℓ n b} {body leaf : Expr ζ ℓ b}
-    (hleaf : ∀ slots ∈ Reachable {γ} (Δ.denote ε ν),
+    (hleaf : ∀ slots, Reachable (· = γ) (Δ.denote ε ν) slots →
       ε[ν; slots]⟦body⟧ ∈ ε[ν; slots]⟦leaf⟧) :
     ε[ν; γ]⟦Ctx.lam body Δ⟧ ∈ ε[ν; γ]⟦Ctx.pi leaf Δ⟧ := by
   rw [Realizes.denotes_lam rfl (fun _ _ => rfl) Realizes.denote,
@@ -87,20 +87,20 @@ theorem trans :
 
 theorem reachable {m : Nat} {Δsyn : Ctx ζ ℓ 0 m}
     {Δsem : SemTele 0 m} {left right : Fin m → Expr ζ ℓ n}
-    (hrealizes : Realizes ε ν Set.univ Δsyn Δsem)
+    (hrealizes : Realizes ε ν ⊤ Δsyn Δsem)
     (hargs : ∀ f, ε[ν; γ] ⊨ left f ≡ right f : (Ctx.get f Δsyn).subst left) :
-    (ε[ν; γ]⟦left ·⟧) ∈ Reachable Set.univ Δsem :=
+    Reachable ⊤ Δsem (ε[ν; γ]⟦left ·⟧) :=
   hrealizes.reachable_of_semCtx (Γ := #t[]) _
     (fun f => by simpa only [Expr.denote_subst, Tele.nil_append] using (hargs f).mem) trivial
 
 end SemDefeq
 
 theorem Realizes.slot_interp
-    {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Set (Slots a)}
+    {a b : Nat} {Γ : Ctx ζ ℓ 0 a} {reach : Slots a → Prop}
     {Δsyn : Ctx ζ ℓ a b} {Δsem : SemTele a b}
     (h : Realizes ε ν reach Δsyn Δsem)
     {n : Nat} {γ₂ : Slots n} (σ₁ : Subst ζ ℓ b n) (γ₁ : Slots b)
-    (hreach : γ₁ ∈ Reachable reach Δsem)
+    (hreach : Reachable reach Δsem γ₁)
     (hσ : ∀ v, ε[ν; γ₂]⟦σ₁ v⟧ = γ₁ v)
     (v : Fin b) (hv : a ≤ v.val) :
     ε[ν; γ₂] ⊨ σ₁ v ≡ σ₁ v : (Ctx.get v (Γ ++ Δsyn)).subst σ₁ := by

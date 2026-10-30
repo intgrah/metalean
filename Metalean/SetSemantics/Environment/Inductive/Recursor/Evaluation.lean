@@ -33,7 +33,7 @@ theorem recGraph_congr_key
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (hsubsingleton : I.Subsingleton) (hlevel : model.toModel.level = 0)
     (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
-    (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
+    (hγ : Reachable ⊤ (model.recrTeleSem s l) γ.valuation)
     {left right : ZFSet}
     (hleft : left ∈ model.toModel.block (RecSlots.params γ))
     (hright : right ∈ model.toModel.block (RecSlots.params γ))
@@ -81,7 +81,7 @@ noncomputable def recLeaf (s : Fin ι.nsorts) (l : Level 0) :
   fun γ => propVal (l.eval ![]) (app (model.recrGraph s γ) (model.recrState s γ))
 
 theorem recLeaf_mem (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
-    (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l)) :
+    (hγ : Reachable ⊤ (model.recrTeleSem s l) γ.valuation) :
     model.recLeaf s l γ ∈ ε₂[γ]⟦ι.recrBody s⟧ := by
   rw [model.recrBody_denotes s l γ hγ]
   have hmaps := model.mapsTo (RecSlots.params γ)
@@ -94,7 +94,7 @@ theorem recLeaf_iota
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (l : Level 0)
     (hallowed : I.RecAllowed ls l) (γ : RecSlots ι s)
-    (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
+    (hγ : Reachable ⊤ (model.recrTeleSem s l) γ.valuation)
     (c : Fin (ι.nctors s)) {vargs : ZFSet}
     (hargs : vargs ∈ (model.codeOf s c).argSet
       (model.toModel.block (RecSlots.params γ)) (RecSlots.params γ))
@@ -150,7 +150,7 @@ theorem recLeaf_iota
     simpa [propVal_of_ne_zero hlevel] using h]
 
 theorem recLeaf_eq_recGraph_app (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
-    (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l)) :
+    (hγ : Reachable ⊤ (model.recrTeleSem s l) γ.valuation) :
     model.recLeaf s l γ = app (model.recrGraph s γ) (model.recrState s γ) := by
   have hmaps := model.mapsTo γ.params
   have hmem := (recGraph_isApprox hmaps).app_mem (by

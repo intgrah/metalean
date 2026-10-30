@@ -22,16 +22,16 @@ attribute [local instance 2000] Classical.allZFSetDefinable
 
 variable {ζ : Sigs} {ℓ : Nat}
   {ε : Atom ζ ℓ → ZFSet} {ν : Param ℓ → Nat}
-  {a b : Nat} {reach : Set (Slots a)}
+  {a b : Nat} {reach : Slots a → Prop}
   {Δsyn : Ctx ζ ℓ a b} {Δsem : SemTele a b} {s : Slots a}
 
 @[expose] def DenotesOver (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) {a b : Nat}
-    (reach : Set (Slots a)) (Δsem : SemTele a b)
+    (reach : Slots a → Prop) (Δsem : SemTele a b)
     (e : Expr ζ ℓ b) (domain : Dom b) : Prop :=
-  ∀ s ∈ Reachable reach Δsem, ε[ν; s]⟦e⟧ = domain s
+  ∀ s, Reachable reach Δsem s → ε[ν; s]⟦e⟧ = domain s
 
 abbrev Realizes (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) {a b : Nat}
-    (reach : Set (Slots a)) :
+    (reach : Slots a → Prop) :
     Ctx ζ ℓ a b → SemTele a b → Prop :=
   Tele.Forall₂ fun _ Θsem A => DenotesOver ε ν reach Θsem A
 
@@ -42,7 +42,7 @@ theorem Realizes.denotes_fold
     (hK : ∀ {n} (γ : Slots n) t e,
       ε[ν; γ]⟦K t e⟧ = F ε[ν; γ]⟦t⟧ (fun x => ε[ν; γ.snoc x]⟦e⟧))
     (hF : ∀ A f₁ f₂, (∀ x ∈ A, f₁ x = f₂ x) → F A f₁ = F A f₂)
-    {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach)
+    {e : Expr ζ ℓ b} {leaf : Dom b} (hs : reach s)
     (he : DenotesOver ε ν reach Δsem e leaf) :
     ε[ν; s]⟦Tele.foldr K e Δsyn⟧ = Δsem.fold F leaf s := by
   induction h with
@@ -54,7 +54,7 @@ theorem Realizes.denotes_fold
     exact hF _ _ _ fun x hx => he (γ.snoc x)
       (.snoc (by simpa using hγ) (by simpa using hx))
 
-theorem Realizes.denotes_pi {e : Expr ζ ℓ b} {cod : Dom b} (hs : s ∈ reach) :
+theorem Realizes.denotes_pi {e : Expr ζ ℓ b} {cod : Dom b} (hs : reach s) :
     DenotesOver ε ν reach Δsem e cod →
     Realizes ε ν reach Δsyn Δsem →
     ε[ν; s]⟦Δsyn.pi e⟧ = Δsem.pi cod s := by
@@ -65,14 +65,14 @@ theorem Realizes.denotes_pi {e : Expr ζ ℓ b} {cod : Dom b} (hs : s ∈ reach)
 theorem Realizes.denotes_piAt {k : Nat}
     {Δsyn : Ctx ζ ℓ a (a + k)} {Δsem : SemTele a (a + k)}
     {e : Expr ζ ℓ (a + k)} {leaf : DomAt (a + k)}
-    {fn : ZFSet} (hs : s ∈ reach)
-    (he : ∀ final ∈ Reachable reach Δsem,
+    {fn : ZFSet} (hs : reach s)
+    (he : ∀ final, Reachable reach Δsem final →
       ε[ν; final]⟦e⟧ = leaf final [zf|fn $(fun f : Fin k => final (Fin.natAdd a f))...])
     (h : Realizes ε ν reach Δsyn Δsem) :
     ε[ν; s]⟦Δsyn.pi e⟧ = Δsem.piAt leaf s fn := by
   simpa only [SemTele.pi, SemTele.piAt, SemTele.foldAt, SemTele.app_eq_apps] using h.denotes_pi hs he
 
-theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reach) :
+theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : reach s) :
     DenotesOver ε ν reach Δsem e leaf →
     Realizes ε ν reach Δsyn Δsem →
     ε[ν; s]⟦Δsyn.lam e⟧ = Δsem.lam leaf s := by
@@ -83,11 +83,11 @@ theorem Realizes.denotes_lam {e : Expr ζ ℓ b} {leaf : Dom b} (hs : s ∈ reac
 theorem Realizes.pull {a₁ count : Nat}
     {Δsyn : Ctx ζ ℓ a (a + count)}
     {Δsem : SemTele a (a + count)}
-    {reach₁ : Set (Slots a₁)}
+    {reach₁ : Slots a₁ → Prop}
     (h : Realizes ε ν reach Δsyn Δsem)
     (σ : Subst ζ ℓ a a₁) (project : Slots a₁ → Slots a)
-    (hreach : Set.MapsTo project reach₁ reach)
-    (hσ : ∀ γ ∈ reach₁, ∀ v, ε[ν; γ]⟦σ v⟧ = project γ v) :
+    (hreach : ∀ s, reach₁ s → reach (project s))
+    (hσ : ∀ γ, reach₁ γ → ∀ v, ε[ν; γ]⟦σ v⟧ = project γ v) :
     Realizes ε ν reach₁ (Ctx.substN σ count Δsyn) (Δsem.pull project count) := by
   induction Δsyn using Tele.addInduction with
   | nil =>
@@ -110,27 +110,27 @@ theorem Realizes.denotes_fold_subst {n count : Nat}
       ε[ν; γ]⟦K t e⟧ = F ε[ν; γ]⟦t⟧ (fun x => ε[ν; γ.snoc x]⟦e⟧))
     (hF : ∀ A f₁ f₂, (∀ x ∈ A, f₁ x = f₂ x) → F A f₁ = F A f₂)
     (σ : Subst ζ ℓ a n) (γ : Slots n) (δ : Slots a)
-    (hδ : δ ∈ reach) (hσ : (ε[ν; γ]⟦σ ·⟧) = δ)
+    (hδ : reach δ) (hσ : (ε[ν; γ]⟦σ ·⟧) = δ)
     {e : Expr ζ ℓ (n + count)} {leaf : Dom (a + count)}
-    (he : ∀ values : Slots count, Fin.append δ values ∈ Reachable {δ} Δsem →
+    (he : ∀ values : Slots count, Reachable (· = δ) Δsem (Fin.append δ values) →
       ε[ν; Fin.append γ values]⟦e⟧ = leaf (Fin.append δ values)) :
     ε[ν; γ]⟦Tele.foldr K e (Ctx.substN σ count Δsyn)⟧ = Δsem.fold F leaf δ := by
-  have hp := h.pull σ (fun _ => δ) (reach₁ := {γ}) (fun _ _ => hδ)
+  have hp := h.pull σ (fun _ => δ) (reach₁ := (· = γ)) (fun _ _ => hδ)
     (fun current hcurrent v => by subst current; exact congrFun hσ v)
-  have hd : DenotesOver ε ν {γ} (Δsem.pull (fun _ : Slots n => δ) count) e
+  have hd : DenotesOver ε ν (· = γ) (Δsem.pull (fun _ : Slots n => δ) count) e
       (fun final => leaf (Slots.pull (fun _ : Slots n => δ) final)) := by
     intro final hfinal
     let values := fun f => final (Fin.natAdd n f)
     have hbase : (fun v : Fin n => final (v.castAdd count)) = γ := by
-      simpa [Fin.castAdd, Fin.castLE] using Set.eq_of_mem_singleton (Reachable.base hfinal)
+      simpa [Fin.castAdd, Fin.castLE] using Reachable.base hfinal
     have hvalues : final = Fin.append γ values := by
       rw [← hbase]
       exact Fin.append_castAdd_natAdd.symm
-    have hs := Reachable.pull hfinal (reach := {δ}) (fun _ _ => rfl)
-    have hs' : Fin.append δ values ∈ Reachable {δ} Δsem := by
+    have hs := Reachable.pull hfinal (reach := (· = δ)) (fun _ _ => rfl)
+    have hs' : Reachable (· = δ) Δsem (Fin.append δ values) := by
       simpa [hvalues] using hs
     simpa [hvalues] using he values hs'
-  have hd := hp.denotes_fold K F hK hF (Set.mem_singleton γ) hd
+  have hd := hp.denotes_fold K F hK hF rfl hd
   rwa [SemTele.fold_pull] at hd
 
 theorem Realizes.of_le (hba : b ≤ a) (Δsyn : Ctx ζ ℓ a b) :
@@ -154,7 +154,7 @@ theorem Realizes.append {d : Nat} {Θsyn : Ctx ζ ℓ b d}
 
 theorem Realizes.ofTypes {count : Nat} {types : Fin count → Expr ζ ℓ a}
     {domains : Fin count → Dom a}
-    (h : ∀ f, ∀ γ ∈ reach, ε[ν; γ]⟦types f⟧ = domains f γ) :
+    (h : ∀ f, ∀ γ, reach γ → ε[ν; γ]⟦types f⟧ = domains f γ) :
     Realizes ε ν reach (Ctx.ofTypes types) (SemTele.ofDoms domains) := by
   induction count with
   | zero => exact .nil
@@ -166,9 +166,9 @@ theorem Expr.denote_pi_ofTypes {count : Nat} (types : Fin count → Expr ζ ℓ 
     (e : Expr ζ ℓ (a + count)) (γ : Slots a) :
     ε[ν; γ]⟦(Ctx.ofTypes types).pi e⟧ =
       Aczel.pis (fun i => ε[ν; γ]⟦types i⟧) (fun values => ε[ν; Fin.append γ values]⟦e⟧) := by
-  have h := Realizes.ofTypes (ε := ε) (ν := ν) (reach := Set.univ)
+  have h := Realizes.ofTypes (ε := ε) (ν := ν) (reach := ⊤)
     (types := types) (domains := fun i δ => ε[ν; δ]⟦types i⟧) (fun _ _ _ => rfl)
-  exact (h.denotes_pi (Set.mem_univ γ) (fun _ _ => rfl)).trans (SemTele.pi_ofDoms _ _ _)
+  exact (h.denotes_pi trivial (fun _ _ => rfl)).trans (SemTele.pi_ofDoms _ _ _)
 
 @[expose] noncomputable def Ctx.denote (ε : Atom ζ ℓ → ZFSet) (ν : Param ℓ → Nat) :
     Ctx ζ ℓ a b → SemTele a b :=
@@ -180,8 +180,8 @@ theorem Realizes.denote : Realizes ε ν reach Δsyn (Δsyn.denote ε ν) := by
   | snoc _ _ ih => exact .snoc ih fun _ _ => rfl
 
 theorem Realizes.reachable_iff (h : Realizes ε ν reach Δsyn Δsem) (γ : Slots b) :
-    γ ∈ Reachable reach Δsem ↔
-      (fun base => γ (base.castLE Δsem.le)) ∈ reach ∧
+    Reachable reach Δsem γ ↔
+      reach (fun base => γ (base.castLE Δsem.le)) ∧
         ∀ v hv, γ v ∈ ε[ν; fun x => γ (x.castLE v.isLt.le)]⟦Δsyn.entry hv v.isLt⟧ := by
   induction h with
   | nil =>
@@ -201,7 +201,7 @@ theorem Realizes.reachable_iff (h : Realizes ε ν reach Δsyn Δsem) (γ : Slot
         rw [Ctx.entry_snoc_of_lt _ _ _ _ v.isLt]
         exact ((ih _).mp hprefix).2 v hv
     · rintro ⟨hbase, hmem⟩
-      have hprefix : Fin.init γ ∈ Reachable reach Δsem := by
+      have hprefix : Reachable reach Δsem (Fin.init γ) := by
         refine (ih _).mpr ⟨by simpa [Fin.init] using hbase, fun v hv => ?_⟩
         have hv := hmem v.castSucc hv
         rw [Ctx.entry_snoc_of_lt _ _ _ _ v.isLt] at hv
@@ -212,15 +212,15 @@ theorem Realizes.reachable_iff (h : Realizes ε ν reach Δsyn Δsem) (γ : Slot
       change γ (Fin.last scope) ∈ ε[ν; Fin.init γ]⟦t⟧ at hlast
       rwa [hdomain _ hprefix] at hlast
 
-theorem Reachable.of_denote (h : Realizes ε ν reach Δsyn Δsem) {γ : Slots a} (hγ : γ ∈ reach)
-    {slots : Slots b} (hslots : slots ∈ Reachable {γ} (Δsyn.denote ε ν)) :
-    slots ∈ Reachable reach Δsem := by
+theorem Reachable.of_denote (h : Realizes ε ν reach Δsyn Δsem) {γ : Slots a} (hγ : reach γ)
+    {slots : Slots b} (hslots : Reachable (· = γ) (Δsyn.denote ε ν) slots) :
+    Reachable reach Δsem slots := by
   have hs := (Realizes.denote.reachable_iff slots).mp hslots
-  exact (h.reachable_iff slots).mpr ⟨Set.eq_of_mem_singleton hs.1 ▸ hγ, hs.2⟩
+  exact (h.reachable_iff slots).mpr ⟨hs.1 ▸ hγ, hs.2⟩
 
-theorem Realizes.monoReach {reach₁ reach₂ : Set (Slots a)}
+theorem Realizes.monoReach {reach₁ reach₂ : Slots a → Prop}
     (h : Realizes ε ν reach₁ Δsyn Δsem)
-    (hreaches : reach₂ ⊆ reach₁) :
+    (hreaches : reach₂ ≤ reach₁) :
     Realizes ε ν reach₂ Δsyn Δsem := by
   induction h with
   | nil => exact .nil
@@ -231,13 +231,13 @@ theorem Realizes.reachable_subst {n count : Nat} {γ : Slots n}
     {Δsyn : Ctx ζ ℓ a (a + count)} {Δsem : SemTele a (a + count)}
     (h : Realizes ε ν reach Δsyn Δsem)
     (ps : Subst ζ ℓ a n) (args : Fin count → Expr ζ ℓ n)
-    (hbase : (ε[ν; γ]⟦ps ·⟧) ∈ reach)
+    (hbase : reach (ε[ν; γ]⟦ps ·⟧))
     (hargs : ∀ f, ε[ν; γ]⟦args f⟧ ∈ ε[ν; γ]⟦(Δsyn.proj f).subst
       (Fin.append ps fun previous => args (previous.castLE f.isLt.le))⟧) :
-    Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) ∈ Reachable reach Δsem := by
+    Reachable reach Δsem (Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧)) := by
   apply (h.reachable_iff _).mpr
   refine ⟨?_, fun v hv => ?_⟩
-  · change (fun base => Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) (base.castAdd count)) ∈ reach
+  · change reach fun base => Fin.append (ε[ν; γ]⟦ps ·⟧) (ε[ν; γ]⟦args ·⟧) (base.castAdd count)
     simpa using hbase
   cases v using Fin.addCases with
   | left v => exact (Nat.not_le_of_gt v.isLt hv).elim
@@ -271,7 +271,7 @@ theorem Realizes.map {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
 theorem Realizes.mapInst {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
     {ℓ₁ n m : Nat} {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet}
     {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
-    {reach : Set (Slots n)} {Δsem : SemTele n m}
+    {reach : Slots n → Prop} {Δsem : SemTele n m}
     (h : Realizes ε₁ ν reach Δ{ls} Δsem)
     (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
     Realizes ε₂ ν reach (Δ.map pre.sigs){ls} Δsem :=

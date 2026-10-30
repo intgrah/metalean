@@ -41,15 +41,15 @@ section
 
 variable (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
   (hsorts : ∀ s vps vis, ε₂ (.ind η s ls vps vis) = model.toModel.sortValue s vps vis)
-  (hparamReach : (ε₂[γ]⟦ps ·⟧) ∈ Reachable Set.univ model.paramsSem)
-  (hfieldsReach : Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
-    Reachable {(ε₂[γ]⟦ps ·⟧)} (model.ctors s c).source.ordinary.sem)
+  (hparamReach : Reachable ⊤ model.paramsSem (ε₂[γ]⟦ps ·⟧))
+  (hfieldsReach : Reachable (· = (ε₂[γ]⟦ps ·⟧)) (model.ctors s c).source.ordinary.sem
+    (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)))
 
 include hatoms in
 theorem paramsReachable {ps₂ : Fin ι.nparams → Expr ζ₂ 0 n}
     (hps : ∀ param, ε₂[γ] ⊨ ps param ≡ ps₂ param :
       (I.map pre.sigs).paramType ls ps param) :
-    (ε₂[γ]⟦ps ·⟧) ∈ Reachable Set.univ model.paramsSem :=
+    Reachable ⊤ model.paramsSem (ε₂[γ]⟦ps ·⟧) :=
   SemDefeq.reachable (model.realizes pre hatoms).params fun param => by
     rw [Ctx.get_subst _ _ param param.val param.isLt rfl]
     simpa [Inductive.paramType] using hps param
@@ -61,11 +61,12 @@ theorem fieldSlotsReachable
       ((((I.map pre.sigs).ctors s c).ordinary f).type{ls}).subst
         (Fin.append ps fun previous : Fin f.val =>
           fds (previous.castLE f.isLt.le))) :
-    Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧) ∈
-      Reachable {(ε₂[γ]⟦ps ·⟧)} (model.ctors s c).source.ordinary.sem := by
+    Reachable (· = (ε₂[γ]⟦ps ·⟧)) (model.ctors s c).source.ordinary.sem
+      (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)) := by
   have hsourceMap := (model.ctors s c).source.ordinary.realizes.mapInst pre hatoms
   simp [Ctor.ordinaryTele] at hsourceMap
-  apply (hsourceMap.monoReach (Set.singleton_subset_iff.mpr hparamReach)).reachable_subst ps fds (by simp)
+  apply (hsourceMap.monoReach (reach₂ := (· = (ε₂[γ]⟦ps ·⟧))) fun _ h => h ▸ hparamReach).reachable_subst
+    ps fds rfl
   intro f
   rw [Ctx.proj_eq_entry, ← Ctx.entry_instL, Ctor.ordinaryTeleAux_entry]
   exact (hfields f).mem
@@ -83,13 +84,13 @@ theorem recFieldsMem
     ((model.ctors s c).source.recursive f) pre hatoms
     (block := fun _ => model.toModel.block (ε₂[γ]⟦ps ·⟧)) (level := model.toModel.level)
     (σ := Fin.append ps fds) γ (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
-    (Reachable.append (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach)))
+    (Reachable.append (Reachable.mono hfieldsReach fun _ h => h ▸ hparamReach))
     (Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧) (hsorts _)
     (fun δ hδ => by
       have hpsEq : (fun param : Fin ι.nparams => δ (param.castLE (by omega))) =
           (ε₂[γ]⟦ps ·⟧) := by
         funext param
-        have h := congrFun (Set.eq_of_mem_singleton (Reachable.base hδ))
+        have h := congrFun (Reachable.base (reach := (· = _)) hδ)
           (param.castAdd (ι.ctors s c).nfields)
         rw [Fin.append_left] at h
         exact h
@@ -111,7 +112,7 @@ theorem targetIndexDenotes (index : Fin (ι.nindices s)) :
         ((Expr.denote_map pre.sigs hatoms _ _).trans ((model.ctors s c).source.targetValues_denotes
           (Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧))
           (Reachable.append
-            (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach))) index)))
+            (Reachable.mono hfieldsReach fun _ h => h ▸ hparamReach)) index)))
 
 include hatoms hparamReach hfieldsReach in
 theorem targetIndexInterp (index : Fin (ι.nindices s)) :
@@ -122,7 +123,7 @@ theorem targetIndexInterp (index : Fin (ι.nindices s)) :
   let fields := Fin.append (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦fds ·⟧)
   have hmem := ((model.ctors s c).targetInterp fields
     (Reachable.append (Reachable.mono hfieldsReach
-      (Set.singleton_subset_iff.mpr hparamReach))) index).mem
+      fun _ h => h ▸ hparamReach)) index).mem
   rw [← Expr.denote_map pre.sigs hatoms] at hmem
   refine ⟨rfl, ?_⟩
   have hsubst := Expr.denote_subst (ε := ε₂) (ν := ![]) γ (Fin.append ps fds)
@@ -132,7 +133,7 @@ theorem targetIndexInterp (index : Fin (ι.nindices s)) :
   have hvalue := (model.targetIndexDenotes pre hatoms hparamReach hfieldsReach index).trans
     ((model.ctors s c).source.targetValues_denotes fields
       (Reachable.append (Reachable.mono hfieldsReach
-        (Set.singleton_subset_iff.mpr hparamReach))) index).symm
+        fun _ h => h ▸ hparamReach)) index).symm
   rw [← hvalue] at hmem
   simp only [Inductive.indexType_map, InstLevel.inst_apply, Expr.map_instL, Expr.map] at hmem
   dsimp only [fields] at hmem

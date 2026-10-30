@@ -57,8 +57,8 @@ theorem ctorResult_of_mem_sortValue {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (hrec : IsEmpty (Fin (ι.ctors s c).nrecFields)) (vps : Slots ι.nparams)
     (vis : Slots (ι.nindices s)) (vrecFds : Slots (ι.ctors s c).nrecFields) {vmaj : ZFSet}
     (hmem : vmaj ∈ model.toModel.sortValue s vps vis) :
-    Fin.append vps (model.fieldsOf s c vps vis vmaj) ∈
-        Reachable {vps} (model.ctors s c).source.ordinary.sem ∧
+    Reachable (· = vps) (model.ctors s c).source.ordinary.sem
+        (Fin.append vps (model.fieldsOf s c vps vis vmaj)) ∧
       model.ctorResult s c vps (model.fieldsOf s c vps vis vmaj) vrecFds = vmaj := by
   let fieldTele := (model.ctors s c).source.ordinary.sem
   let carrier := fibreOp (model.toModel.block vps) (sortKey s.val (encode vis))
@@ -104,9 +104,9 @@ variable (total : E₁.as ⟶ E₂.as) (hatoms : AtomsMap total.sigs ε₁ ε₂
 include hE hatoms
 
 theorem projTypeWith_denotes {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.paramsSem)
-    (w : Slots (ι.nparams + (ι.ctors s c).nfields)) (hw : w ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem)
+    (hps : Reachable ⊤ model.paramsSem vps)
+    (w : Slots (ι.nparams + (ι.ctors s c).nfields))
+    (hw : Reachable (· = vps) (model.ctors s c).source.ordinary.sem w)
     (f : Fin (ι.ctors s c).nfields) {m : Nat} {γ : Slots m}
     (ps₁ : Fin ι.nparams → Expr ζ₂ 0 m) (previous : Fin f.val → Expr ζ₂ 0 m)
     (hps₁ : ∀ param, ε₂[γ]⟦ps₁ param⟧ = w (param.castLE (by omega)))
@@ -168,7 +168,7 @@ theorem projTerm_denotes_field
     (vis : Slots (ι.nindices s)) (f : Fin (ι.ctors s c).nfields)
     {m₁ : Nat} {γ₁ : Slots m₁}
     {ps₁ : Fin ι.nparams → Expr ζ₂ 0 m₁} {maj₁ : Expr ζ₂ 0 m₁}
-    (hvps : (ε₂[γ₁]⟦ps₁ ·⟧) ∈ Reachable Set.univ model.paramsSem)
+    (hvps : Reachable ⊤ model.paramsSem (ε₂[γ₁]⟦ps₁ ·⟧))
     (hmajMem₁ : ε₂[γ₁]⟦maj₁⟧ ∈ model.toModel.sortValue s (ε₂[γ₁]⟦ps₁ ·⟧) vis) :
     ε₂[γ₁]⟦hstruct.projTerm η ls ps₁ f maj₁⟧ =
       model.fieldsOf s c (ε₂[γ₁]⟦ps₁ ·⟧) vis ε₂[γ₁]⟦maj₁⟧ f := by

@@ -39,7 +39,7 @@ structure StrongRecursiveFieldSource (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSe
     (bound : Nat) (recFd : RecField ζ₁ ι nfields arity s₁) : Type (u + 1) where
   extension : StrongTeleExtension E ε ![] base recFd.tele{ls} bound
   mem (γ : Slots (ι.nparams + nfields + arity))
-    (hγ : γ ∈ Reachable (Reachable Set.univ base.sem) extension.sem)
+    (hγ : Reachable (Reachable ⊤ base.sem) extension.sem γ)
     (index : Fin (ι.nindices s₁)) :
     ε[γ]⟦(recFd.indices index){ls}⟧ ∈
       ε[γ]⟦I.indexType ls s₁ (fun param => .var ⟨param.val, by omega⟩)
@@ -69,10 +69,10 @@ theorem type_denotes
     {block : Dom (ι.nparams + nfields)}
     {sortValue : Slots ι.nparams → Slots (ι.nindices s₁) → ZFSet}
     (γ : Slots n) (δ : Slots (ι.nparams + nfields))
-    (hδ : δ ∈ Reachable Set.univ base.sem)
+    (hδ : Reachable ⊤ base.sem δ)
     (hσ : (ε₂[γ]⟦σ ·⟧) = δ)
     (hsort : ∀ vps vis, ε₂ (.ind η s₁ ls vps vis) = sortValue vps vis)
-    (happly : ∀ final ∈ Reachable {δ} (code recFd source).tele,
+    (happly : ∀ final, Reachable (· = δ) (code recFd source).tele final →
       sortValue (fun param : Fin ι.nparams => final (param.castLE (by omega)))
         (ε₁[final]⟦recFd.indices{ls} ·⟧) =
         propSet level (fibreOp
@@ -89,7 +89,7 @@ theorem type_denotes
   rw [← (code recFd source).tele.pi_base
     (fun current final => propSet level (fibreOp (block current) ((code recFd source).index final))) δ]
   simp only [RecField.map, RecField.instantiatedType, RecField.instantiatedTelescope_id]
-  apply Realizes.denotes_pi (Set.mem_singleton δ)
+  apply Realizes.denotes_pi (reach := (· = δ)) rfl
   · intro final hfinal
     have his (index : Fin (ι.nindices s₁)) :=
       Expr.denote_map (ν := ![]) pre.sigs hatoms final (recFd.indices index){ls}
@@ -98,7 +98,7 @@ theorem type_denotes
     rw [funext his, hsort]
     exact happly final hfinal
   · exact Realizes.mapInst
-      (source.extension.realizes.monoReach (Set.singleton_subset_iff.mpr hδ)) pre hatoms
+      (source.extension.realizes.monoReach (reach₂ := (· = δ)) fun _ h => h ▸ hδ) pre hatoms
 
 theorem ihType_denotes
     (recFd : RecField ζ₁ ι nfields arity s₁)
@@ -109,7 +109,7 @@ theorem ihType_denotes
     {motive : ZFSet} {e : Expr ζ₂ 0 n}
     {domain : Dom (ι.nparams + nfields + arity)}
     (γ : Slots n) (δ : Slots (ι.nparams + nfields))
-    (hδ : δ ∈ Reachable Set.univ base.sem)
+    (hδ : Reachable ⊤ base.sem δ)
     (hσ : (ε₂[γ]⟦σ ·⟧) = δ)
     (hvalue : ε₂[γ]⟦e⟧ ∈ (code recFd source).tele.pi domain δ)
     (hleaf : ∀ final,
@@ -207,12 +207,12 @@ theorem CtorWF.source (hdecl : SemDecls E₁ ε₁ ![])
 theorem Inductive.indexValuesReachable {m : Nat}
     {paramsSem : SemTele 0 ι.nparams}
     {indicesSem : SemTele ι.nparams (ι.nparams + ι.nindices s)}
-    (his : Realizes ε₁ ![] (Reachable Set.univ paramsSem) (I.indices s){ls} indicesSem)
+    (his : Realizes ε₁ ![] (Reachable ⊤ paramsSem) (I.indices s){ls} indicesSem)
     (ps : Fin ι.nparams → Expr ζ₁ 0 m) (is : Fin (ι.nindices s) → Expr ζ₁ 0 m) (γ : Slots m)
-    (hps : (ε₁[γ]⟦ps ·⟧) ∈ Reachable Set.univ paramsSem)
+    (hps : Reachable ⊤ paramsSem (ε₁[γ]⟦ps ·⟧))
     (interp : ∀ index, ε₁[γ] ⊨ is index ≡ is index : I.indexType ls s ps is index) :
-    Fin.append (ε₁[γ]⟦ps ·⟧) (ε₁[γ]⟦is ·⟧) ∈
-      Reachable (Reachable Set.univ paramsSem) indicesSem := by
+    Reachable (Reachable ⊤ paramsSem) indicesSem
+      (Fin.append (ε₁[γ]⟦ps ·⟧) (ε₁[γ]⟦is ·⟧)) := by
   apply his.reachable_subst ps is hps
   intro index
   rw [Ctx.proj_eq_entry, ← Ctx.entry_instL, ← Ctx.proj_eq_entry]
@@ -223,12 +223,12 @@ namespace StrongCtorSource
 open scoped Classical in
 noncomputable def targetValues (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
     (γ : Slots (ι.nparams + csig.nfields)) (i : Fin (ι.nindices s)) : ZFSet :=
-  if γ ∈ Reachable Set.univ (params.append source.ordinary).sem then
+  if Reachable ⊤ (params.append source.ordinary).sem γ then
     ε₁[γ]⟦(ctor.targetIndices i){ls}⟧ else ∅
 
 theorem targetValues_denotes (source : StrongCtorSource E₁ ε₁ I ls ctor params bound)
     (γ : Slots (ι.nparams + csig.nfields))
-    (hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem) (i : Fin (ι.nindices s)) :
+    (hγ : Reachable ⊤ (params.append source.ordinary).sem γ) (i : Fin (ι.nindices s)) :
     ε₁[γ]⟦(ctor.targetIndices i){ls}⟧ = source.targetValues γ i := by
   simp [targetValues, hγ]
 
@@ -258,7 +258,7 @@ structure StrongCtorModel (E : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
     (params : StrongTeleModel E ε ![] I.params{ls}) : Type (u + 1) where
   bound : Nat
   source : StrongCtorSource E ε I ls ctor params bound
-  targetInterp : ∀ γ ∈ Reachable Set.univ (params.append source.ordinary).sem,
+  targetInterp : ∀ γ, Reachable ⊤ (params.append source.ordinary).sem γ →
     ∀ i, ε[γ] ⊨ (ctor.targetIndices i){ls} ≡ (ctor.targetIndices i){ls} :
       I.indexType ls s (fun param => .var ⟨param.val, by omega⟩) ctor.targetIndices{ls} i
   targetBounded : ∃ level, ∀ γ i, source.targetValues γ i ∈ U_ level
@@ -277,13 +277,13 @@ theorem CtorWF.model (hdecl : SemDecls E₁ ε₁ ![])
     have htarget (i : Fin (ι.nindices s)) := (hctor.targetIndices i).instLevel ls
     rw [Ctx.instL_append] at htarget
     have interp (γ : Slots (ι.nparams + csig.nfields))
-        (hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem) (i : Fin (ι.nindices s)) :
+        (hγ : Reachable ⊤ (params.append source.ordinary).sem γ) (i : Fin (ι.nindices s)) :
         ε₁[γ] ⊨ (ctor.targetIndices i){ls} ≡ (ctor.targetIndices i){ls} :
           I.indexType ls s (fun param => .var ⟨param.val, by omega⟩) ctor.targetIndices{ls} i := by
       simpa! using soundness hdecl hrule hE (htarget i) γ
         ((params.append source.ordinary).semCtx γ hγ)
     refine ⟨bound, source, interp, ⟨bound₁, fun γ i => ?_⟩, hlocal⟩
-    by_cases hγ : γ ∈ Reachable Set.univ (params.append source.ordinary).sem
+    by_cases hγ : Reachable ⊤ (params.append source.ordinary).sem γ
     · have hreach := Inductive.indexValuesReachable indices.realizes
         (fun param => .var (param.castAdd csig.nfields)) ctor.targetIndices{ls} γ
         (by exact Reachable.base (Reachable.of_append hγ)) (interp γ hγ)

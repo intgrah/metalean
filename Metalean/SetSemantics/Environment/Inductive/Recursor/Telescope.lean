@@ -56,7 +56,7 @@ noncomputable def recrTeleSem :
 
 include hatoms hsorts hctors in
 theorem recrPrefixRealizes :
-    Realizes ε₂ ![] Set.univ
+    Realizes ε₂ ![] ⊤
       ((I.map pre.sigs).params{ls} ++ (I.map pre.sigs).motiveBinders η ls l ++
         (I.map pre.sigs).caseBinders η ls)
       (model.recrPrefixSem l) :=
@@ -67,11 +67,11 @@ theorem recrPrefixRealizes :
 
 include hatoms in
 theorem recrIndicesRealizes :
-    Realizes ε₂ ![] (Reachable Set.univ (model.recrPrefixSem l))
+    Realizes ε₂ ![] (Reachable ⊤ (model.recrPrefixSem l))
       ((I.map pre.sigs).indexTele ls s fun param => .var (param.castLE (by omega)))
       (model.recrIndicesSem s) := by
   have his := ((model.indices s).realizes.mapInst pre hatoms).pull
-    (reach₁ := Reachable Set.univ (model.recrPrefixSem l))
+    (reach₁ := Reachable ⊤ (model.recrPrefixSem l))
     (fun param => .var (param.castLE (by omega))) (fun γ p => γ (p.castLE (by omega)))
     (fun _ hγ =>
       (Reachable.base (Reachable.of_append (Reachable.base (Reachable.of_append hγ))) :))
@@ -80,7 +80,7 @@ theorem recrIndicesRealizes :
 
 include hatoms hsorts hctors in
 theorem recrTeleRealizes :
-    Realizes ε₂ ![] Set.univ ((I.map pre.sigs).recrTele η s ls l)
+    Realizes ε₂ ![] ⊤ ((I.map pre.sigs).recrTele η s ls l)
       (model.recrTeleSem s l) := by
   refine .snoc ((model.recrPrefixRealizes pre hatoms hsorts hctors l).append
     (model.recrIndicesRealizes pre hatoms s l)) fun γ _ => ?_
@@ -98,8 +98,8 @@ theorem recrArgs_reachable {n : Nat} {γ : Slots n} {s : Fin ι.nsorts}
       ε₂[γ]⟦(I.map pre.sigs).caseFnType η ls ps ms target ctor⟧)
     (his : ∀ index, ε₂[γ]⟦is index⟧ ∈ ε₂[γ]⟦(I.map pre.sigs).indexType ls s ps is index⟧)
     (hmaj : ε₂[γ]⟦maj⟧ ∈ ε₂[γ]⟦.ind η s ls ps is⟧) :
-    (RecSlots.mk (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧) (ε₂[γ]⟦is ·⟧) ε₂[γ]⟦maj⟧).valuation ∈
-      Reachable Set.univ (model.recrTeleSem s l) :=
+    Reachable ⊤ (model.recrTeleSem s l)
+      (RecSlots.mk (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧) (ε₂[γ]⟦is ·⟧) ε₂[γ]⟦maj⟧).valuation :=
   RecSlots.denote_recrSubst ε₂ ![] γ ps ms mins is maj ▸
     SemDefeq.reachable (model.recrTeleRealizes pre hatoms hsorts hctors s l)
       (Inductive.forall_recrSubst (motive := fun _ e₁ e₂ t => ε₂[γ] ⊨ e₁ ≡ e₂ : t)
@@ -119,12 +119,12 @@ noncomputable def recrGraph : ZFSet :=
     (model.recrCaseMotive γ.params γ.motives) model.toModel.level
     γ.cases γ.params
 
-variable (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
+variable (hγ : Reachable ⊤ (model.recrTeleSem s l) γ.valuation)
 
 include hγ
 
-theorem recrSortReachable : Fin.append (RecSlots.params γ) (RecSlots.indices γ) ∈
-    Reachable Set.univ (model.sortSem s) :=
+theorem recrSortReachable :
+    Reachable ⊤ (model.sortSem s) (Fin.append (RecSlots.params γ) (RecSlots.indices γ)) :=
   by
     apply Reachable.append
     have h := Reachable.pull (Reachable.of_append (Reachable.init hγ))
@@ -133,24 +133,23 @@ theorem recrSortReachable : Fin.append (RecSlots.params γ) (RecSlots.indices γ
     simpa [RecSlots.valuation, RecSlots.prefixValues, Slots.pull] using h
 
 @[reachability →] theorem recrParamsReachable :
-    RecSlots.params γ ∈ Reachable Set.univ model.paramsSem := by
+    Reachable ⊤ model.paramsSem (RecSlots.params γ) := by
   simpa using
     Reachable.base (Reachable.of_append (model.recrSortReachable s l γ hγ))
 
 theorem recrChildReachable {s₁ : Fin ι.nsorts} (indices : Slots (ι.nindices s₁))
-    (his : Fin.append γ.params indices ∈
-      Reachable (Reachable Set.univ model.paramsSem) (model.indicesSem s₁))
+    (his : Reachable (Reachable ⊤ model.paramsSem) (model.indicesSem s₁)
+      (Fin.append γ.params indices))
     (major : ZFSet) (hmaj : major ∈ model.toModel.sortValue s₁ γ.params indices) :
-    (RecSlots.mk γ.params γ.motives γ.cases indices major).valuation ∈
-      Reachable Set.univ (model.recrTeleSem s₁ l) := by
-  have hprefix : γ.prefixValues ∈ Reachable Set.univ (model.recrPrefixSem l) := by
+    Reachable ⊤ (model.recrTeleSem s₁ l)
+      (RecSlots.mk γ.params γ.motives γ.cases indices major).valuation := by
+  have hprefix : Reachable ⊤ (model.recrPrefixSem l) γ.prefixValues := by
     simpa [RecSlots.valuation] using Reachable.base (Reachable.of_append (Reachable.init hγ))
-  have hindices : Fin.append γ.prefixValues indices ∈
-      Reachable (Reachable Set.univ (model.recrPrefixSem l)) (model.recrIndicesSem s₁) :=
+  have hindices : Reachable (Reachable ⊤ (model.recrPrefixSem l)) (model.recrIndicesSem s₁)
+      (Fin.append γ.prefixValues indices) :=
     Reachable.of_pull (by simpa [Slots.pull_append, RecSlots.prefixValues] using his) (by simpa using hprefix)
-  change (Fin.snoc (Fin.append γ.prefixValues indices) major :
-      Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s₁ + 1)) ∈
-    Reachable Set.univ (model.recrTeleSem s₁ l)
+  change Reachable ⊤ (model.recrTeleSem s₁ l) (Fin.snoc (Fin.append γ.prefixValues indices) major :
+      Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors + ι.nindices s₁ + 1))
   refine Reachable.snoc (by simpa using Reachable.append hindices) ?_
   simpa [recrMajorDomain, RecSlots.prefixValues] using hmaj
 
@@ -189,7 +188,7 @@ theorem recrMotiveResult_mem_sort :
     simpa [InductiveModel.sortValue] using
       model.recrMajorOf_erased s l γ hγ
   have hfinal :
-      final ∈ Reachable (Reachable Set.univ model.paramsSem) (model.recrMotiveTele s) :=
+      Reachable (Reachable ⊤ model.paramsSem) (model.recrMotiveTele s) final :=
     .snoc (by simpa [final] using Reachable.of_append (model.recrSortReachable s l γ hγ))
       (by simpa [final] using hmaj)
   have hsuffix : (fun f : Fin (ι.nindices s + 1) => final (Fin.natAdd ι.nparams f)) =
@@ -215,7 +214,7 @@ theorem recrStepSound :
     StepSound model.toModel.codes (model.toModel.block (RecSlots.params γ))
       (model.recrCaseMotive γ.params γ.motives) model.toModel.level
       γ.cases γ.params := by
-  have hprefix : γ.prefixValues ∈ Reachable Set.univ (model.recrPrefixSem l) := by
+  have hprefix : Reachable ⊤ (model.recrPrefixSem l) γ.prefixValues := by
     simpa [RecSlots.valuation] using Reachable.base (Reachable.of_append (Reachable.init hγ))
   rw [recrPrefixSem] at hprefix
   have hcaseReach := Reachable.mono (Reachable.of_append hprefix)

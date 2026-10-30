@@ -51,15 +51,16 @@ theorem CtorCode.support_card_lt {code : CtorCode.{u} n}
     Cardinal.mk (code.Support γ) < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
   have hκ := Cardinal.inaccessible_isInaccessible.{u} level
   have hreg : (Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level)).IsRegular := hκ.isRegular.lift
-  have hbase : Cardinal.mk ({γ} : Set (Slots n)) < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
-    rw [Cardinal.mk_singleton]
+  have hbase {m : Nat} (δ : Slots m) :
+      Cardinal.mk {s // s = δ} < Cardinal.lift.{u + 1} (Cardinal.inaccessible.{u} level) := by
+    rw [Cardinal.mk_eq_one]
     exact Cardinal.one_lt_aleph0.trans_le hreg.aleph0_le
   rw [CtorCode.Support.cardinalMk]
   refine Cardinal.sum_lt_of_isRegular hreg
-    (Reachable.card_lt hκ hdoms.ordinary hbase) fun final => ?_
+    (Reachable.card_lt hκ hdoms.ordinary (hbase γ)) fun final => ?_
   exact Cardinal.sum_lt_lift_of_isRegular hreg
     (lt_of_lt_of_le (by simp) hreg.aleph0_le)
-    fun f => Reachable.card_lt hκ (hdoms.recursive f) (by simpa using hbase)
+    fun f => Reachable.card_lt hκ (hdoms.recursive f) (hbase final.1)
 
 theorem CtorCode.argSet_mem_type {code : CtorCode n}
     (hdoms : code.DomsIn level) {block : ZFSet}

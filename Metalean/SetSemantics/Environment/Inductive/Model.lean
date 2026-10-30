@@ -54,20 +54,20 @@ noncomputable def sortValue (witness : InductiveModel ι) (s : Fin ι.nsorts)
 structure Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
     (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level ℓ) (witness : InductiveModel.{u} ι) : Prop where
   level_eq : witness.level = I.level{ls}.eval ν
-  params : Realizes ε₁ ν Set.univ I.params{ls} witness.paramsSem
+  params : Realizes ε₁ ν ⊤ I.params{ls} witness.paramsSem
   indicesRealizes (s : Fin ι.nsorts) :
-    Realizes ε₁ ν (Reachable Set.univ witness.paramsSem)
+    Realizes ε₁ ν (Reachable ⊤ witness.paramsSem)
       (I.indices s){ls} (witness.indicesSem s)
   ordinaryOf_castLE : ∀ s c vps vargs (param : Fin ι.nparams),
     witness.ordinaryOf s c vps vargs (param.castLE (Nat.le_add_right _ _)) = vps param
   targetIndex_eq : ∀ s c vps vargs,
     (witness.codes s c).targetIndex vps vargs =
       sortKey s.val (encode (witness.targetValues s c (witness.ordinaryOf s c vps vargs)))
-  targetRealizes : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
+  targetRealizes : ∀ s c, ∀ vps, Reachable ⊤ witness.paramsSem vps →
     ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps, ∀ index,
     ε₁[ν; witness.ordinaryOf s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
       witness.targetValues s c (witness.ordinaryOf s c vps vargs) index
-  fieldsRealize : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
+  fieldsRealize : ∀ s c, ∀ vps, Reachable ⊤ witness.paramsSem vps →
     ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps,
     ε₁[ν] ⊨ witness.ordinaryOf s c vps vargs :
       (I.params ++ (I.ctors s c).ordinaryTele){ls}
@@ -223,19 +223,17 @@ theorem codeOf_targetIndex (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 
 theorem ordinaryOf_reachable (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.params.sem)
+    (hps : Reachable ⊤ model.params.sem vps)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
-    ordinaryOf model s c vps vargs ∈
-      Reachable (Reachable Set.univ model.params.sem)
-        (model.ctors s c).source.ordinary.sem := by
-  exact Reachable.mono (SemTele.mem_sigma.mp hargs).1
-    (Set.singleton_subset_iff.mpr hps)
+    Reachable (Reachable ⊤ model.params.sem) (model.ctors s c).source.ordinary.sem
+      (ordinaryOf model s c vps vargs) := by
+  exact Reachable.mono (SemTele.mem_sigma.mp hargs).1 fun _ h => h ▸ hps
 
 theorem targetRealizes (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.params.sem)
+    (hps : Reachable ⊤ model.params.sem vps)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps)
@@ -247,7 +245,7 @@ theorem targetRealizes (s : Fin ι.nsorts)
 
 theorem fieldsRealize (s : Fin ι.nsorts)
     (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.params.sem)
+    (hps : Reachable ⊤ model.params.sem vps)
     (vargs : ZFSet)
     (hargs : vargs ∈ (codeOf model s c).argSet
       (model.toModel.block vps) vps) :
@@ -295,8 +293,8 @@ theorem ctorArgs_mem
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams)
     (vfds : Slots (ι.ctors s c).nfields)
-    (hfields : Fin.append vps vfds ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem)
+    (hfields : Reachable (· = vps) (model.ctors s c).source.ordinary.sem
+      (Fin.append vps vfds))
     (vrecFds : Fin (ι.ctors s c).nrecFields → ZFSet)
     (hrecFields : ∀ f, vrecFds f ∈ typedRecFieldSet
       (StrongRecursiveFieldSource.code
@@ -317,8 +315,8 @@ theorem ctorArgs_mem
 theorem ctorResult_mem_sortValue
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (vps : Slots ι.nparams) (vfds : Slots (ι.ctors s c).nfields)
-    (hfields : Fin.append vps vfds ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem)
+    (hfields : Reachable (· = vps) (model.ctors s c).source.ordinary.sem
+      (Fin.append vps vfds))
     (vrecFds : Slots (ι.ctors s c).nrecFields)
     (hrecFields : ∀ f, vrecFds f ∈ typedRecFieldSet
       ((model.ctors s c).source.code.recursive f).tele
@@ -351,21 +349,20 @@ theorem large_target_separates
 
 theorem ordinarySemCtx
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (hps : Reachable ⊤ model.paramsSem vps)
     (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
-    (hslots : slots ∈ Reachable {vps} (model.ctors s c).source.ordinary.sem) :
+    (hslots : Reachable (· = vps) (model.ctors s c).source.ordinary.sem slots) :
     ε₁[![]] ⊨ slots : (I.params ++ (I.ctors s c).ordinaryTele){ls} :=
   Ctx.instL_append .. ▸ (model.ctors s c).source.ordinary.semCtx slots
-    (Reachable.mono hslots (Set.singleton_subset_iff.mpr hps))
+    (Reachable.mono hslots fun _ h => h ▸ hps)
 
 theorem ordinary_eq_proof
     (hdecl : SemDecls E₁ ε₁ ![]) (hrule : SemDeclRules E₁ ε₁ ![])
     (hE : EnvWF E₁) (hB : InductiveWF E₁ I)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (hps : Reachable ⊤ model.paramsSem vps)
     (slots : Slots (ι.nparams + (ι.ctors s c).nfields))
-    (hslots : slots ∈ Reachable {vps}
-      (model.ctors s c).source.ordinary.sem)
+    (hslots : Reachable (· = vps) (model.ctors s c).source.ordinary.sem slots)
     (f : Fin (ι.ctors s c).nfields)
     (hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0) :
     slots (Fin.natAdd ι.nparams f) = proof := by
@@ -383,7 +380,7 @@ theorem large_ordinary_eq
     {s : Fin ι.nsorts} {c : Fin (ι.nctors s)}
     (heligible : (I.ctors s c).Eligible I.level)
     (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.paramsSem)
+    (hps : Reachable ⊤ model.paramsSem vps)
     (approximation : ZFSet)
     (happroximation : approximation ⊆ model.toModel.block vps)
     {leftArgs rightArgs : ZFSet}
@@ -415,8 +412,8 @@ theorem large_ordinary_eq
     | inl hzero =>
       have hzero : ((I.ctors s c).ordinary f).level{ls}.eval ![] = 0 := by
         simp [hzero]
-      have heq (vargs : ZFSet) (hreach : ordinary.values vps vargs ∈
-          Reachable {vps} (model.ctors s c).source.ordinary.sem) :=
+      have heq (vargs : ZFSet) (hreach : Reachable (· = vps) (model.ctors s c).source.ordinary.sem
+          (ordinary.values vps vargs)) :=
         model.ordinary_eq_proof hdecl hrule hE hB s c vps hps _ hreach f hzero
       exact (heq leftArgs hleftReach).trans (heq rightArgs hrightReach).symm
     | inr hindex =>

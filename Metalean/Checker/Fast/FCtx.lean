@@ -15,8 +15,17 @@ namespace Metalean.Checker.Fast
 
 abbrev FCtx := Array FExpr
 
+@[inline]
+unsafe def FCtx.withPtrEqImpl (G₁ G₂ : FCtx) (k : Unit → Bool) (h : G₁ = G₂ → k () = true) :
+    Bool :=
+  withPtrEqUnsafe G₁ G₂ k h
+
+@[implemented_by FCtx.withPtrEqImpl]
+def FCtx.withPtrEq (G₁ G₂ : FCtx) (k : Unit → Bool) (_h : G₁ = G₂ → k () = true) : Bool :=
+  k ()
+
 instance (priority := high) : DecidableEq FCtx :=
-  fun G₁ G₂ => withPtrEqDecEq G₁ G₂ fun _ => inferInstance
+  fun G₁ G₂ => withPtrEqDecEq FCtx.withPtrEq (fun _ _ _ _ => rfl) G₁ G₂ fun _ => inferInstance
 
 unsafe def FCtx.addrImpl (G : FCtx) : USize :=
   ptrAddrUnsafe G

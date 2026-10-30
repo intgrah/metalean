@@ -44,15 +44,15 @@ noncomputable def recrMotiveValue (s : Fin ι.nsorts) (l : Level 0) : Dom ι.npa
 
 include hatoms hsorts in
 theorem recrMotiveValue_denotes (s : Fin ι.nsorts) (l : Level 0) (vps : Slots ι.nparams)
-    (hps : vps ∈ Reachable Set.univ model.paramsSem) :
+    (hps : Reachable ⊤ model.paramsSem vps) :
     ε₂[vps]⟦(I.map pre.sigs).motiveType η ls (fun param => Expr.var param) l s⟧ =
       model.recrMotiveValue s l vps := by
   let := Subst.category ζ₂ 0
-  have htele : Realizes ε₂ ![] (Reachable Set.univ model.paramsSem)
+  have htele : Realizes ε₂ ![] (Reachable ⊤ model.paramsSem)
       ((I.map pre.sigs).motiveTele η ls (fun param => Expr.var param) s)
       (model.recrMotiveTele s) := by
     have hlast (γ : Slots (ι.nparams + ι.nindices s))
-        (_ : γ ∈ Reachable (Reachable Set.univ model.paramsSem) (model.indicesSem s)) :
+        (_ : Reachable (Reachable ⊤ model.paramsSem) (model.indicesSem s) γ) :
         ε₂[γ]⟦.ind η s ls (fun param => (Expr.var param).wkN (ι.nindices s))
             (fun index => Expr.var ⟨ι.nparams + index.val, by omega⟩)⟧ = model.toModel.sortValue s
             (fun param : Fin ι.nparams => γ (param.castLE (Nat.le_add_right _ _)))
@@ -75,7 +75,7 @@ noncomputable def recrMotivesSem (l : Level 0) :
 
 include hatoms hsorts in
 theorem recrMotivesRealizes (l : Level 0) :
-    Realizes ε₂ ![] (Reachable Set.univ model.paramsSem)
+    Realizes ε₂ ![] (Reachable ⊤ model.paramsSem)
       ((I.map pre.sigs).motiveBinders η ls l) (model.recrMotivesSem l) :=
   Realizes.ofTypes fun s => model.recrMotiveValue_denotes pre hatoms hsorts s l
 
@@ -133,7 +133,7 @@ include hatoms hsorts hctors in
 theorem StrongInductiveModel.recrCaseDomain_denotes
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
     (γ : Slots (ι.nparams + ι.nsorts))
-    (hps : (fun p => γ (p.castAdd ι.nsorts)) ∈ Reachable Set.univ model.paramsSem) :
+    (hps : Reachable ⊤ model.paramsSem fun p => γ (p.castAdd ι.nsorts)) :
     ε₂[γ]⟦(I.map pre.sigs).caseFnType η ls
       (fun param => Expr.var (param.castLE (by omega)))
       (fun s => Expr.var ⟨ι.nparams + s.val, by omega⟩)
@@ -155,8 +155,8 @@ theorem StrongInductiveModel.recrCaseDomain_denotes
   intro values hvalues
   let δ := Fin.append vps values
   let ξ := Fin.append γ values
-  have hδ : δ ∈ Reachable Set.univ (model.params.append source.ordinary).sem :=
-    Reachable.append (Reachable.mono hvalues (Set.singleton_subset_iff.mpr hps))
+  have hδ : Reachable ⊤ (model.params.append source.ordinary).sem δ :=
+    Reachable.append (Reachable.mono hvalues fun _ h => h ▸ hps)
   have hrec (f : Fin sig.nrecFields) :
       ε₂[ξ]⟦((C.map pre.sigs).recursive f).instantiatedType η ls
         (fun p => (ps p).wkN sig.nfields) (Fin.append (fun p => (ps p).wkN sig.nfields)
@@ -243,9 +243,9 @@ noncomputable def recrCasesSem :
 
 theorem recrCasesSem_mem
     (γ : Slots (ι.nparams + ι.nsorts + Fin.sum ι.nctors))
-    (hγ : γ ∈ Reachable (Reachable (Reachable Set.univ model.paramsSem)
+    (hγ : Reachable (Reachable (Reachable ⊤ model.paramsSem)
         (model.recrMotivesSem l))
-      model.recrCasesSem)
+      model.recrCasesSem γ)
     (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
     γ (Fin.natAdd (ι.nparams + ι.nsorts) (Fin.encodeSigma ι.nctors ⟨s, c⟩)) ∈
       model.recrCaseDomain s c fun base => γ (base.castAdd (Fin.sum ι.nctors)) := by
@@ -255,7 +255,7 @@ theorem recrCasesSem_mem
 include hatoms hsorts hctors in
 theorem recrCasesRealizes :
     Realizes ε₂ ![]
-      (Reachable (Reachable Set.univ model.paramsSem)
+      (Reachable (Reachable ⊤ model.paramsSem)
         (model.recrMotivesSem l))
       ((I.map pre.sigs).caseBinders η ls)
       model.recrCasesSem :=

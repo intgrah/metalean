@@ -78,7 +78,7 @@ theorem iotaRuleSound
   let outer := RecSlots.mk (ε₂[γ]⟦ps ·⟧) (ε₂[γ]⟦ms ·⟧) (ε₂[γ]⟦mins · ·⟧)
     (ε₂[γ]⟦((I.map pre.sigs).ctors s c).targetIndex ls ps fds ·⟧)
     ε₂[γ]⟦.ctor η s c ls ps fds recFds⟧
-  have houter : outer.valuation ∈ Reachable Set.univ (model.recrTeleSem s l) :=
+  have houter : Reachable ⊤ (model.recrTeleSem s l) outer.valuation :=
     model.recrArgs_reachable pre hatoms hsorts hctors l
       (fun p => (hps p).mem) (fun s => (hms s).mem) (fun s c => (hmins s c).mem)
       (fun i => (model.targetIndexInterp pre hatoms
@@ -119,9 +119,9 @@ theorem iotaRuleSound
       let code := (model.codeOf s c).recursive f
       let recovered := recoverRecField code.tele code.index (model.toModel.block outer.params)
         model.toModel.level fieldSlots (vrecFds f)
-      have hfields : fieldSlots ∈ Reachable Set.univ
-          (model.params.append (model.ctors s c).source.ordinary).sem :=
-        Reachable.append (Reachable.mono hfieldsReach (Set.singleton_subset_iff.mpr hparamReach))
+      have hfields : Reachable ⊤ (model.params.append (model.ctors s c).source.ordinary).sem
+          fieldSlots :=
+        Reachable.append (Reachable.mono hfieldsReach fun _ h => h ▸ hparamReach)
       have hσ : (ε₂[γ]⟦Fin.append ps fds ·⟧) = fieldSlots :=
         Fin.append_comp ps fds fun e => ε₂[γ]⟦e⟧
       have hden := (source.extension.realizes.mapInst pre hatoms).denotes_fold_subst
@@ -139,19 +139,19 @@ theorem iotaRuleSound
           let indices := (ε₁[final]⟦recFd.indices{ls} ·⟧)
           have hparams : (fun p : Fin ι.nparams => final (p.castLE (by omega))) = outer.params := by
             funext param
-            exact (congrFun (Set.eq_of_mem_singleton (Reachable.base hvalues))
+            exact (congrFun (Reachable.base (reach := (· = _)) hvalues)
               (param.castAdd (ι.ctors s c).nfields)).trans
-              (congrFun (Set.eq_of_mem_singleton (Reachable.base hfieldsReach)) param)
+              (congrFun (Reachable.base (reach := (· = _)) hfieldsReach) param)
           have his := Inductive.indexValuesReachable
             (model.indices ((ι.ctors s c).recursiveTarget f)).realizes
             (fun param => .var (param.castLE (by omega))) recFd.indices{ls} final
             (by simp only [Expr.denote]; rw [hparams]; exact hparamReach)
             (fun i => ⟨rfl, source.mem final
-              (Reachable.mono hvalues (Set.singleton_subset_iff.mpr hfields)) i⟩)
+              (Reachable.mono hvalues fun _ h => h ▸ hfields) i⟩)
           simp only [Expr.denote] at his
           rw [hparams] at his
           have hmajor := Reachable.apps_mem_of_base hvalues
-            (congrFun (Set.eq_of_mem_singleton (Reachable.base hvalues))) (hrecFieldsMem f)
+            (congrFun (Reachable.base (reach := (· = _)) hvalues)) (hrecFieldsMem f)
           simp only [Fin.append_right] at hmajor
           have hchild := model.recrChildReachable s l outer houter indices his
             (Aczel.apps (vrecFds f) values) hmajor

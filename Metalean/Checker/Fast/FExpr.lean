@@ -701,9 +701,17 @@ unsafe def decEqShared (a b : FExpr) : Decidable (a = b) :=
     let same : Bool := Id.run ((eqCached true a b).run' none)
     if same then isTrue lcProof else isFalse lcProof
 
+@[inline]
+unsafe def withPtrEqImpl (a b : FExpr) (k : Unit → Bool) (h : a = b → k () = true) : Bool :=
+  withPtrEqUnsafe a b k h
+
+@[implemented_by withPtrEqImpl]
+def withPtrEq (a b : FExpr) (k : Unit → Bool) (_h : a = b → k () = true) : Bool :=
+  k ()
+
 @[implemented_by decEqShared]
 def decEq (a b : FExpr) : Decidable (a = b) :=
-  withPtrEqDecEq a b fun () =>
+  withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl) a b fun () =>
   if hh : a.data.hash ≠ b.data.hash then isFalse fun e => hh (e ▸ rfl)
   else if h : a.ctorIdx = b.ctorIdx then
     match_on_same_ctor (motive := fun a b _ => Decidable (a = b)) a b h

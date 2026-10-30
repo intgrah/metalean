@@ -38,7 +38,7 @@ noncomputable def recoverRecField (Δ : SemTele n b) (index : Dom b)
 
 theorem recoverRecField_apps {k : Nat} {Δ : SemTele n (n + k)} {index : Dom (n + k)}
     {block value : ZFSet} {level : Nat} {γ : Slots n} {final : Slots (n + k)}
-    (hfinal : final ∈ Reachable {γ} Δ) :
+    (hfinal : Reachable (· = γ) Δ final) :
     Aczel.apps (recoverRecField Δ index block level γ value)
         (fun f => final (Fin.natAdd n f)) =
       propGet level (fibreOp block (index final))
@@ -173,13 +173,13 @@ noncomputable def argSet (block : ZFSet) (code : CtorCode n) : Dom n :=
     recFieldSet (code.recursive f).tele (code.recursive f).index block final)
 
 structure Support (code : CtorCode.{u} n) (γ : Slots.{u} n) : Type (u + 1) where
-  ordinary : Reachable {γ} code.ordinary
+  ordinary : {s // Reachable (· = γ) code.ordinary s}
   field : Fin code.nrecFields
-  recursive : Reachable {ordinary.1} (code.recursive field).tele
+  recursive : {s // Reachable (· = ordinary.1) (code.recursive field).tele s}
 
 private def Support.equiv (code : CtorCode.{u} n) (γ : Slots.{u} n) :
-    code.Support γ ≃ (final : Reachable {γ} code.ordinary) ×
-      (f : Fin code.nrecFields) × Reachable {final.1} (code.recursive f).tele where
+    code.Support γ ≃ (final : {s // Reachable (· = γ) code.ordinary s}) ×
+      (f : Fin code.nrecFields) × {s // Reachable (· = final.1) (code.recursive f).tele s} where
   toFun p := ⟨p.ordinary, p.field, p.recursive⟩
   invFun p := ⟨p.1, p.2.1, p.2.2⟩
   left_inv _ := rfl
@@ -189,9 +189,9 @@ instance support_small (code : CtorCode.{u} n) (γ : Slots.{u} n) : Small.{u} (c
   small_of_injective (Support.equiv code γ).injective
 
 theorem Support.cardinalMk (code : CtorCode.{u} n) (γ : Slots.{u} n) :
-    Cardinal.mk (code.Support γ) = Cardinal.sum (fun final : Reachable {γ} code.ordinary =>
+    Cardinal.mk (code.Support γ) = Cardinal.sum (fun final : {s // Reachable (· = γ) code.ordinary s} =>
       Cardinal.sum fun f : Fin code.nrecFields =>
-        Cardinal.mk (Reachable {final.1} (code.recursive f).tele)) := by
+        Cardinal.mk {s // Reachable (· = final.1) (code.recursive f).tele s}) := by
   rw [Cardinal.mk_congr (Support.equiv code γ)]
   simp [Cardinal.mk_sigma]
 
@@ -313,9 +313,9 @@ noncomputable def pack (block : ZFSet) (level : Nat) (code : CtorCode n)
     funext fun base => Fin.append_left γ values base
   rwa [hbase] at h
 
-theorem pack_mem {reach : Set (Slots n)} {γ : Slots n} {values : Slots code.nfields}
+theorem pack_mem {reach : Slots n → Prop} {γ : Slots n} {values : Slots code.nfields}
     {fields : Slots code.nrecFields} {level : Nat}
-    (hfinal : Fin.append γ values ∈ Reachable reach code.ordinary)
+    (hfinal : Reachable reach code.ordinary (Fin.append γ values))
     (hfields : ∀ f, fields f ∈ typedRecFieldSet
       (code.recursive f).tele (code.recursive f).index block level (Fin.append γ values)) :
     code.pack block level γ values fields ∈ code.argSet block γ := by

@@ -30,7 +30,7 @@ namespace Sem
 
 private theorem reachable (h : InductiveModel.Sound E ε Nonempty.block η (fun _ => l) w)
     {α : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![])) :
-    ![α] ∈ Reachable Set.univ w.paramsSem :=
+    Reachable ⊤ w.paramsSem ![α] :=
   h.realizes.params.reachable_of_semCtx ![α]
     (by simpa! [Ctx.instL] using (.nil : ε[![]] ⊨ ![] : #t[]).snoc hα) trivial
 

@@ -172,38 +172,39 @@ theorem app_eq_apps {count : Nat} (Δ : SemTele a (a + count)) (γ : Slots (a + 
 
 end SemTele
 
-variable {a b : Nat} {reach : Set (Slots.{u} a)}
+variable {a b : Nat} {reach : Slots.{u} a → Prop}
 
-inductive Reachable {a : Nat} (reach : Set (Slots a)) : {b : Nat} → SemTele a b → Set (Slots b)
+inductive Reachable {a : Nat} (reach : Slots a → Prop) : {b : Nat} → SemTele a b → Slots b → Prop
   | nil {s : Slots a} :
-    s ∈ reach →
+    reach s →
     Reachable reach .nil s
   | snoc {b : Nat} {Δ : SemTele a b} {domain : Dom b} {s : Slots (b + 1)} :
-    Fin.init s ∈ Reachable reach Δ →
+    Reachable reach Δ (Fin.init s) →
     s (Fin.last b) ∈ domain (Fin.init s) →
     Reachable reach (Δ.snoc domain) s
 
 @[reachability →] theorem Reachable.base {Δ : SemTele a b} {γ : Slots b}
-    (h : γ ∈ Reachable reach Δ) :
-    (fun base => γ (base.castLE Δ.le)) ∈ reach := by
+    (h : Reachable reach Δ γ) :
+    reach (fun base => γ (base.castLE Δ.le)) := by
   induction h with
   | nil hreach => simpa using hreach
   | snoc hprefix hlast ih => simpa [Fin.init] using ih
 
 @[reachability →] theorem Reachable.init {Δ : SemTele a b} {domain : Dom b}
     {γ : Slots (b + 1)} :
-    γ ∈ Reachable reach (Δ.snoc domain) →
-    Fin.init γ ∈ Reachable reach Δ
+    Reachable reach (Δ.snoc domain) γ →
+    Reachable reach Δ (Fin.init γ)
   | .snoc hprefix _ => hprefix
 
 @[reachability →] theorem Reachable.last {Δ : SemTele a b} {domain : Dom b}
     {γ : Slots (b + 1)} :
-    γ ∈ Reachable reach (Δ.snoc domain) →
+    Reachable reach (Δ.snoc domain) γ →
     γ (Fin.last b) ∈ domain (Fin.init γ)
   | .snoc _ hlast => hlast
 
 noncomputable def Reachable.snocEquiv (Δ : SemTele a b) (domain : Dom b) :
-    Reachable reach (Δ.snoc domain) ≃ (current : Reachable reach Δ) × domain current.1 where
+    {s // Reachable reach (Δ.snoc domain) s} ≃
+      (current : {s // Reachable reach Δ s}) × domain current.1 where
   toFun final := ⟨⟨Fin.init final.1, Reachable.init final.2⟩,
     ⟨final.1 (Fin.last b), Reachable.last final.2⟩⟩
   invFun point := ⟨point.1.1.snoc point.2.1,
@@ -215,13 +216,13 @@ noncomputable def Reachable.snocEquiv (Δ : SemTele a b) (domain : Dom b) :
       Fin.init_snoc (α := fun _ => ZFSet.{u}) (p := current) (x := value)))
     simp [Slots.snoc, Subtype.heq_iff_coe_eq]
 
-instance Reachable.small (Δ : SemTele.{u} a b) [Small.{u} reach] :
-    Small.{u} (Reachable reach Δ) := by
+instance Reachable.small (Δ : SemTele.{u} a b) [Small.{u} (Subtype reach)] :
+    Small.{u} {s // Reachable reach Δ s} := by
   induction Δ with
   | nil =>
-    exact small_of_injective (f := fun final : Reachable reach (.nil : SemTele a a) =>
-        (⟨final.1, Reachable.base final.2⟩ : reach))
-      (fun _ _ h => Subtype.ext (congrArg (fun p : reach => p.1) h))
+    exact small_of_injective (f := fun final : {s // Reachable reach (.nil : SemTele a a) s} =>
+        (⟨final.1, Reachable.base final.2⟩ : Subtype reach))
+      (fun _ _ h => Subtype.ext (congrArg (fun p : Subtype reach => p.1) h))
   | snoc Δ domain ih =>
     have := ih
     exact small_of_injective (Reachable.snocEquiv Δ domain).injective
@@ -229,14 +230,14 @@ instance Reachable.small (Δ : SemTele.{u} a b) [Small.{u} reach] :
 theorem Reachable.card_lt {κ : Cardinal.{u}} (hκ : κ.IsInaccessible)
     {Δ : SemTele a b}
     (hdoms : Tele.Forall (fun _ domain => ∀ γ, domain γ ∈ V_ κ.ord) Δ)
-    (hreach : Cardinal.mk reach < Cardinal.lift.{u + 1} κ) :
-    Cardinal.mk (Reachable reach Δ) < Cardinal.lift.{u + 1} κ := by
+    (hreach : Cardinal.mk (Subtype reach) < Cardinal.lift.{u + 1} κ) :
+    Cardinal.mk {s // Reachable reach Δ s} < Cardinal.lift.{u + 1} κ := by
   induction hdoms with
   | nil =>
     exact (Cardinal.mk_le_of_injective
-      (f := fun final : Reachable reach (.nil : SemTele a a) =>
-        (⟨final.1, Reachable.base final.2⟩ : reach))
-      (fun _ _ h => Subtype.ext (congrArg (fun p : reach => p.1) h))).trans_lt hreach
+      (f := fun final : {s // Reachable reach (.nil : SemTele a a) s} =>
+        (⟨final.1, Reachable.base final.2⟩ : Subtype reach))
+      (fun _ _ h => Subtype.ext (congrArg (fun p : Subtype reach => p.1) h))).trans_lt hreach
   | snoc Δ domain ih =>
     rw [Cardinal.mk_congr (Reachable.snocEquiv _ _), Cardinal.mk_sigma]
     exact Cardinal.sum_lt_of_isRegular hκ.isRegular.lift ih fun current => by
@@ -244,7 +245,7 @@ theorem Reachable.card_lt {κ : Cardinal.{u}} (hκ : κ.IsInaccessible)
       exact Cardinal.lift_lt.mpr (card_lt_of_mem_vonNeumann hκ (domain current.1))
 
 theorem Reachable.app_mem_of_base {Δ : SemTele a b} {γ : Slots a} {final : Slots b}
-    {domain : Dom b} {fn : ZFSet} (h : final ∈ Reachable reach Δ)
+    {domain : Dom b} {fn : ZFSet} (h : Reachable reach Δ final)
     (hbase : ∀ v : Fin a, final (v.castLE Δ.le) = γ v) (hf : fn ∈ Δ.pi domain γ) :
     SemTele.app Δ final fn ∈ domain final := by
   induction Δ with
@@ -260,7 +261,7 @@ theorem Reachable.app_mem_of_base {Δ : SemTele a b} {γ : Slots a} {final : Slo
 theorem Reachable.apps_mem_of_base {k : Nat}
     {Δ : SemTele a (a + k)} {γ : Slots a}
     {final : Slots (a + k)} {domain : Dom (a + k)} {fn : ZFSet}
-    (h : final ∈ Reachable reach Δ)
+    (h : Reachable reach Δ final)
     (hbase : ∀ v : Fin a, final (v.castAdd k) = γ v)
     (hf : fn ∈ Δ.pi domain γ) :
     [zf|fn $(fun f : Fin k => final (Fin.natAdd a f))...] ∈ domain final := by
@@ -268,7 +269,7 @@ theorem Reachable.apps_mem_of_base {k : Nat}
   exact Reachable.app_mem_of_base h hbase hf
 
 theorem Reachable.app_lam {Δ : SemTele a b} {base : Slots a} {final : Slots b}
-    {leaf : Dom b} (h : final ∈ Reachable {base} Δ) :
+    {leaf : Dom b} (h : Reachable (· = base) Δ final) :
     SemTele.app Δ final (Δ.lam leaf base) = leaf final := by
   induction Δ with
   | nil =>
@@ -286,25 +287,25 @@ theorem Reachable.app_lam {Δ : SemTele a b} {base : Slots a} {final : Slots b}
 
 theorem Reachable.apps_lam_of_base {k : Nat}
     {Δ : SemTele a (a + k)} {base : Slots a} {final : Slots (a + k)} {leaf : Dom (a + k)}
-    (h : final ∈ Reachable {base} Δ) :
+    (h : Reachable (· = base) Δ final) :
     [zf|$(Δ.lam leaf base) $(fun f : Fin k => final (Fin.natAdd a f))...] = leaf final := by
   rw [← SemTele.app_eq_apps Δ]
   exact Reachable.app_lam h
 
 theorem Reachable.app_mem {Δ : SemTele a b} {γ : Slots a} {final : Slots b}
-    {domain : Dom b} {fn : ZFSet} (h : final ∈ Reachable {γ} Δ) (hf : fn ∈ Δ.pi domain γ) :
+    {domain : Dom b} {fn : ZFSet} (h : Reachable (· = γ) Δ final) (hf : fn ∈ Δ.pi domain γ) :
     SemTele.app Δ final fn ∈ domain final :=
-  Reachable.app_mem_of_base h (congrFun (Set.eq_of_mem_singleton (Reachable.base h))) hf
+  Reachable.app_mem_of_base h (congrFun (Reachable.base (reach := (· = γ)) h)) hf
 
 theorem Reachable.app_lamAt {Δ : SemTele a b} {γ : Slots a} {final : Slots b}
-    {leaf : DomAt b} {fn : ZFSet} (h : final ∈ Reachable {γ} Δ) :
+    {leaf : DomAt b} {fn : ZFSet} (h : Reachable (· = γ) Δ final) :
     SemTele.app Δ final (Δ.lamAt leaf γ fn) = leaf final (SemTele.app Δ final fn) := by
   rw [SemTele.lamAt, SemTele.foldAt]
   exact Reachable.app_lam h
 
 theorem Reachable.lam_mem_pi {cod leaf : Dom b} {Δ : SemTele a b} :
-    (∀ γ ∈ Reachable reach Δ, leaf γ ∈ cod γ) →
-    ∀ γ ∈ reach, Δ.lam leaf γ ∈ Δ.pi cod γ := by
+    (∀ γ, Reachable reach Δ γ → leaf γ ∈ cod γ) →
+    ∀ γ, reach γ → Δ.lam leaf γ ∈ Δ.pi cod γ := by
   intro h γ hγ
   induction Δ with
   | nil => exact h γ (.nil hγ)
@@ -319,7 +320,7 @@ namespace SemTele
 theorem fold_congr (Δ : SemTele a b) (F : ZFSet → (ZFSet → ZFSet) → ZFSet)
     (hF : ∀ A f₁ f₂, (∀ x ∈ A, f₁ x = f₂ x) → F A f₁ = F A f₂)
     {leaf₁ leaf₂ : Dom b} (γ : Slots a)
-    (h : ∀ final ∈ Reachable {γ} Δ, leaf₁ final = leaf₂ final) :
+    (h : ∀ final, Reachable (· = γ) Δ final → leaf₁ final = leaf₂ final) :
     Δ.fold F leaf₁ γ = Δ.fold F leaf₂ γ := by
   induction Δ with
   | nil => exact h γ (.nil rfl)
@@ -329,7 +330,7 @@ theorem fold_congr (Δ : SemTele a b) (F : ZFSet → (ZFSet → ZFSet) → ZFSet
 
 theorem lamAt_ext (Δ : SemTele a b) {leaf₁ leaf₂ : DomAt b}
     (γ : Slots a) (fn₁ fn₂ : ZFSet)
-    (h : ∀ final ∈ Reachable {γ} Δ,
+    (h : ∀ final, Reachable (· = γ) Δ final →
       leaf₁ final (SemTele.app Δ final fn₁) = leaf₂ final (SemTele.app Δ final fn₂)) :
     Δ.lamAt leaf₁ γ fn₁ = Δ.lamAt leaf₂ γ fn₂ := by
   simp only [lamAt, foldAt]
@@ -340,7 +341,7 @@ theorem pi_base (Δ : SemTele a b) (cod : Slots a → Dom b)
     Δ.pi (fun final => cod (fun base => final (base.castLE Δ.le)) final) γ =
       Δ.pi (cod γ) γ :=
   Δ.fold_congr Aczel.pi (fun _ _ _ h => Aczel.pi_congr h) γ fun final hfinal =>
-    congrArg (fun base => cod base final) (Set.eq_of_mem_singleton (Reachable.base hfinal))
+    congrArg (fun base => cod base final) (Reachable.base (reach := (· = γ)) hfinal)
 
 theorem fold_pull {a₁ count : Nat} (former : ZFSet → (ZFSet → ZFSet) → ZFSet)
     (project : Slots a₁ → Slots a) (Δ : SemTele a (a + count)) (leaf : Dom (a + count))
@@ -415,8 +416,8 @@ theorem values_pack (Δ : SemTele a b) (γ : Slots b) (tail : ZFSet) :
     exact Fin.snoc_init_self γ
 
 theorem pack_mem {Δ : SemTele a b} {leaf : Dom b}
-    {reach : Set (Slots a)} {final : Slots b} {tail : ZFSet}
-    (hfinal : final ∈ Reachable reach Δ) (htail : tail ∈ leaf final) :
+    {reach : Slots a → Prop} {final : Slots b} {tail : ZFSet}
+    (hfinal : Reachable reach Δ final) (htail : tail ∈ leaf final) :
     Δ.pack final tail ∈ Δ.sigma leaf (fun base => final (base.castLE Δ.le)) := by
   induction Δ generalizing tail with
   | nil => exact htail
@@ -427,7 +428,7 @@ theorem pack_mem {Δ : SemTele a b} {leaf : Dom b}
 
 theorem mem_sigma {Δ : SemTele a b} {leaf : Dom b} {γ : Slots a} {vargs : ZFSet} :
     vargs ∈ Δ.sigma leaf γ ↔
-      Δ.values γ vargs ∈ Reachable {γ} Δ ∧
+      Reachable (· = γ) Δ (Δ.values γ vargs) ∧
       Δ.tail vargs ∈ leaf (Δ.values γ vargs) ∧
       Δ.pack (Δ.values γ vargs) (Δ.tail vargs) = vargs := by
   constructor
@@ -441,7 +442,7 @@ theorem mem_sigma {Δ : SemTele a b} {leaf : Dom b} {γ : Slots a} {vargs : ZFSe
       rw [heq, fst_pair, snd_pair]
       exact ⟨.snoc (by simpa using hprior) (by simpa using hvalue), htail, heq ▸ hpack⟩
   · rintro ⟨hfinal, htail, hpack⟩
-    have hbase := Set.eq_of_mem_singleton (Reachable.base hfinal)
+    have hbase := Reachable.base hfinal
     have h := pack_mem hfinal htail
     rw [hbase] at h
     exact hpack ▸ h
@@ -462,7 +463,7 @@ theorem sigma_inter_cod {leaf₁ leaf₂ leaf₃ : Dom b} (Δ : SemTele a b)
 theorem pi_mem_iff {source target : Dom b} (Δ : SemTele a b)
     (γ : Slots a) (fn : ZFSet) (hf : fn ∈ Δ.pi source γ) :
     fn ∈ Δ.pi target γ ↔
-      ∀ final ∈ Reachable {γ} Δ, SemTele.app Δ final fn ∈ target final := by
+      ∀ final, Reachable (· = γ) Δ final → SemTele.app Δ final fn ∈ target final := by
   constructor
   · exact fun h _ hfinal => Reachable.app_mem hfinal h
   · intro h
@@ -559,11 +560,11 @@ theorem lamAt_mem_piAt {leaf cod : DomAt b} {domain : Dom b} (Δ : SemTele a b)
     (h : ∀ (s : Slots b) (value : ZFSet), value ∈ domain s → leaf s value ∈ cod s value)
     (γ : Slots a) (fn : ZFSet) (hf : fn ∈ Δ.pi domain γ) :
     Δ.lamAt leaf γ fn ∈ Δ.piAt cod γ fn :=
-  Reachable.lam_mem_pi (reach := {γ})
-    (fun final hfinal => h final _ (Reachable.app_mem hfinal hf)) γ (Set.mem_singleton γ)
+  Reachable.lam_mem_pi (reach := (· = γ))
+    (fun final hfinal => h final _ (Reachable.app_mem hfinal hf)) γ rfl
 
 end SemTele
-variable {a b level : Nat} {reach : Set (Slots.{u} a)}
+variable {a b level : Nat} {reach : Slots.{u} a → Prop}
 
 abbrev SemTele.DomsIn (level : Nat) {a b : Nat} (Δ : SemTele a b) : Prop :=
   Tele.Forall (fun _ domain => ∀ γ, domain γ ∈ U_ level) Δ
@@ -621,8 +622,8 @@ theorem SemTele.pi_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
 
 @[reachability ←] theorem Reachable.append {d : Nat} {Δ : SemTele a b} {Θ : SemTele b d}
     {s : Slots d} :
-    s ∈ Reachable (Reachable reach Δ) Θ →
-    s ∈ Reachable reach (Δ ++ Θ) := by
+    Reachable (Reachable reach Δ) Θ s →
+    Reachable reach (Δ ++ Θ) s := by
   intro h
   induction h with
   | nil h => exact h
@@ -630,8 +631,8 @@ theorem SemTele.pi_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
 
 @[reachability →] theorem Reachable.of_append {d : Nat} {Δ : SemTele a b} {Θ : SemTele b d}
     {s : Slots d} :
-    s ∈ Reachable reach (Δ ++ Θ) →
-    s ∈ Reachable (Reachable reach Δ) Θ := by
+    Reachable reach (Δ ++ Θ) s →
+    Reachable (Reachable reach Δ) Θ s := by
   intro h
   induction Θ with
   | nil => exact .nil h
@@ -640,7 +641,7 @@ theorem SemTele.pi_subset_type {Δ : SemTele a b} (hdoms : Δ.DomsIn level)
     exact .snoc (ih hrest) hlast
 
 theorem Reachable.ofDoms_mem {count : Nat} {domains : Fin count → Dom a}
-    {γ : Slots (a + count)} (h : γ ∈ Reachable reach (SemTele.ofDoms domains)) (f : Fin count) :
+    {γ : Slots (a + count)} (h : Reachable reach (SemTele.ofDoms domains) γ) (f : Fin count) :
     γ (Fin.natAdd a f) ∈ domains f fun base => γ (base.castAdd count) := by
   induction count with
   | zero => exact f.elim0
@@ -650,9 +651,9 @@ theorem Reachable.ofDoms_mem {count : Nat} {domains : Fin count → Dom a}
     | cast f => exact ih (Reachable.init h) f
 
 theorem Reachable.ofDoms_append {count : Nat} {domains : Fin count → Dom a}
-    {γ : Slots a} {values : Fin count → ZFSet} (hbase : γ ∈ reach)
+    {γ : Slots a} {values : Fin count → ZFSet} (hbase : reach γ)
     (hvalues : ∀ f, values f ∈ domains f γ) :
-    Fin.append γ values ∈ Reachable reach (SemTele.ofDoms domains) := by
+    Reachable reach (SemTele.ofDoms domains) (Fin.append γ values) := by
   induction count with
   | zero => exact .nil (by simpa using hbase)
   | succ count ih =>
@@ -661,7 +662,7 @@ theorem Reachable.ofDoms_append {count : Nat} {domains : Fin count → Dom a}
       (by simpa using hvalues (Fin.last count))
 
 theorem Reachable.mem_type_of_domsIn {Δ : SemTele a b} {γ : Slots b} {level : Nat}
-    (h : γ ∈ Reachable reach Δ) (hdoms : Δ.DomsIn level) (v : Fin b) (hv : a ≤ v.val) :
+    (h : Reachable reach Δ γ) (hdoms : Δ.DomsIn level) (v : Fin b) (hv : a ≤ v.val) :
     γ v ∈ U_ level := by
   induction h with
   | nil =>
@@ -672,32 +673,32 @@ theorem Reachable.mem_type_of_domsIn {Δ : SemTele a b} {γ : Slots b} {level : 
     | last => exact mem_type_of_mem (hdomain (Fin.init γ)) hlast
     | cast v => exact ih hdoms v (by simpa using hv)
 
-theorem Reachable.mono {reach₁ reach₂ : Set (Slots a)}
+theorem Reachable.mono {reach₁ reach₂ : Slots a → Prop}
     {Δ : SemTele a b} {γ : Slots b}
-    (h : γ ∈ Reachable reach₁ Δ) (hle : reach₁ ⊆ reach₂) :
-    γ ∈ Reachable reach₂ Δ := by
+    (h : Reachable reach₁ Δ γ) (hle : reach₁ ≤ reach₂) :
+    Reachable reach₂ Δ γ := by
   induction h <;> solve_by_elim
 
-theorem Reachable.pull {a₁ count : Nat} {reach₁ : Set (Slots a₁)}
+theorem Reachable.pull {a₁ count : Nat} {reach₁ : Slots a₁ → Prop}
     {project : Slots a₁ → Slots a}
     {Δ : SemTele a (a + count)} {γ : Slots (a₁ + count)}
-    (h : γ ∈ Reachable reach₁ (Δ.pull project count))
-    (hbase : Set.MapsTo project reach₁ reach) :
-    Slots.pull project γ ∈ Reachable reach Δ := by
+    (h : Reachable reach₁ (Δ.pull project count) γ)
+    (hbase : ∀ s, reach₁ s → reach (project s)) :
+    Reachable reach Δ (Slots.pull project γ) := by
   induction Δ using Tele.addInduction with
   | nil =>
     have .nil hreach := h
-    exact .nil (by simpa using hbase hreach)
+    exact .nil (by simpa using hbase _ hreach)
   | snoc count prior domain ih =>
     have .snoc hprior hlast := h
     exact .snoc (by simpa using ih hprior) (by simpa using hlast)
 
-theorem Reachable.of_pull {a₁ count : Nat} {reach₁ : Set (Slots a₁)}
+theorem Reachable.of_pull {a₁ count : Nat} {reach₁ : Slots a₁ → Prop}
     {project : Slots a₁ → Slots a}
     {Δ : SemTele a (a + count)} {γ : Slots (a₁ + count)}
-    (h : Slots.pull project γ ∈ Reachable reach Δ)
-    (hbase : (fun base => γ (base.castAdd count)) ∈ reach₁) :
-    γ ∈ Reachable reach₁ (Δ.pull project count) := by
+    (h : Reachable reach Δ (Slots.pull project γ))
+    (hbase : reach₁ fun base => γ (base.castAdd count)) :
+    Reachable reach₁ (Δ.pull project count) γ := by
   induction Δ using Tele.addInduction with
   | nil => exact .nil (by simpa using hbase)
   | snoc count prior domain ih =>

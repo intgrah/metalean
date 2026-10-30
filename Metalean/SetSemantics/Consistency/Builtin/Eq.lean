@@ -32,7 +32,7 @@ namespace Sem
 
 private theorem reachable (h : InductiveModel.Sound E ε Eq.block η (fun _ => l) w)
     {α x : ZFSet.{u}} (hα : α ∈ S_ (l.eval ![])) (hx : x ∈ α) :
-    ![α, x] ∈ Reachable Set.univ w.paramsSem :=
+    Reachable ⊤ w.paramsSem ![α, x] :=
   h.realizes.params.reachable_of_semCtx ![α, x]
     (by
       simpa [Ctx.instL] using
@@ -41,7 +41,7 @@ private theorem reachable (h : InductiveModel.Sound E ε Eq.block η (fun _ => l
     trivial
 
 private theorem target (h : InductiveModel.Sound E ε Eq.block η (fun _ => l) w)
-    {α x key : ZFSet.{u}} (hps : ![α, x] ∈ Reachable Set.univ w.paramsSem)
+    {α x key : ZFSet.{u}} (hps : Reachable ⊤ w.paramsSem ![α, x])
     {vargs : _} (hargs : vargs ∈ (w.codes ⟨0, by decide⟩ ⟨0, by decide⟩).argSet
       (w.block ![α, x]) ![α, x])
     (hkey : (w.codes ⟨0, by decide⟩ ⟨0, by decide⟩).targetIndex ![α, x] vargs = key) :
