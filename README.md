@@ -54,7 +54,3 @@ Typing [(Defs.lean)](Metalean/Typing/Defs.lean)
 ## Acknowledgements
 
 I would like to thank the Lean4lean project, as a huge inspiration.
-
-## Use of AI
-
-Proofs were assisted by Claude Opus 5 and Fable 5. I take full responsibility for the proofs.
