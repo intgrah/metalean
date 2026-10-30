@@ -6,10 +6,10 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Cases
-public import Metalean.SetSemantics.Environment.Inductive.Recursor.Witness
+public import Metalean.SetSemantics.Environment.Inductive.Recursor.Arguments
 public import Metalean.Syntax.Inductive.Recursor.Substitution
 import Metalean.Grind
-import Metalean.SetSemantics.InductiveComputation
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Syntax.Inductive.Recursor
 import Metalean.Syntax.Substitution
 

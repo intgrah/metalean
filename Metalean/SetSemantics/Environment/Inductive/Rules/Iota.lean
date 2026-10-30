@@ -6,12 +6,12 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Model
-public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
+public import Metalean.SetSemantics.Environment.Inductive.Recursor.Evaluation
 public import Metalean.SetSemantics.Environment.Inductive.Rules.Constructor
 import Metalean.Grind
-import Metalean.SetSemantics.ConstructorValue
+import Metalean.SetSemantics.Inductive.Constructor
 import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
-import Metalean.SetSemantics.InductiveComputation
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Syntax.Substitution
 
 public section

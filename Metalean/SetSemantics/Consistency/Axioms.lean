@@ -9,7 +9,7 @@ public import Metalean.Builtin.Env
 public import Metalean.SetSemantics.Consistency.Builtin.Eq
 public import Metalean.SetSemantics.Consistency.Builtin.Iff
 public import Metalean.SetSemantics.Consistency.Builtin.Nonempty
-public import Metalean.SetSemantics.Environment.Quot
+public import Metalean.SetSemantics.Environment.Quotient
 import Mathlib.Tactic.FinCases
 
 public section

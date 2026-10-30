@@ -6,10 +6,10 @@ Authors: Jeremy Chen
 module
 import Mathlib.Data.Fintype.Shrink
 
-public import Metalean.SetSemantics.InductiveBlock
+public import Metalean.SetSemantics.Inductive.Recursion
 public import Metalean.SetTheory.ZFC.SmallSupport
 import Metalean.Grind
-import Metalean.SetTheory.ZFC.AczelUniverse
+import Metalean.SetTheory.ZFC.Aczel.Universe
 
 public section
 

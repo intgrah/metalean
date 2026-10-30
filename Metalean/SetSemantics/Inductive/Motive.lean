@@ -5,8 +5,9 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.InductiveBlock
-import Metalean.Data.Fin
+public import Metalean.Meta.ZF
+public import Metalean.SetTheory.ZFC.Aczel.Spine
+public import Metalean.SetTheory.ZFC.Erasure
 
 @[expose] public section
 
@@ -17,10 +18,6 @@ namespace Metalean
 open ZFSet
 
 attribute [local instance 2000] Classical.allZFSetDefinable
-
-variable {n : Nat}
-
-section
 
 variable {count level sortCode arity : Nat} {arities : Fin count → Nat}
   {vms : Fin count → ZFSet} {motive block entry value : ZFSet}
@@ -92,7 +89,34 @@ theorem fibre_bundleMotive_propVal (hentry : entry ∈ block) :
   have h₂ := mem_motiveDomain_value (level := level) hentry
   cases level <;> simp_all [motiveAt]
 
-
-end
+theorem fibre_bundleMotive_typed {count level : Nat}
+    {arities : Fin count → Nat} {vms : Fin count → ZFSet}
+    {block value : ZFSet} (s : Fin count)
+    (vis : Fin (arities s) → ZFSet)
+    (hvalue : value ∈ propSet level
+      (fibreOp block (sortKey s.val (encode vis)))) :
+    fibreOp (bundleMotive level arities vms block)
+        (pair (sortKey s.val (encode vis)) value) =
+      [zf|$(vms s) vis... value] := by
+  let carrier := fibreOp block (sortKey s.val (encode vis))
+  let raw := propGet level carrier value
+  have hraw : raw ∈ carrier := propGet_mem hvalue
+  have hval : propVal level raw = value := propVal_propGet hvalue
+  have hvalueEq : propVal level value = value := by
+    cases level with
+    | zero =>
+      rw [propSet_zero, mem_squash] at hvalue
+      have ⟨_, _, heq⟩ := hvalue
+      simpa using heq.symm
+    | succ level => simp
+  have hentry : pair (sortKey s.val (encode vis)) raw ∈ block :=
+    mem_fibre.mp hraw
+  have htag : fst (fst (pair (sortKey s.val (encode vis)) raw)) =
+      numeral s.val := by
+    simp [sortKey, encode]
+  have his : snd (sortKey s.val (encode vis)) = encode vis := by
+    simp [sortKey, encode]
+  simpa [motiveAt, his, Aczel.appTuple_encode, hval, hvalueEq] using
+    fibre_bundleMotive_value (level := level) (arities := arities) s hentry htag
 
 end Metalean

@@ -5,8 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.Environment.Inductive.Soundness
-public import Metalean.SetSemantics.Environment.Quot
+public import Metalean.SetSemantics.Environment.Inductive.Model
+public import Metalean.SetSemantics.Environment.Quotient
 public import Metalean.Typing.InstLevel
 
 @[expose] public section

@@ -6,7 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Model
-import Metalean.SetSemantics.InductiveComputation
+public import Metalean.SetSemantics.Inductive.Motive
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Syntax.Substitution
 
 @[expose] public section

@@ -6,7 +6,8 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Constructor
-import Metalean.SetSemantics.InductiveComputation
+public import Metalean.SetSemantics.Inductive.Universe
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Typing.Inductive
 import Metalean.Typing.InstLevel
 
@@ -15,6 +16,85 @@ import Metalean.Typing.InstLevel
 @[expose] public section
 
 universe u
+
+namespace Metalean
+
+open ZFSet
+
+variable {ℓ ℓ₁ n m count level bound bound₁ : Nat}
+  {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
+  {ε₁ : Atom ζ₁ ℓ → ZFSet.{u}} {ε₂ : Atom ζ₂ ℓ → ZFSet.{u}} {ν : Param ℓ → Nat}
+  {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₁ (.inductive ι)}
+  {ls : Fin ι.nlevels → Level ℓ}
+  {Γ : Ctx ζ₁ ℓ 0 n} {Δ : Ctx ζ₁ ℓ n m}
+
+structure InductiveModel (ι : IndSig) : Type (u + 1) where
+  paramsSem : SemTele.{u} 0 ι.nparams
+  codes (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) : CtorCode.{u} ι.nparams
+  bound : ZFSet.{u}
+  level : Nat
+  ordinaryOf (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (vps : Slots.{u} ι.nparams) (vargs : ZFSet.{u}) :
+    Slots.{u} (ι.nparams + (ι.ctors s c).nfields)
+  indicesSem (s : Fin ι.nsorts) : SemTele.{u} ι.nparams (ι.nparams + ι.nindices s)
+  targetValues (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
+    Slots.{u} (ι.nparams + (ι.ctors s c).nfields) → Fin (ι.nindices s) → ZFSet.{u}
+
+namespace InductiveModel
+
+variable {witness : InductiveModel.{u} ι}
+
+noncomputable def block (witness : InductiveModel ι) (vps : Slots ι.nparams) : ZFSet :=
+  indSet witness.codes witness.bound vps
+
+noncomputable def sortValue (witness : InductiveModel ι) (s : Fin ι.nsorts)
+    (vps : Slots ι.nparams) (vis : Slots (ι.nindices s)) : ZFSet :=
+  propSet witness.level (fibreOp (witness.block vps) (sortKey s.val (encode vis)))
+
+structure Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
+    (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level ℓ) (witness : InductiveModel.{u} ι) : Prop where
+  level_eq : witness.level = I.level{ls}.eval ν
+  params : Realizes ε₁ ν Set.univ I.params{ls} witness.paramsSem
+  indicesRealizes (s : Fin ι.nsorts) :
+    Realizes ε₁ ν (Reachable Set.univ witness.paramsSem)
+      (I.indices s){ls} (witness.indicesSem s)
+  ordinaryOf_castLE : ∀ s c vps vargs (param : Fin ι.nparams),
+    witness.ordinaryOf s c vps vargs (param.castLE (Nat.le_add_right _ _)) = vps param
+  targetIndex_eq : ∀ s c vps vargs,
+    (witness.codes s c).targetIndex vps vargs =
+      sortKey s.val (encode (witness.targetValues s c (witness.ordinaryOf s c vps vargs)))
+  targetRealizes : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
+    ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps, ∀ index,
+    ε₁[ν; witness.ordinaryOf s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
+      witness.targetValues s c (witness.ordinaryOf s c vps vargs) index
+  fieldsRealize : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
+    ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps,
+    ε₁[ν] ⊨ witness.ordinaryOf s c vps vargs :
+      (I.params ++ (I.ctors s c).ordinaryTele){ls}
+  bounded : ∀ vps,
+    Set.MapsTo (indOp witness.codes vps) (Set.Iic witness.bound) (Set.Iic witness.bound)
+
+theorem Interprets.map
+    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
+    (h : witness.Interprets ε₁ ν I ls) :
+    witness.Interprets ε₂ ν (I.map pre.sigs) ls where
+  level_eq := h.level_eq
+  params := h.params.mapInst pre hatoms
+  indicesRealizes s := (h.indicesRealizes s).mapInst pre hatoms
+  ordinaryOf_castLE := h.ordinaryOf_castLE
+  targetIndex_eq := h.targetIndex_eq
+  targetRealizes s c vps hps vargs hargs index := by
+    simpa [Inductive.map, Ctor.map] using
+      (Expr.denote_map pre.sigs hatoms _ _).trans (h.targetRealizes s c vps hps vargs hargs index)
+  fieldsRealize s c vps hps vargs hargs v := by
+    have hv := h.fieldsRealize s c vps hps vargs hargs v
+    rw [← Expr.denote_map pre.sigs hatoms, ← Ctx.get_map] at hv
+    simpa [Inductive.map] using hv
+  bounded := h.bounded
+
+end InductiveModel
+
+end Metalean
 
 namespace Metalean
 
@@ -351,5 +431,71 @@ theorem large_ordinary_eq
       exact hleftValue.trans ((congrFun htargetValues index).trans hrightValue.symm)
 
 end StrongInductiveModel
+
+end Metalean
+
+namespace Metalean
+
+open CategoryTheory ZFSet
+
+variable {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
+  {ε₁ : Atom ζ₁ 0 → ZFSet.{u}} {ε₂ : Atom ζ₂ 0 → ZFSet.{u}}
+  {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₁ (.inductive ι)}
+  {ls : Fin ι.nlevels → Level 0} {witness : InductiveModel.{u} ι}
+
+def Inductive.RulesSound (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ 0 → ZFSet.{u})
+    (η : Head ζ₁ (.inductive ι)) (ls : Fin ι.nlevels → Level 0) : Prop :=
+  ∀ {ζ₂ : Sigs} {E₂ : Env ζ₂} {ε₂ : Atom ζ₂ 0 → ZFSet.{u}}
+    (pre : E₁.as ⟶ E₂.as), AtomsMap pre.sigs ε₁ ε₂ →
+    Inductive.SemRules ε₂ ![] (E₂.get (η.map pre.sigs)).block (η.map pre.sigs) ls
+
+theorem Inductive.RulesSound.map (h : Inductive.RulesSound E₁ ε₁ η ls)
+    (pre : E₁.as ⟶ E₂.as) (hatoms₁ : AtomsMap pre.sigs ε₁ ε₂) :
+    Inductive.RulesSound E₂ ε₂ (η.map pre.sigs) ls := fun {ζ₃ E₃ ε₃} suffix hatoms₂ => by
+  have hcomp : AtomsMap (pre ≫ suffix).sigs ε₁ ε₃ := by
+    simpa [dsimp% Env.forget.map_comp pre suffix] using hatoms₁.trans hatoms₂
+  have hmap : (η.map pre.sigs).map suffix.sigs = η.map (pre ≫ suffix).sigs :=
+    ((Env.forget ⋙ Head.functor _).map_comp_apply pre suffix η).symm
+  simpa [hmap] using h (pre ≫ suffix) hcomp
+
+structure InductiveModel.Sound (E₁ : Env ζ₁) (ε : Atom ζ₁ 0 → ZFSet.{u})
+    (I : Inductive ζ₁ ι) (η : Head ζ₁ (.inductive ι))
+    (ls : Fin ι.nlevels → Level 0) (witness : InductiveModel.{u} ι) : Prop where
+  block_eq : (E₁.get η).block = I
+  realizes : witness.Interprets ε ![] I ls
+  sortAtom (s : Fin ι.nsorts) (vps : Slots ι.nparams) (vis : Slots (ι.nindices s)) :
+    ε (.ind η s ls vps vis) = witness.sortValue s vps vis
+  rules : Inductive.RulesSound E₁ ε η ls
+
+namespace InductiveModel.Sound
+
+theorem uniqueCtor_of_mem_fibre (h : InductiveModel.Sound E₁ ε₁ I η ls witness)
+    (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
+    (hs : ∀ s₁ : Fin ι.nsorts, s₁ = s)
+    (hc : ∀ c₁ : Fin (ι.nctors s), c₁ = c)
+    (vps : Slots ι.nparams) {key raw : ZFSet.{u}}
+    (hraw : raw ∈ fibreOp (witness.block vps) key) :
+    ∃ vargs, vargs ∈ (witness.codes s c).argSet (witness.block vps) vps ∧
+      (witness.codes s c).targetIndex vps vargs = key := by
+  have hentry := mem_fibre.mp hraw
+  unfold InductiveModel.block at hentry
+  rw [← indSet_unfold (h.realizes.bounded vps)] at hentry
+  have ⟨s₁, c₁, vargs, hargs, hentryEq⟩ := mem_indOp.mp hentry
+  obtain rfl := hs s₁
+  obtain rfl := hc c₁
+  exact ⟨vargs, hargs, by simpa [entry_eq] using congrArg fst hentryEq⟩
+
+theorem map
+    (h : InductiveModel.Sound E₁ ε₁ I η ls witness)
+    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
+    InductiveModel.Sound E₂ ε₂ (I.map pre.sigs) (η.map pre.sigs) ls witness where
+  block_eq := by
+    simpa [dsimp% (Env.lookup _).naturality_apply pre η] using
+      congrArg (Inductive.map pre.sigs) h.block_eq
+  realizes := h.realizes.map pre hatoms
+  sortAtom s vps vis := (congrFun hatoms _).trans (h.sortAtom s vps vis)
+  rules := Inductive.RulesSound.map h.rules pre hatoms
+
+end InductiveModel.Sound
 
 end Metalean

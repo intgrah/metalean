@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Consistency.Environment
-public import Metalean.SetSemantics.QuotientValue
+public import Metalean.SetSemantics.Quotient
 
 public section
 

@@ -7,7 +7,7 @@ module
 
 public import Metalean.Typing.Env.Defs
 public import Metalean.SetSemantics.Soundness.Core
-import Metalean.SetTheory.ZFC.AczelUniverse
+import Metalean.SetTheory.ZFC.Aczel.Universe
 
 @[expose] public section
 

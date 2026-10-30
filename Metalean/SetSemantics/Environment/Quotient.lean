@@ -5,7 +5,7 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.QuotientValue
+public import Metalean.SetSemantics.Quotient
 public import Metalean.SetSemantics.Soundness
 
 public section

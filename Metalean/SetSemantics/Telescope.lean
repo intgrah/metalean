@@ -10,7 +10,7 @@ public import Mathlib.Data.Nat.SuccPred
 public import Metalean.Meta.ZF
 public import Metalean.Data.Tele
 public import Metalean.Data.Fin
-public import Metalean.SetTheory.ZFC.AczelUniverse
+public import Metalean.SetTheory.ZFC.Aczel.Universe
 import Metalean.Grind
 
 @[expose] public section
@@ -367,14 +367,6 @@ theorem foldAt_pull {a₁ count : Nat} (former : ZFSet → (ZFSet → ZFSet) →
       (leaf := fun final result =>
         former (domain final) fun field => leaf (final.snoc field) [zf|result field]) value
 
-noncomputable def collect (leaf : DomAt.{u} b) (Δ : SemTele.{u} a b) : DomAt.{u} a :=
-  fun γ fn => ⋃₀ range fun final : Reachable {γ} Δ => leaf final.1 (app Δ final.1 fn)
-
-theorem mem_collect (Δ : SemTele a b) (leaf : DomAt b) (γ : Slots a) (fn result : ZFSet) :
-    result ∈ Δ.collect leaf γ fn ↔
-      ∃ final ∈ Reachable {γ} Δ, result ∈ leaf final (SemTele.app Δ final fn) := by
-  simp [collect]
-
 noncomputable def sigma : Dom b → SemTele a b → Dom a :=
   fold fun domain rest => σ domain (map rest domain)
 
@@ -484,47 +476,6 @@ theorem pi_mem_iff {source target : Dom b} (Δ : SemTele a b)
       rw [app_map hvalue]
       simpa [SemTele.app] using h (current.snoc value)
         (.snoc (by simpa using hcurrent) (by simpa using hvalue))
-
-theorem collect_property {leaf : DomAt b} {domain : Dom b} (Δ : SemTele a b)
-    (P : ZFSet → Prop)
-    (hleaf : ∀ (γ : Slots b) (value : ZFSet), value ∈ domain γ →
-      ∀ result ∈ leaf γ value, P result)
-    (γ : Slots a) (fn : ZFSet) (hf : fn ∈ Δ.pi domain γ) :
-    ∀ result ∈ Δ.collect leaf γ fn, P result := by
-  intro result hresult
-  obtain ⟨final, hfinal, hresult⟩ := (Δ.mem_collect leaf γ fn result).mp hresult
-  exact hleaf final _ (Reachable.app_mem hfinal hf) result hresult
-
-theorem lamAt_congr_of_collect {a b : Nat} (P : ZFSet → Prop)
-    {domain : Dom b} {leaf leaf' keys : DomAt b} (tele : SemTele a b)
-    (hleaf : ∀ (final : Slots b) (value : ZFSet), value ∈ domain final →
-      (∀ key ∈ keys final value, P key) → leaf final value = leaf' final value)
-    (γ : Slots a) (value : ZFSet) (hfield : value ∈ tele.pi domain γ)
-    (hkeys : ∀ key ∈ tele.collect keys γ value, P key) :
-    tele.lamAt leaf γ value = tele.lamAt leaf' γ value := by
-  apply tele.lamAt_ext
-  intro final hfinal
-  apply hleaf final _ (Reachable.app_mem hfinal hfield)
-  exact fun key hkey => hkeys key ((tele.mem_collect keys γ value key).mpr ⟨final, hfinal, hkey⟩)
-
-theorem collect_rel
-    {leftDomain rightDomain : Dom b} {leaf₁ leaf₂ : DomAt b}
-    (r : ZFSet → ZFSet → Prop) (tele : SemTele a b)
-    (hleaf : ∀ (final : Slots b) (left right : ZFSet),
-      left ∈ leftDomain final → right ∈ rightDomain final →
-      ∀ result ∈ leaf₂ final right,
-        ∃ recovered ∈ leaf₁ final left, r recovered result)
-    (γ : Slots a) {left right : ZFSet}
-    (hleft : left ∈ tele.pi leftDomain γ)
-    (hright : right ∈ tele.pi rightDomain γ) :
-    ∀ result ∈ tele.collect leaf₂ γ right,
-      ∃ recovered ∈ tele.collect leaf₁ γ left,
-        r recovered result := by
-  intro result hresult
-  obtain ⟨final, hfinal, hresult⟩ := (tele.mem_collect leaf₂ γ right result).mp hresult
-  obtain ⟨recovered, hrecovered, hrel⟩ := hleaf final _ _
-    (Reachable.app_mem hfinal hleft) (Reachable.app_mem hfinal hright) result hresult
-  exact ⟨recovered, (tele.mem_collect leaf₁ γ left recovered).mpr ⟨final, hfinal, hrecovered⟩, hrel⟩
 
 theorem pi_mono_cod {cod cod' : Dom b} (Δ : SemTele a b)
     (h : ∀ γ : Slots b, cod γ ⊆ cod' γ) (γ : Slots a) :

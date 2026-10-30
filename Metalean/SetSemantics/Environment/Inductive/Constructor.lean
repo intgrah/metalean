@@ -5,7 +5,8 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.Environment.Inductive.Interpretation
+public import Metalean.SetSemantics.Environment.Telescope
+public import Metalean.SetSemantics.Inductive.Universe
 import Metalean.Typing.Inductive
 import Metalean.Typing.InstLevel
 import Metalean.Syntax.Substitution

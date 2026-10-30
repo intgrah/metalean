@@ -6,7 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
-import Metalean.SetSemantics.InductiveComputation
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Syntax.Inductive.LargeElimination
 
 @[expose] public section

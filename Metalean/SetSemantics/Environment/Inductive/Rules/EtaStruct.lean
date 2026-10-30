@@ -5,10 +5,10 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
+public import Metalean.SetSemantics.Environment.Inductive.Recursor.Evaluation
 import Metalean.SetSemantics.Environment.Inductive.Recursor.Telescope
 import Metalean.SetSemantics.Environment.Inductive.Rules.Constructor
-import Metalean.SetSemantics.InductiveComputation
+import Metalean.SetSemantics.Inductive.Recursion
 import Metalean.Typing.Inductive
 import Metalean.Typing.InstLevel
 import Metalean.Syntax.Structure.Projection

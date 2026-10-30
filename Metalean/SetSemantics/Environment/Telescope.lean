@@ -5,7 +5,6 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Metalean.SetSemantics.ConstructorValue
 public import Metalean.SetSemantics.Realization
 public import Metalean.SetSemantics.Soundness
 
@@ -20,8 +19,6 @@ open ZFSet
 variable {ℓ ℓ₁ n m count level bound bound₁ : Nat}
   {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
   {ε₁ : Atom ζ₁ ℓ → ZFSet.{u}} {ε₂ : Atom ζ₂ ℓ → ZFSet.{u}} {ν : Param ℓ → Nat}
-  {ι : IndSig} {I : Inductive ζ₁ ι} {η : Head ζ₁ (.inductive ι)}
-  {ls : Fin ι.nlevels → Level ℓ}
   {Γ : Ctx ζ₁ ℓ 0 n} {Δ : Ctx ζ₁ ℓ n m}
 
 structure StrongTeleModel (E₁ : Env ζ₁) (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
@@ -115,79 +112,5 @@ def StrongTeleModel.append (base : StrongTeleModel E₁ ε₁ ν Γ)
     ⟨max baseLevel bound, (hbase.mono (Nat.le_max_left _ _)).append
       (extension.bounded.mono (Nat.le_max_right _ _))⟩
   realizes := base.realizes.append extension.realizes
-
-theorem Realizes.mapInst {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
-    {reach : Set (Slots n)} {Δsem : SemTele n m}
-    (h : Realizes ε₁ ν reach Δ{ls} Δsem)
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
-    Realizes ε₂ ν reach (Δ.map pre.sigs){ls} Δsem :=
-  (congrArg (fun Δ => Realizes ε₂ ν _ Δ _)
-    (Ctx.map_instL pre.sigs ls Δ)).mp (h.map pre hatoms)
-
-structure InductiveModel (ι : IndSig) : Type (u + 1) where
-  paramsSem : SemTele.{u} 0 ι.nparams
-  codes (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) : CtorCode.{u} ι.nparams
-  bound : ZFSet.{u}
-  level : Nat
-  ordinaryOf (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
-    (vps : Slots.{u} ι.nparams) (vargs : ZFSet.{u}) :
-    Slots.{u} (ι.nparams + (ι.ctors s c).nfields)
-  indicesSem (s : Fin ι.nsorts) : SemTele.{u} ι.nparams (ι.nparams + ι.nindices s)
-  targetValues (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) :
-    Slots.{u} (ι.nparams + (ι.ctors s c).nfields) → Fin (ι.nindices s) → ZFSet.{u}
-
-namespace InductiveModel
-
-variable {witness : InductiveModel.{u} ι}
-
-noncomputable def block (witness : InductiveModel ι) (vps : Slots ι.nparams) : ZFSet :=
-  indSet witness.codes witness.bound vps
-
-noncomputable def sortValue (witness : InductiveModel ι) (s : Fin ι.nsorts)
-    (vps : Slots ι.nparams) (vis : Slots (ι.nindices s)) : ZFSet :=
-  propSet witness.level (fibreOp (witness.block vps) (sortKey s.val (encode vis)))
-
-structure Interprets (ε₁ : Atom ζ₁ ℓ → ZFSet.{u}) (ν : Param ℓ → Nat)
-    (I : Inductive ζ₁ ι) (ls : Fin ι.nlevels → Level ℓ) (witness : InductiveModel.{u} ι) : Prop where
-  level_eq : witness.level = I.level{ls}.eval ν
-  params : Realizes ε₁ ν Set.univ I.params{ls} witness.paramsSem
-  indicesRealizes (s : Fin ι.nsorts) :
-    Realizes ε₁ ν (Reachable Set.univ witness.paramsSem)
-      (I.indices s){ls} (witness.indicesSem s)
-  ordinaryOf_castLE : ∀ s c vps vargs (param : Fin ι.nparams),
-    witness.ordinaryOf s c vps vargs (param.castLE (Nat.le_add_right _ _)) = vps param
-  targetIndex_eq : ∀ s c vps vargs,
-    (witness.codes s c).targetIndex vps vargs =
-      sortKey s.val (encode (witness.targetValues s c (witness.ordinaryOf s c vps vargs)))
-  targetRealizes : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
-    ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps, ∀ index,
-    ε₁[ν; witness.ordinaryOf s c vps vargs]⟦((I.ctors s c).targetIndices index){ls}⟧ =
-      witness.targetValues s c (witness.ordinaryOf s c vps vargs) index
-  fieldsRealize : ∀ s c, ∀ vps ∈ Reachable Set.univ witness.paramsSem,
-    ∀ vargs ∈ (witness.codes s c).argSet (witness.block vps) vps,
-    ε₁[ν] ⊨ witness.ordinaryOf s c vps vargs :
-      (I.params ++ (I.ctors s c).ordinaryTele){ls}
-  bounded : ∀ vps,
-    Set.MapsTo (indOp witness.codes vps) (Set.Iic witness.bound) (Set.Iic witness.bound)
-
-theorem Interprets.map
-    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂)
-    (h : witness.Interprets ε₁ ν I ls) :
-    witness.Interprets ε₂ ν (I.map pre.sigs) ls where
-  level_eq := h.level_eq
-  params := h.params.mapInst pre hatoms
-  indicesRealizes s := (h.indicesRealizes s).mapInst pre hatoms
-  ordinaryOf_castLE := h.ordinaryOf_castLE
-  targetIndex_eq := h.targetIndex_eq
-  targetRealizes s c vps hps vargs hargs index := by
-    simpa [Inductive.map, Ctor.map] using
-      (Expr.denote_map pre.sigs hatoms _ _).trans (h.targetRealizes s c vps hps vargs hargs index)
-  fieldsRealize s c vps hps vargs hargs v := by
-    have hv := h.fieldsRealize s c vps hps vargs hargs v
-    rw [← Expr.denote_map pre.sigs hatoms, ← Ctx.get_map] at hv
-    simpa [Inductive.map] using hv
-  bounded := h.bounded
-
-end InductiveModel
 
 end Metalean

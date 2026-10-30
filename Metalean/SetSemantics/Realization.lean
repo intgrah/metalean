@@ -6,8 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Metalean.SetSemantics.Denotation
-public import Metalean.SetSemantics.Eliminator
-public import Metalean.SetSemantics.InductiveUniverse
+public import Metalean.SetSemantics.Telescope
 import Metalean.Grind
 import Metalean.Syntax.Substitution
 
@@ -242,34 +241,14 @@ theorem Realizes.map {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
       simpa [Expr.denote_map pre.sigs hatoms] using hdomain s hs
 
 
-theorem fibre_bundleMotive_typed {count level : Nat}
-    {arities : Fin count → Nat} {vms : Fin count → ZFSet}
-    {block value : ZFSet} (s : Fin count)
-    (vis : Slots (arities s))
-    (hvalue : value ∈ propSet level
-      (fibreOp block (sortKey s.val (encode vis)))) :
-    fibreOp (bundleMotive level arities vms block)
-        (pair (sortKey s.val (encode vis)) value) =
-      [zf|$(vms s) vis... value] := by
-  let carrier := fibreOp block (sortKey s.val (encode vis))
-  let raw := propGet level carrier value
-  have hraw : raw ∈ carrier := propGet_mem hvalue
-  have hval : propVal level raw = value := propVal_propGet hvalue
-  have hvalueEq : propVal level value = value := by
-    cases level with
-    | zero =>
-      rw [propSet_zero, mem_squash] at hvalue
-      have ⟨_, _, heq⟩ := hvalue
-      simpa using heq.symm
-    | succ level => simp
-  have hentry : pair (sortKey s.val (encode vis)) raw ∈ block :=
-    mem_fibre.mp hraw
-  have htag : fst (fst (pair (sortKey s.val (encode vis)) raw)) =
-      numeral s.val := by
-    simp [sortKey, encode]
-  have his : snd (sortKey s.val (encode vis)) = encode vis := by
-    simp [sortKey, encode]
-  simpa [motiveAt, his, Aczel.appTuple_encode, hval, hvalueEq] using
-    fibre_bundleMotive_value (level := level) (arities := arities) s hentry htag
+theorem Realizes.mapInst {ζ₁ ζ₂ : Sigs} {E₁ : Env ζ₁} {E₂ : Env ζ₂}
+    {ℓ₁ n m : Nat} {ε₁ : Atom ζ₁ ℓ → ZFSet} {ε₂ : Atom ζ₂ ℓ → ZFSet}
+    {Δ : Ctx ζ₁ ℓ₁ n m} {ls : Param ℓ₁ → Level ℓ}
+    {reach : Set (Slots n)} {Δsem : SemTele n m}
+    (h : Realizes ε₁ ν reach Δ{ls} Δsem)
+    (pre : E₁.as ⟶ E₂.as) (hatoms : AtomsMap pre.sigs ε₁ ε₂) :
+    Realizes ε₂ ν reach (Δ.map pre.sigs){ls} Δsem :=
+  (congrArg (fun Δ => Realizes ε₂ ν _ Δ _)
+    (Ctx.map_instL pre.sigs ls Δ)).mp (h.map pre hatoms)
 
 end Metalean
