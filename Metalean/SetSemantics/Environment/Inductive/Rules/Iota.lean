@@ -130,13 +130,10 @@ theorem recursiveIotaLeaf
   rw [hparams] at his
   have hmajor := Reachable.apps_mem_of_base hfinal
     (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal))) hvalue
-  have hraw := Reachable.apps_mem_of_base hfinal
-    (congrFun (Set.eq_of_mem_singleton (Reachable.base hfinal)))
-    (recoverRecField_mem code.tele code.index hvalue)
   have hchild := model.recrChildReachable s l outer houter indices his
     (Aczel.apps value arguments) hmajor
-  apply model.recLeaf_eq_recGraph_app outer houter indices (Aczel.apps value arguments)
-    hchild _ (mem_fibre.mp hraw)
+  rw [model.recLeaf_eq_recGraph_app _ _ _ hchild]
+  apply congrArg (app (model.recrGraph s outer))
   change pair (code.index final)
     (propGet model.toModel.level (fibreOp (model.toModel.block outer.params) (code.index final))
       (Aczel.apps value arguments)) = _

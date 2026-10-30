@@ -129,14 +129,16 @@ theorem image_snd_indOp_mem_type (codes : (s : Fin m) → Fin (nctors s) → Cto
     have hargs := CtorCode.argSet_mem_type (hdoms s c) hblock γ
     image_mem_type hargs fun vargs hvargs =>
       pair_mem_type (numeral_mem_type level _) (mem_type_of_mem hargs hvargs)
-  refine mem_type_of_subset
-    (y := tagGraph (fun code => code.argSet block γ) (fun _ tag => entryValue tag) codes)
-    (sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun s => sUnion_mem_type (range_mem_type (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) (hvalues s))))
-    fun value hvalue => ?_
-  have ⟨entry', hentry, heq⟩ := mem_image.mp hvalue
-  have ⟨s, c, vargs, hargs, hentry'⟩ := mem_indOp.mp hentry
-  refine mem_tagGraph.mpr ⟨s, c, vargs, hargs, ?_⟩
-  rw [← heq, ← hentry', entry_eq, snd_pair]
+  have hvaluesEq : image snd (indOp codes γ block) =
+      ⋃₀ range (fun s => ⋃₀ range fun c =>
+        image (entryValue (tagOf s c)) ((codes s c).argSet block γ)) := by
+    ext value
+    simp [indOp, entry_eq]
+  rw [hvaluesEq]
+  exact sUnion_mem_type (range_mem_type
+    (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) fun s =>
+      sUnion_mem_type (range_mem_type
+        (Cardinal.mk_lt_aleph0.trans (Cardinal.inaccessible_isInaccessible _).aleph0_lt) (hvalues s)))
 
 noncomputable def bodyOp (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) (bound : ZFSet)
     (γ : Slots n) (body : ZFSet) : ZFSet :=
@@ -190,24 +192,11 @@ theorem exists_bodyOp_closed {codes : (s : Fin m) → Fin (nctors s) → CtorCod
     (hdoms : CodesDomsIn level codes)
     (bound : ZFSet) (γ : Slots n) :
     ∃ body, body ∈ U_ level ∧ bodyOp codes bound γ body ⊆ body :=
-  exists_closed_of_smallSupport (fun _ _ h => bodyOp_mono h)
+  exists_closed_of_smallSupport (Cardinal.inaccessible_isInaccessible level)
+    (fun _ _ h => bodyOp_mono h)
     (fun _ hbody => bodyOp_mem_type hdoms bound γ hbody)
     (blockSupport_mem_type codes hdoms γ)
     fun _ _ hvalue => image_snd_indOp_support codes bound γ hvalue
-
-theorem fibreOp_indSet_mem_type_of_trap {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
-    {body : ZFSet} (hbody : body ∈ U_ level) (hbodyBound : body ⊆ U_ b)
-    (γ : Slots n)
-    (hclosed : indOp codes γ (prod (U_ b) body) ⊆ prod (U_ b) body)
-    (key : ZFSet) : fibreOp (indSet codes (U_ b) γ) key ∈ U_ level := by
-  have hproduct : prod (U_ b) body ⊆ U_ b := by
-    intro entry' hentry
-    have ⟨key', hkey, value, hvalue, hpair⟩ := mem_prod.mp hentry
-    rw [hpair]
-    exact pair_mem_type hkey (hbodyBound hvalue)
-  have hind : indSet codes (U_ b) γ ⊆ prod (U_ b) body := lfp_least hproduct hclosed
-  exact mem_type_of_subset hbody fun value hvalue =>
-    (pair_mem_prod.mp (hind (mem_fibre.mp hvalue))).2
 
 theorem fibreOp_indSet_mem_type {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
     (hdoms : CodesDomsIn level codes)
@@ -215,28 +204,17 @@ theorem fibreOp_indSet_mem_type {codes : (s : Fin m) → Fin (nctors s) → Ctor
     (hmaps : Set.MapsTo (indOp codes slots) (Set.Iic (U_ b)) (Set.Iic (U_ b)))
     (key : ZFSet) : fibreOp (indSet codes (U_ b) slots) key ∈ U_ level := by
   have ⟨body, hbody, hclosed⟩ := exists_bodyOp_closed hdoms (U_ b) slots
-  let boundedBody := body.sep fun value => value ∈ U_ b
-  have hboundedBody : boundedBody ∈ U_ level := sep_mem_type hbody
-  have hboundedBodyBound : boundedBody ⊆ U_ b := fun _ hvalue => (mem_sep.mp hvalue).2
-  refine fibreOp_indSet_mem_type_of_trap hboundedBody hboundedBodyBound slots
-    (fun entry' hentry => ?_) key
-  have hcandidate : prod (U_ b) boundedBody ⊆ U_ b := by
-    intro member hmember
-    have ⟨key', hkey, value, hvalue, hpair⟩ := mem_prod.mp hmember
-    rw [hpair]
-    exact pair_mem_type hkey (hboundedBodyBound hvalue)
-  have hentryBound : entry' ∈ U_ b := hmaps hcandidate hentry
-  have hentryTrap : entry' ∈ indOp codes slots (prod (U_ b) body) := by
-    apply indOp_mono _ hentry
-    intro member hmember
-    have ⟨key', hkey, value, hvalue, hpair⟩ := mem_prod.mp hmember
-    exact mem_prod.mpr ⟨key', hkey, value, (mem_sep.mp hvalue).1, hpair⟩
-  have hpair : entry' = pair (fst entry') (snd entry') := by
-    have ⟨_, _, _, _, heq⟩ := mem_indOp.mp hentry
-    simp [← heq, entry_eq]
-  rw [hpair]
-  exact pair_mem_prod.mpr ⟨fst_mem_type hentryBound,
-    mem_sep.mpr ⟨hclosed (mem_image.mpr ⟨entry', hentryTrap, rfl⟩), snd_mem_type hentryBound⟩⟩
+  have hind : indSet codes (U_ b) slots ⊆ prod (U_ b) body :=
+    lfp_le_of_inter hmaps (fun _ _ h => indOp_mono h) fun entry' hentry => by
+      have ⟨hentry, hbound⟩ := mem_inter.mp hentry
+      have hpair : entry' = pair (fst entry') (snd entry') := by
+        obtain ⟨_, _, _, _, rfl⟩ := mem_indOp.mp hentry
+        simp [entry_eq]
+      have hbody' := hclosed (mem_image.mpr ⟨entry', hentry, rfl⟩)
+      rw [hpair]
+      exact pair_mem_prod.mpr ⟨fst_mem_type hbound, hbody'⟩
+  exact mem_type_of_subset hbody fun _ hvalue =>
+    (pair_mem_prod.mp (hind (mem_fibre.mp hvalue))).2
 
 theorem CtorCode.argSet_subset_type {code : CtorCode n}
     (hdoms : code.DomsIn level)
@@ -248,12 +226,10 @@ theorem CtorCode.argSet_subset_type {code : CtorCode n}
     simp! at ht
     exact ht ▸ empty_mem_type
   | arg hdomain _ ih =>
-    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma.mp ht
-    rw [app_map hvalue] at hw
+    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma_map.mp ht
     exact pair_mem_type (mem_type_of_mem (hdomain γ) hvalue) (ih _ hw)
   | recArg htele _ ih =>
-    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma.mp ht
-    rw [app_map hvalue] at hw
+    obtain ⟨value, hvalue, w, hw, rfl⟩ := mem_sigma_map.mp ht
     exact pair_mem_type (recFieldSet_subset_type htele hblock γ hvalue) (ih _ hw)
 
 theorem indOp_subset_type {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}

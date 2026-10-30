@@ -369,8 +369,7 @@ theorem pi_replace {source target address : Dom b}
         have happ := Aczel.app_mem hfunction hargument
         rwa [app_map hargument] at happ) ?_
     intro point hpoint
-    simpa using hpoints (pair argument point) (mem_sigma.mpr
-      ⟨argument, hargument, point, by rwa [app_map hargument], rfl⟩)
+    simpa using hpoints (pair argument point) (pair_mem_sigma_map.mpr ⟨hargument, hpoint⟩)
 
 theorem collect_property {leaf : DomAt b} {domain : Dom b} (Δ : SemTele a b)
     (P : ZFSet → Prop)

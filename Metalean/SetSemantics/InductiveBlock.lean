@@ -22,8 +22,6 @@ attribute [local instance 2000] Classical.allZFSetDefinable
 variable {n m level : Nat} {nctors : Fin m → Nat} {s : Fin m} {c : Fin (nctors s)}
   {block blockW bound motive step graph minors z vargs : ZFSet}
   {γ : Slots n} {codes : (s : Fin m) → Fin (nctors s) → CtorCode n}
-  {args : CtorCode n → ZFSet}
-  {emit val : CtorCode n → Nat → ZFSet → ZFSet}
 
 def tagOf (s : Fin m) (c : Fin (nctors s)) : Nat :=
   (Fin.encodeSigma nctors ⟨s, c⟩).val
@@ -34,49 +32,16 @@ theorem tagOf_injective {s₁ s₂ : Fin m} {c₁ : Fin (nctors s₁)} {c₂ : F
   simpa using congrArg (Fin.decodeSigma nctors)
     (Fin.ext h : Fin.encodeSigma nctors ⟨s₁, c₁⟩ = Fin.encodeSigma nctors ⟨s₂, c₂⟩)
 
-noncomputable def tagGraph (args : CtorCode.{u} n → ZFSet.{u})
-    (emit : CtorCode.{u} n → Nat → ZFSet.{u} → ZFSet.{u})
-    (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n) : ZFSet.{u} :=
-  ⋃₀ range fun s => ⋃₀ range fun c =>
-    image (emit (codes s c) (tagOf s c)) (args (codes s c))
-
-theorem mem_tagGraph :
-    z ∈ tagGraph args emit codes ↔
-      ∃ s c, ∃ vargs ∈ args (codes s c), emit (codes s c) (tagOf s c) vargs = z := by
-  simp [tagGraph]
-
-noncomputable def pairGraph (γ : Slots.{u} n) (args : CtorCode.{u} n → ZFSet.{u})
-    (val : CtorCode.{u} n → Nat → ZFSet.{u} → ZFSet.{u})
-    (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n) : ZFSet.{u} :=
-  range fun p : (s : Fin m) × (c : Fin (nctors s)) × args (codes s c) =>
-    pair (entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2)
-      (val (codes p.1 p.2.1) (tagOf p.1 p.2.1) p.2.2)
-
-theorem pairGraph_isFunc :
-    IsFunc (dom (pairGraph γ args val codes))
-      (image snd (pairGraph γ args val codes)) (pairGraph γ args val codes) := by
-  apply isFunc_range_pair
-  intro ⟨s₁, c₁, a₁⟩ ⟨s₂, c₂, a₂⟩ heq
-  cases tagOf_injective (entry_tag_eq heq)
-  cases Subtype.ext (entry_args_eq heq)
-  rfl
-
-theorem app_pairGraph (hargs : vargs ∈ args (codes s c)) :
-    app (pairGraph γ args val codes)
-        (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
-      val (codes s c) (tagOf s c) vargs :=
-  pairGraph_isFunc.app_eq (mem_range.mpr ⟨⟨s, c, vargs, hargs⟩, rfl⟩)
-
-noncomputable def indOp (codes : (s : Fin m) → Fin (nctors s) → CtorCode n)
-    (γ : Slots n) (block : ZFSet) : ZFSet :=
-  tagGraph (fun code => code.argSet block γ)
-    (fun code tag vargs => entry (code.targetIndex γ vargs) tag vargs) codes
+noncomputable def indOp (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n)
+    (γ : Slots.{u} n) (block : ZFSet.{u}) : ZFSet.{u} :=
+  range fun p : (s : Fin m) × (c : Fin (nctors s)) × (codes s c).argSet block γ =>
+    entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2
 
 theorem mem_indOp :
     z ∈ indOp codes γ block ↔
       ∃ s c, ∃ vargs ∈ (codes s c).argSet block γ,
-        entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs = z :=
-  mem_tagGraph
+        entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs = z := by
+  simp [indOp]
 
 theorem mem_indOp_inter {block₁ block₂ : ZFSet}
     (hz₁ : z ∈ indOp codes γ block₁)
@@ -99,16 +64,25 @@ noncomputable def indSet
     (codes : (s : Fin m) → Fin (nctors s) → CtorCode n) (bound : ZFSet) (γ : Slots n) : ZFSet :=
   lfp bound (indOp codes γ)
 
-noncomputable def stepGraph (level : Nat) (block graph : ZFSet) (γ : Slots n)
-    (minors : ZFSet) : ((s : Fin m) → Fin (nctors s) → CtorCode n) → ZFSet :=
-  pairGraph γ (fun code => code.argSet block γ)
-    fun code tag vargs => code.applyMinor level graph γ [zf|minors $(encode tag)] vargs
+noncomputable def stepGraph (level : Nat) (block graph : ZFSet.{u}) (γ : Slots.{u} n)
+    (minors : ZFSet.{u}) (codes : (s : Fin m) → Fin (nctors s) → CtorCode.{u} n) : ZFSet.{u} :=
+  range fun p : (s : Fin m) × (c : Fin (nctors s)) × (codes s c).argSet block γ =>
+    pair (entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2)
+      ((codes p.1 p.2.1).applyMinor level graph γ
+        [zf|minors $(encode (tagOf p.1 p.2.1))] p.2.2)
 
 theorem app_stepGraph (hargs : vargs ∈ (codes s c).argSet block γ) :
     app (stepGraph level block graph γ minors codes)
         (entry ((codes s c).targetIndex γ vargs) (tagOf s c) vargs) =
-      (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs :=
-  app_pairGraph hargs
+      (codes s c).applyMinor level graph γ [zf|minors $(encode (tagOf s c))] vargs := by
+  have hkey : Function.Injective
+      (fun p : (s : Fin m) × (c : Fin (nctors s)) × (codes s c).argSet block γ =>
+        entry ((codes p.1 p.2.1).targetIndex γ p.2.2) (tagOf p.1 p.2.1) p.2.2) := by
+    intro ⟨s₁, c₁, a₁⟩ ⟨s₂, c₂, a₂⟩ heq
+    cases tagOf_injective (entry_tag_eq heq)
+    cases Subtype.ext (entry_args_eq heq)
+    rfl
+  exact (isFunc_range_pair _ _ hkey).app_eq (mem_range.mpr ⟨⟨s, c, vargs, hargs⟩, rfl⟩)
 
 theorem indOp_inter {block₁ block₂ : ZFSet}
     (hw : ∀ value, value ∈ block₁ → value ∈ block₂ → value ∈ blockW)

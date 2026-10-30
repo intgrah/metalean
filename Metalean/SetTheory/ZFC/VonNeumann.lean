@@ -20,6 +20,15 @@ attribute [local instance 2000] Classical.allZFSetDefinable
 
 variable {o : Ordinal.{u}} {κ : Cardinal.{u}} {x y a b : ZFSet.{u}}
 
+theorem insert_self_inj (h : insert x x = insert y y) : x = y := by
+  have hx : x ∈ insert y y := by rw [← h]; exact mem_insert x x
+  have hy : y ∈ insert x x := by rw [h]; exact mem_insert y y
+  rcases mem_insert_iff.mp hx with hxy | hxy
+  · exact hxy
+  · rcases mem_insert_iff.mp hy with hyx | hyx
+    · exact hyx.symm
+    · exact absurd hyx (mem_asymm hxy)
+
 theorem empty_mem_vonNeumann (ho : 0 < o) : (∅ : ZFSet) ∈ V_ o := by
   simpa [mem_vonNeumann] using ho
 

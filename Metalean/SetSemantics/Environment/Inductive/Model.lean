@@ -253,7 +253,7 @@ theorem ctorArgs_mem
   · have htail : tail ∈ (model.recursiveRest s c).argSet
         (model.toModel.block vps) fieldSlots :=
       CtorCode.packRecursive_mem (fun f => recoverRecField_mem _ _ (hrecFields f))
-        (CtorCode.proof_mem_argSet_target fieldSlots)
+        proof_mem_verum
     simpa [codeOf, StrongCtorSource.code, recursiveRest] using SemTele.pack_mem hfields htail
   · unfold ordinaryOf
     rw [← hbase]

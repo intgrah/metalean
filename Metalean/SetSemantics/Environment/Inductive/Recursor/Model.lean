@@ -166,29 +166,16 @@ theorem recLeaf_iota
     simpa [propVal_of_ne_zero hlevel] using h]
   exact hiota
 
-theorem recLeaf_eq_recGraph_app
-    {l : Level 0} {s s₁ : Fin ι.nsorts} (outer : RecSlots ι s)
-    (houter : outer.valuation ∈ Reachable Set.univ (model.recrTeleSem s l))
-    (indices : Slots (ι.nindices s₁)) (major : ZFSet)
-    (hchild : (RecSlots.mk outer.params outer.motives outer.cases indices major).valuation ∈
-      Reachable Set.univ (model.recrTeleSem s₁ l))
-    (predecessor : ZFSet)
-    (hpredecessor : predecessor ∈ model.toModel.block outer.params)
-    (hstate : model.recrState s₁
-      (RecSlots.mk outer.params outer.motives outer.cases indices major) = predecessor) :
-    model.recLeaf s₁ l (RecSlots.mk outer.params outer.motives outer.cases indices major) =
-      app (model.recrGraph s outer) predecessor := by
-  by_cases hresult : l.eval ![] = 0
-  · have hmem : app (model.recrGraph s outer) predecessor ∈
-        fibreOp (model.recrCaseMotive outer.params outer.motives) predecessor :=
-      (recGraph_isApprox (model.mapsTo outer.params)).app_mem
-        (by rwa [dom_recGraph (model.mapsTo outer.params) (model.recrStepSound s l outer houter)])
-    rw [model.recLeaf_eq_proof s₁ l hresult]
-    rw [← hstate] at hmem
-    simpa [hstate] using
-      (model.eq_proof_of_mem_fibre_motive s₁ l _ hchild hresult hmem).symm
-  rw [recLeaf, propVal_of_ne_zero hresult, hstate]
-  rfl
+theorem recLeaf_eq_recGraph_app (s : Fin ι.nsorts) (l : Level 0) (γ : RecSlots ι s)
+    (hγ : γ.valuation ∈ Reachable Set.univ (model.recrTeleSem s l)) :
+    model.recLeaf s l γ = app (model.recrGraph s γ) (model.recrState s γ) := by
+  have hmaps := model.mapsTo γ.params
+  have hmem := (recGraph_isApprox hmaps).app_mem (by
+    rw [dom_recGraph hmaps (model.recrStepSound s l γ hγ)]
+    exact model.recrState_mem s l γ hγ)
+  apply propVal_eq_self_of_mem (hvalue := hmem)
+  rw [model.fibre_motive_recrState s l γ hγ]
+  exact model.recrMotiveResult_mem_sort s l γ hγ
 
 end StrongInductiveModel
 

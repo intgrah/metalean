@@ -235,7 +235,7 @@ theorem projTerm_denotes_field
         (rest := CtorCode.target (StrongCtorSource.targetIndex (model.ctors s c).source))
         (level := model.toModel.level) (γ := Fin.append vps vfds)
         (block₁ := model.toModel.block vps) (values := hstruct.recursive)
-        hstruct.no_recursive.elim (CtorCode.proof_mem_argSet_target (Fin.append vps vfds))
+        hstruct.no_recursive.elim proof_mem_verum
       simpa [args, ctorArgs, codeOf, StrongCtorSource.code, recursiveRest, vfds, major] using
         SemTele.pack_mem hfields htail
     have htarget : (model.codeOf s c).targetIndex vps args = sortKey s.val (encode vis) := by

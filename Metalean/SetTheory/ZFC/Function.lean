@@ -154,6 +154,15 @@ noncomputable def pi (α β : ZFSet) : ZFSet :=
   · intro hc
     exact ⟨op a, mem_map.mpr ⟨a, ha, rfl⟩, hc⟩
 
+theorem mem_sigma_map {V : ZFSet → ZFSet} :
+    c ∈ σ α (map V α) ↔ ∃ a ∈ α, ∃ b ∈ V a, c = pair a b := by
+  simp only [mem_sigma]
+  exact exists_congr fun a => and_congr_right fun ha => by rw [app_map ha]
+
+theorem pair_mem_sigma_map {V : ZFSet → ZFSet} :
+    pair a b ∈ σ α (map V α) ↔ a ∈ α ∧ b ∈ V a := by
+  simp [pair_inj]
+
 theorem map_congr {op₁ op₂ : ZFSet → ZFSet}
     (h : ∀ a ∈ α, op₁ a = op₂ a) : map op₁ α = map op₂ α := by
   ext c

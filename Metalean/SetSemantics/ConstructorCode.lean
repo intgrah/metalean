@@ -252,54 +252,18 @@ theorem argSet_inter (hw : ∀ value ∈ block₁, value ∈ block₂ → value 
   induction code generalizing vargs with
   | target => exact h
   | arg domain rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma.mp h
-    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma.mp h'
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp h
+    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma_map.mp h'
     have ⟨rfl, rfl⟩ := pair_inj.mp heq
-    rw [app_map hvalue] at htail
-    rw [app_map hvalue'] at htail'
-    exact mem_sigma.mpr ⟨value, hvalue, tail,
-      by rw [app_map hvalue]; exact ih _ tail htail htail', rfl⟩
+    exact pair_mem_sigma_map.mpr ⟨hvalue, ih _ tail htail htail'⟩
   | recArg tele index rest ih =>
-    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma.mp h
-    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma.mp h'
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp h
+    have ⟨_, hvalue', tail', htail', heq⟩ := mem_sigma_map.mp h'
     have ⟨rfl, rfl⟩ := pair_inj.mp heq
-    rw [app_map hvalue] at htail
-    rw [app_map hvalue'] at htail'
     have hvalueW : value ∈ recFieldSet tele index blockW γ := tele.pi_inter_cod
       (fun _ _ hv hv' => mem_fibre.mpr (hw _ (mem_fibre.mp hv) (mem_fibre.mp hv')))
       γ value hvalue hvalue'
-    exact mem_sigma.mpr ⟨value, hvalueW, tail,
-      by rw [app_map hvalueW]; exact ih _ tail htail htail', rfl⟩
-
-theorem mem_argSet_arg {domain : Dom n} {rest : CtorCode (n + 1)}
-    {value : ZFSet} (hvalue : value ∈ domain γ)
-    (hrest : vargs ∈ rest.argSet block (Fin.snoc γ value)) :
-    [zf|(value, vargs)] ∈ (CtorCode.arg domain rest).argSet block γ :=
-  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa! using hrest, rfl⟩
-
-theorem mem_argSet_recArg {b : Nat} {tele : SemTele n b} {index : Dom b}
-    {rest : CtorCode n} {value : ZFSet}
-    (hvalue : value ∈ recFieldSet tele index block γ)
-    (hrest : vargs ∈ rest.argSet block γ) :
-    [zf|(value, vargs)] ∈ (CtorCode.recArg tele index rest).argSet block γ :=
-  mem_sigma.mpr ⟨value, hvalue, vargs, by rw [app_map hvalue]; simpa! using hrest, rfl⟩
-
-theorem argSet_arg_inv {domain : Dom n} {rest : CtorCode (n + 1)}
-    (h : vargs ∈ (CtorCode.arg domain rest).argSet block γ) :
-    ∃ value t : ZFSet, value ∈ domain γ ∧
-      t ∈ rest.argSet block (Fin.snoc γ value) ∧ vargs = [zf|(value, t)] := by
-  obtain ⟨value, hvalue, t, ht, rfl⟩ := mem_sigma.mp h
-  rw [app_map hvalue] at ht
-  exact ⟨value, t, hvalue, by simpa using ht, rfl⟩
-
-theorem argSet_recArg_inv {b : Nat} {tele : SemTele n b} {index : Dom b}
-    {rest : CtorCode n}
-    (h : vargs ∈ (CtorCode.recArg tele index rest).argSet block γ) :
-    ∃ value t : ZFSet, value ∈ recFieldSet tele index block γ ∧
-      t ∈ rest.argSet block γ ∧ vargs = [zf|(value, t)] := by
-  obtain ⟨value, hvalue, t, ht, rfl⟩ := mem_sigma.mp h
-  rw [app_map hvalue] at ht
-  exact ⟨value, t, hvalue, by simpa using ht, rfl⟩
+    exact pair_mem_sigma_map.mpr ⟨hvalueW, ih _ tail htail htail'⟩
 
 theorem argSet_mem_of_support
     (code : CtorCode n) (γ : Slots n) (vargs : ZFSet)
@@ -311,17 +275,16 @@ theorem argSet_mem_of_support
   induction code generalizing vargs with
   | target => exact hargs
   | arg domain rest ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_arg_inv hargs
-    refine mem_argSet_arg hvalue (ih (γ.snoc value) tail htail ?_)
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
+    refine pair_mem_sigma_map.mpr ⟨hvalue, ih (γ.snoc value) tail htail ?_⟩
     intro point hpoint hmem
-    have hp := hsupport [zf|(value, point)] (mem_sigma.mpr
-      ⟨value, hvalue, point, by rw [app_map hvalue]; exact hpoint, rfl⟩)
+    have hp := hsupport [zf|(value, point)] (pair_mem_sigma_map.mpr ⟨hvalue, hpoint⟩)
     have hmem' : (CtorCode.arg domain rest).readSupport γ
         [zf|(value, tail)] [zf|(value, point)] ∈ block₁ := by
       simpa [readSupport] using hmem
     simpa [readSupport] using hp hmem'
   | recArg tele index rest ih =>
-    obtain ⟨field, tail, hfield, htail, rfl⟩ := argSet_recArg_inv hargs
+    obtain ⟨field, hfield, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
     have hfield' : field ∈ recFieldSet tele index block₂ γ := by
       refine tele.pi_replace
         (source := fun final => fibreOp block₁ (index final))
@@ -338,7 +301,7 @@ theorem argSet_mem_of_support
           [zf|(field, tail)] [zf|(falsum, point)] ∈ block₁ := by
         simpa [readSupport] using hmem
       simpa [readSupport] using hp hmem'
-    refine mem_argSet_recArg hfield' (ih γ tail htail ?_)
+    refine pair_mem_sigma_map.mpr ⟨hfield', ih γ tail htail ?_⟩
     intro point hpoint hmem
     have hp := hsupport [zf|(verum, point)] (mem_union.mpr (.inr
       (mem_image.mpr ⟨point, hpoint, rfl⟩)))
@@ -349,21 +312,13 @@ theorem argSet_mem_of_support
       exact hmem
     simpa [readSupport] using hp hmem'
 
-theorem eq_proof_of_mem_argSet_target {index : Dom n}
-    (h : vargs ∈ argSet block (.target index) γ) : vargs = proof := by
-  simpa! using h
-
-theorem proof_mem_argSet_target {index : Dom n} (γ : Slots n) :
-    proof ∈ argSet block (CtorCode.target index) γ := by
-  simp!
-
 theorem eq_proof_of_mem_argSet_prependRecursive {count : Nat}
     {fields : Fin count → CtorRecCode.Packed n} {index : Dom n}
     (hcount : IsEmpty (Fin count))
     (h : vargs ∈ argSet block (prependRecursive count fields (.target index)) γ) :
     vargs = proof := by
   obtain rfl : count = 0 := Fin.eq_zero_of_isEmpty hcount
-  exact eq_proof_of_mem_argSet_target h
+  exact mem_verum.mp h
 
 noncomputable def applyFields (level : Nat) {n : Nat} :
     (code : CtorCode n) → Slots n → ZFSet → ZFSet → ZFSet
@@ -393,10 +348,10 @@ theorem applyIhs_congr (h : ∀ value ∈ block, app graph₁ value = app graph�
   induction code generalizing minor vargs with
   | target => rfl
   | arg domain rest ih =>
-    obtain ⟨value, tail, _, htail, rfl⟩ := argSet_arg_inv hargs
+    obtain ⟨value, _, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
     simpa! using ih (γ.snoc value) minor tail htail
   | recArg tele index rest ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
     simp only [applyIhs, fst_pair, snd_pair]
     rw [recMap_congr tele index h γ value hvalue]
     exact ih γ _ tail htail
@@ -420,7 +375,7 @@ theorem tail_mem_argSet {Δ : SemTele n b} {rest : CtorCode b}
   induction Δ with
   | nil => exact hargs
   | snoc Δ domain ih =>
-    have ⟨_, _, _, htail, heq⟩ := argSet_arg_inv (ih hargs)
+    have ⟨_, _, _, htail, heq⟩ := mem_sigma_map.mp (ih hargs)
     change snd (SemTele.tail vargs Δ) ∈ rest.argSet block
       (Fin.snoc (SemTele.values γ vargs Δ) (fst (SemTele.tail vargs Δ)))
     rwa [heq, fst_pair, snd_pair]

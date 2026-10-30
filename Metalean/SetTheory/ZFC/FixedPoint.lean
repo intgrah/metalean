@@ -40,6 +40,13 @@ theorem lfp_subset : lfp b Φ ⊆ b := (sInf {x : Set.Iic b | Φ x ⊆ x}).2
 theorem lfp_least {x : ZFSet} (hxb : x ⊆ b) (hcl : Φ x ⊆ x) : lfp b Φ ⊆ x :=
   sInf_le (a := (⟨x, hxb⟩ : Set.Iic b)) hcl
 
+theorem lfp_le_of_inter (hmaps : Set.MapsTo Φ (Set.Iic b) (Set.Iic b))
+    (hmono : Monotone Φ) {x : ZFSet} (hcl : Φ x ∩ b ⊆ x) : lfp b Φ ⊆ x := by
+  have hbound : b ∩ x ⊆ b := fun _ h => (mem_inter.mp h).1
+  have hx : b ∩ x ⊆ x := fun _ h => (mem_inter.mp h).2
+  exact subset_trans (lfp_least hbound fun _ h =>
+    mem_inter.mpr ⟨hmaps hbound h, hcl (mem_inter.mpr ⟨hmono hx h, hmaps hbound h⟩)⟩) hx
+
 theorem mem_lfp {z : ZFSet} :
     z ∈ lfp b Φ ↔ z ∈ b ∧ ∀ x ∈ powerset b, Φ x ⊆ x → z ∈ x := by
   refine ⟨fun h => ⟨lfp_subset h, fun x hx hcl => lfp_least (mem_powerset.mp hx) hcl h⟩,

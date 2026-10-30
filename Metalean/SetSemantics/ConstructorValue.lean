@@ -53,7 +53,7 @@ theorem pack_values {Δ : SemTele n b} {rest : CtorCode b}
   | nil => rfl
   | snoc Δ domain ih =>
     have ⟨_, _, _, _, heq⟩ :=
-      CtorCode.argSet_arg_inv (CtorCode.tail_mem_argSet hargs)
+      mem_sigma_map.mp (CtorCode.tail_mem_argSet (Δ := Δ) hargs)
     simp only [pack, values, SemTele.tail, Fin.init_snoc, Fin.snoc_last]
     rw [heq, fst_pair, snd_pair, ← heq]
     exact ih hargs
@@ -94,7 +94,7 @@ theorem reachable_values {Δ : SemTele n b} {rest : CtorCode b}
   | nil => exact .nil hγ
   | snoc Δ domain ih =>
     have ⟨_, _, hvalue, _, heq⟩ :=
-      CtorCode.argSet_arg_inv (CtorCode.tail_mem_argSet hargs)
+      mem_sigma_map.mp (CtorCode.tail_mem_argSet (Δ := Δ) hargs)
     change Fin.snoc (values γ vargs Δ) (fst (SemTele.tail vargs Δ)) ∈
       Reachable reach (Δ.snoc domain)
     refine .snoc ?_ ?_
@@ -112,8 +112,8 @@ theorem pack_mem {Δ : SemTele n b} {rest : CtorCode b}
   | nil => exact htail
   | snoc Δ domain ih =>
     have .snoc hprefix hlast := hγ
-    refine ih hprefix (CtorCode.mem_argSet_arg hlast ?_)
-    rwa [Fin.snoc_init_self]
+    refine ih hprefix (pair_mem_sigma_map.mpr ⟨hlast, ?_⟩)
+    simpa [Slots.snoc] using htail
 
 end SemTele
 
@@ -160,9 +160,8 @@ theorem packRecursive_mem {fields : Fin count → CtorRecCode.Packed n}
   | zero => exact htail
   | succ count ih =>
     let f := fields 0
-    exact mem_argSet_recArg
-      (hvalues 0)
-      (by simpa [Fin.tail_def] using ih (Fin.tail hvalues) htail)
+    exact pair_mem_sigma_map.mpr ⟨hvalues 0,
+      by simpa [Fin.tail_def] using ih (Fin.tail hvalues) htail⟩
 
 theorem eraseRecField_recoverRecField {b level : Nat}
     (tele : SemTele n b) (index : Dom b) (block : ZFSet)
@@ -221,7 +220,7 @@ theorem recursiveValues_mem {fields : Fin count → CtorRecCode.Packed n} {index
   induction count generalizing vargs with
   | zero => exact fun f => Fin.elim0 f
   | succ count ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
     simpa using Fin.cases hvalue (ih (fields := Fin.tail fields) htail)
 
 theorem applyFields_prependRecursive (fields : Fin count → CtorRecCode.Packed n)
@@ -253,9 +252,9 @@ theorem packRecursive_erase {fields : Fin count → CtorRecCode.Packed n} {index
       (fun f => eraseRecField (fields f).2.tele level γ (tupleValues count vargs f)) proof))) =
       propVal level (entryValue tag (build vargs)) := by
   induction count generalizing vargs build with
-  | zero => rw [eq_proof_of_mem_argSet_target hargs]; rfl
+  | zero => rw [mem_verum.mp hargs]; rfl
   | succ count ih =>
-    obtain ⟨value, tail, hvalue, htail, rfl⟩ := argSet_recArg_inv hargs
+    obtain ⟨value, hvalue, tail, htail, rfl⟩ := mem_sigma_map.mp hargs
     cases level with
     | zero => simp
     | succ level =>

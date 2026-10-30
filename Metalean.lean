@@ -197,14 +197,12 @@ public import Metalean.SetSemantics.Consistency.Extension
 public import Metalean.SetSemantics.Consistency.Inductive
 public import Metalean.SetSemantics.Consistency.Main
 public import Metalean.SetSemantics.ConstructorCode
-public import Metalean.SetSemantics.ConstructorPredecessors
 public import Metalean.SetSemantics.ConstructorValue
 public import Metalean.SetSemantics.Denotation
 public import Metalean.SetSemantics.Eliminator
 public import Metalean.SetSemantics.Environment.Inductive.Constructor
 public import Metalean.SetSemantics.Environment.Inductive.Interpretation
 public import Metalean.SetSemantics.Environment.Inductive.Model
-public import Metalean.SetSemantics.Environment.Inductive.Recursor.Access
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Case
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Cases
 public import Metalean.SetSemantics.Environment.Inductive.Recursor.Model
