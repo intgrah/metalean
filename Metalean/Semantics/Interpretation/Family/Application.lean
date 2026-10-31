@@ -59,14 +59,14 @@ theorem application_eq_bind₂ (I : Domain Γ₁) (label : Tm_ Γ₁) (X : Domai
   constructor
   · intro ⟨x, hx, heval⟩
     have ⟨u, hu, heval'⟩ := Evaluates.function_ideal_finitary heval
-    refine ⟨u, x, by simpa using hu, hx, ?_⟩
+    refine ⟨u, x, (ΩIdeal.presheaf_map_mem_id I σ u).mp hu, hx, ?_⟩
     exact ⟨x, by simp, by simpa using heval'⟩
   · intro ⟨u, x, hu, hx, hy⟩
     rw [stepApplication_app] at hy
     have ⟨x', hx', heval⟩ := hy
     refine ⟨x, hx, ?_⟩
     have hle : principalIdeal u ≤ I.pullback σ :=
-      ΩLower.principal_le_iff.mpr (by simpa using hu)
+      ΩLower.principal_le_iff.mpr ((ΩIdeal.presheaf_map_mem_id I σ u).mpr hu)
     exact ((by simpa using heval : Evaluates (principalIdeal u)
       ((Tm E ℓ).map σ.op label) x' y).mono (by simpa using hx')).mono_ideal hle
 
@@ -76,10 +76,12 @@ noncomputable def rawApplication (F : RawValue Γ₁) (Q : Set (Tm_ Γ₁)) (X :
 
 theorem mem_rawApplication (F : RawValue Γ₁) (Q : Set (Tm_ Γ₁)) (X : RawValue Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (rawApplication F Q X).mem σ y ↔ y ≤ ⊥ ∨ ∃ label ∈ Q, ∃ u x, F.mem σ u ∧ X.mem σ x ∧
-      (application (principalIdeal u) ((Tm E ℓ).map σ.op label)
-        (principalIdeal x)).mem (𝟙 Γ₂) y := by
-  simp only [rawApplication, ΩLower.mem_iSup, ΩLower.mem_bind₂]
+    (y ∈ (rawApplication F Q X).app σ) ↔ y ≤ ⊥ ∨ ∃ label ∈ Q, ∃ u x, (u ∈ F.app σ) ∧ (x ∈ X.app σ) ∧
+      (y ∈ (application (principalIdeal u) ((Tm E ℓ).map σ.op label)
+        (principalIdeal x)).app (𝟙 Γ₂)) := by
+  unfold rawApplication
+  rw [ΩLower.mem_iSup]
+  simp only [ΩLower.mem_iSup, ΩLower.mem_bind₂]
   constructor
   · rintro (h | ⟨label, h | ⟨hlabel, h⟩⟩)
     · exact Or.inl h
@@ -103,7 +105,7 @@ theorem pullback_rawApplication (F X : RawValue Γ₁)
     (rawApplication F Q X).pullback σ₁ =
       rawApplication (F.pullback σ₁) ((Tm E ℓ).map σ₁.op '' Q) (X.pullback σ₁) := by
   ext Γ₃ σ₂ y
-  rw [ΩLower.presheaf_map_mem, mem_rawApplication, mem_rawApplication]
+  rw [ΩLower.pullback_app, mem_rawApplication, mem_rawApplication]
   simp
 
 theorem rawApplication_singleton (F X : Domain Γ₁) (label : Tm_ Γ₁) :
@@ -130,23 +132,23 @@ theorem rawApplication_eq_of_support (F X : Domain Γ₁)
   apply le_antisymm
   · intro Γ₂ σ y hy
     rcases (mem_rawApplication _ _ _ _ _).mp hy with hy | ⟨name, hname, u, x, hu, hx, hy⟩
-    · exact (application F label X).lower σ hy ((application F label X).bottom σ)
+    · exact ((application F label X).app σ).lower hy ((application F label X).bottom σ)
     rw [mem_application] at hy
     have ⟨x', hx', heval⟩ := hy
     simp at heval
     have hle : principalIdeal u ≤ F.pullback σ :=
-      ΩLower.principal_le_iff.mpr (by simpa using hu)
+      ΩLower.principal_le_iff.mpr ((ΩIdeal.presheaf_map_mem_id F σ u).mpr hu)
     have heval := (heval.mono_ideal hle).mono (show x' ≤ x by simpa using hx')
     by_cases hname' : (Tm E ℓ).map σ.op name = (Tm E ℓ).map σ.op label
     · exact ⟨x, hx, hname' ▸ heval⟩
-    · refine (application F label X).lower σ ?_ ((application F label X).bottom σ)
+    · refine ((application F label X).app σ).lower ?_ ((application F label X).bottom σ)
       apply heval.le_of_outputAtom
       intro w hw
       rcases hsupport σ _ ⟨name, hname, rfl⟩ hw with hbottom | hlabel
       · exact hbottom
       · exact absurd hlabel hname'
   · intro Γ₂ σ y hy
-    rw [ΩIdeal.val_mem, application_eq_bind₂, ΩIdeal.mem_bind₂] at hy
+    rw [← ΩIdeal.mem_app, application_eq_bind₂, ΩIdeal.mem_bind₂] at hy
     have ⟨u, x, hu, hx, hy⟩ := hy
     rw [stepApplication_app] at hy
     rw [mem_rawApplication]
@@ -154,10 +156,10 @@ theorem rawApplication_eq_of_support (F X : Domain Γ₁)
 
 theorem rawApplication_eventually {α : Type*} {l : Filter α}
     {F X : RawValue Γ₁} {Fs Xs : α → RawValue Γ₁} {Q : Set (Tm_ Γ₁)}
-    (hF : ∀ {x}, F.mem (𝟙 Γ₁) x → ∀ᶠ a in l, (Fs a).mem (𝟙 Γ₁) x)
-    (hX : ∀ {x}, X.mem (𝟙 Γ₁) x → ∀ᶠ a in l, (Xs a).mem (𝟙 Γ₁) x)
-    {y : CoherentShape Γ₁} (hy : (rawApplication F Q X).mem (𝟙 Γ₁) y) :
-    ∀ᶠ a in l, (rawApplication (Fs a) Q (Xs a)).mem (𝟙 Γ₁) y :=
+    (hF : ∀ {x}, (x ∈ F.app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (Fs a).app (𝟙 Γ₁)))
+    (hX : ∀ {x}, (x ∈ X.app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (Xs a).app (𝟙 Γ₁)))
+    {y : CoherentShape Γ₁} (hy : (y ∈ (rawApplication F Q X).app (𝟙 Γ₁))) :
+    ∀ᶠ a in l, (y ∈ (rawApplication (Fs a) Q (Xs a)).app (𝟙 Γ₁)) :=
   ΩLower.iSup_eventually (fun label => ΩLower.iSup_eventually
     fun _ => ΩLower.bind₂_eventually (stepApplicationRaw label) hF hX) hy
 
@@ -228,10 +230,10 @@ theorem pullback_rawApps (F : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁) (names : Fi
 
 theorem exists_shapes_of_mem_rawApps (F : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁)
     (names : Fin k → Tm_ Γ₁) (args : Fin k → RawValue Γ₁) (y : CoherentShape Γ₂)
-    (hy : (rawApps F names args).mem σ y) :
-    ∃ xs : Fin k → CoherentShape Γ₂, (∀ i, (args i).mem σ (xs i)) ∧
-      (rawApps (F.pullback σ) (fun i => (Tm E ℓ).map σ.op (names i))
-        fun i => (principalIdeal (xs i)).val).mem (𝟙 Γ₂) y := by
+    (hy : (y ∈ (rawApps F names args).app σ)) :
+    ∃ xs : Fin k → CoherentShape Γ₂, (∀ i, ((xs i) ∈ (args i).app σ)) ∧
+      (y ∈ (rawApps (F.pullback σ) (fun i => (Tm E ℓ).map σ.op (names i))
+        fun i => (principalIdeal (xs i)).val).app (𝟙 Γ₂)) := by
   induction k generalizing y with
   | zero =>
     rw [rawApps_zero] at hy
@@ -240,7 +242,7 @@ theorem exists_shapes_of_mem_rawApps (F : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁)
     rw [rawApps_last, mem_rawApplication] at hy
     rcases hy with hy | ⟨label, rfl, u, x, hu, hx, hy⟩
     · exact ⟨fun _ => ⊥, fun i => (args i).bottom σ,
-        ΩLower.lower _ (𝟙 Γ₂) hy (ΩLower.bottom _ (𝟙 Γ₂))⟩
+        (ΩLower.app _ (𝟙 Γ₂)).lower hy (ΩLower.bottom _ (𝟙 Γ₂))⟩
     · have ⟨xs, hxs, hu⟩ := ih (fun i => names i.castSucc) (fun i => args i.castSucc) u hu
       refine ⟨Fin.snoc xs x, fun i => ?_, ?_⟩
       · cases i using Fin.lastCases with
@@ -262,12 +264,12 @@ theorem rawApps_isDirected (F : Domain Γ₁) (names : Fin k → Tm_ Γ₁)
     exact rawApplication_isDirected Set.subsingleton_singleton (ih _ _) (args _).property
 
 theorem rawApps_eventually {α : Type*} {l : Filter α} {F : RawValue Γ₁} {Fs : α → RawValue Γ₁}
-    (hF : ∀ {x}, F.mem (𝟙 Γ₁) x → ∀ᶠ a in l, (Fs a).mem (𝟙 Γ₁) x)
+    (hF : ∀ {x}, (x ∈ F.app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (Fs a).app (𝟙 Γ₁)))
     (names : Fin k → Tm_ Γ₁) {args : Fin k → RawValue Γ₁}
     {argss : α → Fin k → RawValue Γ₁}
-    (hargs : ∀ i {x}, (args i).mem (𝟙 Γ₁) x → ∀ᶠ a in l, (argss a i).mem (𝟙 Γ₁) x)
-    {y : CoherentShape Γ₁} (hy : (rawApps F names args).mem (𝟙 Γ₁) y) :
-    ∀ᶠ a in l, (rawApps (Fs a) names (argss a)).mem (𝟙 Γ₁) y := by
+    (hargs : ∀ i {x}, (x ∈ (args i).app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (argss a i).app (𝟙 Γ₁)))
+    {y : CoherentShape Γ₁} (hy : (y ∈ (rawApps F names args).app (𝟙 Γ₁))) :
+    ∀ᶠ a in l, (y ∈ (rawApps (Fs a) names (argss a)).app (𝟙 Γ₁)) := by
   induction k generalizing y with
   | zero =>
     rw [rawApps_zero] at hy

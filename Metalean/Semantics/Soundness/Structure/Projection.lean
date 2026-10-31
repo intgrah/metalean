@@ -67,10 +67,10 @@ theorem rawRecCase_of_structural (hs : (E₂.get η).block.IsStructure s c)
   ext Γ₃ σ₂ y
   constructor
   · rintro (hy | ⟨d, sect', fields, hobs, hy⟩)
-    · exact ΩLower.lower _ σ₂ hy (ΩLower.bottom _ σ₂)
+    · exact (ΩLower.app _ σ₂).lower hy (ΩLower.bottom _ σ₂)
     · have hd : d = c := hs.ctor_unique d
       subst d
-      have hfields : ∀ i, (RawValue.proj ⟨η, s, c⟩ i X).mem σ₂ (fields i) := by
+      have hfields : ∀ i, ((fields i) ∈ (RawValue.proj ⟨η, s, c⟩ i X).app σ₂) := by
         rcases hobs with ⟨hns, _⟩ | ⟨_, _, hf⟩
         · exact (hns hs).elim
         · exact hf

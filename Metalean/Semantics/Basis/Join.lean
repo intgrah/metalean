@@ -297,7 +297,7 @@ theorem upper_of_compatible {a b : CoherentShape Γ} (h : Shape.Compatible (𝟙
     ∃ c, a ≤ c ∧ b ≤ c :=
   ⟨⟨_, Shape.cSup_isCoherent h a.2 b.2⟩, Shape.le_cSup h⟩
 
-instance : CondSemilatticeSup (CoherentShape Γ) where
+@[implicit_reducible] instance : CondSemilatticeSup (CoherentShape Γ) where
   cSup a b h := ⟨Shape.cSup a.1 b.1, Shape.cSup_isCoherent (compatible_of_upper h) a.2 b.2⟩
   le_cSup_left _ _ h := (Shape.le_cSup (compatible_of_upper h)).1
   le_cSup_right _ _ h := (Shape.le_cSup (compatible_of_upper h)).2
@@ -330,8 +330,8 @@ noncomputable abbrev principalIdeal (a : CoherentShape Γ) : Domain Γ :=
 
 @[simp]
 theorem principalIdeal_mem (a : CoherentShape Γ₁) (σ : Γ₂ ⟶ Γ₁) (b : CoherentShape Γ₂) :
-    (principalIdeal a).mem σ b ↔ b ≤ reindex σ a :=
-  ΩIdeal.mem_principal (R := pointedOrder E ℓ) a σ b
+    b ∈ (principalIdeal a).app σ ↔ b ≤ reindex σ a :=
+  Iff.rfl
 
 theorem principalIdeal_mono {a b : CoherentShape Γ} (h : a ≤ b) :
     principalIdeal a ≤ principalIdeal b :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Filter.Defs
 public import Metalean.Order.Presheaf.Ideal
 import Mathlib.Order.Filter.Finite
+public import Mathlib.Order.Filter.Bases.Finite
 
 @[expose] public section
 
@@ -23,8 +24,8 @@ variable {R S T U : Cᵒᵖ ⥤ CondSemilatSup.{max u v}} {A A' : Cᵒᵖ ⥤ Ty
 namespace ΩIdeal
 
 def IsFinitary (f : ΩIdeal R X → ΩIdeal S X) : Prop :=
-  ∀ I {y}, (f I).mem (𝟙 X) y →
-    ∃ x, I.mem (𝟙 X) x ∧ (f (principal R x)).mem (𝟙 X) y
+  ∀ I {y}, (y ∈ (f I).app (𝟙 X)) →
+    ∃ x, (x ∈ I.app (𝟙 X)) ∧ (y ∈ (f (principal R x)).app (𝟙 X))
 
 theorem IsFinitary.comp {f : ΩIdeal R X → ΩIdeal S X} {g : ΩIdeal S X → ΩIdeal T X}
     (hg : IsFinitary g) (hf : IsFinitary f) (hm : Monotone g) : IsFinitary (g ∘ f) := by
@@ -63,42 +64,37 @@ namespace ΩLower
 
 variable {X : C}
 
-def approximations (I : ΩLower R X) : Filter (ΩLower R X) where
-  sets := {P | ∃ s : Finset (R.obj (op X)), (∀ x ∈ s, I.mem (𝟙 X) x) ∧
-    ∀ J, s.sup (principal R) ≤ J → J ∈ P}
-  univ_sets := ⟨∅, by simp, fun _ _ => trivial⟩
-  sets_of_superset := fun ⟨s, hs, h⟩ hPQ => ⟨s, hs, fun J hJ => hPQ (h J hJ)⟩
-  inter_sets := by
-    classical
-    intro P Q ⟨s, hs, hP⟩ ⟨t, ht, hQ⟩
-    refine ⟨s ∪ t, Finset.forall_mem_union.mpr ⟨hs, ht⟩, fun J hJ => ?_⟩
-    exact ⟨hP J ((Finset.sup_mono (α := ΩLower R X) Finset.subset_union_left).trans hJ),
-      hQ J ((Finset.sup_mono (α := ΩLower R X) Finset.subset_union_right).trans hJ)⟩
+def approximations (I : ΩLower R X) : Filter (ΩLower R X) :=
+  ⨅ x : {x // x ∈ I.app (𝟙 X)}, Filter.principal (Set.Ici (principal R x.val))
 
 theorem exists_finset_of_eventually {I : ΩLower R X} {P : ΩLower R X → Prop}
     (h : ∀ᶠ J in I.approximations, P J) :
-    ∃ s : Finset (R.obj (op X)), (∀ x ∈ s, I.mem (𝟙 X) x) ∧ P (s.sup (principal R)) :=
-  have ⟨s, hs, hP⟩ := h
-  ⟨s, hs, hP _ fun _ _ ha => ha⟩
+    ∃ s : Finset (R.obj (op X)), (∀ x ∈ s, x ∈ I.app (𝟙 X)) ∧ P (s.sup (principal R)) := by
+  classical
+  obtain ⟨s, hs, hP⟩ := (Filter.hasBasis_iInf_principal_finite _).eventually_iff.mp h
+  refine ⟨hs.toFinset.image Subtype.val, ?_, hP ?_⟩
+  · intro x hx
+    obtain ⟨x, _, rfl⟩ := Finset.mem_image.mp hx
+    exact x.property
+  · simp only [Set.mem_iInter, Set.mem_Ici]
+    intro x hx
+    exact Finset.le_sup (f := principal R) (Finset.mem_image.mpr ⟨x, hs.mem_toFinset.mpr hx, rfl⟩)
 
-theorem eventually_mem {I : ΩLower R X} {x : R.obj (op X)} (hx : I.mem (𝟙 X) x) :
-    ∀ᶠ J in I.approximations, J.mem (𝟙 X) x := by
-  refine ⟨{x}, by simpa using hx, ?_⟩
-  intro J hJ
-  rw [Finset.sup_singleton] at hJ
-  exact principal_le_iff.mp hJ
+theorem eventually_mem {I : ΩLower R X} {x : R.obj (op X)} (hx : x ∈ I.app (𝟙 X)) :
+    ∀ᶠ J in I.approximations, x ∈ J.app (𝟙 X) :=
+  Filter.mem_iInf_of_mem ⟨x, hx⟩ (Filter.mem_principal.mpr fun _ h => principal_le_iff.mp h)
 
 theorem eventually_sup_le {α : Type*} {l : Filter α} {f : α → ΩLower R X}
     (s : Finset (R.obj (op X)))
-    (h : ∀ x ∈ s, ∀ᶠ a in l, (f a).mem (𝟙 X) x) :
+    (h : ∀ x ∈ s, ∀ᶠ a in l, (x ∈ (f a).app (𝟙 X))) :
     ∀ᶠ a in l, s.sup (principal R) ≤ f a :=
   (s.eventually_all.mpr h).mono fun _ h =>
     Finset.sup_le (α := ΩLower R X) fun x hx => principal_le_iff.mpr (h x hx)
 
 def IsFinitary (f : ΩLower R X → ΩLower S X) : Prop :=
-  ∀ I {y}, (f I).mem (𝟙 X) y →
-    ∃ s : Finset (R.obj (op X)), (∀ x ∈ s, I.mem (𝟙 X) x) ∧
-      (f (s.sup (principal R))).mem (𝟙 X) y
+  ∀ I {y}, (y ∈ (f I).app (𝟙 X)) →
+    ∃ s : Finset (R.obj (op X)), (∀ x ∈ s, (x ∈ I.app (𝟙 X))) ∧
+      (y ∈ (f (s.sup (principal R))).app (𝟙 X))
 
 variable {α : Type*} {l : Filter α}
 
@@ -106,16 +102,16 @@ theorem bind₂_eventually
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord ⊗ S ⋙ forget₂ CondSemilatSup Preord)
       (presheaf T) (uliftYoneda.{u}.obj X))
     {I : ΩLower R X} {J : ΩLower S X} {Is : α → ΩLower R X} {Js : α → ΩLower S X}
-    (hI : ∀ {x}, I.mem (𝟙 X) x → ∀ᶠ a in l, (Is a).mem (𝟙 X) x)
-    (hJ : ∀ {y}, J.mem (𝟙 X) y → ∀ᶠ a in l, (Js a).mem (𝟙 X) y)
-    {z} (hz : (bind₂ I J F).mem (𝟙 X) z) : ∀ᶠ a in l, (bind₂ (Is a) (Js a) F).mem (𝟙 X) z := by
+    (hI : ∀ {x}, (x ∈ I.app (𝟙 X)) → ∀ᶠ a in l, (x ∈ (Is a).app (𝟙 X)))
+    (hJ : ∀ {y}, (y ∈ J.app (𝟙 X)) → ∀ᶠ a in l, (y ∈ (Js a).app (𝟙 X)))
+    {z} (hz : (z ∈ (bind₂ I J F).app (𝟙 X))) : ∀ᶠ a in l, (z ∈ (bind₂ (Is a) (Js a) F).app (𝟙 X)) := by
   have ⟨x, y, hx, hy, hz⟩ := (mem_bind₂ ..).mp hz
   filter_upwards [hI hx, hJ hy] with a hx hy
   exact (mem_bind₂ ..).mpr ⟨x, y, hx, hy, hz⟩
 
 theorem iSup_eventually {ι : Sort*} {F : ι → ΩLower R X} {Fs : α → ι → ΩLower R X}
-    (hF : ∀ i {y}, (F i).mem (𝟙 X) y → ∀ᶠ a in l, (Fs a i).mem (𝟙 X) y)
-    {y} (hy : (⨆ i, F i).mem (𝟙 X) y) : ∀ᶠ a in l, (⨆ i, Fs a i).mem (𝟙 X) y := by
+    (hF : ∀ i {y}, (y ∈ (F i).app (𝟙 X)) → ∀ᶠ a in l, (y ∈ (Fs a i).app (𝟙 X)))
+    {y} (hy : (y ∈ (⨆ i, F i).app (𝟙 X))) : ∀ᶠ a in l, (y ∈ (⨆ i, Fs a i).app (𝟙 X)) := by
   rcases (mem_iSup ..).mp hy with hy | ⟨i, hy⟩
   · exact Eventually.of_forall fun _ => (mem_iSup ..).mpr (.inl hy)
   · exact (hF i hy).mono fun _ hy => (mem_iSup ..).mpr (.inr ⟨i, hy⟩)
@@ -129,13 +125,13 @@ protected theorem const (J : ΩLower S X) : IsFinitary fun _ : ΩLower R X => J 
   fun _ _ hy => ⟨∅, by simp, hy⟩
 
 theorem of_eventually {f : ΩLower R X → ΩLower S X}
-    (h : ∀ I {y}, (f I).mem (𝟙 X) y → ∀ᶠ J in I.approximations, (f J).mem (𝟙 X) y) :
+    (h : ∀ I {y}, (y ∈ (f I).app (𝟙 X)) → ∀ᶠ J in I.approximations, (y ∈ (f J).app (𝟙 X))) :
     IsFinitary f := fun I _ hy => exists_finset_of_eventually (h I hy)
 
 theorem eventually {f : ΩLower R X → ΩLower S X} (hf : IsFinitary f) (hm : Monotone f)
     {α : Type*} {l : Filter α} {I : ΩLower R X} {Is : α → ΩLower R X}
-    (hI : ∀ {x}, I.mem (𝟙 X) x → ∀ᶠ a in l, (Is a).mem (𝟙 X) x)
-    {y} (hy : (f I).mem (𝟙 X) y) : ∀ᶠ a in l, (f (Is a)).mem (𝟙 X) y :=
+    (hI : ∀ {x}, (x ∈ I.app (𝟙 X)) → ∀ᶠ a in l, (x ∈ (Is a).app (𝟙 X)))
+    {y} (hy : (y ∈ (f I).app (𝟙 X))) : ∀ᶠ a in l, (y ∈ (f (Is a)).app (𝟙 X)) :=
   have ⟨s, hs, hy⟩ := hf I hy
   (eventually_sup_le s fun x hx => hI (hs x hx)).mono fun _ h => hm h (𝟙 X) y hy
 
@@ -158,8 +154,8 @@ theorem apply {f : ΩLower R X → ΩLower S X → ΩLower T X} {g : ΩLower R X
   exact hargm J harg (𝟙 X) y hf
 
 theorem exists_principal {f : ΩLower R X → ΩLower S X} (hf : IsFinitary f) (hm : Monotone f)
-    {I : ΩLower R X} (hI : I.IsDirected) {y} (hy : (f I).mem (𝟙 X) y) :
-    ∃ x, I.mem (𝟙 X) x ∧ (f (principal R x)).mem (𝟙 X) y :=
+    {I : ΩLower R X} (hI : I.IsDirected) {y} (hy : (y ∈ (f I).app (𝟙 X))) :
+    ∃ x, (x ∈ I.app (𝟙 X)) ∧ (y ∈ (f (principal R x)).app (𝟙 X)) :=
   have ⟨s, hs, hy⟩ := hf I hy
   have ⟨x, hx, hsx⟩ := hI.exists_upper_fin (𝟙 X) (fun a : s => a.1) fun a => hs a.1 a.2
   ⟨x, hx, hm (Finset.sup_le (α := ΩLower R X) fun a ha => principal_mono (hsx ⟨a, ha⟩)) (𝟙 X) y hy⟩

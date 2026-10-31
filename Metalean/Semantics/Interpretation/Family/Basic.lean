@@ -152,9 +152,6 @@ noncomputable abbrev presheaf (E : Env ζ) (ℓ : Nat) := Functor.HomObj.functor
 noncomputable def pullback {Γ₁ Γ₂ : CtxCat E ℓ} (F : RawFamily Γ₁) (σ : Γ₂ ⟶ Γ₁) : RawFamily Γ₂ :=
   F.map (coyoneda.map σ.op.op)
 
-noncomputable instance : CompleteLattice (RawFamily Γ₁) :=
-  inferInstanceAs (CompleteLattice (Functor.HomObj _ _ _))
-
 variable {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ}
 
 @[simp] theorem app_pullback (F : RawFamily Γ₁) {Γ₂ : (CtxCat E ℓ)ᵒᵖ} {Γ₃ : CtxCat E ℓ}
@@ -169,8 +166,8 @@ def IsFinitary (F : RawFamily Γ₁) : Prop :=
 
 theorem IsFinitary.eventually {F : RawFamily Γ₁} (hF : F.IsFinitary)
     (σ : Γ₂ ⟶ Γ₁) (i : ℕ) (ρ : RawValuation Γ₂) (I : RawValue Γ₂)
-    {y : CoherentShape Γ₂} (hy : (F.app _ σ.op (ρ.replace i I)).mem (𝟙 Γ₂) y) :
-    ∀ᶠ J in I.approximations, (F.app _ σ.op (ρ.replace i J)).mem (𝟙 Γ₂) y :=
+    {y : CoherentShape Γ₂} (hy : (y ∈ (F.app _ σ.op (ρ.replace i I)).app (𝟙 Γ₂))) :
+    ∀ᶠ J in I.approximations, (y ∈ (F.app _ σ.op (ρ.replace i J)).app (𝟙 Γ₂)) :=
   (hF σ i ρ).eventually
     ((F.app _ σ.op).hom.monotone.comp (Function.update_mono (f := ρ) (i := i)))
     ΩLower.eventually_mem hy
@@ -202,10 +199,6 @@ theorem lookup_isFinitary (i : ℕ) : (lookup i : RawFamily Γ₁).IsFinitary :=
     simpa using ΩLower.IsFinitary.id
   · simpa [h] using ΩLower.IsFinitary.const (ρ i)
 
-@[simp] theorem iSup_app {ι : Sort*} (F : ι → RawFamily Γ₁) {X : (CtxCat E ℓ)ᵒᵖ}
-    (σ : Opposite.op Γ₁ ⟶ X) (ρ : RawValuation X.unop) :
-    (⨆ i, F i).app X σ ρ = ⨆ i, (F i).app X σ ρ := ΩLower.homObj_iSup_app F X σ ρ
-
 theorem iSup_eq {ι : Sort*} {F : ι → RawFamily Γ₁} (j : ι) {X : RawFamily Γ₁}
     (h : ∀ i, F i = X) : ⨆ i, F i = X :=
   le_antisymm (iSup_le fun i => (h i).le) (by rw [← h j]; exact le_iSup F j)
@@ -213,8 +206,8 @@ theorem iSup_eq {ι : Sort*} {F : ι → RawFamily Γ₁} (j : ι) {X : RawFamil
 theorem mem_iSup_app {ι : Sort*} (F : ι → RawFamily Γ₁) {X : (CtxCat E ℓ)ᵒᵖ}
     (σ₁ : Opposite.op Γ₁ ⟶ X) (ρ : RawValuation X.unop) {Y : CtxCat E ℓ} (σ₂ : Y ⟶ X.unop)
     (y : CoherentShape Y) :
-    ((⨆ i, F i).app X σ₁ ρ).mem σ₂ y ↔ y ≤ ⊥ ∨ ∃ i, ((F i).app X σ₁ ρ).mem σ₂ y := by
-  rw [iSup_app, ΩLower.mem_iSup]
+    (y ∈ ((⨆ i, F i).app X σ₁ ρ).app σ₂) ↔ y ≤ ⊥ ∨ ∃ i, (y ∈ ((F i).app X σ₁ ρ).app σ₂) := by
+  rw [ΩLower.homObj_iSup_app, ΩLower.mem_iSup]
 
 theorem IsFinitary.iSup {ι : Sort*} {F : ι → RawFamily Γ₁}
     (hF : ∀ i, (F i).IsFinitary) : (⨆ i, F i).IsFinitary := by
@@ -309,35 +302,10 @@ theorem IsFinitary.compose_value {Γ₃ : CtxCat E ℓ} {B : RawFamily Γ₃}
 
 end RawFamily
 
-noncomputable abbrev RawAction.arguments (E : Env ζ) (ℓ : Nat) := Tm E ℓ ⊗ (ΩLower.presheaf (pointedOrder E ℓ) ⋙ forget Preord)
+noncomputable abbrev RawAction.presheaf (E : Env ζ) (ℓ : Nat) := Functor.parameterizedHom
+  (ΩLower.presheaf (pointedOrder E ℓ)) (ΩLower.presheaf (pointedOrder E ℓ)) (Tm E ℓ)
 
-@[implicit_reducible] def RawAction.monotone (E : Env ζ) (ℓ : Nat) :
-    Subfunctor (Functor.HomObj.functor (arguments E ℓ) (ΩLower.presheaf (pointedOrder E ℓ) ⋙ forget Preord)) where
-  obj _ := {F | ∀ X σ label, Monotone (β := RawValue X.unop) (fun I : RawValue X.unop => F.app X σ (label, I))}
-  map f _ h X σ := h X (f ≫ σ)
-
-abbrev RawAction (Γ₁ : CtxCat E ℓ) := (RawAction.monotone E ℓ).toFunctor.obj (op Γ₁)
-
-noncomputable def RawAction.app {Γ₁ : CtxCat E ℓ} (F : RawAction Γ₁) (X : (CtxCat E ℓ)ᵒᵖ)
-    (p : (op Γ₁ ⟶ X) × (Tm E ℓ).obj X) : Preord.of (RawValue X.unop) ⟶ Preord.of (RawValue X.unop) :=
-  Preord.ofHom ⟨fun I => F.val.app X p.1 (p.2, I), F.property X p.1 p.2⟩
-
-@[ext] theorem RawAction.ext {Γ₁ : CtxCat E ℓ} {F G : RawAction Γ₁}
-    (h : ∀ X p I, F.app X p I = G.app X p I) : F = G :=
-  Subtype.ext (Functor.HomObj.ext_app fun X σ (label, I) => h X (σ, label) I)
-
-noncomputable instance : PartialOrder (RawAction Γ₁) :=
-  PartialOrder.lift (fun F : RawAction Γ₁ => fun X p I => F.app X p I)
-    fun _ _ h => RawAction.ext fun X p I => congr($h X p I)
-
-noncomputable abbrev RawAction.presheaf (E : Env ζ) (ℓ : Nat) : (CtxCat E ℓ)ᵒᵖ ⥤ Preord where
-  __ := (monotone E ℓ).toFunctor.toPreord (order := fun X => inferInstanceAs (Preorder (RawAction X.unop)))
-    fun f _ _ h Z p => h Z (f ≫ p.1, p.2)
-  obj X := Preord.of (RawAction X.unop)
-
-@[simp] theorem RawAction.app_map {X Y Z : (CtxCat E ℓ)ᵒᵖ} (f : X ⟶ Y) (F : RawAction X.unop)
-    (p : (Y ⟶ Z) × (Tm E ℓ).obj Z) :
-    ((presheaf E ℓ).map f F).app Z p = F.app Z (f ≫ p.1, p.2) := rfl
+abbrev RawAction (Γ₁ : CtxCat E ℓ) : Type := (RawAction.presheaf E ℓ).obj (op Γ₁)
 
 noncomputable def RawAction.pullback {Γ₁ Γ₂ : CtxCat E ℓ} (F : RawAction Γ₁) (σ : Γ₂ ⟶ Γ₁) : RawAction Γ₂ :=
   (RawAction.presheaf E ℓ).map σ.op F
@@ -347,53 +315,16 @@ namespace RawAction
 @[simp] theorem app_pullback {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} (F : RawAction Γ₁)
     (σ₁ : op Γ₁ ⟶ op Γ₂) (σ₂ : Γ₃ ⟶ Γ₂) (label : Tm_ Γ₂) (I : RawValue Γ₂) :
     F.app _ (σ₁ ≫ σ₂.op, (Tm E ℓ).map σ₂.op label) (I.pullback σ₂) = ((F.app _ (σ₁, label) I).pullback σ₂) :=
-  congr($(F.val.naturality σ₂.op σ₁) (label, I))
-
-noncomputable instance : SupSet (RawAction Γ₁) where
-  sSup S := {
-    val := {
-      app X σ := ↾fun p => (⨆ F ∈ S, F.app X (σ, p.1) p.2 : RawValue X.unop)
-      naturality f σ := ConcreteCategory.hom_ext _ _ fun p => by
-        change ⨆ F ∈ S, F.app _ (σ ≫ f, (Tm E ℓ).map f p.1) (p.2.pullback f.unop) =
-          (⨆ F ∈ S, F.app _ (σ, p.1) p.2).pullback f.unop
-        simpa only [ΩLower.pullback_iSup] using biSup_congr fun F _ => F.app_pullback σ f.unop p.1 p.2 }
-    property X σ label I₁ I₂ h :=
-      have hmono : ∀ F ∈ S, F.app X (σ, label) I₁ ≤ F.app X (σ, label) I₂ :=
-        fun (F : RawAction Γ₁) _ => F.property X σ label h
-      iSup₂_mono hmono }
-
-theorem app_sSup (S : Set (RawAction Γ₁)) (X : (CtxCat E ℓ)ᵒᵖ)
-    (p : (op Γ₁ ⟶ X) × (Tm E ℓ).obj X) (I : RawValue X.unop) :
-    (sSup S).app X p I = ⨆ F ∈ S, F.app X p I := rfl
-
-noncomputable instance : CompleteLattice (RawAction Γ₁) where
-  bot := {
-    val.app X _ := ↾fun _ => (⊥ : RawValue X.unop)
-    val.naturality f _ := ConcreteCategory.hom_ext _ _ fun _ => (ΩLower.presheaf_map_bot f.unop).symm
-    property _ _ _ _ _ _ := by rfl }
-  bot_le F := fun X p I => @bot_le (RawValue X.unop) _ _ (F.app X p I)
-  __ := completeLatticeOfSup (RawAction Γ₁) fun S => by
-    constructor
-    · intro F hF X p I
-      apply le_iSup₂_of_le F hF le_rfl
-    · intro F hF X p I
-      apply iSup₂_le
-      intro G hG
-      apply hF hG
-
-@[simp] theorem iSup_app {ι : Sort*} (F : ι → RawAction Γ₁) (X : (CtxCat E ℓ)ᵒᵖ)
-    (p : (op Γ₁ ⟶ X) × (Tm E ℓ).obj X) (I : RawValue X.unop) :
-    (⨆ i, F i).app X p I = ⨆ i, (F i).app X p I := by
-  change (sSup (Set.range F)).app X p I = _
-  rw [app_sSup, iSup_range]
+  F.naturality_apply σ₂.op (σ₁, label) I
 
 @[simp] theorem map_iSup {ι : Sort*} {X Y : (CtxCat E ℓ)ᵒᵖ} (f : X ⟶ Y)
     (F : ι → RawAction X.unop) :
-    (presheaf E ℓ).map f (⨆ i, F i) = ⨆ i, (presheaf E ℓ).map f (F i) :=
-  ext fun Z p I => by
-    change (⨆ i, F i).app Z (f ≫ p.1, p.2) I = (⨆ i, (presheaf E ℓ).map f (F i)).app Z p I
-    rw [iSup_app, iSup_app]
-    exact iSup_congr fun _ => rfl
+    (presheaf E ℓ).map f (⨆ i, F i) = ⨆ i, (presheaf E ℓ).map f (F i) := by
+  apply Functor.HomObj.ext_app
+  intro Z p I
+  change (⨆ i, F i).app Z (f ≫ p.1, p.2) I = (⨆ i, (presheaf E ℓ).map f (F i)).app Z p I
+  rw [ΩLower.homObj_iSup_app, ΩLower.homObj_iSup_app]
+  exact iSup_congr fun _ => rfl
 
 variable {Γ₁ Γ₂ Γ₃ : CtxCat E ℓ} {G : RawAction Γ₁}
 
@@ -407,9 +338,9 @@ def IsIdealValued (F : RawAction Γ₁) : Prop :=
 
 theorem IsFinitary.exists_principal {F : RawAction Γ₁} (hF : F.IsFinitary)
     (σ : Γ₂ ⟶ Γ₁) (label : Tm_ Γ₂) (I : Domain Γ₂)
-    {y : CoherentShape Γ₂} (hy : (F.app _ (σ.op, label) I.val).mem (𝟙 Γ₂) y) :
-    ∃ x, I.mem (𝟙 Γ₂) x ∧
-      (F.app _ (σ.op, label) (ΩLower.principal (pointedOrder E ℓ) x)).mem (𝟙 Γ₂) y :=
+    {y : CoherentShape Γ₂} (hy : (y ∈ (F.app _ (σ.op, label) I.val).app (𝟙 Γ₂))) :
+    ∃ x, (x ∈ I.app (𝟙 Γ₂)) ∧
+      (y ∈ (F.app _ (σ.op, label) (ΩLower.principal (pointedOrder E ℓ) x)).app (𝟙 Γ₂)) :=
   (hF σ label).exists_principal (F.app _ (σ.op, label)).hom.monotone I.property hy
 
 theorem IsFinitary.pullback {F : RawAction Γ₁} (hF : F.IsFinitary) (σ₁ : Γ₂ ⟶ Γ₁) :

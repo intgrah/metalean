@@ -53,7 +53,7 @@ theorem piLimit_rawExtend_indValue_of_structural (code : IndCode Γ) (hrel : cod
     (piLimit E ℓ).rawExtend (RawValue.ind code fun d => (Ts d).val) n X.val =
       ((piLimit E ℓ).indBody (Ts c) X hg).val := by
   ext Γ₂ σ y
-  change _ ↔ ((piLimit E ℓ).indBody (Ts c) X hg).mem σ y
+  change _ ↔ (y ∈ ((piLimit E ℓ).indBody (Ts c) X hg).app σ)
   rw [← ΩIdeal.presheaf_map_mem_id _ σ,
     pullback_indBody (piLimit E ℓ) (Ts c) X hg σ (hg.pullback σ), mem_rawExtend]
   constructor

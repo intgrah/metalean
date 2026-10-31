@@ -32,7 +32,11 @@ namespace PartialSection
 variable {R : Cᵒᵖ ⥤ CondSemilatSup.{max u v}} {X Y : C} {D : PartialDomain.{u, v, w} X}
 
 def extend (F : PartialSection R D) : ΩLower R X where
-  mem f a := a ≤ ⊥ ∨ ∃ s, (F.value f s).mem (𝟙 _) a
+  app f := {
+    carrier := {a | a ≤ ⊥ ∨ ∃ s, (a ∈ (F.value f s).app (𝟙 _))}
+    lower' := fun {_ _} hab => fun
+      | .inl hb => .inl (hab.trans hb)
+      | .inr ⟨s, hb⟩ => .inr ⟨s, ((F.value f s).app (𝟙 _)).lower hab hb⟩ }
   natural f g a
     | .inl ha => .inl ((R.map g.op).map_le_bot ha)
     | .inr ⟨s, ha⟩ => .inr ⟨D.pullback s g, by
@@ -40,19 +44,16 @@ def extend (F : PartialSection R D) : ΩLower R X where
         exact (ΩLower.presheaf_map_mem_id _ _ _).mpr
           (by simpa using (F.value f s).natural (𝟙 _) g a ha)⟩
   bottom _ := .inl le_rfl
-  lower f hab
-    | .inl hb => .inl (hab.trans hb)
-    | .inr ⟨s, hb⟩ => .inr ⟨s, (F.value f s).lower (𝟙 _) hab hb⟩
 
 @[simp] theorem mem_extend (F : PartialSection R D) (f : Y ⟶ X) (a : R.obj (op Y)) :
-    F.extend.mem f a ↔ a ≤ ⊥ ∨ ∃ s, (F.value f s).mem (𝟙 _) a := Iff.rfl
+    (a ∈ F.extend.app f) ↔ a ≤ ⊥ ∨ ∃ s, (a ∈ (F.value f s).app (𝟙 _)) := Iff.rfl
 
 theorem pullback_extend (F : PartialSection R D) (f : Y ⟶ X) (s : D.Witness f) :
     F.extend.pullback f = F.value f s := by
   ext Z g a
   constructor
   · intro
-    | .inl ha => exact (F.value f s).lower g ha ((F.value f s).bottom g)
+    | .inl ha => exact ((F.value f s).app g).lower ha ((F.value f s).bottom g)
     | .inr ⟨t, ha⟩ =>
       rw [← F.natural f g s t] at ha
       exact (ΩLower.presheaf_map_mem_id _ _ _).mp ha
@@ -69,7 +70,7 @@ theorem extend_le_iff (F : PartialSection R D) (L : ΩLower R X) :
     exact ΩLower.pullback_mono h f
   · intro h Y f a ha
     rcases ha with ha | ⟨s, ha⟩
-    · exact L.lower f ha (L.bottom f)
+    · exact (L.app f).lower ha (L.bottom f)
     · exact (ΩLower.presheaf_map_mem_id _ _ _).mp (h f s (𝟙 _) a ha)
 
 theorem extend_mono {F G : PartialSection R D}
@@ -78,14 +79,14 @@ theorem extend_mono {F G : PartialSection R D}
   (F.extend_le_iff G.extend).mpr fun f s => by rw [G.pullback_extend f s]; exact h f s
 
 theorem support (F : PartialSection R D) {f : Y ⟶ X} {a : R.obj (op Y)}
-    (ha : F.extend.mem f a) (hne : ¬ a ≤ ⊥) : Nonempty (D.Witness f) := by
+    (ha : (a ∈ F.extend.app f)) (hne : ¬ a ≤ ⊥) : Nonempty (D.Witness f) := by
   rcases ha with ha | ⟨s, _⟩
   · exact (hne ha).elim
   · exact ⟨s⟩
 
 theorem eq_extend (F : PartialSection R D) (L : ΩLower R X)
     (hs : ∀ {Y} (f : Y ⟶ X) (a : R.obj (op Y)),
-      L.mem f a → ¬ a ≤ ⊥ → Nonempty (D.Witness f))
+      (a ∈ L.app f) → ¬ a ≤ ⊥ → Nonempty (D.Witness f))
     (hv : ∀ {Y} (f : Y ⟶ X) (s : D.Witness f), L.pullback f = F.value f s) :
     L = F.extend := by
   apply le_antisymm

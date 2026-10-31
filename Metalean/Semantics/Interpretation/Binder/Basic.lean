@@ -5,8 +5,6 @@ Authors: Jeremy Chen
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
-public import Mathlib.CategoryTheory.Subfunctor.Image
 public import Metalean.CategoryTheory.Functor.FunctorHom
 public import Metalean.Order.Presheaf.Partial
 public import Metalean.Semantics.Domain.Decoder.Extension
@@ -26,11 +24,8 @@ abbrev RawActionFamily (Γ₁ : CtxCat E ℓ) :=
   Functor.HomObj (RawValuation.presheaf E ℓ) (RawAction.presheaf E ℓ)
     (coyoneda.obj (op (op Γ₁)))
 
-noncomputable instance {Γ₁ : CtxCat E ℓ} : PartialOrder (RawActionFamily Γ₁) :=
-  inferInstanceAs (PartialOrder (Functor.HomObj _ _ _))
-
 noncomputable instance {Γ₁ : CtxCat E ℓ} : CompleteLattice (RawActionFamily Γ₁) :=
-  Functor.HomObj.completeLattice (G := (RawAction.monotone E ℓ).toFunctor)
+  Functor.HomObj.completeLattice (G := RawAction.presheaf E ℓ ⋙ forget Preord)
     (lattice := fun X => inferInstanceAs (CompleteLattice (RawAction X.unop)))
     (fun f => ((RawAction.presheaf E ℓ).map f).hom.monotone) fun f S => by
       change (RawAction.presheaf E ℓ).map f (sSup S) = sSup ((RawAction.presheaf E ℓ).map f '' S)
@@ -87,9 +82,9 @@ noncomputable def sectionValue (hA : ℒ.Comprehension Γ₁ ΓA)
     (hA : ℒ.Comprehension Γ₁ ΓA) (B : RawFamily ΓA)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (label : Tm_ Γ₂)
     (I : RawValue Γ₂) (σ₂ : Γ₃ ⟶ Γ₂) (y : CoherentShape Γ₃) :
-    (sectionValue hA B σ₁ ρ label I).mem σ₂ y ↔ y ≤ ⊥ ∨
+    (y ∈ (sectionValue hA B σ₁ ρ label I).app σ₂) ↔ y ≤ ⊥ ∨
       ∃ s : hA.Section (σ₂ ≫ σ₁) ((Tm E ℓ).map σ₂.op label),
-        (B.app _ s.hom.op ((ρ.pullback σ₂).push (I.pullback σ₂))).mem (𝟙 Γ₃) y :=
+        (y ∈ (B.app _ s.hom.op ((ρ.pullback σ₂).push (I.pullback σ₂))).app (𝟙 Γ₃)) :=
   Iff.rfl
 
 theorem sectionValue_eq_value (hA : ℒ.Comprehension Γ₁ ΓA)
@@ -128,10 +123,10 @@ noncomputable def bodyHom (hA : ℒ.Comprehension Γ₁ ΓA) (B : RawFamily ΓA)
     intro ⟨ρ, I⟩
     change (_ : RawValue Γ₃) = _
     ext Γ₄ σ₃ (y : CoherentShape Γ₄)
-    change (sectionValue hA B (σ₂ ≫ σ₁) (ρ.pullback σ₂)
-      ((Tm E ℓ).map σ₂.op label) (I.pullback σ₂)).mem σ₃ y ↔
-        ((sectionValue hA B σ₁ ρ label I).pullback σ₂).mem σ₃ y
-    rw [ΩLower.presheaf_map_mem, mem_sectionValue, mem_sectionValue,
+    change (y ∈ (sectionValue hA B (σ₂ ≫ σ₁) (ρ.pullback σ₂)
+      ((Tm E ℓ).map σ₂.op label) (I.pullback σ₂)).app σ₃) ↔
+        (y ∈ ((sectionValue hA B σ₁ ρ label I).pullback σ₂).app σ₃)
+    rw [ΩLower.pullback_app, mem_sectionValue, mem_sectionValue,
       Category.assoc, op_comp, Functor.map_comp_apply,
       RawValuation.pullback_comp, ΩLower.pullback_pullback]
 
@@ -140,18 +135,18 @@ theorem sectionValue_finitary (hA : ℒ.Comprehension Γ₁ ΓA)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (label : Tm_ Γ₂) :
     ΩLower.IsFinitary (sectionValue hA B σ ρ label) := by
   intro I y hy
-  simp_rw [mem_sectionValue] at hy ⊢
+  rw [mem_sectionValue] at hy
   rcases hy with hy | ⟨s, hy⟩
   · exact ⟨∅, by simp, Or.inl hy⟩
   · simp at hy
     have ⟨l, hl, hy⟩ := hB.head s.hom ρ I hy
-    exact ⟨l, hl, Or.inr ⟨s, by simpa using hy⟩⟩
+    exact ⟨l, hl, Or.inr ⟨s, by simpa [bodySection] using hy⟩⟩
 
 theorem sectionValue_support (hA : ℒ.Comprehension Γ₁ ΓA)
     (B : RawFamily ΓA)
     (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (label : Tm_ Γ₂)
     (I : RawValue Γ₂) {y : CoherentShape Γ₂}
-    (hy : (sectionValue hA B σ ρ label I).mem (𝟙 Γ₂) y)
+    (hy : (y ∈ (sectionValue hA B σ ρ label I).app (𝟙 Γ₂)))
     (hne : ¬ y ≤ ⊥) :
     Nonempty (hA.Section σ label) := by
   simpa [sectionDomain] using (bodySection hA B σ ρ label I).support hy hne
@@ -162,23 +157,9 @@ namespace RawActionFamily
 
 noncomputable def normalizedBody
     (hA : ℒ.Comprehension Γ₁ ΓA) (C : RawFamily Γ₁) (B : RawFamily ΓA) : RawActionFamily Γ₁ :=
-  let f : Functor.HomObj ((RawValuation.presheaf E ℓ) ⊗ ΩLower.presheaf (pointedOrder E ℓ))
-      (ΩLower.presheaf (pointedOrder E ℓ)) (coyoneda.obj (op (op Γ₁)) ⊗ (Tm E ℓ)) :=
-    (Functor.HomObj.fst.pair
-      (((Functor.HomObj.fst.comp (C.map { app _ := ↾Prod.fst })).pair .snd).comp
-        (D.rawExtendHom.map { app _ := ↾Prod.snd }))).comp (RawFamily.bodyHom hA B)
-  let p : (RawAction.arguments E ℓ) ⊗ (((RawValuation.presheaf E ℓ) ⋙ forget Preord) ⊗ coyoneda.obj (op (op Γ₁))) ⟶
-      (ΩLower.presheaf (pointedOrder E ℓ) ⋙ forget Preord) :=
-    { app _ := ↾fun ((label, I), ρ, σ₁) => ((ρ, I), σ₁, label) } ≫
-      Functor.homObjEquiv _ _ _ f.toTypes
-  let q := Subfunctor.lift (MonoidalClosed.curry p) (by
-    rintro X _ ⟨⟨ρ, σ₁⟩, rfl⟩ Y σ₂ label
-    exact (f.app Y (σ₁ ≫ σ₂, label)).hom.monotone.comp
-      ((monotone_const (β := RawValuation Y.unop)).prodMk (β := RawValue Y.unop) monotone_id))
-  ((Functor.homObjEquiv _ _ _).symm q).ofTypes (by
-    intro X σ₁ ρ ρ' h Y ⟨σ₂, label⟩ I
-    exact (f.app Y (σ₁ ≫ σ₂, label)).hom.monotone
-      ⟨RawValuation.pullback_mono h σ₂.unop, by rfl⟩)
+  ((Functor.HomObj.fst.pair
+    (((Functor.HomObj.fst.comp (C.map { app _ := ↾Prod.fst })).pair .snd).comp
+      (D.rawExtendHom.map { app _ := ↾Prod.snd }))).comp (RawFamily.bodyHom hA B)).curry
 
 end RawActionFamily
 
@@ -218,7 +199,7 @@ theorem sectionValue_iSup_le (hA : ℒ.Comprehension Γ₁ ΓA) (B : Nat → Raw
   rw [mem_sectionValue] at hy
   rcases hy with hy | ⟨sec, hy⟩
   · exact (ΩLower.mem_iSup ..).mpr (Or.inl hy)
-  · simp only [iSup_app] at hy
+  · simp only [ΩLower.homObj_iSup_app] at hy
     have ⟨n, hy⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hy
     exact (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨n, Or.inr ⟨sec, hy⟩⟩
 
@@ -234,9 +215,9 @@ def IsFinitary (F : RawActionFamily Γ₁) : Prop :=
 theorem IsFinitary.eventually {F : RawActionFamily Γ₁} (hF : F.IsFinitary)
     (σ : Γ₂ ⟶ Γ₁) (i : ℕ) (ρ : RawValuation Γ₂) (I X : RawValue Γ₂)
     (label : Tm_ Γ₂) {y : CoherentShape Γ₂}
-    (hy : ((F.app _ σ.op (ρ.replace i I)).app _ ((𝟙 Γ₂).op, label) X).mem (𝟙 Γ₂) y) :
+    (hy : (y ∈ ((F.app _ σ.op (ρ.replace i I)).app _ ((𝟙 Γ₂).op, label) X).app (𝟙 Γ₂))) :
     ∀ᶠ J in I.approximations,
-      ((F.app _ σ.op (ρ.replace i J)).app _ ((𝟙 Γ₂).op, label) X).mem (𝟙 Γ₂) y :=
+      (y ∈ ((F.app _ σ.op (ρ.replace i J)).app _ ((𝟙 Γ₂).op, label) X).app (𝟙 Γ₂)) :=
   (hF σ i ρ X label).eventually
     (fun _ _ h => (F.app _ σ.op).hom.monotone
       (RawValuation.replace_mono i le_rfl h) _ ((𝟙 Γ₂).op, label) X)
@@ -258,22 +239,22 @@ theorem IsFinitary.normalizedBody
   have hfin : ΩLower.IsFinitary fun I => RawFamily.sectionValue hA B σ (ρ.replace i I) label
       (D.rawExtend (C.app _ σ.op (ρ.replace i I)) label J) := by
     intro I y hy
-    simp_rw [RawFamily.mem_sectionValue] at hy ⊢
+    rw [RawFamily.mem_sectionValue] at hy
     rcases hy with hy | ⟨s, hy⟩
     · exact ⟨∅, by simp, Or.inl hy⟩
     · simp at hy
       let X : RawFamily Γ₂ := RawFamily.decode D label (C.pullback σ) (RawFamily.constant J)
       have hX : X.IsFinitary := RawFamily.IsFinitary.decode D
         (RawFamily.IsFinitary.pullback hC σ) (RawFamily.constant_isFinitary J)
-      have hxy : (B.app _ s.hom.op
-          ((ρ.replace i I).push (X.app _ (𝟙 Γ₂).op (ρ.replace i I)))).mem (𝟙 Γ₂) y := by
+      have hxy : (y ∈ (B.app _ s.hom.op
+          ((ρ.replace i I).push (X.app _ (𝟙 Γ₂).op (ρ.replace i I)))).app (𝟙 Γ₂)) := by
         rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback]
-        simpa using hy
+        simpa [RawFamily.bodySection] using hy
       have ⟨l, hl, hy⟩ := hB.compose_value hX (𝟙 Γ₂) s.hom i ρ I hxy
       refine ⟨l, hl, Or.inr ⟨s, ?_⟩⟩
       dsimp only at hy
       rw [RawFamily.decode_app_hom_coe, RawFamily.constant_app_hom_coe, RawFamily.pullback] at hy
-      simpa using hy
+      simpa [RawFamily.bodySection] using hy
   change ΩLower.IsFinitary fun I => RawFamily.sectionValue hA B (𝟙 _ ≫ σ)
     ((ρ.replace i I).pullback (𝟙 _)) label
     (D.rawExtend (C.app _ (𝟙 _ ≫ σ).op ((ρ.replace i I).pullback (𝟙 _))) label J)
@@ -281,15 +262,8 @@ theorem IsFinitary.normalizedBody
 
 noncomputable def apply (F : RawActionFamily Γ₁) (X : RawFamily Γ₁) (label : Tm_ Γ₁) :
     RawFamily Γ₁ :=
-  let p := CartesianMonoidalCategory.lift
-    (CartesianMonoidalCategory.lift
-      (CartesianMonoidalCategory.snd _ _ ≫ coyonedaEquiv.symm label)
-      (Functor.homObjEquiv _ _ _ X.toTypes))
-    (Functor.homObjEquiv _ _ _ F.toTypes)
-  ((Functor.homObjEquiv _ _ _).symm (p ≫ MonoidalClosed.uncurry (RawAction.monotone E ℓ).ι)).ofTypes
-    fun Y σ _ _ h =>
-      OrderHom.apply_mono ((F.app Y σ).hom.monotone h Y (𝟙 Y, (Tm E ℓ).map σ label))
-        ((X.app Y σ).hom.monotone h)
+  ((Functor.HomObj.id _).pair X).comp
+    (F.uncurry.map (CartesianMonoidalCategory.lift (𝟙 _) (coyonedaEquiv.symm label)))
 
 @[simp] theorem apply_app (F : RawActionFamily Γ₁) (X : RawFamily Γ₁)
     (label : Tm_ Γ₁) (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) :
@@ -298,7 +272,7 @@ noncomputable def apply (F : RawActionFamily Γ₁) (X : RawFamily Γ₁) (label
         (X.app _ σ.op ρ) := rfl
 
 def IsActionFinitary (F : RawActionFamily Γ₁) : Prop :=
-  ∀ ⦃Γ₂ : CtxCat E ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂), (F.app _ σ.op ρ).IsFinitary
+  ∀ ⦃Γ₂ : CtxCat E ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂), RawAction.IsFinitary (F.app _ σ.op ρ)
 
 theorem IsFinitary.apply {F : RawActionFamily Γ₁} (hF : F.IsFinitary) (hArg : F.IsActionFinitary)
     {X : RawFamily Γ₁} (hX : X.IsFinitary) (label : Tm_ Γ₁) :

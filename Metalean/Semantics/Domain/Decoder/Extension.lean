@@ -84,18 +84,18 @@ theorem rawExtend_toLower (F : CodeAssignment E ℓ) (T : Domain Γ₁)
 
 @[simp] theorem mem_rawExtend (F : CodeAssignment E ℓ) (T : RawValue Γ₁)
     (n : Tm_ Γ₁) (X : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (F.rawExtend T n X).mem σ y ↔
-      ∃ c, T.mem σ c ∧ ∃ x, X.mem σ x ∧
-        (F.eval c ((Tm E ℓ).map σ.op n) (principalIdeal x)).mem (𝟙 Γ₂) y := by
+    (y ∈ (F.rawExtend T n X).app σ) ↔
+      ∃ c, (c ∈ T.app σ) ∧ ∃ x, (x ∈ X.app σ) ∧
+        (y ∈ (F.eval c ((Tm E ℓ).map σ.op n) (principalIdeal x)).app (𝟙 Γ₂)) := by
   rw [rawExtend, ΩLower.mem_bind₂]
   exact ⟨fun ⟨c, x, hc, hx, hy⟩ => ⟨c, hc, x, hx, hy⟩, fun ⟨c, hc, x, hx, hy⟩ => ⟨c, x, hc, hx, hy⟩⟩
 
 @[simp] theorem mem_extend (F : CodeAssignment E ℓ)
     (T : Domain Γ₂) (n : Tm_ Γ₂) (X : Domain Γ₂)
     (σ : Γ₁ ⟶ Γ₂) (y : CoherentShape Γ₁) :
-    (F.extend T n X).mem σ y ↔ ∃ a, T.mem σ a ∧
-      (F.eval a ((Tm E ℓ).map σ.op n) (X.pullback σ)).mem (𝟙 Γ₁) y := by
-  rw [← ΩIdeal.val_mem, ← rawExtend_toLower, mem_rawExtend]
+    (y ∈ (F.extend T n X).app σ) ↔ ∃ a, (a ∈ T.app σ) ∧
+      (y ∈ (F.eval a ((Tm E ℓ).map σ.op n) (X.pullback σ)).app (𝟙 Γ₁)) := by
+  rw [ΩIdeal.mem_app, ← rawExtend_toLower, mem_rawExtend]
   constructor
   · intro ⟨c, hc, x, hx, hy⟩
     refine ⟨c, hc, F.eval_mono_payload c _ ?_ (𝟙 Γ₁) y hy⟩
@@ -124,6 +124,7 @@ theorem pullback_rawExtend (F : CodeAssignment E ℓ) (T : RawValue Γ₁)
     (F.rawExtend T n X).pullback σ₁ =
       F.rawExtend (T.pullback σ₁) ((Tm E ℓ).map σ₁.op n) (X.pullback σ₁) := by
   ext Γ₃ σ₂ y
+  rw [ΩLower.pullback_app, mem_rawExtend, mem_rawExtend]
   simp [← Functor.map_comp_apply, ← op_comp]
 
 theorem pullback_extend (F : CodeAssignment E ℓ) (T : Domain Γ₁)
@@ -142,10 +143,10 @@ noncomputable def rawExtendHom (F : CodeAssignment E ℓ) :
 
 theorem rawExtend_eventually (F : CodeAssignment E ℓ) {α : Type*} {l : Filter α}
     {T X : RawValue Γ₁} {Ts Xs : α → RawValue Γ₁} (n : Tm_ Γ₁)
-    (hT : ∀ {x}, T.mem (𝟙 Γ₁) x → ∀ᶠ a in l, (Ts a).mem (𝟙 Γ₁) x)
-    (hX : ∀ {x}, X.mem (𝟙 Γ₁) x → ∀ᶠ a in l, (Xs a).mem (𝟙 Γ₁) x)
-    {y : CoherentShape Γ₁} (hy : (F.rawExtend T n X).mem (𝟙 Γ₁) y) :
-    ∀ᶠ a in l, (F.rawExtend (Ts a) n (Xs a)).mem (𝟙 Γ₁) y :=
+    (hT : ∀ {x}, (x ∈ T.app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (Ts a).app (𝟙 Γ₁)))
+    (hX : ∀ {x}, (x ∈ X.app (𝟙 Γ₁)) → ∀ᶠ a in l, (x ∈ (Xs a).app (𝟙 Γ₁)))
+    {y : CoherentShape Γ₁} (hy : (y ∈ (F.rawExtend T n X).app (𝟙 Γ₁))) :
+    ∀ᶠ a in l, (y ∈ (F.rawExtend (Ts a) n (Xs a)).app (𝟙 Γ₁)) :=
   ΩLower.bind₂_eventually _ hT hX hy
 
 theorem extend_principal (F : CodeAssignment E ℓ) (a : CoherentShape Γ₁)
@@ -164,14 +165,14 @@ theorem extend_principal (F : CodeAssignment E ℓ) (a : CoherentShape Γ₁)
     exact (ΩIdeal.presheaf_map_mem_id _ σ y).mpr hy
 
 theorem eval_le_extend (F : CodeAssignment E ℓ) {T : Domain Γ₁}
-    {a : CoherentShape Γ₁} (ha : T.mem (𝟙 Γ₁) a)
+    {a : CoherentShape Γ₁} (ha : (a ∈ T.app (𝟙 Γ₁)))
     (n : Tm_ Γ₁) (X : Domain Γ₁) : F.eval a n X ≤ F.extend T n X :=
   (F.extend_principal a n X).symm.le.trans (F.extend_mono (ΩLower.principal_le_iff.mpr ha) (@le_rfl _ _ _))
 
 theorem rawExtend_eq_map (F : CodeAssignment E ℓ) {T X : RawValue Γ₁} {n : Tm_ Γ₁}
     (G : Functor.HomObj (order E ℓ) (order E ℓ) (uliftYoneda.{0}.obj Γ₁))
-    (hT : ∀ {Γ₂ : CtxCat E ℓ} (σ : Γ₂ ⟶ Γ₁) (c : CoherentShape Γ₂), T.mem σ c →
-      ∃ d, T.mem σ d ∧ c ≤ d ∧ ∀ x,
+    (hT : ∀ {Γ₂ : CtxCat E ℓ} (σ : Γ₂ ⟶ Γ₁) (c : CoherentShape Γ₂), (c ∈ T.app σ) →
+      ∃ d, (d ∈ T.app σ) ∧ c ≤ d ∧ ∀ x,
         F.eval d ((Tm E ℓ).map σ.op n) (principalIdeal x) = principalIdeal (G.app _ ⟨σ⟩ x)) :
     F.rawExtend T n X = X.map G := by
   ext Γ₂ σ y
@@ -210,9 +211,9 @@ theorem extend_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent)
     (T : Domain Γ₁) (n : Tm_ Γ₁) (X : Domain Γ₁) :
     F.extend T n (F.extend T n X) = F.extend T n X := by
   apply le_antisymm
-  · intro Γ₂ σ y
-    simp_rw [mem_extend]
-    intro ⟨a, ha, hy⟩
+  · intro Γ₂ σ y hy
+    obtain ⟨a, ha, hy⟩ := (mem_extend F T n (F.extend T n X) σ y).mp hy
+    apply (mem_extend F T n X σ y).mpr
     have ⟨x, hx, hy⟩ := (F.app _ a).property _ ((𝟙 Γ₂).op, (Tm E ℓ).map σ.op n)
       ((F.extend T n X).pullback σ) hy
     rw [ΩIdeal.presheaf_map_mem_id] at hx
@@ -223,13 +224,13 @@ theorem extend_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent)
     have hyc' := F.eval_mono_payload c _ (ΩLower.principal_le_iff.mpr hxc) (𝟙 Γ₂) y hyc
     rw [F.eval_idempotent hF] at hyc'
     exact ⟨c, hc, hyc'⟩
-  · intro Γ₂ σ y
-    simp_rw [mem_extend]
-    intro ⟨a, ha, hy⟩
-    have ha' : (T.pullback σ).mem (𝟙 Γ₂) a :=
+  · intro Γ₂ σ y hy
+    obtain ⟨a, ha, hy⟩ := (mem_extend F T n X σ y).mp hy
+    apply (mem_extend F T n (F.extend T n X) σ y).mpr
+    have ha' : (a ∈ (T.pullback σ).app (𝟙 Γ₂)) :=
       (ΩIdeal.presheaf_map_mem_id T σ a).mpr ha
-    have hy' : (F.eval a ((Tm E ℓ).map σ.op n)
-        (F.eval a ((Tm E ℓ).map σ.op n) (X.pullback σ))).mem (𝟙 Γ₂) y := by
+    have hy' : (y ∈ (F.eval a ((Tm E ℓ).map σ.op n)
+        (F.eval a ((Tm E ℓ).map σ.op n) (X.pullback σ))).app (𝟙 Γ₂)) := by
       rw [F.eval_idempotent hF]
       exact hy
     refine ⟨a, ha, ?_⟩

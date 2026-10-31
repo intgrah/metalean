@@ -42,7 +42,7 @@ theorem graphAction_le_of_valid (B : IdealAction Γ₁) (f : CoherentGraph Γ₁
     (hf : B.onBasis.GraphValid (𝟙 Γ₁) f) (σ₁ : Γ₂ ⟶ Γ₁)
     (label : Tm_ Γ₂) (X : Domain Γ₂) :
     (graphAction f).val.app _ (σ₁.op, label) X ≤ B.val.app _ (σ₁.op, label) X := by
-  have hgraph : (IdealAction.abstraction B).mem (𝟙 Γ₁) f.lamGenerator :=
+  have hgraph : (f.lamGenerator ∈ (IdealAction.abstraction B).app (𝟙 Γ₁)) :=
     (IdealAction.mem_abstraction _ _ _).mpr ⟨f, hf, le_rfl⟩
   have hle : application ((principalIdeal f.lamGenerator).pullback σ₁) label X ≤
       application ((IdealAction.abstraction B).pullback σ₁) label X :=
@@ -50,7 +50,7 @@ theorem graphAction_le_of_valid (B : IdealAction Γ₁) (f : CoherentGraph Γ₁
   rw [pullback_abstraction, IdealAction.application_abstraction] at hle
   intro Γ₃ σ₂ z hz
   have h := hle σ₂ z hz
-  change (B.val.app _ (σ₁.op ≫ (𝟙 Γ₂).op, label) X).mem σ₂ z at h
+  change (z ∈ (B.val.app _ (σ₁.op ≫ (𝟙 Γ₂).op, label) X).app σ₂) at h
   simpa using h
 
 namespace CodeAssignment
@@ -111,27 +111,30 @@ theorem pullback_resultBody (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
 
 noncomputable def resultIdeal (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
     (X Y : Domain Γ₂) : Domain Γ₂ where
-  val.mem σ₂ z := z ≤ ⊥ ∨ ∃ (h : Tm.type ((Tm E ℓ).map (σ₂ ≫ σ₁).op n) =
-      Ty.piApp ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).1
-        ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).2)
-      (hm : Tm.type ((Tm E ℓ).map σ₂.op m) =
-        yonedaEquiv ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).1),
-    (F.resultBody label n B (σ₂ ≫ σ₁) ((Tm E ℓ).map σ₂.op m) (X.pullback σ₂)
-      (Y.pullback σ₂) h hm).mem (𝟙 _) z
+  val.app σ₂ := {
+    carrier := {z | z ≤ ⊥ ∨ ∃ (h : Tm.type ((Tm E ℓ).map (σ₂ ≫ σ₁).op n) =
+        Ty.piApp ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).1
+          ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).2)
+        (hm : Tm.type ((Tm E ℓ).map σ₂.op m) =
+          yonedaEquiv ((Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label).1),
+      (z ∈ (F.resultBody label n B (σ₂ ≫ σ₁) ((Tm E ℓ).map σ₂.op m) (X.pullback σ₂)
+        (Y.pullback σ₂) h hm).app (𝟙 _))}
+    lower' := fun {_ _} hab hb => by
+      rcases hb with hb | ⟨h, hm, hb⟩
+      · exact Or.inl (hab.trans hb)
+      · exact Or.inr ⟨h, hm, ((F.resultBody label n B _ _ _ _ _ hm).app (𝟙 _)).lower hab hb⟩ }
   val.natural σ₂ σ₃ z := by
     rintro (hz | ⟨h, hm, hz⟩)
     · exact Or.inl (Le.reindex σ₃ hz)
     have hmem := (F.resultBody label n B (σ₂ ≫ σ₁) ((Tm E ℓ).map σ₂.op m) (X.pullback σ₂)
       (Y.pullback σ₂) h hm).natural (𝟙 _) σ₃ z hz
     rw [Category.comp_id, ← ΩIdeal.presheaf_map_mem_id, F.pullback_resultBody] at hmem
+    refine Or.inr ?_
     rw [Category.assoc, ← map_tm_comp m σ₂ σ₃, ← ΩIdeal.pullback_pullback,
       ← ΩIdeal.pullback_pullback]
-    exact Or.inr ⟨_, _, hmem⟩
+    exact ⟨_, _, hmem⟩
   val.bottom _ := Or.inl bot_le
-  val.lower _ hab hb := by
-    rcases hb with hb | ⟨h, hm, hb⟩
-    · exact Or.inl (hab.trans hb)
-    · exact Or.inr ⟨h, hm, (F.resultBody label n B _ _ _ _ _ hm).lower (𝟙 _) hab hb⟩
+
   property := by
     rintro Γ₃ σ₂ c d (hc | ⟨h, hm, hc⟩) hd
     · exact ⟨d, hd, hc.trans bot_le, le_rfl⟩
@@ -156,7 +159,7 @@ theorem pullback_resultIdeal (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
   apply ΩIdeal.ext
   intro Γ₄ σ₃ z
   rw [ΩIdeal.presheaf_map_mem]
-  dsimp only [resultIdeal, ΩIdeal.mem]
+  change (_ ∨ _) ↔ (_ ∨ _)
   rw [Category.assoc, map_tm_comp, ΩIdeal.pullback_pullback, ΩIdeal.pullback_pullback]
 
 theorem resultBody_finitary_left (σ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
@@ -188,7 +191,8 @@ theorem resultIdeal_pullback (σ₁ : Γ₂ ⟶ Γ₁) (σ₂ : Γ₃ ⟶ Γ₂)
       F.resultIdeal label n B (σ₂ ≫ σ₁) m X Y := by
   apply ΩIdeal.ext
   intro Γ₄ σ₃ z
-  dsimp only [resultIdeal, ΩIdeal.mem, resultBody, IdealAction.pullback_app]
+  change (_ ∨ _) ↔ (_ ∨ _)
+  dsimp only [resultBody, IdealAction.pullback_app]
   rw [map_pair_comp, map_tm_comp n, Category.assoc]
 
 theorem resultIdeal_eq_body (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
@@ -202,7 +206,7 @@ theorem resultIdeal_eq_body (σ₁ : Γ₂ ⟶ Γ₁) (m : Tm_ Γ₂)
   intro Γ₃ σ₂ z
   constructor
   · rintro (hz | ⟨h', hm', hz⟩)
-    · exact (F.resultBody label n B σ₁ m X Y h hm).lower σ₂ hz
+    · exact ((F.resultBody label n B σ₁ m X Y h hm).app σ₂).lower hz
         ((F.resultBody label n B σ₁ m X Y h hm).bottom σ₂)
     · rw [← ΩIdeal.presheaf_map_mem_id _ σ₂, F.pullback_resultBody]
       exact hz
@@ -296,9 +300,9 @@ theorem pullback_piBody (G : Domain Γ₁) (σ : Γ₂ ⟶ Γ₁) :
   rw [resultIdeal_pullback, ΩIdeal.pullback_pullback, ΩIdeal.pullback_pullback]
 
 theorem piBody_finitary (G X : Domain Γ₁) (m : Tm_ Γ₁) {y : CoherentShape Γ₁}
-    (hy : ((F.piBody label n A B G).val.app _ ((𝟙 Γ₁).op, m) X).mem (𝟙 Γ₁) y) :
-    ∃ g, G.mem (𝟙 Γ₁) g ∧
-      ((F.piBody label n A B (principalIdeal g)).val.app _ ((𝟙 Γ₁).op, m) X).mem (𝟙 Γ₁) y := by
+    (hy : (y ∈ ((F.piBody label n A B G).val.app _ ((𝟙 Γ₁).op, m) X).app (𝟙 Γ₁))) :
+    ∃ g, (g ∈ G.app (𝟙 Γ₁)) ∧
+      (y ∈ ((F.piBody label n A B (principalIdeal g)).val.app _ ((𝟙 Γ₁).op, m) X).app (𝟙 Γ₁)) := by
   rw [piBody_app_id] at hy
   rcases hy with hy | ⟨hc, hm, hy⟩
   · exact ⟨⊥, G.bottom (𝟙 _), by rw [piBody_app_id]; exact Or.inl hy⟩
@@ -389,9 +393,9 @@ namespace CodeAssignment
 
 theorem piAction_domain_finitary (label : Ty.Pair Γ₁)
     (n : Tm_ Γ₁) (A : Domain Γ₁) (B : IdealAction Γ₁) (G : Domain Γ₁)
-    (hz : ((F.piAction label A B).val.app _ ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) z) :
-    ∃ a, A.mem (𝟙 Γ₁) a ∧
-      ((F.piAction label (principalIdeal a) B).val.app _ ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) z := by
+    (hz : (z ∈ ((F.piAction label A B).val.app _ ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁))) :
+    ∃ a, (a ∈ A.app (𝟙 Γ₁)) ∧
+      (z ∈ ((F.piAction label (principalIdeal a) B).val.app _ ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁)) := by
   simp only [piAction_app_id] at hz ⊢
   refine IdealAction.abstraction_finitary (fun A ↦ F.piBody label n A B G)
     (fun h m X ↦ F.piBody_mono label n h (fun _ _ _ => @le_rfl _ _ _) (@le_rfl _ _ _) (𝟙 Γ₁) m X)
@@ -408,11 +412,11 @@ theorem piAction_domain_finitary (label : Ty.Pair Γ₁)
 
 theorem piAction_body_finitary (label : Ty.Pair Γ₁)
     (n : Tm_ Γ₁) (A H G : Domain Γ₁)
-    (hz : ((F.piAction label A (applicationAction H)).val.app _
-      ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) z) :
-    ∃ h, H.mem (𝟙 Γ₁) h ∧
-      ((F.piAction label A (applicationAction
-        (principalIdeal h))).val.app _ ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) z := by
+    (hz : (z ∈ ((F.piAction label A (applicationAction H)).val.app _
+      ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁))) :
+    ∃ h, (h ∈ H.app (𝟙 Γ₁)) ∧
+      (z ∈ ((F.piAction label A (applicationAction
+        (principalIdeal h))).val.app _ ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁)) := by
   simp only [piAction_app_id] at hz ⊢
   refine IdealAction.abstraction_finitary (fun H ↦ F.piBody label n A (applicationAction H) G)
     (fun hle m X ↦ F.piBody_mono label n (@le_rfl _ _ _)
@@ -422,7 +426,7 @@ theorem piAction_body_finitary (label : Ty.Pair Γ₁)
   rcases hy with hy | ⟨hc, hm, hy⟩
   · exact ⟨⊥, H'.bottom (𝟙 Γ₁), by rw [piBody_app_id]; exact Or.inl hy⟩
   rw [ΩIdeal.pullback_id] at hy
-  change (F.extend (application (H'.pullback (𝟙 Γ₁)) _ _) _ _).mem (𝟙 Γ₁) y at hy
+  change (y ∈ (F.extend (application (H'.pullback (𝟙 Γ₁)) _ _) _ _).app (𝟙 Γ₁)) at hy
   rw [ΩIdeal.pullback_id] at hy
   have ⟨b, hb, hy⟩ := F.extend_finitary_left _ _ _ hy
   have ⟨h, hh, hb⟩ := application_function_finitary H' _ hb
@@ -430,7 +434,7 @@ theorem piAction_body_finitary (label : Ty.Pair Γ₁)
   rw [piBody_app_id]
   refine Or.inr ⟨hc, hm, ?_⟩
   rw [ΩIdeal.pullback_id]
-  change (F.extend (application ((principalIdeal h).pullback (𝟙 Γ₁)) _ _) _ _).mem (𝟙 Γ₁) y
+  change (y ∈ (F.extend (application ((principalIdeal h).pullback (𝟙 Γ₁)) _ _) _ _).app (𝟙 Γ₁))
   rw [ΩIdeal.pullback_id]
   exact F.extend_mono (ΩLower.principal_le_iff.mpr hb) (@le_rfl _ _ _) (𝟙 Γ₁) y hy
 

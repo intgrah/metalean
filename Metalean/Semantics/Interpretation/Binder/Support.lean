@@ -34,29 +34,30 @@ theorem RawAction.rawApplication_abstraction_eq_value (F : RawAction Γ₁)
   ext Γ₂ σ y
   let label' := (Tm E ℓ).map σ.op label
   let Y := F.app _ (σ.op, label') (X.pullback σ).val
-  have hvalue : (F.app _ ((𝟙 Γ₁).op, label) X.val).mem σ y ↔ Y.mem (𝟙 Γ₂) y := by
+  have hvalue : (y ∈ (F.app _ ((𝟙 Γ₁).op, label) X.val).app σ) ↔ (y ∈ Y.app (𝟙 Γ₂)) := by
     rw [← ΩLower.presheaf_map_mem_id, ← F.app_pullback, op_id, Category.id_comp]
     rfl
   rw [hvalue, mem_rawApplication]
   constructor
   · rintro (hbot | ⟨name, hname, u, x, hu, hx, x', hx', hy⟩)
-    · exact Y.lower (𝟙 Γ₂) hbot (Y.bottom (𝟙 Γ₂))
+    · exact (Y.app (𝟙 Γ₂)).lower hbot (Y.bottom (𝟙 Γ₂))
     simp at hy
     apply hy.mem_of_outputAtom (hD σ label' (X.pullback σ))
     intro w hw'
     have hatom : OutputAtom (F.abstraction.pullback σ) ((Tm E ℓ).map σ.op name) x' w :=
       hw'.mono_function (ΩLower.principal_le_iff.mpr (by simpa using hu))
     rcases hsupport σ _ ⟨name, hname, rfl⟩ hatom with hbottom | hname'
-    · exact Y.lower (𝟙 Γ₂) hbottom (Y.bottom (𝟙 Γ₂))
+    · exact (Y.app (𝟙 Γ₂)).lower hbottom (Y.bottom (𝟙 Γ₂))
     rw [hname'] at hatom
     exact (F.app _ (σ.op, label')).hom.monotone
       (ΩLower.principal_le_iff.mpr
-        ((X.pullback σ).lower (𝟙 Γ₂) (by simpa using hx') (by simpa using hx)))
+        (((X.pullback σ).app (𝟙 Γ₂)).lower (by simpa using hx') (by simpa using hx)))
       (𝟙 Γ₂) w (BasisAction.mem_value_of_outputAtom hatom)
   · intro hy
     have ⟨x, hx, hy'⟩ := hF.exists_principal σ label' (X.pullback σ) hy
     have ⟨g, e, hg, hlab, hin, hout⟩ := BasisAction.outputAtom_of_mem_value (F := F.onBasis) hy'
-    exact Or.inr ⟨label, hlabel, g.lamGenerator, x, by simpa using hg, by simpa using hx,
+    exact Or.inr ⟨label, hlabel, g.lamGenerator, x,
+      (ΩLower.presheaf_map_mem_id F.abstraction σ _).mp hg, by simpa using hx,
       OutputAtom.mem_application ⟨g, e, by simp, hlab, hin, hout⟩ (by simp)⟩
 
 namespace RawFamily

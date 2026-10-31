@@ -97,13 +97,19 @@ theorem indBody_congr {code code' : IndCode Γ₁} (ecode : code = code')
 noncomputable def indRebuild (code : IndCode Γ₁)
     (ctorTypes : Fin code.toIndHead.nctors → Domain Γ₁) (σ₁ : Γ₂ ⟶ Γ₁)
     (n : Tm_ Γ₂) (X : Domain Γ₂) : Domain Γ₂ where
-  val.mem σ₂ y := y ≤ ⊥ ∨
-    (∃ (c : Fin code.toIndHead.nctors)
-      (hg : (code.map ((Tm E ℓ).map (σ₂ ≫ σ₁).op)).StructGuard c
-        ((Tm E ℓ).map σ₂.op n)),
-      (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂) hg).mem (𝟙 _) y) ∨
-    (∀ c : Fin code.toIndHead.nctors, ¬ (E.get code.η).block.IsStructure code.s c) ∧
-      (indIdeal code.toIndHead (X.pullback σ₂)).mem (𝟙 _) y
+  val.app σ₂ := {
+    carrier := {y | y ≤ ⊥ ∨
+      (∃ (c : Fin code.toIndHead.nctors)
+        (hg : (code.map ((Tm E ℓ).map (σ₂ ≫ σ₁).op)).StructGuard c
+          ((Tm E ℓ).map σ₂.op n)),
+        (y ∈ (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂) hg).app (𝟙 _))) ∨
+      (∀ c : Fin code.toIndHead.nctors, ¬ (E.get code.η).block.IsStructure code.s c) ∧
+        (y ∈ (indIdeal code.toIndHead (X.pullback σ₂)).app (𝟙 _))}
+    lower' := fun {_ _} hab => by
+      rintro (hb | ⟨c, hg, hb⟩ | ⟨hns, hb⟩)
+      · exact Or.inl (hab.trans hb)
+      · exact Or.inr (Or.inl ⟨c, hg, ((F.indBody _ _ hg).app (𝟙 _)).lower hab hb⟩)
+      · exact Or.inr (Or.inr ⟨hns, ((indIdeal code.toIndHead _).app (𝟙 _)).lower hab hb⟩) }
   val.natural σ₂ σ₃ y := by
     rintro (hy | ⟨c, hg, hy⟩ | ⟨hns, hy⟩)
     · exact Or.inl (Le.reindex σ₃ hy)
@@ -114,10 +120,13 @@ noncomputable def indRebuild (code : IndCode Γ₁)
       have hn : (Tm E ℓ).map σ₃.op ((Tm E ℓ).map σ₂.op n) =
           (Tm E ℓ).map (σ₃ ≫ σ₂).op n := CodeAssignment.map_tm_comp n σ₂ σ₃
       refine Or.inr (Or.inl ⟨c, (hg.pullback σ₃).cast hcode rfl hn, ?_⟩)
-      have hmem : ((F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
-          hg).pullback σ₃).mem (𝟙 _) (reindex σ₃ y) := by
-        simpa using (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
+      have hmem : ((reindex σ₃ y) ∈ ((F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
+          hg).pullback σ₃).app (𝟙 _)) := by
+        apply (ΩIdeal.presheaf_map_mem_id _ σ₃ _).mpr
+        have h := (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (X.pullback σ₂)
           hg).natural (𝟙 _) σ₃ y hy
+        simp only [Category.comp_id] at h
+        exact h
       rwa [F.pullback_indBody _ _ hg σ₃ (hg.pullback σ₃),
         F.indBody_congr hcode rfl hn
           (show ((ctorTypes c).pullback (σ₂ ≫ σ₁)).pullback σ₃ =
@@ -126,20 +135,18 @@ noncomputable def indRebuild (code : IndCode Γ₁)
           (ΩIdeal.pullback_pullback X σ₂ σ₃) (hg.pullback σ₃)
           ((hg.pullback σ₃).cast hcode rfl hn)] at hmem
     · refine Or.inr (Or.inr ⟨hns, ?_⟩)
-      have hmem : ((indIdeal code.toIndHead (X.pullback σ₂)).pullback σ₃).mem (𝟙 _)
-          (reindex σ₃ y) := by
-        simpa using (indIdeal code.toIndHead (X.pullback σ₂)).natural (𝟙 _) σ₃ y hy
+      have hmem : ((reindex σ₃ y) ∈ ((indIdeal code.toIndHead (X.pullback σ₂)).pullback σ₃).app (𝟙 _)) := by
+        apply (ΩIdeal.presheaf_map_mem_id _ σ₃ _).mpr
+        have h := (indIdeal code.toIndHead (X.pullback σ₂)).natural (𝟙 _) σ₃ y hy
+        simp only [Category.comp_id] at h
+        exact h
       rwa [show (indIdeal code.toIndHead (X.pullback σ₂)).pullback σ₃ =
           indIdeal code.toIndHead (X.pullback (σ₃ ≫ σ₂)) from
         Subtype.val_injective (by
           rw [← ΩIdeal.pullback_pullback]
           exact RawValue.pullback_indProjection _ _ _)] at hmem
   val.bottom _ := Or.inl bot_le
-  val.lower σ₂ hab := by
-    rintro (hb | ⟨c, hg, hb⟩ | ⟨hns, hb⟩)
-    · exact Or.inl (hab.trans hb)
-    · exact Or.inr (Or.inl ⟨c, hg, (F.indBody _ _ hg).lower (𝟙 _) hab hb⟩)
-    · exact Or.inr (Or.inr ⟨hns, (indIdeal code.toIndHead _).lower (𝟙 _) hab hb⟩)
+
   property := by
     rintro Γ₃ σ₂ a b (ha | ⟨ca, hga, ha⟩ | ⟨hnsa, ha⟩) hb
     · exact ⟨b, hb, ha.trans bot_le, le_rfl⟩
@@ -163,7 +170,7 @@ theorem pullback_indRebuild (code : IndCode Γ₁)
   apply ΩIdeal.ext
   intro Γ₄ σ₃ y
   rw [ΩIdeal.presheaf_map_mem]
-  dsimp only [indRebuild, ΩIdeal.mem]
+  change (_ ∨ _) ↔ (_ ∨ _)
   rw [Category.assoc, CodeAssignment.map_tm_comp, ΩIdeal.pullback_pullback]
 
 theorem projIdeal_indBody (T X : Domain Γ₁)
@@ -197,7 +204,7 @@ theorem indRebuild_eq_indBody (code : IndCode Γ₁)
     exact F.indBody_congr hcode rfl rfl (ΩIdeal.pullback_pullback (ctorTypes c) σ₁ σ₂) rfl _ _
   constructor
   · rintro (hy | ⟨c', hg', hy⟩ | ⟨hns, _⟩)
-    · exact (F.indBody _ _ hg).lower σ₂ hy ((F.indBody _ _ hg).bottom σ₂)
+    · exact ((F.indBody _ _ hg).app σ₂).lower hy ((F.indBody _ _ hg).bottom σ₂)
     · obtain rfl := hg.witness.struct.ctor_unique c'
       rwa [← ΩIdeal.presheaf_map_mem_id _ σ₂, hbody]
     · exact absurd hg.witness.struct (hns c)
@@ -217,7 +224,7 @@ theorem indRebuild_eq_indIdeal (code : IndCode Γ₁)
     Subtype.val_injective (RawValue.pullback_indProjection _ _ _)
   constructor
   · rintro (hy | ⟨c, hg, _⟩ | ⟨_, hy⟩)
-    · exact (indIdeal _ X).lower σ₂ hy ((indIdeal _ X).bottom σ₂)
+    · exact ((indIdeal _ X).app σ₂).lower hy ((indIdeal _ X).bottom σ₂)
     · exact absurd hg.witness.struct (hns c)
     · rwa [← ΩIdeal.presheaf_map_mem_id _ σ₂]
   · intro hy
@@ -227,9 +234,9 @@ theorem indRebuild_eq_indIdeal (code : IndCode Γ₁)
 theorem mem_indRebuild_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent)
     (code : IndCode Γ₁) (ctorTypes : Fin code.toIndHead.nctors → Domain Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (n : Tm_ Γ₂) (X : Domain Γ₂) (y : CoherentShape Γ₂) :
-    (F.indRebuild code ctorTypes σ n
-        (F.indRebuild code ctorTypes σ n X)).mem (𝟙 Γ₂) y ↔
-      (F.indRebuild code ctorTypes σ n X).mem (𝟙 Γ₂) y := by
+    (y ∈ (F.indRebuild code ctorTypes σ n
+        (F.indRebuild code ctorTypes σ n X)).app (𝟙 Γ₂)) ↔
+      (y ∈ (F.indRebuild code ctorTypes σ n X).app (𝟙 Γ₂)) := by
   by_cases hguard : ∃ c : Fin code.toIndHead.nctors,
       (code.map ((Tm E ℓ).map σ.op)).StructGuard c n
   · have ⟨c, hg⟩ := hguard
@@ -243,7 +250,7 @@ theorem mem_indRebuild_idempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempoten
       code.map ((Tm E ℓ).map σ.op) := by rw [Category.id_comp]
   have hnid : (Tm E ℓ).map (𝟙 Γ₂).op n = n := by simp
   have hempty : ∀ Z : Domain Γ₂,
-      (F.indRebuild code ctorTypes σ n Z).mem (𝟙 Γ₂) y ↔ y ≤ ⊥ := by
+      (y ∈ (F.indRebuild code ctorTypes σ n Z).app (𝟙 Γ₂)) ↔ y ≤ ⊥ := by
     intro Z
     constructor
     · rintro (hy | ⟨c, hg, _⟩ | ⟨hns', _⟩)
@@ -293,9 +300,9 @@ theorem pullback_indAction (code : IndCode Γ₁)
         (ctorTypes c).pullback (σ₃ ≫ p.1.unop ≫ σ) := by
     intro c
     rw [ΩIdeal.pullback_pullback, Category.assoc]
-  change (F.indRebuild code ctorTypes (p.1.unop ≫ σ) p.2 X).mem σ₃ y ↔
-    (F.indRebuild (code.map ((Tm E ℓ).map σ.op)) (fun c => (ctorTypes c).pullback σ)
-      p.1.unop p.2 X).mem σ₃ y
+  change (y ∈ (F.indRebuild code ctorTypes (p.1.unop ≫ σ) p.2 X).app σ₃) ↔
+    (y ∈ (F.indRebuild (code.map ((Tm E ℓ).map σ.op)) (fun c => (ctorTypes c).pullback σ)
+      p.1.unop p.2 X).app σ₃)
   refine or_congr_right (or_congr_left (exists_congr fun c => ?_))
   constructor
   · rintro ⟨hg, hy⟩
@@ -311,8 +318,8 @@ theorem indAction_isIdempotent {F : CodeAssignment E ℓ} (hF : F.IsIdempotent)
   intro Γ₂ σ₁ n X
   apply ΩIdeal.ext
   intro Γ₃ σ₂ y
-  change (F.indRebuild code ctorTypes σ₁ n (F.indRebuild code ctorTypes σ₁ n X)).mem σ₂ y ↔
-    (F.indRebuild code ctorTypes σ₁ n X).mem σ₂ y
+  change (y ∈ (F.indRebuild code ctorTypes σ₁ n (F.indRebuild code ctorTypes σ₁ n X)).app σ₂) ↔
+    (y ∈ (F.indRebuild code ctorTypes σ₁ n X).app σ₂)
   rw [← ΩIdeal.presheaf_map_mem_id _ σ₂, ← ΩIdeal.presheaf_map_mem_id _ σ₂, F.pullback_indRebuild,
     F.pullback_indRebuild]
   exact mem_indRebuild_idempotent hF code ctorTypes (σ₂ ≫ σ₁) _ _ y
@@ -338,15 +345,15 @@ theorem indAction_eq_of_rank
   ext Γ₂ p X
   apply ΩIdeal.ext
   intro Γ₃ σ y
-  change (F.indRebuild code _ p.1.unop p.2 X).mem σ y ↔
-    (G.indRebuild code _ p.1.unop p.2 X).mem σ y
+  change (y ∈ (F.indRebuild code _ p.1.unop p.2 X).app σ) ↔
+    (y ∈ (G.indRebuild code _ p.1.unop p.2 X).app σ)
   refine or_congr_right (or_congr_left (exists_congr fun c => exists_congr fun hg => ?_))
   have heq := telescope_eq_of_rank h ((principalIdeal (ctorTypes c)).pullback (σ ≫ p.1.unop))
     (fun _ σ₂ _ hb => ⟨_, by simpa using hr c, (principalIdeal_mem _ _ _).mpr le_rfl,
       (principalIdeal_mem _ _ _).mp hb⟩)
     (indNames hg) fun i => projIdeal (code.ctorHead c) i (X.pullback σ)
-  change (ctorIdeal _ _ (F.telescope _ _ _).1).mem _ y ↔
-    (ctorIdeal _ _ (G.telescope _ _ _).1).mem _ y
+  change (y ∈ (ctorIdeal _ _ (F.telescope _ _ _).1).app _) ↔
+    (y ∈ (ctorIdeal _ _ (G.telescope _ _ _).1).app _)
   rw [heq]
 
 end CodeAssignment

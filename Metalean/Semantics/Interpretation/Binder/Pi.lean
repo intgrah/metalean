@@ -26,7 +26,7 @@ section Pi
 variable {Γ₁ Γ₂ Γ₃ ΓA : CtxCat E ℓ} (D : CodeAssignment E ℓ)
 
 noncomputable abbrev rawPi (label : Ty.Pair Γ₁) (A : RawValue Γ₁) (B : RawAction Γ₁) : RawValue Γ₁ :=
-  BasisAction.pi label A B.onBasis
+  BasisAction.pi label A (RawAction.onBasis B)
 
 theorem rawPi_toIdealAction (label : Ty.Pair Γ₁)
     (A : Domain Γ₁) (B : RawAction Γ₁)
@@ -37,7 +37,7 @@ theorem rawPi_toIdealAction (label : Ty.Pair Γ₁)
 theorem rawPi_isDirected (label : Ty.Pair Γ₁) {A : RawValue Γ₁}
     (B : RawAction Γ₁) (hA : A.IsDirected) (hD : B.IsIdealValued) :
     (rawPi label A B).IsDirected :=
-  BasisAction.pi_isDirected label A B.onBasis hA
+  BasisAction.pi_isDirected label A (RawAction.onBasis B) hA
     fun _ σ label x => hD σ label (principalIdeal x)
 
 noncomputable def rawPiHom (E : Env ζ) (ℓ : Nat) : Functor.HomObj (ΩLower.presheaf (pointedOrder E ℓ) ⊗ (RawAction.presheaf E ℓ))
@@ -46,7 +46,7 @@ noncomputable def rawPiHom (E : Env ζ) (ℓ : Nat) : Functor.HomObj (ΩLower.pr
     toFun := fun (A, B) => rawPi label A B
     monotone' := fun _ _ ⟨hA, hB⟩ {_} σ _ ⟨a, f, ha, hf, hq⟩ =>
       ⟨a, f, hA σ a ha, RawAction.GraphValid.mono hB hf, hq⟩ }
-  naturality σ label := Preord.ext fun (A, B) => (BasisAction.pullback_pi label A B.onBasis σ.unop).symm
+  naturality σ label := Preord.ext fun (A, B) => (BasisAction.pullback_pi label A (RawAction.onBasis B) σ.unop).symm
 
 namespace RawFamily
 
@@ -85,7 +85,7 @@ theorem mem_piAtom_pi_value_iff
     (hA : ℒ.Comprehension Γ₁ ΓA) (label : Ty.Pair Γ₁)
     (C : RawFamily Γ₁) (B : RawFamily ΓA)
     (σ₁ : Γ₂ ⟶ Γ₁) (ρ : RawValuation Γ₂) (σ₂ : Γ₃ ⟶ Γ₂) (label' : Ty.Pair Γ₃) :
-    ((pi D hA label C B).app _ σ₁.op ρ).mem σ₂ (piAtom label') ↔
+    ((piAtom label') ∈ ((pi D hA label C B).app _ σ₁.op ρ).app σ₂) ↔
       label' = (Ty.pairPresheaf E ℓ).map (σ₂ ≫ σ₁).op label := by
   rw [pi_value, BasisAction.mem_piAtom_pi_iff, op_comp, Functor.map_comp_apply]
 
@@ -161,7 +161,7 @@ theorem application_rawPi_fixed (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
 theorem application_rawPi_fixed_support (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
     (X : Domain Γ₃)
     {y : CoherentShape Γ₃}
-    (hy : (CoherentShape.application (F.pullback σ₂) name X).mem (𝟙 Γ₃) y)
+    (hy : (y ∈ (CoherentShape.application (F.pullback σ₂) name X).app (𝟙 Γ₃)))
     (hne : ¬ y ≤ ⊥) :
     Nonempty (Raw.ContextSection ht (σ₂ ≫ σ₁) name) := by
   let T := (C.app _ σ₁.op ρ).toIdeal hC
@@ -266,8 +266,10 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
     have h := RawAction.rawApplication_abstraction_eq_value (m.pullback σ₂)
       (hmF.pullback σ₂) (hMI.pullback σ₂) Y {name} name rfl
       fun _ _ hname _ _ _ => Or.inr (by simpa using hname)
-    rw [RawAction.pullback, RawAction.app_map] at h
-    simpa only [RawAction.pullback_abstraction, op_id, Category.comp_id] using h
+    change rawApplication (m.pullback σ₂).abstraction {name} Y.val =
+      m.app _ (σ₂.op ≫ (𝟙 Γ₃).op, name) Y.val at h
+    rw [op_id, Category.comp_id] at h
+    exact h
   change (piLimit E ℓ).rawExtend (rawPi label T.val b) n L.val = m.abstraction
   rw [rawPi_toIdealAction label T b hbF hBI, (piLimit E ℓ).rawExtend_toLower, piLimit_extend_pi label,
     piAction_app_id]
@@ -310,8 +312,8 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
       sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val := by
     rw [← hMX]
     exact (RawAction.app_pullback m σ₂.op σ₃ name X.val).symm
-  have hLHS : (m.app _ (σ₂.op, name) X.val).mem σ₃ y ↔
-      (sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val).mem (𝟙 Γ₄) y := by
+  have hLHS : (y ∈ (m.app _ (σ₂.op, name) X.val).app σ₃) ↔
+      (y ∈ (sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val).app (𝟙 Γ₄)) := by
     rw [← happ]
     exact (Presheaf.ΩLower.presheaf_map_mem_id _ σ₃ y).symm
   rw [hLHS]
@@ -327,15 +329,15 @@ theorem normalizedAbstraction_fixed (ht : E[Γ₁.as.ctx] ⊢ t : .sort u)
         change _ = yonedaEquiv (yoneda.map (σ₃ ≫ σ₂) ≫ label.1)
         rw [← yonedaEquiv_naturality, hlabel, ← Functor.map_comp_apply, ← op_comp]
       refine Or.inr ⟨hnσ (σ₃ ≫ σ₂), hm, ?_⟩
-      change ((piLimit E ℓ).resultBody label n V (σ₃ ≫ σ₂) name' (U.pullback σ₃) (W.pullback σ₃) _ hm).val.mem
-        (𝟙 Γ₄) y
+      change y ∈ ((piLimit E ℓ).resultBody label n V (σ₃ ≫ σ₂) name'
+        (U.pullback σ₃) (W.pullback σ₃) _ hm).val.app (𝟙 Γ₄)
       rw [hrb]
       exact Or.inr ⟨s, hs⟩
   · rintro (hy | ⟨h, hm, hy⟩)
-    · exact (sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val).lower _ hy
+    · exact ((sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val).app _).lower hy
         ((sectionValue (CtxCat.rawComprehension ht) M ((σ₃ ≫ σ₂) ≫ σ₁) (ρ.pullback (σ₃ ≫ σ₂)) name' J.val).bottom _)
-    · change ((piLimit E ℓ).resultBody label n V (σ₃ ≫ σ₂) name' (U.pullback σ₃) (W.pullback σ₃) h hm).val.mem
-        (𝟙 Γ₄) y at hy
+    · change y ∈ ((piLimit E ℓ).resultBody label n V (σ₃ ≫ σ₂) name'
+        (U.pullback σ₃) (W.pullback σ₃) h hm).val.app (𝟙 Γ₄) at hy
       rwa [hrb] at hy
 
 end RawFamily

@@ -122,16 +122,16 @@ theorem proofConstructor_instance (h : RecData Γ₁ η ls l ps ms mins) (hrel :
   have hsect : sect.names = fun f => (Tm E₂ ℓ).map (σ₃ ≫ σ₂).op (inst.typed.names f) := by
     simp [sect]
   have hrhs :
-      (RawValue.ctor ⟨η, s, c⟩ (fun f => (Tm E₂ ℓ).map σ₂.op (inst.typed.names f))
-        (recoveredField η s c ls indices)).mem σ₃ y ↔
-      (RawValue.ctor ⟨η, s, c⟩ (fun f => (Tm E₂ ℓ).map (σ₃ ≫ σ₂).op (inst.typed.names f))
-        (recoveredField η s c ls fun i => (indices i).pullback σ₃)).mem (𝟙 Γ₄) y := by
+      (y ∈ (RawValue.ctor ⟨η, s, c⟩ (fun f => (Tm E₂ ℓ).map σ₂.op (inst.typed.names f))
+        (recoveredField η s c ls indices)).app σ₃) ↔
+      (y ∈ (RawValue.ctor ⟨η, s, c⟩ (fun f => (Tm E₂ ℓ).map (σ₃ ≫ σ₂).op (inst.typed.names f))
+        (recoveredField η s c ls fun i => (indices i).pullback σ₃)).app (𝟙 Γ₄)) := by
     rw [← ΩLower.presheaf_map_mem_id, RawValue.pullback_ctor]
     simp [pullback_recoveredField]
   rw [hrhs]
   constructor
   · rintro (hy | ⟨c', sect', hn', hy⟩)
-    · exact ΩLower.lower _ _ hy (ΩLower.bottom _ _)
+    · exact (ΩLower.app _ _).lower hy (ΩLower.bottom _ _)
     · have hc : c' = c := Fin.ext (by have := c'.isLt; have := c.isLt; omega)
       subst c'
       have hn' : RecoveryNames η s c ls

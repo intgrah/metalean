@@ -292,7 +292,7 @@ theorem RawFamily.closedApps_iSup_le {Γ : CtxCat E ℓ} {k : Nat} {F : Nat → 
   induction X using Opposite.rec with | op Γ₂ =>
   change (RawFamily.closedApps (⨆ n, F n) names args).app _ σ.unop.op ρ ≤
     (⨆ n, RawFamily.closedApps (F n) names args).app _ σ.unop.op ρ
-  simp only [RawFamily.iSup_app, RawFamily.closedApps_value]
+  simp only [ΩLower.homObj_iSup_app, RawFamily.closedApps_value]
   have hm : Monotone fun n => (F n).app _ (σ.unop ≫ CtxCat.toNil Γ).op fun _ => ⊥ :=
     fun _ _ hab => hF hab _ _ _
   have h := @rawApps_iSup_le _ _ _ _ _ _ hm (fun i => (Tm E ℓ).map σ.unop.op (names i))

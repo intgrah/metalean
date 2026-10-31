@@ -82,11 +82,16 @@ theorem pullback_recoveredField (s : Fin ι.nsorts) (c : Fin (ι.nctors s))
 noncomputable def proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
     (σ₁ : Γ₂ ⟶ Γ₁) (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
     (indices : Fin (ι.nindices s) → RawValue Γ₂) : RawValue Γ₂ where
-  mem σ₂ y := y ≤ ⊥ ∨ ∃ (c : Fin (ι.nctors s))
-    (sect : CtorSection h s c (σ₂ ≫ σ₁)),
-    RecoveryNames η s c ls (fun i => (Tm E ℓ).map σ₂.op (indexNames i)) sect.names ∧
-      (RawValue.ctor ⟨η, s, c⟩ sect.names
-        (recoveredField η s c ls fun i => (indices i).pullback σ₂)).mem (𝟙 _) y
+  app σ₂ := {
+    carrier := {y | y ≤ ⊥ ∨ ∃ (c : Fin (ι.nctors s))
+      (sect : CtorSection h s c (σ₂ ≫ σ₁)),
+      RecoveryNames η s c ls (fun i => (Tm E ℓ).map σ₂.op (indexNames i)) sect.names ∧
+        (y ∈ (RawValue.ctor ⟨η, s, c⟩ sect.names
+          (recoveredField η s c ls fun i => (indices i).pullback σ₂)).app (𝟙 _))}
+    lower' := fun {_ _} hyz => by
+      rintro (hz | ⟨c, sect, hn, hz⟩)
+      · exact Or.inl (hyz.trans hz)
+      · exact Or.inr ⟨c, sect, hn, (ΩLower.app _ _).lower hyz hz⟩ }
   natural σ₂ σ₃ y := by
     rintro (hy | ⟨c, sect, hn, hy⟩)
     · exact Or.inl (Le.reindex σ₃ hy)
@@ -97,10 +102,6 @@ noncomputable def proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : F
         rw [← ΩLower.presheaf_map_mem_id, RawValue.pullback_ctor] at hy'
         simpa [pullback_recoveredField] using hy'
   bottom _ := Or.inl bot_le
-  lower σ₂ hyz := by
-    rintro (hz | ⟨c, sect, hn, hz⟩)
-    · exact Or.inl (hyz.trans hz)
-    · exact Or.inr ⟨c, sect, hn, ΩLower.lower _ _ hyz hz⟩
 
 theorem proofConstructor_mono (h : RecData Γ₁ η ls l ps ms mins) (s : Fin ι.nsorts)
     (σ₁ : Γ₂ ⟶ Γ₁) (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
@@ -118,8 +119,8 @@ theorem pullback_proofConstructor (h : RecData Γ₁ η ls l ps ms mins) (s : Fi
       proofConstructor h s (σ₂ ≫ σ₁) (fun i => (Tm E ℓ).map σ₂.op (indexNames i))
         fun i => (indices i).pullback σ₂ := by
   ext Γ₄ g y
-  change (proofConstructor h s σ₁ indexNames indices).mem (g ≫ σ₂) y ↔ _
-  simp only [proofConstructor]
+  change (y ∈ (proofConstructor h s σ₁ indexNames indices).app (g ≫ σ₂)) ↔ _
+  change (_ ∨ _) ↔ (_ ∨ _)
   rw [Category.assoc]
   simp
 
@@ -147,10 +148,10 @@ noncomputable def recoverMajor (h : RecData Γ₁ η ls l ps ms mins) (s : Fin �
 private theorem recoveredField_eventually {α : Type*} {L : Filter α} {s : Fin ι.nsorts}
     {c : Fin (ι.nctors s)} {indices : Fin (ι.nindices s) → RawValue Γ₁}
     {values : α → Fin (ι.nindices s) → RawValue Γ₁}
-    (hv : ∀ i {x}, (indices i).mem (𝟙 Γ₁) x → ∀ᶠ a in L, (values a i).mem (𝟙 Γ₁) x)
+    (hv : ∀ i {x}, (x ∈ (indices i).app (𝟙 Γ₁)) → ∀ᶠ a in L, (x ∈ (values a i).app (𝟙 Γ₁)))
     (f : Fin (CtorHead.mk η s c).arity) {x : CoherentShape Γ₁}
-    (hx : (recoveredField η s c ls indices f).mem (𝟙 Γ₁) x) :
-    ∀ᶠ a in L, (recoveredField η s c ls (values a) f).mem (𝟙 Γ₁) x := by
+    (hx : (x ∈ (recoveredField η s c ls indices f).app (𝟙 Γ₁))) :
+    ∀ᶠ a in L, (x ∈ (recoveredField η s c ls (values a) f).app (𝟙 Γ₁)) := by
   cases f using Fin.addCases with
   | left f =>
     simp only [recoveredField, Fin.append_left] at hx ⊢
@@ -175,9 +176,9 @@ private theorem proofConstructor_eventually {α : Type*} {L : Filter α}
     (indexNames : Fin (ι.nindices s) → Tm_ Γ₂)
     {indices : Fin (ι.nindices s) → RawValue Γ₂}
     {values : α → Fin (ι.nindices s) → RawValue Γ₂}
-    (hv : ∀ i {x}, (indices i).mem (𝟙 Γ₂) x → ∀ᶠ a in L, (values a i).mem (𝟙 Γ₂) x)
-    {y : CoherentShape Γ₂} (hy : (proofConstructor h s σ indexNames indices).mem (𝟙 Γ₂) y) :
-    ∀ᶠ a in L, (proofConstructor h s σ indexNames (values a)).mem (𝟙 Γ₂) y := by
+    (hv : ∀ i {x}, (x ∈ (indices i).app (𝟙 Γ₂)) → ∀ᶠ a in L, (x ∈ (values a i).app (𝟙 Γ₂)))
+    {y : CoherentShape Γ₂} (hy : (y ∈ (proofConstructor h s σ indexNames indices).app (𝟙 Γ₂))) :
+    ∀ᶠ a in L, (y ∈ (proofConstructor h s σ indexNames (values a)).app (𝟙 Γ₂)) := by
   rcases hy with hy | ⟨c, sect, hn, fields, hf, hy⟩
   · exact Filter.Eventually.of_forall fun _ => Or.inl hy
   · simp only [ΩLower.pullback_id] at hf

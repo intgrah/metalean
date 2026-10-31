@@ -40,13 +40,13 @@ noncomputable def indProjection (target : IndHead ζ) (X : RawValue Γ₁) : Raw
 
 @[simp] theorem mem_indProjection (target : IndHead ζ)
     (X : RawValue Γ₂) (σ : Γ₁ ⟶ Γ₂) (y : CoherentShape Γ₁) :
-    (X.indProjection target).mem σ y ↔ ∃ x, X.mem σ x ∧ y ≤ indMap target x :=
+    (y ∈ (X.indProjection target).app σ) ↔ ∃ x, (x ∈ X.app σ) ∧ y ≤ indMap target x :=
   ΩLower.mem_map (.ofNatTrans (indHom E ℓ target)) X σ y
 
 theorem indProjection_le (target : IndHead ζ) (X : RawValue Γ₁) :
     X.indProjection target ≤ X := by
   intro Γ₂ σ y ⟨⟨x, _⟩, hx, hy⟩
-  exact X.lower σ (hy.trans (Shape.indProjection_le target x)) hx
+  exact (X.app σ).lower (hy.trans (Shape.indProjection_le target x)) hx
 
 @[simp] theorem pullback_indProjection (target : IndHead ζ) (X : RawValue Γ₁)
     (σ : Γ₂ ⟶ Γ₁) :
@@ -72,7 +72,7 @@ theorem indIdeal_mono (target : IndHead ζ) {X Y : Domain Γ₁} (h : X ≤ Y) :
 
 theorem indIdeal_finitary (target : IndHead ζ) :
     Presheaf.ΩIdeal.IsFinitary (indIdeal target (Γ₁ := Γ₁)) :=
-  fun _ _ ⟨x, hx, hy⟩ => ⟨x, hx, x, (ΩLower.mem_principal_id _ _).mpr le_rfl, hy⟩
+  fun _ _ ⟨x, hx, hy⟩ => ⟨x, hx, x, by simp, hy⟩
 
 theorem indIdeal_idempotent (target : IndHead ζ) (X : Domain Γ₁) :
     indIdeal target (indIdeal target X) = indIdeal target X :=
@@ -107,11 +107,11 @@ theorem indProjection_ctor (head : CtorHead ζ) (names : Fin head.arity → Tm_ 
   ext Γ₂ σ y
   constructor
   · intro ⟨x, ⟨xs, hxs, hx⟩, hy⟩
-    exact ⟨_, head.projectFields_rel₂ (R := fun (X : RawValue Γ₁) x => X.mem σ x) hxs
+    exact ⟨_, head.projectFields_rel₂ (R := fun (X : RawValue Γ₁) x => (x ∈ X.app σ)) hxs
         fun _ _ => (mem_indProjection _ _ _ _).mpr ⟨_, hxs _, le_rfl⟩,
       hy.trans ((indMap_mono _ hx).trans_eq (indMap_ctorMap head _ xs))⟩
   · intro ⟨zs, hzs, hy⟩
-    have hrs (f : Fin head.sig.nrecFields) : ∃ r, (Xs (Fin.natAdd head.sig.nfields f)).mem σ r ∧
+    have hrs (f : Fin head.sig.nrecFields) : ∃ r, (r ∈ (Xs (Fin.natAdd head.sig.nfields f)).app σ) ∧
         zs (Fin.natAdd head.sig.nfields f) ≤ if head.sig.recursiveArity f = 0 then
           indMap ⟨head.η, head.sig.recursiveTarget f⟩ r else r := by
       have h := hzs (Fin.natAdd head.sig.nfields f)

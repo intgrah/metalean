@@ -28,9 +28,9 @@ inductive QuotEvaluates (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     y ≤ ⊥ →
     QuotEvaluates D η A F Q y
   | mk (name : Tm_ Γ₁) (x : CoherentShape Γ₁) {y : CoherentShape Γ₁} :
-    Q.mem (𝟙 Γ₁) (quotMkAtom η name x) →
-    (rawApplication F {name}
-      (D.rawExtend A name (ΩLower.principal (pointedOrder E ℓ) x))).mem (𝟙 Γ₁) y →
+    ((quotMkAtom η name x) ∈ Q.app (𝟙 Γ₁)) →
+    (y ∈ (rawApplication F {name}
+      (D.rawExtend A name (ΩLower.principal (pointedOrder E ℓ) x))).app (𝟙 Γ₁)) →
     QuotEvaluates D η A F Q y
 
 namespace QuotEvaluates
@@ -49,7 +49,7 @@ theorem mono (hA : A ≤ A') (hF : F ≤ F') (hQ : Q ≤ Q')
 theorem lower (hyz : y ≤ z) (h : QuotEvaluates D η A F Q z) : QuotEvaluates D η A F Q y := by
   cases h with
   | bottom h => exact .bottom (hyz.trans h)
-  | mk name x hq hz => exact .mk name x hq ((rawApplication ..).lower _ hyz hz)
+  | mk name x hq hz => exact .mk name x hq (((rawApplication ..).app _).lower hyz hz)
 
 theorem reindex (σ : Γ₂ ⟶ Γ₁) (h : QuotEvaluates D η A F Q y) :
     QuotEvaluates D η (A.pullback σ) (F.pullback σ) (Q.pullback σ) (CoherentShape.reindex σ y) := by
@@ -84,10 +84,10 @@ theorem upper (hA : A.IsDirected) (hF : F.IsDirected) (hQ : Q.IsDirected)
       have hdir : (rawApplication F {name} W).IsDirected := by
         rw [rawApplication_singleton ⟨F, hF⟩ ⟨W, hW⟩ name]
         exact (application ..).property
-      have hy : (rawApplication F {name} W).mem (𝟙 Γ₁) y :=
+      have hy : (y ∈ (rawApplication F {name} W).app (𝟙 Γ₁)) :=
         rawApplication_mono (fun _ _ h => h) (Set.Subset.refl {name})
           (D.rawExtend_mono_right name (ΩLower.principal_mono hxw)) _ _ hy
-      have hz : (rawApplication F {name} W).mem (𝟙 Γ₁) z :=
+      have hz : (z ∈ (rawApplication F {name} W).app (𝟙 Γ₁)) :=
         rawApplication_mono (fun _ _ h => h) (Set.Subset.refl {name})
           (D.rawExtend_mono_right name (ΩLower.principal_mono hx'w)) _ _ hz
       have ⟨v, hv, hyv, hzv⟩ := hdir (𝟙 Γ₁) hy hz
@@ -95,16 +95,20 @@ theorem upper (hA : A.IsDirected) (hF : F.IsDirected) (hQ : Q.IsDirected)
 
 end QuotEvaluates
 
-noncomputable def rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
+@[simps app] noncomputable def rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (A F Q : RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := QuotEvaluates D η (A.pullback σ) (F.pullback σ) (Q.pullback σ) y
-  natural σ₁ σ₂ y := fun h => by simpa using h.reindex σ₂
-  bottom σ := .bottom le_rfl
-  lower σ hyz := fun h => h.lower hyz
+  app σ := {
+    carrier := {y | QuotEvaluates D η (A.pullback σ) (F.pullback σ) (Q.pullback σ) y}
+    lower' := fun {_ _} hyz => fun h => QuotEvaluates.lower hyz h }
+  natural σ₁ σ₂ y h := by
+    have h' := QuotEvaluates.reindex σ₂ h
+    simp only [ΩLower.pullback_pullback] at h'
+    exact h'
+  bottom σ := QuotEvaluates.bottom le_rfl
 
 @[simp] theorem mem_rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (A F Q : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (rawQuotLift D η A F Q).mem σ y ↔
+    (y ∈ (rawQuotLift D η A F Q).app σ) ↔
       QuotEvaluates D η (A.pullback σ) (F.pullback σ) (Q.pullback σ) y := Iff.rfl
 
 @[simp] theorem pullback_rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
@@ -112,12 +116,13 @@ noncomputable def rawQuotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (rawQuotLift D η A F Q).pullback σ₁ =
       rawQuotLift D η (A.pullback σ₁) (F.pullback σ₁) (Q.pullback σ₁) := by
   ext Γ₃ σ₂ y
+  change QuotEvaluates _ _ _ _ _ _ ↔ QuotEvaluates _ _ _ _ _ _
   simp
 
 theorem rawQuotLift_isDirected (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     {A F Q : RawValue Γ₁} (hA : A.IsDirected) (hF : F.IsDirected) (hQ : Q.IsDirected) :
     (rawQuotLift D η A F Q).IsDirected :=
-  fun σ _ _ hy hz => hy.upper (hA.pullback σ) (hF.pullback σ) (hQ.pullback σ) hz
+  fun σ _ _ hy hz => QuotEvaluates.upper (hA.pullback σ) (hF.pullback σ) (hQ.pullback σ) hy hz
 
 theorem rawQuotLift_quotMk (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (A F X : Domain Γ₁) (name : Tm_ Γ₁) :
@@ -126,13 +131,13 @@ theorem rawQuotLift_quotMk (D : CodeAssignment E ℓ) (η : Head ζ .quot)
   ext Γ₂ σ y
   have heq := pullback_rawApplication F.val (D.rawExtend A.val name X.val) {name} σ
   rw [D.pullback_rawExtend, Set.image_singleton] at heq
-  have heq := congrArg (fun V : RawValue Γ₂ => V.mem (𝟙 Γ₂) y) heq
+  have heq := congrArg (fun V : RawValue Γ₂ => (y ∈ V.app (𝟙 Γ₂))) heq
   simp only [ΩLower.pullback, Category.id_comp] at heq
   rw [heq]
   constructor
   · intro h
     cases h with
-    | bottom h => exact (rawApplication ..).lower _ h ((rawApplication ..).bottom _)
+    | bottom h => exact ((rawApplication ..).app _).lower h ((rawApplication ..).bottom _)
     | mk name' x hq hy =>
       have ⟨z, hz, hxz⟩ := hq
       simp at hxz
@@ -141,11 +146,11 @@ theorem rawQuotLift_quotMk (D : CodeAssignment E ℓ) (η : Head ζ .quot)
       exact rawApplication_mono
         (fun _ _ h => h) (Set.Subset.refl _)
         (D.rawExtend_mono_right _ (ΩLower.principal_le_iff.mpr
-          ((X.val.pullback σ).lower _ hvalue hz))) _ _ hy
+          (((X.val.pullback σ).app _).lower hvalue hz))) _ _ hy
   · intro hy
-    change (rawApplication (F.pullback σ).val {(Tm E ℓ).map σ.op name}
+    change (y ∈ (rawApplication (F.pullback σ).val {(Tm E ℓ).map σ.op name}
       (D.rawExtend (A.pullback σ).val ((Tm E ℓ).map σ.op name)
-        (X.pullback σ).val)).mem (𝟙 Γ₂) y at hy
+        (X.pullback σ).val)).app (𝟙 Γ₂)) at hy
     have hfin := (application_argument_finitary (F.pullback σ)
       ((Tm E ℓ).map σ.op name)).comp
         (D.extend_finitary_right (A.pullback σ) ((Tm E ℓ).map σ.op name))
@@ -155,9 +160,9 @@ theorem rawQuotLift_quotMk (D : CodeAssignment E ℓ) (η : Head ζ .quot)
         (D.extend (A.pullback σ) ((Tm E ℓ).map σ.op name) (X.pullback σ))] at hy
     have ⟨x, hx, hy⟩ := hfin (X.pullback σ) hy
     refine .mk ((Tm E ℓ).map σ.op name) x ⟨x, hx, by simp⟩ ?_
-    change (rawApplication (F.pullback σ).val {(Tm E ℓ).map σ.op name}
+    change (y ∈ (rawApplication (F.pullback σ).val {(Tm E ℓ).map σ.op name}
       (D.rawExtend (A.pullback σ).val ((Tm E ℓ).map σ.op name)
-        (principalIdeal x).val)).mem (𝟙 Γ₂) y
+        (principalIdeal x).val)).app (𝟙 Γ₂))
     rwa [D.rawExtend_toLower (A.pullback σ) ((Tm E ℓ).map σ.op name) (principalIdeal x),
       rawApplication_singleton (F.pullback σ)
         (D.extend (A.pullback σ) ((Tm E ℓ).map σ.op name) (principalIdeal x))]
@@ -166,8 +171,8 @@ end QuotElimination
 
 section ProofElimination
 
-noncomputable def rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := (rawApplication (F.pullback σ) {n | Tm.type n = (Ty E ℓ).map σ.op C} ⊥).mem (𝟙 _) y
+@[simps app] noncomputable def rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) : RawValue Γ₁ where
+  app σ := (rawApplication (F.pullback σ) {n | Tm.type n = (Ty E ℓ).map σ.op C} ⊥).app (𝟙 _)
   natural σ₁ σ₂ y := fun h => by
     have h := (rawApplication (F.pullback σ₁) {n | Tm.type n = (Ty E ℓ).map σ₁.op C} ⊥).natural
       (𝟙 _) σ₂ y h
@@ -178,12 +183,11 @@ noncomputable def rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) : Raw
     change Tm.type ((Tm E ℓ).map σ₂.op n) = _
     rw [Tm.type_map, hn, ← Functor.map_comp_apply, ← op_comp]
   bottom _ := ΩLower.bottom _ _
-  lower _ hyz := ΩLower.lower _ _ hyz
 
 @[simp] theorem mem_rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁)
     (y : CoherentShape Γ₂) :
-    (rawProofApplication C F).mem σ y ↔
-      (rawApplication (F.pullback σ) {n | Tm.type n = (Ty E ℓ).map σ.op C} ⊥).mem (𝟙 Γ₂) y := Iff.rfl
+    (y ∈ (rawProofApplication C F).app σ) ↔
+      (y ∈ (rawApplication (F.pullback σ) {n | Tm.type n = (Ty E ℓ).map σ.op C} ⊥).app (𝟙 Γ₂)) := Iff.rfl
 
 @[simp] theorem pullback_rawProofApplication (C : Ty_ Γ₁) (F : RawValue Γ₁) (σ₁ : Γ₂ ⟶ Γ₁) :
     (rawProofApplication C F).pullback σ₁ =
@@ -283,10 +287,10 @@ noncomputable def quotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (A F Q : RawFamily Γ₁) : RawFamily Γ₁ where
   app X σ := Preord.ofHom {
     toFun ρ := rawQuotLift D η (A.app X σ ρ) (F.app X σ ρ) (Q.app X σ ρ)
-    monotone' _ _ h _ σ₂ _ hy := hy.mono
+    monotone' _ _ h _ σ₂ _ hy := QuotEvaluates.mono
       (ΩLower.pullback_mono ((A.app X σ).hom.monotone h) σ₂)
       (ΩLower.pullback_mono ((F.app X σ).hom.monotone h) σ₂)
-      (ΩLower.pullback_mono ((Q.app X σ).hom.monotone h) σ₂) }
+      (ΩLower.pullback_mono ((Q.app X σ).hom.monotone h) σ₂) hy }
   naturality σ₂ σ₁ := Preord.ext fun ρ => by
     change rawQuotLift _ _ _ _ _ = (rawQuotLift _ _ _ _ _).pullback σ₂.unop
     rw [pullback_rawQuotLift, A.app_pullback, F.app_pullback, Q.app_pullback]
@@ -302,14 +306,18 @@ theorem IsFinitary.quotLift (D : CodeAssignment E ℓ) (η : Head ζ .quot)
     (quotLift D η A F Q).IsFinitary := by
   intro Γ₂ σ i ρ
   refine ΩLower.IsFinitary.of_eventually fun I _ hy => ?_
-  simp only [quotLift_value, mem_rawQuotLift, ΩLower.pullback_id] at hy ⊢
+  rw [quotLift_value, mem_rawQuotLift] at hy
+  simp only [ΩLower.pullback_id] at hy
   cases hy with
-  | bottom hy => exact Filter.Eventually.of_forall fun _ => .bottom hy
+  | bottom hy => exact Filter.Eventually.of_forall fun _ => QuotEvaluates.bottom hy
   | mk name x hq hy =>
     have happ := rawApplication_eventually (hF.eventually σ i ρ I)
       (D.rawExtend_eventually name (hA.eventually σ i ρ I)
         fun hx => Filter.Eventually.of_forall fun _ => hx) hy
-    exact ((hQ.eventually σ i ρ I hq).and happ).mono fun _ ⟨hq, hy⟩ => .mk name x hq hy
+    exact ((hQ.eventually σ i ρ I hq).and happ).mono fun _ ⟨hq, hy⟩ => by
+      change QuotEvaluates _ _ _ _ _ _
+      simp only [ΩLower.pullback_id]
+      exact QuotEvaluates.mk name x hq hy
 
 noncomputable def proofApplication (C : Ty_ Γ₁) (F : RawFamily Γ₁) : RawFamily Γ₁ where
   app X σ := Preord.ofHom {
@@ -359,10 +367,12 @@ theorem proofApplication_eq {C : Ty_ Γ₁}
 theorem IsFinitary.proofApplication (C : Ty_ Γ₁) {F : RawFamily Γ₁} (hF : F.IsFinitary) :
     (proofApplication C F).IsFinitary := by
   intro Γ₂ σ i ρ
-  refine ΩLower.IsFinitary.of_eventually fun I _ hy => ?_
-  simp only [proofApplication_value, mem_rawProofApplication, ΩLower.pullback_id] at hy ⊢
-  exact rawApplication_eventually (hF.eventually σ i ρ I)
-    (fun hx => Filter.Eventually.of_forall fun _ => hx) hy
+  refine ΩLower.IsFinitary.of_eventually fun I y hy => ?_
+  rw [proofApplication_value, mem_rawProofApplication, ΩLower.pullback_id] at hy
+  refine (rawApplication_eventually (hF.eventually σ i ρ I)
+    (fun hx => Filter.Eventually.of_forall fun _ => hx) hy).mono fun J hJ => ?_
+  rw [proofApplication_value, mem_rawProofApplication, ΩLower.pullback_id]
+  exact hJ
 
 end RawFamily
 

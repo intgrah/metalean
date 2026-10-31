@@ -21,20 +21,22 @@ variable {ζ : Sigs} {E : Env ζ} {ℓ : Nat} {Γ₁ Γ₂ Γ₃ Γ₄ : CtxCat 
 open CategoryTheory Presheaf
 
 def universeIdeal (r : Bool) (X : Domain Γ₁) : Domain Γ₁ where
-  val.mem σ a := X.mem σ a ∧ Shape.IsCode r a.1
+  val.app σ := {
+    carrier := {a | (a ∈ X.app σ) ∧ Shape.IsCode r a.1}
+    lower' := fun {_ _} hab => fun ⟨hb, hcode⟩ => ⟨(X.app σ).lower hab hb, hcode.of_le hab⟩ }
   val.natural σ₁ σ₂ a := fun ⟨ha, hcode⟩ => ⟨X.natural σ₁ σ₂ a ha, hcode.map _ _⟩
   val.bottom σ := ⟨X.bottom σ, .bot⟩
-  val.lower σ hab := fun ⟨hb, hcode⟩ => ⟨X.lower σ hab hb, hcode.of_le hab⟩
+
   property := by
     intro Γ₂ σ a b ⟨ha, hacode⟩ ⟨hb, hbcode⟩
     have ⟨c, hc, hac, hbc⟩ := X.property σ ha hb
-    exact ⟨cSup a b ⟨c, hac, hbc⟩, ⟨X.lower σ (cSup_le _ hac hbc) hc,
+    exact ⟨cSup a b ⟨c, hac, hbc⟩, ⟨(X.app σ).lower (cSup_le _ hac hbc) hc,
       Shape.IsCode.cSup hacode hbcode⟩, le_cSup_left _ _ _, le_cSup_right _ _ _⟩
 
 @[simp]
 theorem mem_universeIdeal_iff (r : Bool) (X : Domain Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (universeIdeal r X).mem σ y ↔ X.mem σ y ∧ Shape.IsCode r y.1 :=
+    (y ∈ (universeIdeal r X).app σ) ↔ (y ∈ X.app σ) ∧ Shape.IsCode r y.1 :=
   Iff.rfl
 
 theorem universeIdeal_le (r : Bool) (X : Domain Γ₁) : universeIdeal r X ≤ X :=
@@ -147,8 +149,7 @@ theorem IdealAction.abstraction_eq_bottom (B : IdealAction Γ₁)
     have houtputs : f.IsBottom := by
       intro i
       have h := hf i
-      change (B.val.app _ (σ.op, f.names i) (principalIdeal (CoherentGraph.input ⟨f, hcoh⟩ i))).mem
-        (𝟙 Γ₂) (CoherentGraph.output ⟨f, hcoh⟩ i) at h
+      change ((CoherentGraph.output ⟨f, hcoh⟩ i) ∈ (B.val.app _ (σ.op, f.names i) (principalIdeal (CoherentGraph.input ⟨f, hcoh⟩ i))).app (𝟙 Γ₂)) at h
       rw [hB] at h
       exact le_bot_iff.mp h
     exact (ΩIdeal.mem_bot σ y).mpr (hy.trans (CoherentGraph.lamGenerator_le_bot_iff.mpr houtputs))
@@ -163,13 +164,13 @@ namespace CodeAssignment
 theorem rawExtend_nonbottom_code (F : CodeAssignment E ℓ)
     (hF : ∀ {Γ₁ : CtxCat E ℓ}, F.app _ (⊥ : CoherentShape Γ₁) = IdealAction.bottom)
     {T I : RawValue Γ₁} {n : Tm_ Γ₁} {σ : Γ₂ ⟶ Γ₁} {y : CoherentShape Γ₂}
-    (hy : (F.rawExtend T n I).mem σ y) (hne : ¬ y ≤ ⊥) :
-    ∃ c, T.mem σ c ∧ ¬ c ≤ ⊥ := by
+    (hy : (y ∈ (F.rawExtend T n I).app σ)) (hne : ¬ y ≤ ⊥) :
+    ∃ c, (c ∈ T.app σ) ∧ ¬ c ≤ ⊥ := by
   have ⟨c, hc, x, _, hy⟩ := (mem_rawExtend _ _ _ _ _ _).mp hy
   refine ⟨c, hc, fun hbot => hne ?_⟩
   have hy' := F.eval_mono_code hbot _ (principalIdeal x) (𝟙 Γ₂) y hy
-  change ((F.app _ (⊥ : CoherentShape Γ₂)).val.app _ ((𝟙 Γ₂).op, _)
-    (principalIdeal x)).mem (𝟙 Γ₂) y at hy'
+  change (y ∈ ((F.app _ (⊥ : CoherentShape Γ₂)).val.app _ ((𝟙 Γ₂).op, _)
+    (principalIdeal x)).app (𝟙 Γ₂)) at hy'
   rw [hF] at hy'
   exact (ΩIdeal.mem_bot _ _).mp hy'
 
@@ -179,15 +180,14 @@ def IsPayloadStrict (F : CodeAssignment E ℓ) : Prop :=
 theorem rawExtend_bottom_payload {F : CodeAssignment E ℓ} (hF : F.IsPayloadStrict)
     (T : RawValue Γ₁) (n : Tm_ Γ₁) : F.rawExtend T n ⊥ = ⊥ := by
   apply le_antisymm
-  · intro Γ₂ σ y
-    simp_rw [mem_rawExtend]
-    intro ⟨c, _, x, hx, hy⟩
+  · intro Γ₂ σ y hy
+    obtain ⟨c, _, x, hx, hy⟩ := (mem_rawExtend _ _ _ _ _ _).mp hy
     have hy' := F.eval_mono_payload c _ (Y := ⊥)
       (ΩLower.principal_mono hx) (𝟙 Γ₂) y hy
-    change ((F.app _ c).val.app _ ((𝟙 Γ₂).op, _) (⊥ : Domain Γ₂)).mem (𝟙 Γ₂) y at hy'
+    change (y ∈ ((F.app _ c).val.app _ ((𝟙 Γ₂).op, _) (⊥ : Domain Γ₂)).app (𝟙 Γ₂)) at hy'
     rwa [hF c] at hy'
   · intro Γ₂ σ y hy
-    exact (F.rawExtend T n ⊥).lower σ ((ΩLower.mem_bot _ _).mp hy) ((F.rawExtend T n ⊥).bottom σ)
+    exact ((F.rawExtend T n ⊥).app σ).lower ((ΩLower.mem_bot _ _).mp hy) ((F.rawExtend T n ⊥).bottom σ)
 
 theorem extend_bottom_payload {F : CodeAssignment E ℓ} (hF : F.IsPayloadStrict)
     (T : Domain Γ₁) (n : Tm_ Γ₁) :
@@ -216,8 +216,7 @@ theorem indAction_isStrict {F : CodeAssignment E ℓ} (hF : F.IsPayloadStrict)
           (⊥ : Domain Γ₃) := by
         simpa [indBody, telescope_bottom hF] using ctorIdeal_bottom _ hg.witness.struct _
       rw [ΩIdeal.pullback_bot] at hy
-      change (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (⊥ : Domain Γ₃) hg).mem
-        (𝟙 Γ₃) y at hy
+      change (y ∈ (F.indBody ((ctorTypes c).pullback (σ₂ ≫ σ₁)) (⊥ : Domain Γ₃) hg).app (𝟙 Γ₃)) at hy
       rw [hbody] at hy
       exact (ΩIdeal.mem_bot _ _).mpr ((ΩIdeal.mem_bot _ _).mp hy)
     · rw [ΩIdeal.pullback_bot, indIdeal_bottom] at hy

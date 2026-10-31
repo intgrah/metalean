@@ -131,16 +131,17 @@ theorem ctorMap_mono (names : Fin head.arity → Tm_ Γ₁)
 
 namespace RawValue
 
-def ind (code : IndCode Γ₁) (Ts : Fin code.toIndHead.nctors → RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := ∃ ts : Fin code.toIndHead.nctors → CoherentShape _, (∀ c, (Ts c).mem σ (ts c)) ∧
-    y ≤ indAtom (code.map ((Tm E ℓ).map σ.op)) ts
+@[simps app] def ind (code : IndCode Γ₁) (Ts : Fin code.toIndHead.nctors → RawValue Γ₁) : RawValue Γ₁ where
+  app σ := {
+    carrier := {y | ∃ ts : Fin code.toIndHead.nctors → CoherentShape _, (∀ c, ((ts c) ∈ (Ts c).app σ)) ∧
+      y ≤ indAtom (code.map ((Tm E ℓ).map σ.op)) ts}
+    lower' := fun {_ _} hyz => fun ⟨ts, hts, hz⟩ => ⟨ts, hts, hyz.trans hz⟩ }
   natural σ₁ σ₂ y := fun ⟨ts, hts, hy⟩ =>
     ⟨fun c => reindex σ₂ (ts c), fun c => (Ts c).natural σ₁ σ₂ _ (hts c),
       (Le.reindex σ₂ hy).trans_eq ((reindex_indAtom σ₂ _ ts).trans
         (indAtom_congr (IndCode.map_comp_hom σ₁ σ₂ code).symm fun _ _ hcc => by
           rw [Fin.ext hcc]))⟩
   bottom σ := ⟨fun _ => ⊥, fun c => (Ts c).bottom σ, bot_le⟩
-  lower σ hyz := fun ⟨ts, hts, hz⟩ => ⟨ts, hts, hyz.trans hz⟩
 
 theorem ind_mono (code : IndCode Γ₁) {Ts Us : Fin code.toIndHead.nctors → RawValue Γ₁}
     (h : ∀ c, Ts c ≤ Us c) : ind code Ts ≤ ind code Us :=
@@ -159,7 +160,7 @@ theorem code_eq_of_ind_eq {code code' : IndCode Γ₁}
     {Ts : Fin code.toIndHead.nctors → RawValue Γ₁}
     {Us : Fin code'.toIndHead.nctors → RawValue Γ₁} (h : ind code Ts = ind code' Us) :
     code = code' := by
-  have hmem : (ind code Ts).mem (𝟙 Γ₁) (indAtom (code.map ((Tm E ℓ).map (𝟙 Γ₁).op)) fun _ => ⊥) :=
+  have hmem : ((indAtom (code.map ((Tm E ℓ).map (𝟙 Γ₁).op)) fun _ => ⊥) ∈ (ind code Ts).app (𝟙 Γ₁)) :=
     ⟨fun _ => ⊥, fun c => (Ts c).bottom _, le_rfl⟩
   have ⟨ts, _, hle⟩ := h ▸ hmem
   have h := code_eq_of_indAtom_le hle
@@ -178,20 +179,21 @@ theorem ind_isDirected (code : IndCode Γ₁) {Ts : Fin code.toIndHead.nctors �
   exact ⟨indAtom (code.map ((Tm E ℓ).map σ.op)) vs, ⟨vs, hv, le_rfl⟩,
     ha.trans (.ind htv), hb.trans (.ind huv)⟩
 
-def ctor (names : Fin head.arity → Tm_ Γ₁)
+@[simps app] def ctor (names : Fin head.arity → Tm_ Γ₁)
     (Xs : Fin head.arity → RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := ∃ xs : Fin head.arity → CoherentShape _, (∀ i, (Xs i).mem σ (xs i)) ∧
-    y ≤ ctorMap head (fun i => (Tm E ℓ).map σ.op (names i)) xs
+  app σ := {
+    carrier := {y | ∃ xs : Fin head.arity → CoherentShape _, (∀ i, ((xs i) ∈ (Xs i).app σ)) ∧
+      y ≤ ctorMap head (fun i => (Tm E ℓ).map σ.op (names i)) xs}
+    lower' := fun {_ _} hyz => fun ⟨xs, hxs, hz⟩ => ⟨xs, hxs, hyz.trans hz⟩ }
   natural σ₁ σ₂ y := fun ⟨xs, hxs, hy⟩ =>
     ⟨fun i => reindex σ₂ (xs i), fun i => (Xs i).natural σ₁ σ₂ _ (hxs i), by
       simpa using Le.reindex σ₂ hy⟩
   bottom σ := ⟨fun _ => ⊥, fun i => (Xs i).bottom σ, bot_le⟩
-  lower σ hyz := fun ⟨xs, hxs, hz⟩ => ⟨xs, hxs, hyz.trans hz⟩
 
 @[simp] theorem mem_ctor (names : Fin head.arity → Tm_ Γ₁)
     (Xs : Fin head.arity → RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (ctor head names Xs).mem σ y ↔ ∃ xs : Fin head.arity → CoherentShape Γ₂,
-      (∀ i, (Xs i).mem σ (xs i)) ∧
+    (y ∈ (ctor head names Xs).app σ) ↔ ∃ xs : Fin head.arity → CoherentShape Γ₂,
+      (∀ i, ((xs i) ∈ (Xs i).app σ)) ∧
         y ≤ ctorMap head (fun i => (Tm E ℓ).map σ.op (names i)) xs :=
   Iff.rfl
 
@@ -222,24 +224,25 @@ theorem ctor_isDirected (names : Fin head.arity → Tm_ Γ₁)
     hb.trans (ctorMap_mono _ _ hyz)⟩
 
 noncomputable def proj (i : Fin head.arity) (X : RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := y ≤ ⊥ ∨ ∃ (names : Fin head.arity → Tm_ _)
-    (fields : Fin head.arity → CoherentShape _),
-    X.mem σ (ctorMap head names fields) ∧ y ≤ fields i
+  app σ := {
+    carrier := {y | y ≤ ⊥ ∨ ∃ (names : Fin head.arity → Tm_ _)
+      (fields : Fin head.arity → CoherentShape _),
+      ((ctorMap head names fields) ∈ X.app σ) ∧ y ≤ fields i}
+    lower' := fun {_ _} hyz => fun
+      | .inl hz => .inl (hyz.trans hz)
+      | .inr ⟨names, fields, hX, hz⟩ => .inr ⟨names, fields, hX, hyz.trans hz⟩ }
   natural σ₁ σ₂ y
     | .inl hy => .inl (le_bot_iff.mpr (le_bot_iff.mp (Le.reindex σ₂ hy)))
     | .inr ⟨names, fields, hX, hy⟩ =>
       .inr ⟨fun j => (Tm E ℓ).map σ₂.op (names j), fun j => reindex σ₂ (fields j),
         by simpa using X.natural σ₁ σ₂ _ hX, Le.reindex σ₂ hy⟩
   bottom _ := .inl le_rfl
-  lower _ hyz
-    | .inl hz => .inl (hyz.trans hz)
-    | .inr ⟨names, fields, hX, hz⟩ => .inr ⟨names, fields, hX, hyz.trans hz⟩
 
 @[simp] theorem mem_proj (i : Fin head.arity) (X : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁)
     (y : CoherentShape Γ₂) :
-    (proj head i X).mem σ y ↔ y ≤ ⊥ ∨ ∃ (names : Fin head.arity → Tm_ Γ₂)
+    (y ∈ (proj head i X).app σ) ↔ y ≤ ⊥ ∨ ∃ (names : Fin head.arity → Tm_ Γ₂)
       (fields : Fin head.arity → CoherentShape Γ₂),
-      X.mem σ (ctorMap head names fields) ∧ y ≤ fields i :=
+      ((ctorMap head names fields) ∈ X.app σ) ∧ y ≤ fields i :=
   Iff.rfl
 
 theorem proj_mono (i : Fin head.arity) {X Y : RawValue Γ₁} (h : X ≤ Y) :
@@ -267,8 +270,8 @@ theorem proj_isDirected (i : Fin head.arity) {X : RawValue Γ₁} (hX : X.IsDire
     hb.trans (ctorMap_le_field hzb i)⟩
 
 theorem proj_eventually (i : Fin head.arity) {I : RawValue Γ₁} {y : CoherentShape Γ₁}
-    (hy : (proj head i I).mem (𝟙 Γ₁) y) :
-    ∀ᶠ J in I.approximations, (proj head i J).mem (𝟙 Γ₁) y := by
+    (hy : (y ∈ (proj head i I).app (𝟙 Γ₁))) :
+    ∀ᶠ J in I.approximations, (y ∈ (proj head i J).app (𝟙 Γ₁)) := by
   rcases hy with hy | ⟨names, fields, hI, hy⟩
   · exact Filter.Eventually.of_forall fun _ => Or.inl hy
   · exact (ΩLower.eventually_mem hI).mono fun _ hJ => Or.inr ⟨names, fields, hJ, hy⟩
@@ -278,8 +281,8 @@ theorem proj_ctor (names : Fin head.arity → Tm_ Γ₁)
     proj head i (ctor head names Xs) = Xs i := by
   refine ΩLower.ext fun σ y => ⟨?_, ?_⟩
   · rintro (hy | ⟨names₁, fields₁, ⟨xs, hxs, hle⟩, hy⟩)
-    · exact (Xs i).lower σ hy ((Xs i).bottom σ)
-    · exact (Xs i).lower σ (hy.trans (ctorMap_le_field hle i)) (hxs i)
+    · exact ((Xs i).app σ).lower hy ((Xs i).bottom σ)
+    · exact ((Xs i).app σ).lower (hy.trans (ctorMap_le_field hle i)) (hxs i)
   · intro hy
     refine Or.inr ⟨fun j => (Tm E ℓ).map σ.op (names j),
       Function.update (fun _ => ⊥) i y, ⟨Function.update (fun _ => ⊥) i y, fun j => ?_, le_rfl⟩,
@@ -304,7 +307,7 @@ theorem proj_ctor (names : Fin head.arity → Tm_ Γ₁)
   · intro Γ₂ σ y ⟨fields, hf, hy⟩
     exact hy.trans (ctorMap_le_bot_iff.mpr ⟨hs, fun i => (ΩLower.mem_bot _ _).mp (hf i)⟩)
   · intro Γ₂ σ y hy
-    exact (ctor head names fun _ => (⊥ : RawValue Γ₁)).lower σ hy
+    exact ((ctor head names fun _ => (⊥ : RawValue Γ₁)).app σ).lower hy
       ((ctor head names fun _ => (⊥ : RawValue Γ₁)).bottom σ)
 
 end RawValue
@@ -347,7 +350,7 @@ theorem projIdeal_finitary (i : Fin head.arity) :
   rintro X y (hy | ⟨names, fields, hX, hy⟩)
   · exact ⟨⊥, X.bottom (𝟙 Γ₁), Or.inl hy⟩
   · exact ⟨ctorMap head names fields, hX,
-      Or.inr ⟨names, fields, (ΩLower.mem_principal_id _ _).mpr le_rfl, hy⟩⟩
+      Or.inr ⟨names, fields, by simp, hy⟩⟩
 
 @[simp] theorem projIdeal_bottom (i : Fin head.arity) :
     projIdeal head i (⊥ : Domain Γ₁) = ⊥ :=

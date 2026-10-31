@@ -88,16 +88,62 @@ abbrev parameterizedHom (F G : C ⥤ Preord.{w})
 
 namespace HomObj
 
-variable {F G : C ⥤ Preord.{w}} {A : C ⥤ Type w}
+variable {F G H : C ⥤ Preord.{max u v w}} {A B : C ⥤ Type v}
 
-def toTypes (f : HomObj F G A) : HomObj (F ⋙ forget Preord) (G ⋙ forget Preord) A where
-  app X a := ↾f.app X a
-  naturality g a := by ext x; exact f.naturality_apply g a x
+set_option backward.isDefEq.respectTransparency false in
+def curry (f : HomObj (F ⊗ G) H (B ⊗ A)) : HomObj F (parameterizedHom G H A) B where
+  app X b := Preord.ofHom {
+    toFun x := {
+      app Y p := Preord.ofHom {
+        toFun y := f.app Y (B.map p.1 b, p.2) (F.map p.1 x, y)
+        monotone' _ _ h := (f.app Y (B.map p.1 b, p.2)).hom.monotone ⟨le_rfl, h⟩ }
+      naturality g p := Preord.ext fun y => by
+        change f.app _ (B.map (p.1 ≫ g) b, A.map g p.2) (F.map (p.1 ≫ g) x, G.map g y) = _
+        have h := f.naturality_apply g (B.map p.1 b, p.2) (F.map p.1 x, y)
+        change f.app _ (B.map g (B.map p.1 b), A.map g p.2)
+          (F.map g (F.map p.1 x), G.map g y) = _ at h
+        simp only [map_comp_apply]
+        exact h }
+    monotone' _ _ h := fun Y p y =>
+      (f.app Y (B.map p.1 b, p.2)).hom.monotone ⟨(F.map p.1).hom.monotone h, le_rfl⟩ }
+  naturality {X Y} g b := Preord.ext fun x => by
+    refine HomObj.ext_app (F := G) (G := H) fun Z (p : (Y ⟶ Z) × A.obj Z) y => ?_
+    change f.app Z (B.map p.1 (B.map g b), p.2) (F.map p.1 (F.map g x), y) =
+      f.app Z (B.map (g ≫ p.1) b, p.2) (F.map (g ≫ p.1) x, y)
+    simp
 
-def ofTypes (f : HomObj (F ⋙ forget Preord) (G ⋙ forget Preord) A)
-    (h : ∀ X a, Monotone (α := F.obj X) (β := G.obj X) (f.app X a)) : HomObj F G A where
-  app X a := Preord.ofHom ⟨f.app X a, h X a⟩
-  naturality g a := Preord.ext (f.naturality_apply g a)
+set_option backward.isDefEq.respectTransparency false in
+def uncurry (f : HomObj F (parameterizedHom G H A) B) : HomObj (F ⊗ G) H (B ⊗ A) where
+  app X p := Preord.ofHom {
+    toFun x := (f.app X p.1 x.1).app X (𝟙 X, p.2) x.2
+    monotone' _ _ h := OrderHom.apply_mono
+      ((f.app X p.1).hom.monotone h.1 X (𝟙 X, p.2)) h.2 }
+  naturality g p := Preord.ext fun x => by
+    have h := f.naturality_apply g p.1 x.1
+    have h' := (f.app _ p.1 x.1).naturality_apply g (𝟙 _, p.2) x.2
+    change ((f.app _ (B.map g p.1) (F.map g x.1)).app _ (𝟙 _, A.map g p.2)) (G.map g x.2) = _
+    rw [h]
+    change (f.app _ p.1 x.1).app _ (g ≫ 𝟙 _, A.map g p.2) (G.map g x.2) =
+      H.map g ((f.app _ p.1 x.1).app _ (𝟙 _, p.2) x.2)
+    change (f.app _ p.1 x.1).app _ (𝟙 _ ≫ g, A.map g p.2) (G.map g x.2) = _ at h'
+    simpa only [Category.comp_id, Category.id_comp] using h'
+
+@[simp] theorem uncurry_curry (f : HomObj (F ⊗ G) H (B ⊗ A)) : f.curry.uncurry = f := by
+  apply HomObj.ext_app
+  intro X p x
+  change f.app X (B.map (𝟙 X) p.1, p.2) (F.map (𝟙 X) x.1, x.2) = f.app X p x
+  simp only [map_id_apply]
+  rfl
+
+@[simp] theorem curry_uncurry (f : HomObj F (parameterizedHom G H A) B) : f.uncurry.curry = f := by
+  apply HomObj.ext_app
+  intro X b x
+  apply HomObj.ext_app
+  intro Y p y
+  change (f.app Y (B.map p.1 b) (F.map p.1 x)).app Y (𝟙 Y, p.2) y = (f.app X b x).app Y p y
+  rw [f.naturality_apply]
+  change (f.app X b x).app Y (p.1 ≫ 𝟙 Y, p.2) y = (f.app X b x).app Y p y
+  simp
 
 end HomObj
 

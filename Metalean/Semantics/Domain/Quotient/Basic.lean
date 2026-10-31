@@ -108,17 +108,18 @@ noncomputable def quotHom (E : Env ζ) (ℓ : Nat) (η : Head ζ .quot) : order 
 
 namespace RawValue
 
-def quotMk (η : Head ζ .quot) (name : Tm_ Γ₁) (X : RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := ∃ x, X.mem σ x ∧ y ≤ quotMkAtom η ((Tm E ℓ).map σ.op name) x
+@[simps app] def quotMk (η : Head ζ .quot) (name : Tm_ Γ₁) (X : RawValue Γ₁) : RawValue Γ₁ where
+  app σ := {
+    carrier := {y | ∃ x, (x ∈ X.app σ) ∧ y ≤ quotMkAtom η ((Tm E ℓ).map σ.op name) x}
+    lower' := fun {_ _} hyz => fun ⟨x, hx, hz⟩ => ⟨x, hx, hyz.trans hz⟩ }
   natural σ₁ σ₂ y := fun ⟨x, hx, hy⟩ =>
     ⟨reindex σ₂ x, X.natural σ₁ σ₂ x hx, by simpa using Le.reindex σ₂ hy⟩
   bottom σ := ⟨⊥, X.bottom σ, bot_le⟩
-  lower σ hyz := fun ⟨x, hx, hz⟩ => ⟨x, hx, hyz.trans hz⟩
 
 @[simp] theorem mem_quotMk (η : Head ζ .quot) (name : Tm_ Γ₁) (X : RawValue Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (quotMk η name X).mem σ y ↔
-      ∃ x, X.mem σ x ∧ y ≤ quotMkAtom η ((Tm E ℓ).map σ.op name) x := Iff.rfl
+    (y ∈ (quotMk η name X).app σ) ↔
+      ∃ x, (x ∈ X.app σ) ∧ y ≤ quotMkAtom η ((Tm E ℓ).map σ.op name) x := Iff.rfl
 
 theorem quotMk_mono (η : Head ζ .quot) (name : Tm_ Γ₁)
     {X Y : RawValue Γ₁} (h : X ≤ Y) : quotMk η name X ≤ quotMk η name Y :=
@@ -141,13 +142,13 @@ noncomputable def quotProjection (η : Head ζ .quot) (X : RawValue Γ₁) : Raw
 
 @[simp] theorem mem_quotProjection (η : Head ζ .quot) (X : RawValue Γ₁)
     (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    (X.quotProjection η).mem σ y ↔ ∃ x, X.mem σ x ∧ y ≤ quotMap η x :=
+    (y ∈ (X.quotProjection η).app σ) ↔ ∃ x, (x ∈ X.app σ) ∧ y ≤ quotMap η x :=
   ΩLower.mem_map (.ofNatTrans (quotHom E ℓ η)) X σ y
 
 theorem quotProjection_le (η : Head ζ .quot) (X : RawValue Γ₁) : X.quotProjection η ≤ X := by
   intro Γ₂ σ y hy
   have ⟨x, hx, hy⟩ := (mem_quotProjection η X σ y).mp hy
-  exact X.lower σ (hy.trans (quotMap_le η x)) hx
+  exact (X.app σ).lower (hy.trans (quotMap_le η x)) hx
 
 @[simp] theorem pullback_quotProjection (η : Head ζ .quot) (X : RawValue Γ₁) (σ : Γ₂ ⟶ Γ₁) :
     (X.quotProjection η).pullback σ = quotProjection η (X.pullback σ) :=
@@ -193,7 +194,7 @@ noncomputable def quotAction (η : Head ζ .quot) : IdealAction Γ₁ where
   val.app _ _ := Preord.ofHom ⟨quotIdeal η, fun _ _ h => quotIdeal_mono η h⟩
   val.naturality σ _ := Preord.ext fun X =>
     Subtype.val_injective (RawValue.pullback_quotProjection η X.val σ.unop).symm
-  property _ _ _ _ := fun ⟨x, hx, hy⟩ => ⟨x, hx, x, (ΩLower.mem_principal_id _ _).mpr le_rfl, hy⟩
+  property _ _ _ _ := fun ⟨x, hx, hy⟩ => ⟨x, hx, x, by simp, hy⟩
 
 noncomputable def quotCodeAction (code : QuotCode Γ₁) : IdealAction Γ₁ :=
   match code.level.rel with

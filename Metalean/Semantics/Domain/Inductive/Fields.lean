@@ -104,13 +104,14 @@ namespace CoherentShape
 namespace RawValue
 
 noncomputable def ctorTypeDom (X : RawValue Γ₁) : RawValue Γ₁ where
-  mem σ y := ∃ a : CoherentShape _, X.mem σ a ∧ y ≤ a.ctorTypeDom
+  app σ := {
+    carrier := {y | ∃ a : CoherentShape _, (a ∈ X.app σ) ∧ y ≤ a.ctorTypeDom}
+    lower' := fun {_ _} hyz => fun ⟨a, ha, hz⟩ => ⟨a, ha, hyz.trans hz⟩ }
   natural σ₁ σ₂ y := fun ⟨a, ha, hy⟩ =>
     ⟨reindex σ₂ a, X.natural σ₁ σ₂ a ha, by
       rw [← CoherentShape.reindex_ctorTypeDom]
       exact Le.reindex σ₂ hy⟩
   bottom σ := ⟨⊥, X.bottom σ, bot_le⟩
-  lower _ hyz := fun ⟨a, ha, hz⟩ => ⟨a, ha, hyz.trans hz⟩
 
 theorem ctorTypeDom_mono {X Y : RawValue Γ₁} (h : X ≤ Y) : ctorTypeDom X ≤ ctorTypeDom Y :=
   fun σ _ ⟨a, ha, hy⟩ => ⟨a, h σ a ha, hy⟩
@@ -128,7 +129,7 @@ theorem ctorTypeDom_isDirected {X : RawValue Γ₁} (hX : X.IsDirected) :
   ext Γ₂ σ y
   constructor
   · intro ⟨q, ⟨a, f, ha, _, hq⟩, hy⟩
-    exact A.lower σ (hy.trans (CoherentShape.ctorTypeDom_mono hq)) ha
+    exact (A.app σ).lower (hy.trans (CoherentShape.ctorTypeDom_mono hq)) ha
   · intro hy
     exact ⟨piGenerator ((Ty.pairPresheaf E ℓ).map σ.op label) y (CoherentGraph.nil Γ₂),
       ⟨y, CoherentGraph.nil Γ₂, hy, fun i => i.elim0, le_rfl⟩, le_rfl⟩
@@ -147,13 +148,15 @@ theorem ctorTypeDomIdeal_mono {X Y : Domain Γ₁} (h : X ≤ Y) :
   Subtype.val_injective (ΩLower.ext fun _ _ => Iff.rfl)
 
 theorem ctorTypeDomIdeal_finitary : ΩIdeal.IsFinitary (ctorTypeDomIdeal (Γ₁ := Γ₁)) :=
-  fun _ _ ⟨a, ha, hle⟩ => ⟨a, ha, a, (ΩLower.mem_principal_id _ _).mpr le_rfl, hle⟩
+  fun _ _ ⟨a, ha, hle⟩ => ⟨a, ha, a, by simp, hle⟩
 
 noncomputable def ctorTypeFibreIdeal (X : Domain Γ₁) (name : Tm_ Γ₁)
     (arg : Domain Γ₁) : Domain Γ₁ where
-  val.mem σ y := ∃ a : CoherentShape _, X.mem σ a ∧
-    (application (principalIdeal a.ctorTypeGraph.lamGenerator) ((Tm E ℓ).map σ.op name)
-      (arg.pullback σ)).mem (𝟙 _) y
+  val.app σ := {
+    carrier := {y | ∃ a : CoherentShape _, (a ∈ X.app σ) ∧
+      (y ∈ (application (principalIdeal a.ctorTypeGraph.lamGenerator) ((Tm E ℓ).map σ.op name)
+        (arg.pullback σ)).app (𝟙 _))}
+    lower' := fun {_ _} hyz => fun ⟨a, ha, hz⟩ => ⟨a, ha, ((application _ _ _).app _).lower hyz hz⟩ }
   val.natural σ₁ σ₂ y := fun ⟨a, ha, hy⟩ => by
     refine ⟨reindex σ₂ a, X.natural σ₁ σ₂ a ha, ?_⟩
     have h := (application _ _ _).natural (𝟙 _) σ₂ y hy
@@ -162,7 +165,7 @@ noncomputable def ctorTypeFibreIdeal (X : Domain Γ₁) (name : Tm_ Γ₁)
     rw [CoherentShape.reindex_ctorTypeGraph, op_comp, Functor.map_comp_apply]
     exact h
   val.bottom σ := ⟨⊥, X.bottom σ, (application _ _ _).bottom _⟩
-  val.lower _ hyz := fun ⟨a, ha, hz⟩ => ⟨a, ha, (application _ _ _).lower _ hyz hz⟩
+
   property := by
     intro Γ₃ σ y z ⟨a, ha, hy⟩ ⟨b, hb, hz⟩
     have ⟨c, hc, hac, hbc⟩ := X.property σ ha hb
@@ -187,15 +190,15 @@ noncomputable def ctorTypeFibreIdeal (X : Domain Γ₁) (name : Tm_ Γ₁)
       (CoherentGraph.lamGenerator_le_iff.mpr (CoherentShape.ctorTypeGraph_mono hq))) (@le_rfl _ _ _) (𝟙 _) y hy
     have hf' : (B.pullback σ).onBasis.GraphValid (𝟙 _) f := by
       intro i
-      change (B.val.app _ (σ.op ≫ (𝟙 _).op, f.val.names i)
-        (principalIdeal (f.input i))).mem (𝟙 _) (f.output i)
+      change ((f.output i) ∈ (B.val.app _ (σ.op ≫ (𝟙 _).op, f.val.names i)
+        (principalIdeal (f.input i))).app (𝟙 _))
       rw [op_id, Category.comp_id]
       exact hf i
     have hz := graphAction_le_of_valid (B.pullback σ) f hf' (𝟙 _)
       ((Tm E ℓ).map σ.op name) (X.pullback σ) (𝟙 _) y
       (by rw [graphAction_value, CoherentGraph.reindex_id]; exact hy')
-    change (B.val.app _ (σ.op ≫ (𝟙 _).op, (Tm E ℓ).map σ.op name)
-      (X.pullback σ)).mem (𝟙 _) y at hz
+    change (y ∈ (B.val.app _ (σ.op ≫ (𝟙 _).op, (Tm E ℓ).map σ.op name)
+      (X.pullback σ)).app (𝟙 _)) at hz
     rwa [op_id, Category.comp_id] at hz
   · intro hy
     have ⟨x, hx, hxy⟩ := B.property _ (σ.op, (Tm E ℓ).map σ.op name) (X.pullback σ) hy
@@ -203,7 +206,7 @@ noncomputable def ctorTypeFibreIdeal (X : Domain Γ₁) (name : Tm_ Γ₁)
     refine ⟨piGenerator ((Ty.pairPresheaf E ℓ).map σ.op label) ⊥ f,
       ⟨⊥, f, A.bottom σ, fun _ => hxy, le_rfl⟩, ?_⟩
     refine ⟨x, hx, .entry ⟨f, ⟨0, Nat.one_pos⟩, ?_, ?_, le_rfl, rfl⟩⟩
-    · change ((principalIdeal f.lamGenerator).pullback (𝟙 _)).mem (𝟙 _) f.lamGenerator
+    · change (f.lamGenerator ∈ ((principalIdeal f.lamGenerator).pullback (𝟙 _)).app (𝟙 _))
       simp
     · change (Tm E ℓ).map σ.op name =
         (Tm E ℓ).map (𝟙 _).op ((Tm E ℓ).map σ.op name)
@@ -223,7 +226,7 @@ theorem ctorTypeFibreIdeal_mono {X Y : Domain Γ₁} (h : X ≤ Y) (name : Tm_ �
 
 theorem ctorTypeFibreIdeal_finitary_left (name : Tm_ Γ₁) (arg : Domain Γ₁) :
     ΩIdeal.IsFinitary fun X => ctorTypeFibreIdeal X name arg :=
-  fun _ _ ⟨a, ha, hmem⟩ => ⟨a, ha, a, (ΩLower.mem_principal_id _ _).mpr le_rfl, hmem⟩
+  fun _ _ ⟨a, ha, hmem⟩ => ⟨a, ha, a, by simp, hmem⟩
 
 theorem ctorTypeFibreIdeal_finitary_right (X : Domain Γ₁) (name : Tm_ Γ₁) :
     ΩIdeal.IsFinitary (ctorTypeFibreIdeal X name) := by

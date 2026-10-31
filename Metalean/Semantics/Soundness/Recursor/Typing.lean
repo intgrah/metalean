@@ -194,7 +194,7 @@ theorem RawSound.recursor_isDirected (hrel : l.rel = true) (t : Fin ι.nsorts)
   have hmono : Monotone fun n => step^[n] ⊥ := Monotone.monotone_iterate_of_le_map step.monotone bot_le
   change ((OrderHom.lfp step t).app _ σ.op ρ).IsDirected
   rw [fixedPoints.lfp_eq_sSup_iterate step (recursorStep_ωScottContinuous _ _ hd),
-    RecApprox.iSup_apply, RawFamily.iSup_app]
+    RecApprox.iSup_apply, ΩLower.homObj_iSup_app]
   exact ΩLower.IsDirected.iSup
     (Monotone.directed_le fun _ _ hab => hmono hab t _ σ.op ρ) fun n => hiter n t σ ρ
 

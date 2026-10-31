@@ -42,15 +42,15 @@ theorem abstraction_iSup_le (hA : ℒ.Comprehension Γ₁ ΓA) (C : RawFamily Γ
     {B : Nat → RawFamily ΓA} (hB : Monotone B) :
     abstraction D hA C (⨆ n, B n) ≤ ⨆ n, abstraction D hA C (B n) := by
   intro X σ₁ ρ Γ₃ σ₂ q hq
-  have hq' : ((normalizedBodyAction D hA C (⨆ n, B n) σ₁.unop ρ).abstraction).mem σ₂ q := hq
+  have hq' : (q ∈ ((normalizedBodyAction D hA C (⨆ n, B n) σ₁.unop ρ).abstraction).app σ₂) := hq
   have ⟨f, hf, hqf⟩ := hq'
   have hmem : ∀ i, ∃ n,
-      (((normalizedBodyAction D hA C (B n) σ₁.unop ρ).onBasis).app _
-        (σ₂.op, f.1.names i) (f.input i)).mem (𝟙 Γ₃) (f.output i) := by
+      ((f.output i) ∈ (((normalizedBodyAction D hA C (B n) σ₁.unop ρ).onBasis).app _
+        (σ₂.op, f.1.names i) (f.input i)).app (𝟙 Γ₃)) := by
     intro i
-    have h : (sectionValue hA (⨆ n, B n) (σ₂ ≫ σ₁.unop) (ρ.pullback σ₂) (f.1.names i)
+    have h : ((f.output i) ∈ (sectionValue hA (⨆ n, B n) (σ₂ ≫ σ₁.unop) (ρ.pullback σ₂) (f.1.names i)
         (D.rawExtend (C.app _ (σ₂ ≫ σ₁.unop).op (ρ.pullback σ₂)) (f.1.names i)
-          (ΩLower.principal (pointedOrder E ℓ) (f.input i)))).mem (𝟙 Γ₃) (f.output i) := hf i
+          (ΩLower.principal (pointedOrder E ℓ) (f.input i)))).app (𝟙 Γ₃)) := hf i
     exact (ΩLower.mem_iSup_of_nonempty ..).mp
       (sectionValue_iSup_le hA B (σ₂ ≫ σ₁.unop) (ρ.pullback σ₂)
         (f.1.names i) _ (𝟙 Γ₃) (f.output i) h)
@@ -58,8 +58,8 @@ theorem abstraction_iSup_le (hA : ℒ.Comprehension Γ₁ ΓA) (C : RawFamily Γ
   have hn : ((normalizedBodyAction D hA C (B (Finset.univ.sup m)) σ₁.unop ρ).onBasis).GraphValid σ₂ f :=
     fun i => normalizedBodyAction_mono D hA le_rfl (hB (Finset.le_sup (Finset.mem_univ i)))
       σ₁.unop ρ _ (σ₂.op, f.1.names i) _ (𝟙 Γ₃) _ (hm i)
-  change ((⨆ n, abstraction D hA C (B n)).app X σ₁ ρ).mem σ₂ q
-  rw [iSup_app]
+  change (q ∈ ((⨆ n, abstraction D hA C (B n)).app X σ₁ ρ).app σ₂)
+  rw [ΩLower.homObj_iSup_app]
   exact (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨_, ⟨f, hn, hqf⟩⟩
 
 end Metalean.CoherentShape.RawFamily

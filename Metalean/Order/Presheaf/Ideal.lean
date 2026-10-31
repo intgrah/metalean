@@ -6,6 +6,7 @@ Authors: Jeremy Chen
 module
 
 public import Mathlib.Order.Ideal
+public import Mathlib.Order.UpperLower.Prod
 public import Metalean.Order.Category.CondSemilatSup.Cartesian
 public import Metalean.Order.Category.Preord.Cartesian
 public import Metalean.Order.Presheaf.Lower
@@ -48,24 +49,24 @@ def pullback (I : ΩIdeal R X) (f : Y ⟶ X) : ΩIdeal R Y := (presheaf R).map f
 theorem pullback_mono {I J : ΩIdeal R X} (h : I ≤ J) (f : Y ⟶ X) : I.pullback f ≤ J.pullback f :=
   ((presheaf R).map f.op).hom.monotone h
 
-abbrev mem (I : ΩIdeal R X) (f : Y ⟶ X) (a : R.obj (op Y)) := I.val.mem f a
+@[implicit_reducible] def app (I : ΩIdeal R X) (f : Y ⟶ X) : Order.Ideal (R.obj (op Y)) where
+  __ := I.val.app f
+  nonempty' := ⟨⊥, I.val.bottom f⟩
+  directed' _ ha _ hb := I.property f ha hb
 
-theorem bottom (I : ΩIdeal R X) (f : Y ⟶ X) : I.mem f ⊥ := I.val.bottom f
-
-theorem lower (I : ΩIdeal R X) (f : Y ⟶ X) {a b : R.obj (op Y)}
-    (h : a ≤ b) : I.mem f b → I.mem f a := I.val.lower f h
+theorem bottom (I : ΩIdeal R X) (f : Y ⟶ X) : (⊥ ∈ I.app f) := I.val.bottom f
 
 theorem natural (I : ΩIdeal R X) (f : Y ⟶ X) (g : Z ⟶ Y) (a : R.obj (op Y)) :
-    I.mem f a → I.mem (g ≫ f) (R.map g.op a) := I.val.natural f g a
+    (a ∈ I.app f) → ((R.map g.op a) ∈ I.app (g ≫ f)) := I.val.natural f g a
 
 @[simp]
-theorem val_mem (I : ΩIdeal R X) (f : Y ⟶ X) (a : R.obj (op Y)) :
-    I.val.mem f a ↔ I.mem f a := Iff.rfl
+theorem mem_app (I : ΩIdeal R X) (f : Y ⟶ X) (a : R.obj (op Y)) :
+    (a ∈ I.app f) ↔ (a ∈ I.val.app f) := Iff.rfl
 
 @[ext]
 theorem ext {I J : ΩIdeal R X}
     (h : ∀ {Y : C} (f : Y ⟶ X) (a : R.obj (op Y)),
-      I.mem f a ↔ J.mem f a) : I = J :=
+      (a ∈ I.app f) ↔ (a ∈ J.app f)) : I = J :=
   Subtype.val_injective (ΩLower.ext h)
 
 instance : OrderBot (ΩIdeal R X) where
@@ -74,24 +75,24 @@ instance : OrderBot (ΩIdeal R X) where
 
 @[simp]
 theorem mem_bot (f : Y ⟶ X) (a : R.obj (op Y)) :
-    (⊥ : ΩIdeal R X).mem f a ↔ a ≤ ⊥ := ΩLower.mem_bot f a
+    (a ∈ (⊥ : ΩIdeal R X).app f) ↔ a ≤ ⊥ := ΩLower.mem_bot f a
 
 @[simp↓] theorem presheaf_map_mem (I : ΩIdeal R X) (f : Y ⟶ X) (g : Z ⟶ Y) (a : R.obj (op Z)) :
-    (I.pullback f).mem g a ↔ I.mem (g ≫ f) a := Iff.rfl
+    (a ∈ (I.pullback f).app g) ↔ (a ∈ I.app (g ≫ f)) := Iff.rfl
 
 @[simp↓] theorem presheaf_map_mem_id (I : ΩIdeal R X) (f : Y ⟶ X)
     (a : R.obj (op Y)) :
-    (I.pullback f).mem (𝟙 Y) a ↔ I.mem f a := by simp
+    (a ∈ (I.pullback f).app (𝟙 Y)) ↔ (a ∈ I.app f) := by simp
 
 @[simp] theorem pullback_bot (f : Y ⟶ X) : (⊥ : ΩIdeal R X).pullback f = ⊥ :=
-  ext fun g a => by simp
+  Subtype.val_injective (ΩLower.presheaf_map_bot f)
 
 def principal (R : Cᵒᵖ ⥤ CondSemilatSup.{max u v}) (x : R.obj (op X)) : ΩIdeal R X where
   val := ΩLower.principal R x
   property := ΩLower.isDirected_principal x
 
-@[simp] theorem mem_principal (x : R.obj (op X)) (f : Y ⟶ X) (a : R.obj (op Y)) :
-    (principal R x).mem f a ↔ a ≤ R.map f.op x := ΩLower.mem_principal x f a
+@[simp] theorem principal_app (a : R.obj (op X)) (f : Y ⟶ X) :
+    (principal R a).app f = Order.Ideal.principal (R.map f.op a) := rfl
 
 @[simp]
 theorem presheaf_map_principal (x : R.obj (op X)) (f : Y ⟶ X) :
@@ -117,10 +118,9 @@ end ΩIdeal
 namespace ΩLower
 
 def pair (I : ΩLower R X) (J : ΩLower S X) : ΩLower (R ⊗ S) X where
-  mem f := fun (a, b) => I.mem f a ∧ J.mem f b
+  app f := (I.app f).prod (J.app f)
   natural f g := fun (a, b) ⟨ha, hb⟩ => ⟨I.natural f g a ha, J.natural f g b hb⟩
   bottom f := ⟨I.bottom f, J.bottom f⟩
-  lower f := fun ⟨ha, hb⟩ ⟨ha', hb'⟩ => ⟨I.lower f ha ha', J.lower f hb hb'⟩
 
 theorem IsDirected.pair {I : ΩLower R X} {J : ΩLower S X}
     (hI : I.IsDirected) (hJ : J.IsDirected) : (I.pair J).IsDirected := by
@@ -129,15 +129,16 @@ theorem IsDirected.pair {I : ΩLower R X} {J : ΩLower S X}
   have ⟨d, hd, had, hbd⟩ := hJ f ha₂ hb₂
   exact ⟨(c, d), ⟨hc, hd⟩, ⟨hac, had⟩, ⟨hbc, hbd⟩⟩
 
-def bind (I : ΩLower R X)
+@[simps app] def bind (I : ΩLower R X)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord) (presheaf S)
       (uliftYoneda.{u}.obj X)) : ΩLower S X where
-  mem f b := ∃ a, I.mem f a ∧ (F.app _ ⟨f⟩ a).mem (𝟙 _) b
+  app f := {
+    carrier := {b | ∃ a, (a ∈ I.app f) ∧ (b ∈ (F.app _ ⟨f⟩ a).app (𝟙 _))}
+    lower' := fun {_ _} h => fun ⟨a, ha, hb⟩ => ⟨a, ha, ((F.app _ ⟨f⟩ a).app _).lower h hb⟩ }
   natural f g b := fun ⟨a, ha, hb⟩ =>
     ⟨R.map g.op a, I.natural f g a ha, (homObj_app_map_mem F g.op ⟨f⟩ a (𝟙 _) _).mpr
       (by simpa using (F.app _ ⟨f⟩ a).natural (𝟙 _) g b hb)⟩
   bottom f := ⟨(⊥ : R.obj (op _)), I.bottom f, (F.app _ ⟨f⟩ (⊥ : R.obj (op _))).bottom _⟩
-  lower f h := fun ⟨a, ha, hb⟩ => ⟨a, ha, (F.app _ ⟨f⟩ a).lower _ h hb⟩
 
 theorem IsDirected.bind {I : ΩLower R X} (hI : I.IsDirected)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord) (presheaf S)
@@ -155,7 +156,7 @@ theorem bind_mono {I I' : ΩLower R X}
     (hI : I ≤ I') (hF : ∀ Y f a, F.app Y f a ≤ F'.app Y f a) : I.bind F ≤ I'.bind F' :=
   fun {Y} f b ⟨a, ha, hb⟩ => ⟨a, hI f a ha, hF (op Y) ⟨f⟩ a (𝟙 Y) b hb⟩
 
-def bind₂ (I : ΩLower R X) (J : ΩLower S X)
+@[simps! app] def bind₂ (I : ΩLower R X) (J : ΩLower S X)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord ⊗ S ⋙ forget₂ CondSemilatSup Preord)
       (presheaf T) (uliftYoneda.{u}.obj X)) : ΩLower T X :=
   (I.pair J).bind F
@@ -163,8 +164,8 @@ def bind₂ (I : ΩLower R X) (J : ΩLower S X)
 @[simp] theorem mem_bind₂ (I : ΩLower R X) (J : ΩLower S X)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord ⊗ S ⋙ forget₂ CondSemilatSup Preord)
       (presheaf T) (uliftYoneda.{u}.obj X)) (f : Y ⟶ X) (c : T.obj (op Y)) :
-    (bind₂ I J F).mem f c ↔ ∃ a b, I.mem f a ∧ J.mem f b ∧
-      (F.app (op Y) ⟨f⟩ (a, b)).mem (𝟙 Y) c :=
+    (c ∈ (bind₂ I J F).app f) ↔ ∃ a b, (a ∈ I.app f) ∧ (b ∈ J.app f) ∧
+      (c ∈ (F.app (op Y) ⟨f⟩ (a, b)).app (𝟙 Y)) :=
   ⟨fun ⟨(a, b), ⟨ha, hb⟩, hc⟩ => ⟨a, b, ha, hb, hc⟩,
     fun ⟨a, b, ha, hb, hc⟩ => ⟨(a, b), ⟨ha, hb⟩, hc⟩⟩
 
@@ -184,14 +185,15 @@ variable (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord) (S ⋙ forg
     (uliftYoneda.{u}.obj X))
 
 def map (I : ΩLower R X) : ΩLower S X where
-  mem f b := ∃ a, I.mem f a ∧ b ≤ F.app _ ⟨f⟩ a
+  app f := {
+    carrier := {b | ∃ a, (a ∈ I.app f) ∧ b ≤ F.app _ ⟨f⟩ a}
+    lower' := fun {_ _} h => fun ⟨a, ha, hb⟩ => ⟨a, ha, h.trans hb⟩ }
   natural f g _ := fun ⟨a, ha, hb⟩ => ⟨R.map g.op a, I.natural f g a ha,
     (map_rel (ConcreteCategory.hom (S.map g.op)) hb).trans_eq (F.naturality_apply g.op ⟨f⟩ a).symm⟩
   bottom f := ⟨⊥, I.bottom f, bot_le⟩
-  lower _ h := fun ⟨a, ha, hb⟩ => ⟨a, ha, h.trans hb⟩
 
 @[simp] theorem mem_map (I : ΩLower R X) (f : Y ⟶ X) (b : S.obj (op Y)) :
-    (I.map F).mem f b ↔ ∃ a, I.mem f a ∧ b ≤ F.app (op Y) ⟨f⟩ a := Iff.rfl
+    (b ∈ (I.map F).app f) ↔ ∃ a, (a ∈ I.app f) ∧ b ≤ F.app (op Y) ⟨f⟩ a := Iff.rfl
 
 theorem IsDirected.map {I : ΩLower R X} (hI : I.IsDirected) : (I.map F).IsDirected := by
   intro Y f _ _ ⟨a, ha, hya⟩ ⟨b, hb, hzb⟩
@@ -232,8 +234,8 @@ def bind₂ (I : ΩIdeal R X) (J : ΩIdeal S X)
 @[simp] theorem mem_bind₂ (I : ΩIdeal R X) (J : ΩIdeal S X)
     (F : Functor.HomObj (R ⋙ forget₂ CondSemilatSup Preord ⊗ S ⋙ forget₂ CondSemilatSup Preord)
       (presheaf T) (uliftYoneda.{u}.obj X)) (f : Y ⟶ X) (c : T.obj (op Y)) :
-    (bind₂ I J F).mem f c ↔ ∃ a b, I.mem f a ∧ J.mem f b ∧
-      (F.app (op Y) ⟨f⟩ (a, b)).mem (𝟙 Y) c :=
+    (c ∈ (bind₂ I J F).app f) ↔ ∃ a b, (a ∈ I.app f) ∧ (b ∈ J.app f) ∧
+      (c ∈ (F.app (op Y) ⟨f⟩ (a, b)).app (𝟙 Y)) :=
   ΩLower.mem_bind₂ _ _ _ f c
 
 end ΩIdeal

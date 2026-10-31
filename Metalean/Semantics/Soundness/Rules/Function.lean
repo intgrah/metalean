@@ -165,8 +165,8 @@ theorem HasFixedness.forallE (ht₁ : E[Γ₁.as.ctx] ⊢ t₁ : .sort u)
         exact Eq.trans (ΩLower.ext fun σ z => (mem_piLimit_rawExtend_sort_iff v _ _ σ z).trans
           (mem_piLimit_rawExtend_sort_iff v _ _ σ z).symm) h
     have hmem := hf i
-    change (RawFamily.sectionValue (CtxCat.rawComprehension ht₁) T (σ₂ ≫ σ₁) (ρ.pullback σ₂) (f.names i)
-      J.val).mem (𝟙 Γ₃) _ at hmem
+    change (_ ∈ (RawFamily.sectionValue (CtxCat.rawComprehension ht₁) T (σ₂ ≫ σ₁) (ρ.pullback σ₂) (f.names i)
+      J.val).app (𝟙 Γ₃)) at hmem
     rw [RawFamily.sectionValue, ← hsort] at hmem
     have ⟨_, hcode⟩ := (mem_piLimit_rawExtend_sort_iff _ _ _ _ _).mp hmem
     rwa [hv] at hcode
@@ -378,7 +378,7 @@ theorem HasEquality.eta
   let U := RawFamily.normalizedBodyAction (piLimit E ℓ) (CtxCat.rawComprehension ht) C Eb σ₁ ρ
   have hsupport {Γ₃ : CtxCat E ℓ} (σ₂ : Γ₃ ⟶ Γ₂) (name : Tm_ Γ₃)
       (X : Domain Γ₃) {y : CoherentShape Γ₃}
-      (hy : (application (F.pullback σ₂) name X).mem (𝟙 Γ₃) y)
+      (hy : (y ∈ (application (F.pullback σ₂) name X).app (𝟙 Γ₃)))
       (hne : ¬ y ≤ ⊥) :
       Nonempty (Raw.ContextSection ht (σ₂ ≫ σ₁) name) :=
     RawFamily.application_rawPi_fixed_support ht label C
@@ -389,8 +389,9 @@ theorem HasEquality.eta
         label X.val = (application (F.pullback σ₂) label X).val := by
     refine (PartialSection.eq_extend _ _ (fun σ₃ y hy hne => ?_)
       fun σ₃ (s : Raw.ContextSection ht (σ₃ ≫ (σ₂ ≫ σ₁)) ((Tm E ℓ).map σ₃.op label)) => ?_).symm
-    · have h := hsupport (σ₃ ≫ σ₂) _ (X.pullback σ₃)
-        (by simpa using (ΩIdeal.presheaf_map_mem_id (application (F.pullback σ₂) label X) σ₃ y).mpr hy) hne
+    · have hy' := (ΩIdeal.presheaf_map_mem_id (application (F.pullback σ₂) label X) σ₃ y).mpr hy
+      rw [pullback_application, ΩIdeal.pullback_pullback] at hy'
+      have h := hsupport (σ₃ ≫ σ₂) _ (X.pullback σ₃) hy' hne
       rw [Category.assoc] at h
       exact h
     change ((application (F.pullback σ₂) label X).pullback σ₃).val = _

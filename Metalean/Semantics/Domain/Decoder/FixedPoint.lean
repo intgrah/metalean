@@ -32,7 +32,7 @@ theorem Evaluates.isCode {g : CoherentGraph Γ₁} (hg : ∀ i, Shape.IsCode fal
 theorem isCode_of_mem_application_lamGenerator {g : CoherentGraph Γ₁}
     (hg : ∀ i, Shape.IsCode false (g.1.outs i)) (name : Tm_ Γ₁)
     (Y : Domain Γ₁) (σ : Γ₂ ⟶ Γ₁) {c : CoherentShape Γ₂}
-    (hc : (application (principalIdeal g.lamGenerator) name Y).mem σ c) : Shape.IsCode false c.1 := by
+    (hc : (c ∈ (application (principalIdeal g.lamGenerator) name Y).app σ)) : Shape.IsCode false c.1 := by
   have ⟨_, _, hy⟩ := (mem_application _ _ _ _ _).mp hc
   simp at hy
   exact hy.isCode (g := g.reindex σ) fun i => (hg i).map _ _
@@ -41,8 +41,8 @@ namespace CodeAssignment
 
 theorem mem_extend_piStep_pi (F : CodeAssignment E ℓ) (label : Ty.Pair Γ₁) (A : Domain Γ₁)
     (B : IdealAction Γ₁) (n : Tm_ Γ₁) (G : Domain Γ₁) (y : CoherentShape Γ₁) :
-    (F.piStep.extend (pi label A B) n G).mem (𝟙 Γ₁) y ↔
-      ((F.piAction label A B).val.app _ ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) y := by
+    (y ∈ (F.piStep.extend (pi label A B) n G).app (𝟙 Γ₁)) ↔
+      (y ∈ ((F.piAction label A B).val.app _ ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁)) := by
   rw [mem_extend]
   constructor
   · intro ⟨c, hc, hy⟩
@@ -62,8 +62,8 @@ theorem mem_extend_piStep_pi (F : CodeAssignment E ℓ) (label : Ty.Pair Γ₁) 
         (applicationAction (principalIdeal h)).val.app _ (σ.op, m) X ≤
           (graphAction f).val.app _ (σ.op, m) X :=
       fun σ m X => application_mono (ΩIdeal.pullback_mono (ΩLower.principal_mono hhf) σ) (@le_rfl _ _ _)
-    have hyf : ((F.piAction label (principalIdeal a) (graphAction f)).val.app _
-        ((𝟙 Γ₁).op, n) G).mem (𝟙 Γ₁) y :=
+    have hyf : (y ∈ ((F.piAction label (principalIdeal a) (graphAction f)).val.app _
+        ((𝟙 Γ₁).op, n) G).app (𝟙 Γ₁)) :=
       F.piAction_mono label (fun _ _ h ↦ h) hbody _ ((𝟙 Γ₁).op, n) G (𝟙 Γ₁) y hy
     refine ⟨piGenerator label a f, (BasisAction.mem_pi _ _ _ _ _).mpr ⟨a, f, ha, hf, by simp⟩, ?_⟩
     simp
@@ -163,8 +163,8 @@ theorem piLimit_eval_prop {c : CoherentShape Γ₁} (hc : Shape.IsCode false c.1
 
 theorem mem_piLimit_rawExtend_sort_iff (r : Level ℓ) (X : RawValue Γ₁)
     (n : Tm_ Γ₁) (σ : Γ₂ ⟶ Γ₁) (y : CoherentShape Γ₂) :
-    ((piLimit E ℓ).rawExtend (ΩLower.principal (pointedOrder E ℓ) (sortAtom r)) n X).mem σ y ↔
-      X.mem σ y ∧ Shape.IsCode r.rel y.1 := by
+    (y ∈ ((piLimit E ℓ).rawExtend (ΩLower.principal (pointedOrder E ℓ) (sortAtom r)) n X).app σ) ↔
+      (y ∈ X.app σ) ∧ Shape.IsCode r.rel y.1 := by
   have heval (x : CoherentShape Γ₂) : (piLimit E ℓ).eval (sortAtom r)
       ((Tm E ℓ).map σ.op n) (principalIdeal x) = universeIdeal r.rel (principalIdeal x) := by
     rfl
@@ -172,10 +172,12 @@ theorem mem_piLimit_rawExtend_sort_iff (r : Level ℓ) (X : RawValue Γ₁)
   constructor
   · intro ⟨c, hc, x, hx, hy⟩
     have hy' := (piLimit E ℓ).eval_mono_code (show c ≤ sortAtom r from hc) _ (principalIdeal x) (𝟙 Γ₂) y hy
-    rw [heval, ΩIdeal.val_mem, mem_universeIdeal_iff, principalIdeal_mem, reindex_id] at hy'
-    exact ⟨X.lower σ hy'.1 hx, hy'.2⟩
+    rw [heval, ← ΩIdeal.mem_app, mem_universeIdeal_iff, principalIdeal_mem, reindex_id] at hy'
+    exact ⟨(X.app σ).lower hy'.1 hx, hy'.2⟩
   · intro ⟨hy, hcode⟩
-    refine ⟨sortAtom r, le_rfl, y, hy, ?_⟩
+    refine ⟨sortAtom r, ?_, y, hy, ?_⟩
+    · change sortAtom r ≤ sortAtom r
+      exact le_rfl
     rw [heval, mem_universeIdeal_iff, principalIdeal_mem, reindex_id]
     exact ⟨le_rfl, hcode⟩
 
@@ -192,7 +194,7 @@ theorem piLimit_rawExtend_prop {X : RawValue Γ₁} (m : Tm_ Γ₁)
     rw [piLimit_eval_prop hcode] at hy
     exact (ΩLower.mem_bot _ _).mpr hy
   · intro Γ₂ σ y hy
-    exact ((piLimit E ℓ).rawExtend X n Y).lower σ ((ΩLower.mem_bot _ _).mp hy)
+    exact (((piLimit E ℓ).rawExtend X n Y).app σ).lower ((ΩLower.mem_bot _ _).mp hy)
       (((piLimit E ℓ).rawExtend X n Y).bottom σ)
 
 theorem piLimit_extend_quot_of_rel (code : QuotCode Γ₁) (hrel : code.level.rel = true)

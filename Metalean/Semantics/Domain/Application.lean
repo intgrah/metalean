@@ -24,7 +24,7 @@ namespace CoherentShape
 inductive OutputAtom (I : ΩLower (pointedOrder E ℓ) Γ₁) (label : Tm_ Γ₁)
     (x y : CoherentShape Γ₁) : Prop where
   | intro (graph : CoherentGraph Γ₁) (entry : Fin graph.val.size)
-      (graph_mem : I.mem (𝟙 Γ₁) graph.lamGenerator) (label_eq : graph.val.names entry = label)
+      (graph_mem : (graph.lamGenerator ∈ I.app (𝟙 Γ₁))) (label_eq : graph.val.names entry = label)
       (input_le : graph.input entry ≤ x) (output_eq : y = graph.output entry) :
       OutputAtom I label x y
 
@@ -48,7 +48,7 @@ theorem reindex (σ : Γ₂ ⟶ Γ₁) {I : ΩLower (pointedOrder E ℓ) Γ₁} 
   have ⟨f, i, hf, hlabel, hix, hiy⟩ := h
   refine ⟨f.reindex σ, i, ?_, congrArg ((Tm E ℓ).map σ.op) hlabel,
     Le.reindex σ hix, congrArg (CoherentShape.reindex σ) hiy⟩
-  change I.mem (𝟙 Γ₂ ≫ σ) (CoherentShape.reindex σ f.lamGenerator)
+  change ((CoherentShape.reindex σ f.lamGenerator) ∈ I.app (𝟙 Γ₂ ≫ σ))
   simpa using I.natural (𝟙 Γ₁) σ f.lamGenerator hf
 
 theorem compatible {I : Domain Γ₁} {label : Tm_ Γ₁} {x y : CoherentShape Γ₁}
@@ -122,15 +122,15 @@ theorem reindex (σ : Γ₂ ⟶ Γ₁) {I : Domain Γ₁} {label : Tm_ Γ₁} {x
 
 theorem mem_of_outputAtom {I : Domain Γ₁} {label : Tm_ Γ₁} {x y : CoherentShape Γ₁}
     {L : RawValue Γ₁} (hL : L.IsDirected)
-    (h : ∀ {z}, OutputAtom I.val label x z → L.mem (𝟙 Γ₁) z) :
+    (h : ∀ {z}, OutputAtom I.val label x z → (z ∈ L.app (𝟙 Γ₁))) :
     Evaluates I label x y →
-    L.mem (𝟙 Γ₁) y
+    (y ∈ L.app (𝟙 Γ₁))
   | .entry hz => h hz
   | .bottom => L.bottom _
-  | .lower hle hz => L.lower _ hle (mem_of_outputAtom hL h hz)
+  | .lower hle hz => (L.app _).lower hle (mem_of_outputAtom hL h hz)
   | .join hc hy hz =>
     have ⟨_, hc', hyc, hzc⟩ := hL (𝟙 Γ₁) (mem_of_outputAtom hL h hy) (mem_of_outputAtom hL h hz)
-    L.lower _ (cSup_le hc hyc hzc) hc'
+    (L.app _).lower (cSup_le hc hyc hzc) hc'
 
 theorem le_of_outputAtom {I : Domain Γ₁} {label : Tm_ Γ₁} {x y d : CoherentShape Γ₁}
     (hy : Evaluates I label x y) (h : ∀ {z}, OutputAtom I.val label x z → z ≤ d) : y ≤ d := by
@@ -138,7 +138,7 @@ theorem le_of_outputAtom {I : Domain Γ₁} {label : Tm_ Γ₁} {x y d : Coheren
 
 theorem function_ideal_finitary {I : Domain Γ₁} {label : Tm_ Γ₁}
     {input output : CoherentShape Γ₁} (h : Evaluates I label input output) :
-    ∃ f, I.mem (𝟙 Γ₁) f ∧ Evaluates (principalIdeal f) label input output := by
+    ∃ f, (f ∈ I.app (𝟙 Γ₁)) ∧ Evaluates (principalIdeal f) label input output := by
   induction h with
   | entry h =>
     have ⟨g, i, hg, hl, hx, hy⟩ := h
@@ -158,11 +158,13 @@ end Evaluates
 
 def application (I : Domain Γ₁) (label : Tm_ Γ₁) (X : Domain Γ₁) : Domain Γ₁ where
   val := {
-    mem σ y := ∃ x, X.mem σ x ∧ Evaluates (I.pullback σ) ((Tm E ℓ).map σ.op label) x y
+    app σ := {
+      carrier := {y | ∃ x, (x ∈ X.app σ) ∧ Evaluates (I.pullback σ) ((Tm E ℓ).map σ.op label) x y}
+      lower' := fun {_ _} hyy' => fun ⟨x, hx, hy'⟩ => ⟨x, hx, hy'.lower hyy'⟩ }
     natural σ₁ σ₂ y := fun ⟨x, hx, hy⟩ =>
       ⟨reindex σ₂ x, X.natural σ₁ σ₂ x hx, by simpa using hy.reindex σ₂⟩
     bottom σ := ⟨⊥, X.bottom σ, Evaluates.bottom⟩
-    lower _ hyy' := fun ⟨x, hx, hy'⟩ => ⟨x, hx, hy'.lower hyy'⟩ }
+ }
   property {_} σ {_ _} := fun ⟨x, hx, hxy⟩ ⟨x', hx', hx'y'⟩ =>
     have ⟨c, hc, hxc, hx'c⟩ := X.property σ hx hx'
     have hy := hxy.mono hxc
@@ -172,13 +174,13 @@ def application (I : Domain Γ₁) (label : Tm_ Γ₁) (X : Domain Γ₁) : Doma
 
 @[simp] theorem mem_application (I : Domain Γ₂) (label : Tm_ Γ₂)
     (X : Domain Γ₂) (σ : Γ₁ ⟶ Γ₂) (y : CoherentShape Γ₁) :
-    (application I label X).mem σ y ↔ ∃ x, X.mem σ x ∧
+    (y ∈ (application I label X).app σ) ↔ ∃ x, (x ∈ X.app σ) ∧
       Evaluates (I.pullback σ) ((Tm E ℓ).map σ.op label) x y :=
   Iff.rfl
 
 theorem OutputAtom.mem_application {F X : Domain Γ₁} {label : Tm_ Γ₁}
-    {x y : CoherentShape Γ₁} (hy : OutputAtom F.val label x y) (hx : X.mem (𝟙 Γ₁) x) :
-    (application F label X).mem (𝟙 Γ₁) y := by
+    {x y : CoherentShape Γ₁} (hy : OutputAtom F.val label x y) (hx : (x ∈ X.app (𝟙 Γ₁))) :
+    (y ∈ (application F label X).app (𝟙 Γ₁)) := by
   simp
   exact ⟨x, hx, .entry hy⟩
 
@@ -191,8 +193,8 @@ theorem application_argument_finitary (F : Domain Γ₁) (label : Tm_ Γ₁) :
   fun I y ⟨x, hx, heval⟩ => ⟨x, hx, x, by simp, heval⟩
 
 theorem application_function_finitary (F : Domain Γ₁) {X : Domain Γ₁} (label : Tm_ Γ₁)
-    {y : CoherentShape Γ₁} (hy : (application F label X).mem (𝟙 Γ₁) y) :
-    ∃ f, F.mem (𝟙 Γ₁) f ∧ (application (principalIdeal f) label X).mem (𝟙 Γ₁) y := by
+    {y : CoherentShape Γ₁} (hy : (y ∈ (application F label X).app (𝟙 Γ₁))) :
+    ∃ f, (f ∈ F.app (𝟙 Γ₁)) ∧ (y ∈ (application (principalIdeal f) label X).app (𝟙 Γ₁)) := by
   have ⟨x, hx, heval⟩ := hy
   have ⟨f, hf, heval⟩ := heval.function_ideal_finitary
   exact ⟨f, hf, x, hx, by simpa using heval⟩

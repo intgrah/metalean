@@ -34,12 +34,12 @@ theorem RawFamily.decode_apply_iSup_le (D : CodeAssignment E ℓ) (n : Tm_ Γ₁
     decode D n C ((⨆ k, F k).apply X label) ≤ ⨆ k, decode D n C ((F k).apply X label) := by
   intro Y σ ρ Γ₃ σ₂ y hy
   have ⟨code, hcode, x, hx, hy⟩ := (D.mem_rawExtend ..).mp hy
-  change (((⨆ k, F k).app _ σ ρ).app _ ((𝟙 Y.unop).op, (Tm E ℓ).map σ label)
-    (X.app _ σ ρ)).mem σ₂ x at hx
-  rw [RawActionFamily.iSup_app, RawAction.iSup_app] at hx
+  change (x ∈ (((⨆ k, F k).app _ σ ρ).app _ ((𝟙 Y.unop).op, (Tm E ℓ).map σ label)
+    (X.app _ σ ρ)).app σ₂) at hx
+  rw [RawActionFamily.iSup_app, ΩLower.homObj_iSup_app] at hx
   have ⟨k, hx⟩ := (ΩLower.mem_iSup_of_nonempty ..).mp hx
-  change ((⨆ k, decode D n C ((F k).apply X label)).app Y σ ρ).mem σ₂ y
-  rw [RawFamily.iSup_app]
+  change (y ∈ ((⨆ k, decode D n C ((F k).apply X label)).app Y σ ρ).app σ₂)
+  rw [ΩLower.homObj_iSup_app]
   exact (ΩLower.mem_iSup_of_nonempty ..).mpr ⟨k, (D.mem_rawExtend ..).mpr ⟨code, hcode, x, hx, hy⟩⟩
 
 @[implicit_reducible] def RecApprox (E : Env ζ) (ℓ : Nat) (ι : IndSig) : Type _ :=

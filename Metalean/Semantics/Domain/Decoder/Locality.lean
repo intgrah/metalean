@@ -42,9 +42,9 @@ theorem Evaluates.principal_upper {f : CoherentGraph Γ₁} {label : Tm_ Γ₁}
 
 theorem application_rank_upper (f : CoherentGraph Γ₁) (label : Tm_ Γ₁) (X : Domain Γ₁)
     (σ : Γ₂ ⟶ Γ₁) {y : CoherentShape Γ₂}
-    (hy : (application (principalIdeal f.lamGenerator) label X).mem σ y) :
+    (hy : (y ∈ (application (principalIdeal f.lamGenerator) label X).app σ)) :
     ∃ b : CoherentShape Γ₂, b.1.rank ≤ f.1.rank ∧
-      (application (principalIdeal f.lamGenerator) label X).mem σ b ∧ y ≤ b := by
+      (b ∈ (application (principalIdeal f.lamGenerator) label X).app σ) ∧ y ≤ b := by
   have heq := pullback_application (principalIdeal f.lamGenerator) X label σ
   simp at heq
   change _ = application (principalIdeal (f.reindex σ).lamGenerator) _ _ at heq
@@ -60,7 +60,7 @@ theorem application_rank_upper (f : CoherentGraph Γ₁) (label : Tm_ Γ₁) (X 
   exact (mem_application _ _ _ _ _).mpr ⟨x, hx, by simpa using hb⟩
 
 def Domain.CofinalIn (T : Domain Γ₁) (P : ∀ {Γ₂ : CtxCat E ℓ}, CoherentShape Γ₂ → Prop) : Prop :=
-  ∀ ⦃Γ₂ : CtxCat E ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (a : CoherentShape Γ₂), T.mem σ a → ∃ b, P b ∧ T.mem σ b ∧ a ≤ b
+  ∀ ⦃Γ₂ : CtxCat E ℓ⦄ (σ : Γ₂ ⟶ Γ₁) (a : CoherentShape Γ₂), (a ∈ T.app σ) → ∃ b, P b ∧ (b ∈ T.app σ) ∧ a ≤ b
 
 theorem CodeAssignment.extend_eq_of {F G : CodeAssignment E ℓ}
     {P : ∀ {Γ₂ : CtxCat E ℓ}, CoherentShape Γ₂ → Prop}
@@ -68,10 +68,16 @@ theorem CodeAssignment.extend_eq_of {F G : CodeAssignment E ℓ}
     {T : Domain Γ₁} (hT : T.CofinalIn P) (cls : Tm_ Γ₁) (X : Domain Γ₁) :
     F.extend T cls X = G.extend T cls X := by
   ext Γ₂ σ y
-  simp_rw [mem_extend]
+  rw [mem_extend, mem_extend]
   constructor <;> intro ⟨a, ha, hy⟩ <;> have ⟨b, hPb, hb, hab⟩ := hT σ a ha
-  · exact ⟨b, hb, by simpa [eval, h b hPb] using F.eval_mono_code hab _ (X.pullback σ) (𝟙 Γ₂) y hy⟩
-  · exact ⟨b, hb, by simpa [eval, h b hPb] using G.eval_mono_code hab _ (X.pullback σ) (𝟙 Γ₂) y hy⟩
+  · refine ⟨b, hb, ?_⟩
+    have hz := F.eval_mono_code hab _ (X.pullback σ) (𝟙 Γ₂) y hy
+    change y ∈ (F.eval b _ _).app (𝟙 Γ₂) at hz
+    simpa only [eval, h b hPb] using hz
+  · refine ⟨b, hb, ?_⟩
+    have hz := G.eval_mono_code hab _ (X.pullback σ) (𝟙 Γ₂) y hy
+    change y ∈ (G.eval b _ _).app (𝟙 Γ₂) at hz
+    simpa only [eval, h b hPb] using hz
 
 private theorem graphAction_extend_eq {F G : CodeAssignment E ℓ} {n : Nat}
     (h : ∀ {Γ₂ : CtxCat E ℓ} (b : CoherentShape Γ₂), b.1.rank < n → F.app _ b = G.app _ b)
@@ -97,10 +103,10 @@ theorem CodeAssignment.piAction_congr {F G : CodeAssignment E ℓ}
   refine congrArg IdealAction.abstraction ?_
   ext Γ₃ ⟨⟨σ₂⟩, m⟩ X
   refine ΩIdeal.ext fun σ₃ z => ?_
-  change (F.resultIdeal _ cls (B.pullback σ₁) σ₂ m (F.extend ((A.pullback σ₁).pullback σ₂) m X)
-      (application (Y.pullback σ₂) m (F.extend ((A.pullback σ₁).pullback σ₂) m X))).mem σ₃ z ↔
-    (G.resultIdeal _ cls (B.pullback σ₁) σ₂ m (G.extend ((A.pullback σ₁).pullback σ₂) m X)
-      (application (Y.pullback σ₂) m (G.extend ((A.pullback σ₁).pullback σ₂) m X))).mem σ₃ z
+  change (z ∈ (F.resultIdeal _ cls (B.pullback σ₁) σ₂ m (F.extend ((A.pullback σ₁).pullback σ₂) m X)
+      (application (Y.pullback σ₂) m (F.extend ((A.pullback σ₁).pullback σ₂) m X))).app σ₃) ↔
+    (z ∈ (G.resultIdeal _ cls (B.pullback σ₁) σ₂ m (G.extend ((A.pullback σ₁).pullback σ₂) m X)
+      (application (Y.pullback σ₂) m (G.extend ((A.pullback σ₁).pullback σ₂) m X))).app σ₃)
   rw [ΩIdeal.pullback_pullback, hA]
   refine or_congr_right (exists_congr fun _ => exists_congr fun _ => ?_)
   rw [resultBody, resultBody, IdealAction.pullback_app, hB]

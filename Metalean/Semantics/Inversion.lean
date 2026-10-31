@@ -57,10 +57,9 @@ theorem TypeEq.sort_model_inj (hE : EnvWF E) (hΔ : E[Δ] ⊢ ok) {l₁ l₂ : L
     (h : E[Δ] ⊢ .sort l₁ ≡ .sort l₂ typ) : l₁ = l₂ := by
   have heq := h.rawInterpret_eq hΔ hE
   rw [rawInterpret_sort, rawInterpret_sort, RawFamily.sort_value, RawFamily.sort_value] at heq
-  have hmem : (principalIdeal (sortAtom l₂ : CoherentShape (⟨Δ, hΔ⟩ : CtxCat E ℓ))).mem
-      (𝟙 _) (sortAtom l₁) := by
-    rw [← ΩIdeal.val_mem, ← heq]
-    exact (ΩLower.mem_principal_id _ _).mpr le_rfl
+  have hmem : ((sortAtom l₁) ∈ (principalIdeal (sortAtom l₂ : CoherentShape (⟨Δ, hΔ⟩ : CtxCat E ℓ))).app (𝟙 _)) := by
+    rw [ΩIdeal.mem_app, ← heq]
+    simp
   exact sortAtom_le_iff.mp hmem
 
 theorem TypeEq.forallE_model_inj
@@ -74,8 +73,8 @@ theorem TypeEq.forallE_model_inj
   have ⟨_, hr⟩ := h.right
   have ⟨⟨_, ht₁⟩, ⟨_, ht₁'⟩⟩ := hl.forallE_inv
   have ⟨⟨_, ht₂⟩, ⟨_, ht₂'⟩⟩ := hr.forallE_inv
-  have hp : ((rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) (.forallE t₁ t₁')).app _ (𝟙 _).op
-      fun _ ↦ ⊥).mem (𝟙 _) (piAtom (Ty.pairOfTyping (⟨Δ, hΔ⟩ : CtxCat E ℓ).as ht₁ ht₁')) := by
+  have hp : ((piAtom (Ty.pairOfTyping (⟨Δ, hΔ⟩ : CtxCat E ℓ).as ht₁ ht₁')) ∈ ((rawInterpret (piLimit E ℓ) (⟨Δ, hΔ⟩ : CtxCat E ℓ) (.forallE t₁ t₁')).app _ (𝟙 _).op
+      fun _ ↦ ⊥).app (𝟙 _)) := by
     rw [rawInterpret_forallE _ ht₁ ht₁', RawFamily.mem_piAtom_pi_value_iff]
     simp
   rw [h.rawInterpret_eq hΔ hE, rawInterpret_forallE _ ht₂ ht₂',

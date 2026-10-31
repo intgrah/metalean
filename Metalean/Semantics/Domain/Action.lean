@@ -28,7 +28,7 @@ def IsIdealValued (F : BasisAction Γ₁) : Prop :=
     (F.app _ (σ.op, label) x).IsDirected
 
 def GraphValid (F : BasisAction Γ₁) (σ : Γ₂ ⟶ Γ₁) (f : CoherentGraph Γ₂) : Prop :=
-  ∀ i, (F.app _ (σ.op, f.1.names i) (f.input i)).mem (𝟙 Γ₂) (f.output i)
+  ∀ i, ((f.output i) ∈ (F.app _ (σ.op, f.1.names i) (f.input i)).app (𝟙 Γ₂))
 
 namespace GraphValid
 
@@ -39,11 +39,10 @@ theorem mono {F G : BasisAction Γ₁} (hFG : F ≤ G) {σ : Γ₂ ⟶ Γ₁} {f
 theorem reindex {F : BasisAction Γ₁} {σ₁ : Γ₂ ⟶ Γ₁} {f : CoherentGraph Γ₂} (hf : GraphValid F σ₁ f)
     (σ₂ : Γ₃ ⟶ Γ₂) : GraphValid F (σ₂ ≫ σ₁) (f.reindex σ₂) := by
   intro i
-  have hB' : ((F.app _ (σ₁.op, f.1.names i) (f.input i)).pullback σ₂).mem (𝟙 Γ₃)
-      (CoherentShape.reindex σ₂ (f.output i)) := by
+  have hB' : ((CoherentShape.reindex σ₂ (f.output i)) ∈ ((F.app _ (σ₁.op, f.1.names i) (f.input i)).pullback σ₂).app (𝟙 Γ₃)) := by
     simpa using (F.app _ (σ₁.op, f.1.names i) (f.input i)).natural (𝟙 Γ₂) σ₂ (f.output i) (hf i)
   exact congrArg (fun L : ΩLower (pointedOrder E ℓ) Γ₃ =>
-    L.mem (𝟙 Γ₃) (CoherentShape.reindex σ₂ (f.output i)))
+    ((CoherentShape.reindex σ₂ (f.output i)) ∈ L.app (𝟙 Γ₃)))
     (F.naturality_apply σ₂.op (σ₁.op, f.1.names i) (f.input i)).symm ▸ hB'
 
 theorem append {F : BasisAction Γ₁} {σ : Γ₂ ⟶ Γ₁} {f g : CoherentGraph Γ₂} (hf : GraphValid F σ f)
@@ -77,14 +76,15 @@ theorem internallyCompatible {F : BasisAction Γ₁} {σ₁ : Γ₂ ⟶ Γ₁} {
 end GraphValid
 
 def abstraction (F : BasisAction Γ₁) : ΩLower (pointedOrder E ℓ) Γ₁ where
-  mem σ q := ∃ f : CoherentGraph _, GraphValid F σ f ∧ q ≤ f.lamGenerator
+  app σ := {
+    carrier := {q | ∃ f : CoherentGraph _, GraphValid F σ f ∧ q ≤ f.lamGenerator}
+    lower' := fun {_ _} hqr => fun ⟨f, hf, hrf⟩ => ⟨f, hf, hqr.trans hrf⟩ }
   natural _ σ _ := fun ⟨f, hf, hqf⟩ => ⟨f.reindex σ, hf.reindex σ, Le.reindex σ hqf⟩
   bottom _ := ⟨CoherentGraph.nil _, fun i => i.elim0, bot_le⟩
-  lower _ hqr := fun ⟨f, hf, hrf⟩ => ⟨f, hf, hqr.trans hrf⟩
 
 @[simp] theorem mem_abstraction (F : BasisAction Γ₂)
     (σ : Γ₁ ⟶ Γ₂) (q : CoherentShape Γ₁) :
-    F.abstraction.mem σ q ↔ ∃ f : CoherentGraph Γ₁, GraphValid F σ f ∧ q ≤ f.lamGenerator :=
+    (q ∈ F.abstraction.app σ) ↔ ∃ f : CoherentGraph Γ₁, GraphValid F σ f ∧ q ≤ f.lamGenerator :=
   Iff.rfl
 
 @[simp]
@@ -105,21 +105,21 @@ theorem abstraction_mono {F G : BasisAction Γ₁} (h : F ≤ G) : F.abstraction
 
 theorem mem_value_of_outputAtom {F : BasisAction Γ₁} {σ : Γ₂ ⟶ Γ₁} {label : Tm_ Γ₂}
     {x y : CoherentShape Γ₂} (h : OutputAtom ((abstraction F).pullback σ) label x y) :
-    (F.app _ (σ.op, label) x).mem (𝟙 Γ₂) y := by
+    (y ∈ (F.app _ (σ.op, label) x).app (𝟙 Γ₂)) := by
   obtain ⟨f, i, hf, hlabel, hix, rfl⟩ := h
-  have hf' : (abstraction F).mem σ f.lamGenerator :=
+  have hf' : (f.lamGenerator ∈ (abstraction F).app σ) :=
     (ΩLower.presheaf_map_mem_id (abstraction F) σ f.lamGenerator).mp hf
   have ⟨g, hg, hfg⟩ := (mem_abstraction F σ f.lamGenerator).mp hf'
   rcases CoherentGraph.lamGenerator_le_iff.mp hfg i with hbot | ⟨j, hname, hin, hout⟩
-  · exact (F.app _ (σ.op, label) x).lower (𝟙 Γ₂)
+  · exact ((F.app _ (σ.op, label) x).app (𝟙 Γ₂)).lower
       (le_bot_iff.mpr hbot) ((F.app _ (σ.op, label) x).bottom (𝟙 Γ₂))
   · have hj := hg j
     rw [hname, hlabel] at hj
-    exact (F.app _ (σ.op, label) x).lower (𝟙 Γ₂) hout
+    exact ((F.app _ (σ.op, label) x).app (𝟙 Γ₂)).lower hout
       ((F.app _ (σ.op, label)).hom.monotone (hin.trans hix) (𝟙 Γ₂) _ hj)
 
 theorem outputAtom_of_mem_value {F : BasisAction Γ₁} {σ : Γ₂ ⟶ Γ₁} {label : Tm_ Γ₂}
-    {x y : CoherentShape Γ₂} (h : (F.app _ (σ.op, label) x).mem (𝟙 Γ₂) y) :
+    {x y : CoherentShape Γ₂} (h : (y ∈ (F.app _ (σ.op, label) x).app (𝟙 Γ₂))) :
     OutputAtom ((abstraction F).pullback σ) label x y :=
   let f := CoherentGraph.single label x y
   ⟨f, ⟨0, Nat.one_pos⟩, (ΩLower.presheaf_map_mem_id _ _ _).mpr ⟨f, fun _ => h, le_rfl⟩,
@@ -184,7 +184,7 @@ noncomputable def abstraction (F : IdealAction Γ₁) : Domain Γ₁ :=
 
 @[simp] theorem mem_abstraction (F : IdealAction Γ₂)
     (σ : Γ₁ ⟶ Γ₂) (q : CoherentShape Γ₁) :
-    (abstraction F).mem σ q ↔ ∃ f : CoherentGraph Γ₁, F.onBasis.GraphValid σ f ∧ q ≤ f.lamGenerator :=
+    (q ∈ (abstraction F).app σ) ↔ ∃ f : CoherentGraph Γ₁, F.onBasis.GraphValid σ f ∧ q ≤ f.lamGenerator :=
   BasisAction.mem_abstraction F.onBasis σ q
 
 theorem abstraction_mono {F G : IdealAction Γ₁}
@@ -219,12 +219,12 @@ theorem abstraction_finitary (H : Domain Γ₁ → IdealAction Γ₁)
         (H I).val.app _ ((𝟙 Γ₁).op, label) X ≤ (H J).val.app _ ((𝟙 Γ₁).op, label) X)
     (hfin : ∀ (I : Domain Γ₁) (label : Tm_ Γ₁)
       (X : Domain Γ₁) {y : CoherentShape Γ₁},
-      ((H I).val.app _ ((𝟙 Γ₁).op, label) X).mem (𝟙 Γ₁) y →
-        ∃ f, I.mem (𝟙 Γ₁) f ∧
-          ((H (principalIdeal f)).val.app _ ((𝟙 Γ₁).op, label) X).mem (𝟙 Γ₁) y)
+      (y ∈ ((H I).val.app _ ((𝟙 Γ₁).op, label) X).app (𝟙 Γ₁)) →
+        ∃ f, (f ∈ I.app (𝟙 Γ₁)) ∧
+          (y ∈ ((H (principalIdeal f)).val.app _ ((𝟙 Γ₁).op, label) X).app (𝟙 Γ₁)))
     (I : Domain Γ₁) {q : CoherentShape Γ₁}
-    (hq : (abstraction (H I)).mem (𝟙 Γ₁) q) :
-    ∃ f, I.mem (𝟙 Γ₁) f ∧ (abstraction (H (principalIdeal f))).mem (𝟙 Γ₁) q := by
+    (hq : (q ∈ (abstraction (H I)).app (𝟙 Γ₁))) :
+    ∃ f, (f ∈ I.app (𝟙 Γ₁)) ∧ (q ∈ (abstraction (H (principalIdeal f))).app (𝟙 Γ₁)) := by
   have ⟨⟨graph, hcoh⟩, hgraph, hq⟩ := (mem_abstraction _ _ _).mp hq
   choose j hj hout using fun i => hfin I (graph.names i) _ (hgraph i)
   have ⟨k, hk, hjk⟩ := ΩLower.IsDirected.exists_upper_fin I.property (𝟙 Γ₁) j hj
