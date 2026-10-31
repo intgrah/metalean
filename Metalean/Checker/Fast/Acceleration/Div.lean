@@ -32,9 +32,9 @@ def fuelRec (pos : Nat) : Fuel.Rec where
   entry := op₂ pos
   step := succ C.Nat_
   base _ := zero C.Nat_
-  instFVarsCore_entry _ _ _ := by simp [op₂, instFVarsCore]
-  instFVarsCore_step _ _ := by simp [succ, instFVarsCore]
-  instFVarsCore_base _ _ := by simp [zero, instFVarsCore]
+  instFVars_entry _ _ _ := by simp [op₂, instFVars, instFVarsStep, rewrite, rewriteCore]
+  instFVars_step _ _ := by simp [succ, instFVars, instFVarsStep, rewrite, rewriteCore]
+  instFVars_base _ _ := by simp [zero, instFVars, instFVarsStep, rewrite, rewriteCore]
 
 theorem computes (pos : Nat) : (fuelRec C pos).Computes F C HDiv.hDiv where
   step _ _ hF hn a b hb hba := by

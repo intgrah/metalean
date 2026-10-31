@@ -29,7 +29,8 @@ syntax "fexpr_simp" (" [" Lean.Parser.Tactic.simpLemma,* "]")?
 macro_rules
   | `(tactic| fexpr_simp $[[$ls,*]]? $[$loc]?) => do
     let ls := (ls.map (·.getElems)).getD #[]
-    `(tactic| simp [fexpr_unfold, FExpr.instFVars, FExpr.instFVarsCore, FExpr.nat, FExpr.bool,
+    `(tactic| simp [fexpr_unfold, FExpr.instFVars, FExpr.instFVarsStep, FExpr.rewrite,
+      FExpr.rewriteCore, FExpr.nat, FExpr.bool,
       FExpr.succ, FExpr.zero, FExpr.boolLit, FExpr.op₂, FExpr.natArrow, FExpr.natArrow₂,
       $ls,*] $[$loc]?)
 

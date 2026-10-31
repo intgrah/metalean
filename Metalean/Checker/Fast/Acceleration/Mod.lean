@@ -52,9 +52,9 @@ def fuelRec : Fuel.Rec where
   entry := FExpr.Nat.modCore C
   step r := r
   base x := x
-  instFVarsCore_entry _ _ _ := by simp [FExpr.Nat.modCore, instFVarsCore]
-  instFVarsCore_step _ _ := rfl
-  instFVarsCore_base _ _ := rfl
+  instFVars_entry _ _ _ := by simp [FExpr.Nat.modCore, instFVars, instFVarsStep, rewrite, rewriteCore]
+  instFVars_step _ _ := rfl
+  instFVars_base _ _ := rfl
 
 theorem computes : (fuelRec C).Computes F C HMod.hMod where
   step _ _ hF hn a b _ hba := by

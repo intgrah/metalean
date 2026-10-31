@@ -38,12 +38,12 @@ structure Rec where
   entry (x y : FExpr) : FExpr
   step (r : FExpr) : FExpr
   base (x : FExpr) : FExpr
-  instFVarsCore_entry : ∀ args x y,
-    (entry x y).instFVarsCore args = entry (x.instFVarsCore args) (y.instFVarsCore args)
-  instFVarsCore_step : ∀ args r,
-    (step r).instFVarsCore args = step (r.instFVarsCore args)
-  instFVarsCore_base : ∀ args x,
-    (base x).instFVarsCore args = base (x.instFVarsCore args)
+  instFVars_entry : ∀ args x y,
+    (entry x y).instFVars args = entry (x.instFVars args) (y.instFVars args)
+  instFVars_step : ∀ args r,
+    (step r).instFVars args = step (r.instFVars args)
+  instFVars_base : ∀ args x,
+    (base x).instFVars args = base (x.instFVars args)
 
 @[fexpr_unfold]
 def Rec.go (R : Rec) (y hy fuel x h : FExpr) : FExpr :=
@@ -255,20 +255,20 @@ theorem RecSpec.goEval {b : Nat} (hb : 0 < b) {hy : FExpr}
       #[.natLit C.Nat_ b, hy, succ C.Nat_ (.natLit C.Nat_ k), .natLit C.Nat_ a, hfuel] using hb', hhy, hk₁, ha', hh
     schema_have c₁ := h.step Fuel.step #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel]
       #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel] using hb', hhy, hk, ha', hh'
-      unfolding stepTrue, stepFalse, R.instFVarsCore_step, R.instFVarsCore_base
+      unfolding stepTrue, stepFalse, R.instFVars_step, R.instFVars_base
     schema_have ht := h.stepTrueType Fuel.stepTrueType
       #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel]
       #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel] using hb', hhy, hk, ha', hh'
-      unfolding stepTrue, R.instFVarsCore_step
+      unfolding stepTrue, R.instFVars_step
     schema_have he := h.stepFalseType Fuel.stepFalseType #[.natLit C.Nat_ b, .natLit C.Nat_ a]
-      #[.natLit C.Nat_ b, .natLit C.Nat_ a] using hb', ha' unfolding stepFalse, R.instFVarsCore_base
+      #[.natLit C.Nat_ b, .natLit C.Nat_ a] using hb', ha' unfolding stepFalse, R.instFVars_base
     have ⟨p, hp, c₂⟩ := hd b a hF hE ht he
     by_cases hba : b ≤ a
     · simp only [hba, decide_true, Bool.cond_true] at hp c₂
       schema_have c₃ := h.stepTrueBeta Fuel.stepTrueBeta
         #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel, p]
         #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel, p]
-        using hb', hhy, hk, ha', hh', hp unfolding stepTrue, R.instFVarsCore_step
+        using hb', hhy, hk, ha', hh', hp unfolding stepTrue, R.instFVars_step
       schema_have hp' := hf.fuelLemmaType Fuel.fuelLemmaType
         #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel, p]
         #[.natLit C.Nat_ b, hy, .natLit C.Nat_ k, .natLit C.Nat_ a, hfuel, p]
@@ -290,12 +290,12 @@ theorem RecSpec.goEval {b : Nat} (hb : 0 < b) {hy : FExpr}
         schema_have c₆ := h.stepCongr Fuel.stepCongr
           #[R.go (.natLit C.Nat_ b) hy (.natLit C.Nat_ k) (op₂ C.Nat_sub (.natLit C.Nat_ a) (.natLit C.Nat_ b)) q]
           #[.natLit C.Nat_ (f (a - b) b)] using c₅.trans (ih (by omega) (hq.conv hlt₂))
-          unfolding R.instFVarsCore_step
+          unfolding R.instFVars_step
         exact c₆.trans (hc.step hF hn a b hb hba)
       exact c₀.trans (c₁.trans (c₂.trans (c₃.trans (c₄ _ hp'))))
     · simp only [hba, decide_false, Bool.cond_false] at hp c₂
       schema_have c₃ := h.stepFalseBeta Fuel.stepFalseBeta #[.natLit C.Nat_ b, .natLit C.Nat_ a, p]
-        #[.natLit C.Nat_ b, .natLit C.Nat_ a, p] using hb', ha', hp unfolding stepFalse, R.instFVarsCore_base
+        #[.natLit C.Nat_ b, .natLit C.Nat_ a, p] using hb', ha', hp unfolding stepFalse, R.instFVars_base
       exact c₀.trans (c₁.trans (c₂.trans (c₃.trans
         (hc.base hF hn a b (.inr (Nat.lt_of_not_le hba))))))
 
@@ -305,11 +305,11 @@ theorem RecSpec.eval (a b : Nat) :
   have ha' := FEq.natLit hF hn a
   have hb' := FEq.natLit hF hn b
   schema_have c₁ := h.unfold Fuel.unfold #[.natLit C.Nat_ a, .natLit C.Nat_ b] #[.natLit C.Nat_ a, .natLit C.Nat_ b]
-    using ha', hb' unfolding onTrue, onFalse, R.instFVarsCore_entry, R.instFVarsCore_base
+    using ha', hb' unfolding onTrue, onFalse, R.instFVars_entry, R.instFVars_base
   schema_have ht := h.onTrueType Fuel.onTrueType #[.natLit C.Nat_ a, .natLit C.Nat_ b] #[.natLit C.Nat_ a, .natLit C.Nat_ b]
     using ha', hb' unfolding onTrue
   schema_have he := h.onFalseType Fuel.onFalseType #[.natLit C.Nat_ a, .natLit C.Nat_ b] #[.natLit C.Nat_ a, .natLit C.Nat_ b]
-    using ha', hb' unfolding onFalse, R.instFVarsCore_base
+    using ha', hb' unfolding onFalse, R.instFVars_base
   have ⟨p, hp, c₂⟩ := hd 1 b hF hE ht he
   by_cases hb : 1 ≤ b
   · simp only [hb, decide_true, Bool.cond_true] at hp c₂
@@ -327,7 +327,7 @@ theorem RecSpec.eval (a b : Nat) :
     exact c₁.trans (c₂.trans (c₃.trans (c₄.trans c₅)))
   · simp only [hb, decide_false, Bool.cond_false] at hp c₂
     schema_have c₃ := h.onFalseBeta Fuel.onFalseBeta #[.natLit C.Nat_ a, .natLit C.Nat_ b, p]
-      #[.natLit C.Nat_ a, .natLit C.Nat_ b, p] using ha', hb', hp unfolding onFalse, R.instFVarsCore_base
+      #[.natLit C.Nat_ a, .natLit C.Nat_ b, p] using ha', hb', hp unfolding onFalse, R.instFVars_base
     exact c₁.trans (c₂.trans (c₃.trans (hc.base hF hn a b (.inl (by omega)))))
 
 end

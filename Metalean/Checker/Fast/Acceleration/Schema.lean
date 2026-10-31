@@ -16,87 +16,28 @@ namespace Metalean.Checker.Fast
 
 open Frontend (Failure)
 
-theorem FExpr.NoProj.instFVarsCore {args : Array FExpr} (hargs : ∀ a ∈ args, a.NoProj)
+theorem FExpr.NoProj.instFVars {args : Array FExpr} (hargs : ∀ a ∈ args, a.NoProj)
     {fe : FExpr} :
     fe.NoProj →
-    (fe.instFVarsCore args).NoProj := by
+    (fe.instFVars args).NoProj := by
   intro h
-  induction h with
-  | bvar i =>
-    rw [FExpr.instFVarsCore]
-    exact .bvar i
-  | fvar i =>
-    rw [FExpr.instFVarsCore]
+  apply h.rewrite (under := id) (level := id) (d := ())
+  rintro d fe r h hp
+  cases fe <;> simp only [FExpr.instFVarsStep] at hp
+  case bvar i => cases hp; exact h
+  case fvar i =>
+    cases hp
     cases hi : args[i]? with
-    | none => exact .fvar i
-    | some a => exact hargs a (Array.mem_of_getElem? hi)
-  | sort l =>
-    rw [FExpr.instFVarsCore]
-    exact .sort l
-  | const pos ls =>
-    rw [FExpr.instFVarsCore]
-    exact .const pos ls
-  | ind _ _ ihps ihis =>
-    rw [FExpr.instFVarsCore]
-    refine .ind ?_ ?_ <;> simp only [Array.mem_map] <;> rintro _ ⟨x, hx, rfl⟩
-    · exact ihps x hx
-    · exact ihis x hx
-  | ctor _ _ _ ihps ihfds ihrecFds =>
-    rw [FExpr.instFVarsCore]
-    refine .ctor ?_ ?_ ?_ <;> simp only [Array.mem_map] <;> rintro _ ⟨x, hx, rfl⟩
-    · exact ihps x hx
-    · exact ihfds x hx
-    · exact ihrecFds x hx
-  | recr _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
-    rw [FExpr.instFVarsCore]
-    refine .recr ?_ ?_ ?_ ?_ ihmaj <;> simp only [Array.mem_map] <;> rintro _ ⟨x, hx, rfl⟩
-    · exact ihps x hx
-    · exact ihms x hx
-    · exact ihmins x hx
-    · exact ihis x hx
-  | quot _ _ ihα ihr =>
-    rw [FExpr.instFVarsCore]
-    exact .quot ihα ihr
-  | quotMk _ _ _ ihα ihr iha =>
-    rw [FExpr.instFVarsCore]
-    exact .quotMk ihα ihr iha
-  | quotLift _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    rw [FExpr.instFVarsCore]
-    exact .quotLift ihα ihr ihβ ihf ihh iha
-  | quotInd _ _ _ _ _ ihα ihr ihβ ihf iha =>
-    rw [FExpr.instFVarsCore]
-    exact .quotInd ihα ihr ihβ ihf iha
-  | app _ _ ihf iha =>
-    rw [FExpr.instFVarsCore]
-    exact .app ihf iha
-  | lam _ _ iht ihb =>
-    rw [FExpr.instFVarsCore]
-    exact .lam iht ihb
-  | forallE _ _ iht ihb =>
-    rw [FExpr.instFVarsCore]
-    exact .forallE iht ihb
-  | letE _ _ _ iht ihv ihb =>
-    rw [FExpr.instFVarsCore]
-    exact .letE iht ihv ihb
-  | natLit nat num =>
-    rw [FExpr.instFVarsCore]
-    exact .natLit nat num
-  | strLit P str =>
-    rw [FExpr.instFVarsCore]
-    exact .strLit P str
+    | none => simpa [hi] using h
+    | some a => simpa [hi] using hargs a (Array.mem_of_getElem? hi)
+  all_goals contradiction
 
 theorem FExpr.Denotes.levelFree {E : Σ ζ, Env ζ} {n k : Nat} {fe : FExpr}
     {e : Expr E.1 0 n} (ℓ : Nat) (hl : fe.data.hasLevelParam = false) :
     FExpr.Denotes E k fe e →
     FExpr.Denotes E k fe (e{fun p : Param 0 => (p.elim0 : Level ℓ)} : Expr E.1 ℓ n) := by
   intro h
-  have h' := h.instL (us := #[]) (σ := fun p : Param 0 => (p.elim0 : RawLevel ℓ)) rfl (fun i => i.elim0)
-  have hfe : fe{(#[] : Array FLevel)} = fe := by
-    change FExpr.instL #[] fe = fe
-    rw [FExpr.instL, hl]
-    rfl
-  rw [hfe] at h'
-  convert h' using 2
+  convert h.instL_skip hl (fun p : Param 0 => (p.elim0 : RawLevel ℓ)) using 2
 
 theorem FExpr.Denotes.sort_inv {E : Σ ζ, Env ζ} {ℓ n k : Nat} {l : FLevel}
     {es : Expr E.1 ℓ n} :
@@ -295,8 +236,8 @@ theorem Schema.Spec.inst {s : Schema} (h : s.Spec F) {ζ : Sigs} {E : Env ζ}
   have hnpBs : ∀ b ∈ bs, b.NoProj := fun b hb => by
     have ⟨i, hi, hbi⟩ := Array.mem_iff_getElem.mp hb
     exact hbi ▸ (hargs i (hbs ▸ hi)).noProjRight
-  refine ⟨h.noProjLhs.instFVarsCore hnpAs, h.noProjRhs.instFVarsCore hnpBs,
-    h.noProjTy.instFVarsCore hnpAs, fun ℓ n Γ => ?_⟩
+  refine ⟨h.noProjLhs.instFVars hnpAs, h.noProjRhs.instFVars hnpBs,
+    h.noProjTy.instFVars hnpAs, fun ℓ n Γ => ?_⟩
   have ⟨k, Γ₀, hS⟩ := h.ctx hF hE
   obtain rfl := hS.size
   have ⟨t₀, ht₀⟩ := h.wfTy (E := ⟨ζ, E⟩) hF

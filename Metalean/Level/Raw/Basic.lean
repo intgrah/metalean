@@ -61,6 +61,9 @@ instance : InstLevel (Param ℓ → RawLevel ℓ₁) (RawLevel ℓ) (RawLevel �
 
 @[simp] theorem inst_param (ls : Param ℓ → RawLevel ℓ₁) (p : Param ℓ) : (param p){ls} = ls p := rfl
 
+@[simp] theorem inst_id (l : RawLevel ℓ) : l{(param : Param ℓ → RawLevel ℓ)} = l := by
+  induction l <;> simp_all [InstLevel.inst, inst]
+
 end RawLevel
 
 end Metalean

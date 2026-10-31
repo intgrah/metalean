@@ -194,104 +194,83 @@ unsafe def OpenClose.closeShared (base k : Nat) (fe : FExpr) : OpenClose → FEx
 opaque closeFVars (base k : Nat) (fe : FExpr) : FExpr :=
   if k = 0 then fe else unsafe replaceShared (closeStep base k) fe
 
+variable {δ : Type*}
+
 mutual
+
+def rewrite (under : δ → δ) (pre : δ → FExpr → Option FExpr) (level : FLevel → FLevel)
+    (d : δ) (fe : FExpr) : FExpr :=
+  match pre d fe with
+  | some r => r
+  | none => rewriteCore under pre level d fe
+termination_by (sizeOf fe, 1)
+
+def rewriteCore (under : δ → δ) (pre : δ → FExpr → Option FExpr) (level : FLevel → FLevel)
+    (d : δ) : FExpr → FExpr
+  | .bvar i => .bvar i
+  | .fvar i => .fvar i
+  | .sort l => .sort (level l)
+  | .const pos ls => .const pos (ls.map level)
+  | .ind pos s ls ps is =>
+    .ind pos s (ls.map level)
+      (ps.map (rewrite under pre level d)) (is.map (rewrite under pre level d))
+  | .ctor pos s c ls ps fds recFds =>
+    .ctor pos s c (ls.map level)
+      (ps.map (rewrite under pre level d))
+      (fds.map (rewrite under pre level d))
+      (recFds.map (rewrite under pre level d))
+  | .recr pos s ls l ps ms mins is maj =>
+    .recr pos s (ls.map level) (level l)
+      (ps.map (rewrite under pre level d))
+      (ms.map (rewrite under pre level d))
+      (mins.map (rewrite under pre level d))
+      (is.map (rewrite under pre level d))
+      (rewrite under pre level d maj)
+  | .quot pos l α r => .quot pos (level l) (rewrite under pre level d α) (rewrite under pre level d r)
+  | .quotMk pos l α r a =>
+    .quotMk pos (level l)
+      (rewrite under pre level d α) (rewrite under pre level d r) (rewrite under pre level d a)
+  | .quotLift pos l₁ l₂ α r β f h a =>
+    .quotLift pos (level l₁) (level l₂)
+      (rewrite under pre level d α) (rewrite under pre level d r) (rewrite under pre level d β)
+      (rewrite under pre level d f) (rewrite under pre level d h) (rewrite under pre level d a)
+  | .quotInd pos l α r β f a =>
+    .quotInd pos (level l)
+      (rewrite under pre level d α) (rewrite under pre level d r) (rewrite under pre level d β)
+      (rewrite under pre level d f) (rewrite under pre level d a)
+  | .proj pos s idx a => .proj pos s idx (rewrite under pre level d a)
+  | .app f a => .app (rewrite under pre level d f) (rewrite under pre level d a)
+  | .lam t b => .lam (rewrite under pre level d t) (rewrite under pre level (under d) b)
+  | .forallE t b => .forallE (rewrite under pre level d t) (rewrite under pre level (under d) b)
+  | .letE t v b => .letE (rewrite under pre level d t) (rewrite under pre level d v) (rewrite under pre level (under d) b)
+  | .natLit p num => .natLit p num
+  | .strLit P str => .strLit P str
+termination_by fe => (sizeOf fe, 0)
+
+end
+
+def instAtStep (fa : FExpr) (d : Nat) (fe : FExpr) : Option FExpr :=
+  if fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange then some fe
+  else match fe with
+    | .bvar i => some (if i < d then fe else if i = d then fa else .bvar (i - 1))
+    | .fvar _ => some fe
+    | _ => none
 
 @[implemented_by instAtShared]
 def instAt (fa : FExpr) (d : Nat) (fe : FExpr) : FExpr :=
-  if fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange then fe
-  else instAtCore fa d fe
-termination_by (sizeOf fe, 1)
+  rewrite Nat.succ (instAtStep fa) id d fe
 
-def instAtCore (fa : FExpr) (d : Nat) : FExpr → FExpr
-  | .bvar i => if i < d then .bvar i else if i = d then fa else .bvar (i - 1)
-  | .fvar i => .fvar i
-  | .sort l => .sort l
-  | .const pos ls => .const pos ls
-  | .ind pos s ls ps is => .ind pos s ls (ps.map (instAt fa d)) (is.map (instAt fa d))
-  | .ctor pos s c ls ps fds recFds =>
-    .ctor pos s c ls (ps.map (instAt fa d)) (fds.map (instAt fa d)) (recFds.map (instAt fa d))
-  | .recr pos s ls l ps ms mins is maj =>
-    .recr pos s ls l
-      (ps.map (instAt fa d))
-      (ms.map (instAt fa d))
-      (mins.map (instAt fa d))
-      (is.map (instAt fa d))
-      (instAt fa d maj)
-  | .quot pos l α r => .quot pos l (instAt fa d α) (instAt fa d r)
-  | .quotMk pos l α r x => .quotMk pos l (instAt fa d α) (instAt fa d r) (instAt fa d x)
-  | .quotLift pos l₁ l₂ α r β f h x =>
-    .quotLift pos l₁ l₂
-      (instAt fa d α)
-      (instAt fa d r)
-      (instAt fa d β)
-      (instAt fa d f)
-      (instAt fa d h)
-      (instAt fa d x)
-  | .quotInd pos l α r β f x =>
-    .quotInd pos l (instAt fa d α) (instAt fa d r) (instAt fa d β) (instAt fa d f) (instAt fa d x)
-  | .proj pos s idx x => .proj pos s idx (instAt fa d x)
-  | .app f x => .app (instAt fa d f) (instAt fa d x)
-  | .lam t b => .lam (instAt fa d t) (instAt fa (d + 1) b)
-  | .forallE t b => .forallE (instAt fa d t) (instAt fa (d + 1) b)
-  | .letE t v b => .letE (instAt fa d t) (instAt fa d v) (instAt fa (d + 1) b)
-  | .natLit p num => .natLit p num
-  | .strLit P str => .strLit P str
-termination_by fe => (sizeOf fe, 0)
-
-end
-
-mutual
+def abstractAtStep (x d : Nat) (fe : FExpr) : Option FExpr :=
+  if fe.data.hasFVar then
+    match fe with
+    | .fvar i => some (if i = x then .bvar d else fe)
+    | _ => none
+  else some fe
 
 @[implemented_by abstractAtShared]
 def abstractAt (x d : Nat) (fe : FExpr) : FExpr :=
-  if fe.data.hasFVar then abstractAtCore x d fe else fe
-termination_by (sizeOf fe, 1)
+  rewrite Nat.succ (abstractAtStep x) id d fe
 
-def abstractAtCore (x d : Nat) : FExpr → FExpr
-  | .bvar i => .bvar i
-  | .fvar i => if i = x then .bvar d else .fvar i
-  | .sort l => .sort l
-  | .const pos ls => .const pos ls
-  | .ind pos s ls ps is => .ind pos s ls (ps.map (abstractAt x d)) (is.map (abstractAt x d))
-  | .ctor pos s c ls ps fds recFds =>
-    .ctor pos s c ls
-      (ps.map (abstractAt x d))
-      (fds.map (abstractAt x d))
-      (recFds.map (abstractAt x d))
-  | .recr pos s ls l ps ms mins is maj =>
-    .recr pos s ls l
-      (ps.map (abstractAt x d))
-      (ms.map (abstractAt x d))
-      (mins.map (abstractAt x d))
-      (is.map (abstractAt x d))
-      (abstractAt x d maj)
-  | .quot pos l α r => .quot pos l (abstractAt x d α) (abstractAt x d r)
-  | .quotMk pos l α r y => .quotMk pos l (abstractAt x d α) (abstractAt x d r) (abstractAt x d y)
-  | .quotLift pos l₁ l₂ α r β f h y =>
-    .quotLift pos l₁ l₂
-      (abstractAt x d α)
-      (abstractAt x d r)
-      (abstractAt x d β)
-      (abstractAt x d f)
-      (abstractAt x d h)
-      (abstractAt x d y)
-  | .quotInd pos l α r β f y =>
-    .quotInd pos l
-      (abstractAt x d α)
-      (abstractAt x d r)
-      (abstractAt x d β)
-      (abstractAt x d f)
-      (abstractAt x d y)
-  | .proj pos s idx y => .proj pos s idx (abstractAt x d y)
-  | .app f y => .app (abstractAt x d f) (abstractAt x d y)
-  | .lam t b => .lam (abstractAt x d t) (abstractAt x (d + 1) b)
-  | .forallE t b => .forallE (abstractAt x d t) (abstractAt x (d + 1) b)
-  | .letE t v b => .letE (abstractAt x d t) (abstractAt x d v) (abstractAt x (d + 1) b)
-  | .natLit p num => .natLit p num
-  | .strLit P str => .strLit P str
-termination_by fe => (sizeOf fe, 0)
-
-end
 
 unsafe def openBVarsShared (base : Nat) (fe : FExpr) (k : Nat) : FExpr :=
   if k = 0 then fe else replaceShared (openStep base k) fe
@@ -372,61 +351,17 @@ end
 unsafe def instLShared (us : Array FLevel) (fe : FExpr) : FExpr :=
   (instLCached us fe).run' ∅
 
-mutual
-
 @[implemented_by instLShared]
 def instL (us : Array FLevel) (fe : FExpr) : FExpr :=
-  if fe.data.hasLevelParam then instLCore us fe else fe
-termination_by (sizeOf fe, 1)
+  rewrite id (fun (_ : Unit) fe => if fe.data.hasLevelParam then none else some fe) (·{us}) () fe
 
-def instLCore (us : Array FLevel) : FExpr → FExpr
-  | .bvar i => .bvar i
-  | .fvar i => .fvar i
-  | .sort l => .sort l{us}
-  | .const pos ls => .const pos ls{us}
-  | .ind pos s ls ps is => .ind pos s ls{us} (ps.map (instL us)) (is.map (instL us))
-  | .ctor pos s c ls ps fds recFds =>
-    .ctor pos s c ls{us}
-      (ps.map (instL us))
-      (fds.map (instL us))
-      (recFds.map (instL us))
-  | .recr pos s ls l ps ms mins is maj =>
-    .recr pos s ls{us} l{us}
-      (ps.map (instL us))
-      (ms.map (instL us))
-      (mins.map (instL us))
-      (is.map (instL us))
-      (instL us maj)
-  | .quot pos l α r => .quot pos l{us} (instL us α) (instL us r)
-  | .quotMk pos l α r a => .quotMk pos l{us} (instL us α) (instL us r) (instL us a)
-  | .quotLift pos l₁ l₂ α r β f h a =>
-    .quotLift pos l₁{us} l₂{us}
-      (instL us α) (instL us r) (instL us β)
-      (instL us f) (instL us h) (instL us a)
-  | .quotInd pos l α r β f a =>
-    .quotInd pos l{us} (instL us α) (instL us r) (instL us β) (instL us f) (instL us a)
-  | .proj pos s idx a => .proj pos s idx (instL us a)
-  | .app f a => .app (instL us f) (instL us a)
-  | .lam t b => .lam (instL us t) (instL us b)
-  | .forallE t b => .forallE (instL us t) (instL us b)
-  | .letE t v b => .letE (instL us t) (instL us v) (instL us b)
-  | .natLit p num => .natLit p num
-  | .strLit P str => .strLit P str
-termination_by fe => (sizeOf fe, 0)
-
-end
 
 instance : InstLevel (Array FLevel) FExpr FExpr := ⟨FExpr.instL⟩
 
 theorem instAt_of_closed (a : FExpr) (d : Nat) {fe : FExpr}
     (h : fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange) :
     instAt a d fe = fe := by
-  simp [instAt, h]
-
-theorem instAt_of_not_closed (a : FExpr) (d : Nat) {fe : FExpr}
-    (h : ¬(fe.data.looseBVarRange.toNat ≤ d ∧ fe.data.looseBVarRange.toNat < Data.maxRange)) :
-    instAt a d fe = instAtCore a d fe := by
-  simp [instAt, h]
+  simp [instAt, rewrite, instAtStep, h]
 
 theorem instAt_lam (a : FExpr) (d : Nat) (t b : FExpr) :
     instAt a d (.lam t b) = .lam (instAt a d t) (instAt a (d + 1) b) := by
@@ -436,8 +371,10 @@ theorem instAt_lam (a : FExpr) (d : Nat) (t b : FExpr) :
     rw [data_lam] at hc'
     have ⟨ht, hb⟩ := Data.closed_of_mkBinder hc'.1 hc'.2
     rw [instAt_of_closed a d hc, instAt_of_closed a d ht, instAt_of_closed a (d + 1) hb]
-  · rw [instAt_of_not_closed a d hc]
-    simp [instAtCore]
+  · unfold instAt
+    rw [rewrite]
+    simp only [instAtStep, ite_eq_right hc]
+    simp [rewriteCore]
 
 theorem instAt_forallE (a : FExpr) (d : Nat) (t b : FExpr) :
     instAt a d (.forallE t b) = .forallE (instAt a d t) (instAt a (d + 1) b) := by
@@ -447,8 +384,10 @@ theorem instAt_forallE (a : FExpr) (d : Nat) (t b : FExpr) :
     rw [data_forallE] at hc'
     have ⟨ht, hb⟩ := Data.closed_of_mkBinder hc'.1 hc'.2
     rw [instAt_of_closed a d hc, instAt_of_closed a d ht, instAt_of_closed a (d + 1) hb]
-  · rw [instAt_of_not_closed a d hc]
-    simp [instAtCore]
+  · unfold instAt
+    rw [rewrite]
+    simp only [instAtStep, ite_eq_right hc]
+    simp [rewriteCore]
 
 def instManyAt (d : Nat) (b : FExpr) : List FExpr → FExpr
   | [] => b
@@ -482,8 +421,10 @@ theorem instAt_letE (a : FExpr) (d : Nat) (t v b : FExpr) :
     have ⟨ht, hv, hb⟩ := Data.closed_of_mkLet hc'.1 hc'.2
     rw [instAt_of_closed a d hc, instAt_of_closed a d ht, instAt_of_closed a d hv,
       instAt_of_closed a (d + 1) hb]
-  · rw [instAt_of_not_closed a d hc]
-    simp [instAtCore]
+  · unfold instAt
+    rw [rewrite]
+    simp only [instAtStep, ite_eq_right hc]
+    simp [rewriteCore]
 
 theorem instManyAt_letE (d : Nat) (as : List FExpr) (t v b : FExpr) :
     instManyAt d (.letE t v b) as =
@@ -559,22 +500,14 @@ theorem LamBody.instAt {m : Nat} {f b : FExpr} (a : FExpr) (d : Nat) :
     rw [show d + 1 + m = d + (m + 1) by omega] at this
     exact .succ this
 
-theorem abstractAt_of_hasFVar (x d : Nat) {fe : FExpr} (h : fe.data.hasFVar = true) :
-    abstractAt x d fe = abstractAtCore x d fe := by
-  simp [abstractAt, h]
-
 theorem abstractAt_of_not_hasFVar (x d : Nat) {fe : FExpr} (h : fe.data.hasFVar = false) :
     abstractAt x d fe = fe := by
-  simp [abstractAt, h]
-
-theorem instL_of_hasLevelParam (us : Array FLevel) {fe : FExpr} (h : fe.data.hasLevelParam = true) :
-    instL us fe = instLCore us fe := by
-  simp [instL, h]
+  simp [abstractAt, rewrite, abstractAtStep, h]
 
 theorem instL_of_not_hasLevelParam (us : Array FLevel) {fe : FExpr}
     (h : fe.data.hasLevelParam = false) :
     instL us fe = fe := by
-  simp [instL, h]
+  simp [instL, rewrite, h]
 
 unsafe def instFVarsShared (args : Array FExpr) (fe : FExpr) : FExpr :=
   replaceShared (fun _ fe =>
@@ -583,52 +516,15 @@ unsafe def instFVarsShared (args : Array FExpr) (fe : FExpr) : FExpr :=
       | .fvar i => some (args[i]?.getD fe)
       | _ => none) fe
 
-def instFVarsCore (args : Array FExpr) : FExpr → FExpr
-  | .bvar i => .bvar i
-  | .fvar i => args[i]?.getD (.fvar i)
-  | .sort l => .sort l
-  | .const pos ls => .const pos ls
-  | .ind pos s ls ps is => .ind pos s ls (ps.map (instFVarsCore args)) (is.map (instFVarsCore args))
-  | .ctor pos s c ls ps fds recFds =>
-    .ctor pos s c ls
-      (ps.map (instFVarsCore args))
-      (fds.map (instFVarsCore args))
-      (recFds.map (instFVarsCore args))
-  | .recr pos s ls l ps ms mins is maj =>
-    .recr pos s ls l
-      (ps.map (instFVarsCore args))
-      (ms.map (instFVarsCore args))
-      (mins.map (instFVarsCore args))
-      (is.map (instFVarsCore args))
-      (instFVarsCore args maj)
-  | .quot pos l α r => .quot pos l (instFVarsCore args α) (instFVarsCore args r)
-  | .quotMk pos l α r a => .quotMk pos l (instFVarsCore args α) (instFVarsCore args r) (instFVarsCore args a)
-  | .quotLift pos l₁ l₂ α r β f h a =>
-    .quotLift pos l₁ l₂
-      (instFVarsCore args α)
-      (instFVarsCore args r)
-      (instFVarsCore args β)
-      (instFVarsCore args f)
-      (instFVarsCore args h)
-      (instFVarsCore args a)
-  | .quotInd pos l α r β f a =>
-    .quotInd pos l
-      (instFVarsCore args α)
-      (instFVarsCore args r)
-      (instFVarsCore args β)
-      (instFVarsCore args f)
-      (instFVarsCore args a)
-  | .proj pos s idx a => .proj pos s idx (instFVarsCore args a)
-  | .app f a => .app (instFVarsCore args f) (instFVarsCore args a)
-  | .lam t b => .lam (instFVarsCore args t) (instFVarsCore args b)
-  | .forallE t b => .forallE (instFVarsCore args t) (instFVarsCore args b)
-  | .letE t v b => .letE (instFVarsCore args t) (instFVarsCore args v) (instFVarsCore args b)
-  | .natLit p num => .natLit p num
-  | .strLit P str => .strLit P str
+def instFVarsStep (args : Array FExpr) (_ : Unit) (fe : FExpr) : Option FExpr :=
+  match fe with
+  | .bvar _ => some fe
+  | .fvar i => some (args[i]?.getD fe)
+  | _ => none
 
-@[implemented_by instFVarsShared]
+@[reducible, implemented_by instFVarsShared]
 def instFVars (args : Array FExpr) (fe : FExpr) : FExpr :=
-  instFVarsCore args fe
+  rewrite id (instFVarsStep args) id () fe
 
 def apps (f : FExpr) (args : Array FExpr) : FExpr :=
   Fin.foldl args.size (fun e i => .app e args[i]) f
