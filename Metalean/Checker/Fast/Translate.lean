@@ -682,37 +682,6 @@ def translateClosedPair (e₁ e₂ : Export.Expr) :
     let w₂ ← translateWith leanElim F table lps hints accel (k := 0) (.ofCtx #[]) Scope.empty [] e₂
     pure (w₁, w₂)).run' {}
 
-structure FPreCtor where
-  ordinary : Array FExpr
-  recursive : Array FRecField
-  targetIndices : Array FExpr
-
-structure FPreInductive where
-  params : FCtx
-  indices : Array FCtx
-  level : FLevel
-  ctors : Array (Array FPreCtor)
-
-def FPreCtor.withLevels (pre : FPreCtor) (levels : Fin pre.ordinary.size → FLevel) : FCtor where
-  ordinary := Array.ofFn fun f => ⟨pre.ordinary[f], levels f⟩
-  recursive := pre.recursive
-  targetIndices := pre.targetIndices
-
-def FPreInductive.withLevels (pre : FPreInductive)
-    (levels : (s : Fin pre.ctors.size) → (c : Fin pre.ctors[s].size) →
-      Fin pre.ctors[s][c].ordinary.size → FLevel) : FInductive where
-  params := pre.params
-  indices := pre.indices
-  level := pre.level
-  ctors := Array.ofFn fun s => Array.ofFn fun c => pre.ctors[s][c].withLevels (levels s c)
-
-structure FBlockResult where
-  ι : IndSig
-  pre : FPreInductive
-  sortNames : List Name
-  ctorNames : List (List Name)
-  metaOrders : List (List (List Nat))
-
 def buildFrom {n : Nat} (G : FCtx) (ρ : Scope n) :
     (rev : List Export.Expr) →
     EIO Failure {ts : Array FExpr // ts.size = rev.length ∧
@@ -764,7 +733,7 @@ def ordinaryFields {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
 
 def preCtorOf {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
     (sd : Fin nsorts → Frontend.SortData nsorts) (s : Fin nsorts) (shape : Frontend.CtorShape nsorts) :
-    EIO Failure FPreCtor := do
+    EIO Failure (FCtor FExpr) := do
   let ⟨fields, _, _⟩ ← ordinaryFields leanElim F table lps hints accel nparams params shape
     shape.ords.length le_rfl
   let recursive ← shape.recs.mapM fun rf => do
@@ -777,75 +746,35 @@ def preCtorOf {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
   unless tis.length = (sd s).indicesRev.length do throw (.reject .arity)
   pure { ordinary := fields, recursive := recursive.toArray, targetIndices := tis.toArray }
 
-def ctorSigOf {nsorts : Nat} (shape : Frontend.CtorShape nsorts) : CtorSig nsorts :=
-  let arity := (shape.recs.map (·.bindersRev.length)).toArray
-  let target := (shape.recs.map (·.target)).toArray
-  { nfields := shape.ords.length
-    nrecFields := shape.recs.length
-    recursiveArity := fun r => arity[r.val]'(by simp [arity])
-    recursiveTarget := fun r => target[r.val]'(by simp [target]) }
-
-def indSigOf (nlevels nparams nsorts : Nat) (sd : Fin nsorts → Frontend.SortData nsorts) : IndSig :=
-  let nindices := Array.ofFn fun s => (sd s).indicesRev.length
-  let ctors := Array.ofFn fun s => ((sd s).shapes.map ctorSigOf).toArray
-  { nlevels, nparams, nsorts
-    nindices := fun s => nindices[s.val]'(by simp [nindices])
-    nctors := fun s => (ctors[s.val]'(by simp [ctors])).size
-    ctors := fun s c => (ctors[s.val]'(by simp [ctors]))[c.val]'c.isLt }
-
 def analyzeBlock (types : List Export.InductiveType) (ctors : List Export.Constructor)
-    (recNames : List Name) (defs : Export.Definitions := ∅) : EIO Failure FBlockResult := do
-  if hpos : 0 < types.length then
-    let first := types[0]
-    if types.any (·.isUnsafe) then throw (.decline .unsafe)
-    if types.any (·.numNested != 0) then throw (.decline .nested)
-    if recNames.length != types.length then throw (.reject .arity)
-    let lps := first.levelParams
-    if lps.eraseDups.length != lps.length then throw (.reject .duplicateLevelParam)
-    if types.any (·.levelParams != lps) then throw (.reject .shape)
-    if ctors.any (·.levelParams != lps) then throw (.reject .shape)
-    if types.any (·.numParams != first.numParams) then throw (.reject .arity)
-    let allCtorNames := types.flatMap (·.ctors)
-    if ctors.length != allCtorNames.length then throw (.reject .shape)
-    if allCtorNames.any fun cname => (ctors.find? (·.name == cname)).isNone then
-      throw (.reject .shape)
-    let sortIdx? : Name → Option (Fin types.length) := fun nm =>
-      types.findFinIdx? (·.name == nm)
-    let (paramBindersRev, _) ← Frontend.takeForallsRevWhnf defs first.type first.numParams
-    let sd ← Fin.mapM fun s : Fin types.length => do
-      let ty := types[s.val]
-      let (_, rest) ← Frontend.takeForallsRevWhnf defs ty.type first.numParams
-      let (indicesRev, .sort level) ← Frontend.takeForallsRevWhnf defs rest ty.numIndices
-        | throw (.reject .shape)
-      let shapes ← ty.ctors.mapM fun cname => do
-        let some c := ctors.find? (·.name == cname) | throw (.reject .shape)
-        Frontend.shapeCtor defs sortIdx? lps paramBindersRev.length ty.numIndices s c.type
-      pure ({ indicesRev, level, shapes } : Frontend.SortData types.length)
-    let levels ← Fin.mapM fun s : Fin types.length =>
-      (·.val) <$> translateLevel lps (sd s).level
-    let level := levels ⟨0, hpos⟩
-    let some rawLevels := Fin.mapM fun s : Fin types.length => (levels s).toRaw lps.length
-      | throw (.reject .unknownLevelParam)
-    if ∃ s, (rawLevels s).normalize ≠ (rawLevels ⟨0, hpos⟩).normalize then throw (.reject .shape)
-    let nparams := paramBindersRev.length
-    let ⟨params, hparamsSize, hparamsWF⟩ ← buildFrom leanElim F table lps hints accel #[] Scope.empty
-      paramBindersRev
-    let indices ← Fin.mapM fun s : Fin types.length => do
-      pure (← buildFrom leanElim F table lps hints accel params (Scope.id nparams) (sd s).indicesRev).val
-    let preCtors ← Fin.mapM fun s : Fin types.length =>
-      Fin.mapM fun c : Fin (sd s).shapes.length =>
-        preCtorOf leanElim F table lps hints accel nparams params sd s ((sd s).shapes[c.val]'c.isLt)
-    pure {
-      ι := indSigOf lps.length nparams types.length sd
-      pre := {
-        params
-        indices := Array.ofFn indices
-        level
-        ctors := Array.ofFn fun s => Array.ofFn (preCtors s) }
-      sortNames := types.map (·.name)
-      ctorNames := types.map (·.ctors)
-      metaOrders := List.ofFn fun s : Fin types.length =>
-        (sd s).shapes.map fun shape => Frontend.metaOrderOf shape }
-  else throw (.reject .shape)
+    (recNames : List Name) (defs : Export.Definitions := ∅) :
+    EIO Failure (Frontend.BlockResult fun _ => FInductive FExpr) := do
+  let ⟨hpos, paramBindersRev, sd⟩ ← Frontend.shapeBlock types ctors recNames defs
+  let lps := types[0].levelParams
+  let levels ← Fin.mapM fun s : Fin types.length =>
+    (·.val) <$> translateLevel lps (sd s).level
+  let level := levels ⟨0, hpos⟩
+  let some rawLevels := Fin.mapM fun s : Fin types.length => (levels s).toRaw lps.length
+    | throw (.reject .unknownLevelParam)
+  if ∃ s, (rawLevels s).normalize ≠ (rawLevels ⟨0, hpos⟩).normalize then throw (.reject .shape)
+  let nparams := paramBindersRev.length
+  let ⟨params, hparamsSize, hparamsWF⟩ ← buildFrom leanElim F table lps hints accel #[] Scope.empty
+    paramBindersRev
+  let indices ← Fin.mapM fun s : Fin types.length => do
+    pure (← buildFrom leanElim F table lps hints accel params (Scope.id nparams) (sd s).indicesRev).val
+  let preCtors ← Fin.mapM fun s : Fin types.length =>
+    Fin.mapM fun c : Fin (sd s).shapes.length =>
+      preCtorOf leanElim F table lps hints accel nparams params sd s ((sd s).shapes[c.val]'c.isLt)
+  pure {
+    ι := Frontend.indSigOf lps.length nparams types.length sd
+    pre := {
+      params
+      indices := Array.ofFn indices
+      level
+      ctors := Array.ofFn fun s => Array.ofFn (preCtors s) }
+    sortNames := types.map (·.name)
+    ctorNames := types.map (·.ctors)
+    metaOrders := List.ofFn fun s : Fin types.length =>
+      (sd s).shapes.map fun shape => Frontend.metaOrderOf shape }
 
 end Metalean.Checker.Fast

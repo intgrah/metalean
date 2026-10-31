@@ -687,7 +687,7 @@ partial def inferCore (G : FCtx) :
     | ⟨.forallE dom cod, hOfList⟩ =>
       match hList : F[P.list]?, hChar : F[P.char]? with
       | some (.inductive ιList IList), some (.inductive ιChar IChar) =>
-        let some ⟨hcod⟩ := cod.noProj | throw (.decline .literal)
+        let ⟨hcod⟩ ← guardProofOr cod.NoProj (.decline .literal)
         let ⟨h⟩ ← guardProofOr (ιList = List.sig ∧ IList = FList.raw ∧ ιChar = Char.sig ∧
           IChar.level = .succ .zero ∧ tOfNat = .forallE (FExpr.nat P.nat) (FExpr.char P.char) ∧
           dom = FExpr.listChar P ∧ cod.data.looseBVarRange.toNat = 0 ∧ cod.fvarRange ≤ G.size)
@@ -1792,9 +1792,9 @@ end
 
 def isDefEqAt (G : FCtx) (ft fe₁ fe₂ : FExpr) :
     CheckM F ℓ (PLift (DefEqAtSpec F ℓ G ft fe₁ fe₂)) := do
-  let some ⟨hnt⟩ := ft.noProj | throw .internal
-  let some ⟨hn₁⟩ := fe₁.noProj | throw .internal
-  let some ⟨hn₂⟩ := fe₂.noProj | throw .internal
+  let ⟨hnt⟩ ← guardProofOr ft.NoProj .internal
+  let ⟨hn₁⟩ ← guardProofOr fe₁.NoProj .internal
+  let ⟨hn₂⟩ ← guardProofOr fe₂.NoProj .internal
   let ⟨h₁⟩ ← checkTyped F ℓ hints accel G fe₁ ft
   let ⟨h₂⟩ ← checkTyped F ℓ hints accel G fe₂ ft
   let ⟨h⟩ ← isDefEq F ℓ hints accel G fe₁ fe₂

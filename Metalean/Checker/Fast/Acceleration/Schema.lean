@@ -176,20 +176,15 @@ structure Schema.Spec (s : Schema) : Prop where
 def FExpr.checkLevelFree (fe : FExpr) : Except Failure (PLift (fe.data.hasLevelParam = false)) :=
   if h : fe.data.hasLevelParam = false then pure ⟨h⟩ else throw .internal
 
-def FExpr.checkNoProj (fe : FExpr) : Except Failure (PLift fe.NoProj) :=
-  match fe.noProj with
-  | some h => pure h
-  | none => throw .internal
-
 def Schema.check (s : Schema) : EIO Failure (PLift (s.Spec F)) := do
   let ⟨hctx⟩ ← checkCtx F hints s.ctx
   let ⟨hnpCtx⟩ ← Array.forallM s.ctx (fun i hi => (s.ctx[i]'hi).NoProj)
-    fun i hi => FExpr.checkNoProj (s.ctx[i]'hi)
+    fun i hi => guardProofOr (s.ctx[i]'hi).NoProj .internal
   let ⟨hlfCtx⟩ ← Array.forallM s.ctx (fun i hi => (s.ctx[i]'hi).data.hasLevelParam = false)
     fun i hi => FExpr.checkLevelFree (s.ctx[i]'hi)
-  let ⟨hnpTy⟩ ← FExpr.checkNoProj s.ty
-  let ⟨hnpLhs⟩ ← FExpr.checkNoProj s.lhs
-  let ⟨hnpRhs⟩ ← FExpr.checkNoProj s.rhs
+  let ⟨hnpTy⟩ ← guardProofOr s.ty.NoProj .internal
+  let ⟨hnpLhs⟩ ← guardProofOr s.lhs.NoProj .internal
+  let ⟨hnpRhs⟩ ← guardProofOr s.rhs.NoProj .internal
   let ⟨hlfTy⟩ ← FExpr.checkLevelFree s.ty
   let ⟨hlfLhs⟩ ← FExpr.checkLevelFree s.lhs
   let ⟨hlfRhs⟩ ← FExpr.checkLevelFree s.rhs

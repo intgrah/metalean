@@ -7,6 +7,7 @@ module
 
 public import Metalean.Checker.Fast.Operations
 public import Metalean.Syntax.Structure.Projection
+import Mathlib.Tactic.MkIffOfInductiveProp
 
 @[expose] public section
 
@@ -1325,6 +1326,13 @@ inductive FExpr.NoProj : FExpr → Prop where
     FExpr.NoProj (.natLit nat num)
   | strLit (P : StrPos) (str : String) :
     FExpr.NoProj (.strLit P str)
+
+mk_iff_of_inductive_prop Metalean.Checker.Fast.FExpr.NoProj
+  Metalean.Checker.Fast.FExpr.noProj_iff
+
+@[instance] partial def FExpr.instDecidableNoProj (fe : FExpr) : Decidable fe.NoProj := by
+  letI (e : FExpr) : Decidable e.NoProj := FExpr.instDecidableNoProj e
+  cases fe <;> rw [FExpr.noProj_iff] <;> simp <;> infer_instance
 
 private theorem FExpr.NoProj.rewriteStep {under : δ → δ} {pre : δ → FExpr → Option FExpr}
     {level : FLevel → FLevel} {d : δ} {fe : FExpr} (h : fe.NoProj)

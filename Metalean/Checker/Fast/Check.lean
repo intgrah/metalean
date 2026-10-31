@@ -150,7 +150,7 @@ def checkInductiveEntry (ι : IndSig) (I : FInductive) :
     have ⟨_, hI, hwf⟩ := h hF hE hI'
     exact ⟨_, .inductive hI, .inductive hwf⟩⟩
 
-def inferOrdLevels (ι : IndSig) (pre : FPreInductive) :
+def inferOrdLevels (ι : IndSig) (pre : FInductive FExpr) :
     CheckM F ι.nlevels ((s : Fin pre.ctors.size) → (c : Fin pre.ctors[s].size) →
       Fin pre.ctors[s][c].ordinary.size → FLevel) :=
   Fin.mapM fun s => Fin.mapM fun c => Fin.mapM fun f => do

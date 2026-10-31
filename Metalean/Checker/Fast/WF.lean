@@ -443,8 +443,8 @@ theorem WFSpec.appList {ℓ n k : Nat} {f : FExpr}
 variable (F)
 
 abbrev WFCache (ℓ : Nat) :=
-  Std.HashMap (Nat × Nat × FExpr)
-    ((key : Nat × Nat × FExpr) × PLift (WFSpec F ℓ key.1 key.2.1 key.2.2))
+  Std.DHashMap (Nat × Nat × FExpr)
+    (fun ⟨n, k, fe⟩ => PLift (WFSpec F ℓ n k fe))
 
 abbrev WFM (ℓ : Nat) := StateT (WFCache F ℓ) (Except Failure)
 
@@ -454,11 +454,10 @@ partial def FExpr.wfM (ℓ n k : Nat) (fe : FExpr) : WFM F ℓ (PLift (WFSpec F 
   if fe matches .bvar _ | .fvar _ | .sort _ | .const .. | .natLit .. | .strLit .. then
     return ← FExpr.wfCore ℓ n k fe
   match (← get).get? (n, k, fe) with
-  | some ⟨key, h⟩ =>
-    if hk : key = (n, k, fe) then return by subst hk; exact h
+  | some h => return h
   | none => pure ()
   let h ← FExpr.wfCore ℓ n k fe
-  modify (·.insert (n, k, fe) ⟨(n, k, fe), h⟩)
+  modify (·.insert (n, k, fe) h)
   pure h
 
 partial def FExpr.wfArrM (ℓ n k : Nat) (es : FCtx) : WFM F ℓ (PLift (ArrWF F ℓ n k es)) :=

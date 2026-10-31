@@ -7,6 +7,7 @@ module
 
 public import Metalean.Syntax.Inductive.Pre
 public import Metalean.Frontend.Translate
+import Mathlib.Logic.Function.Basic
 
 @[expose] public section
 
@@ -82,6 +83,19 @@ def CtorShape.toSig (shape : CtorShape nsorts) : CtorSig nsorts where
   nrecFields := shape.recs.length
   recursiveArity r := (shape.recs[r.val]'r.isLt).bindersRev.length
   recursiveTarget r := (shape.recs[r.val]'r.isLt).target
+
+def CtorShape.toSigCached (shape : CtorShape nsorts) : CtorSig nsorts :=
+  let arity := (shape.recs.map (·.bindersRev.length)).toArray
+  let target := (shape.recs.map (·.target)).toArray
+  { nfields := shape.ords.length
+    nrecFields := shape.recs.length
+    recursiveArity := fun r => arity[r.val]'(by simp [arity])
+    recursiveTarget := fun r => target[r.val]'(by simp [target]) }
+
+@[csimp] theorem CtorShape.toSig_eq_cached :
+    @CtorShape.toSig = @CtorShape.toSigCached := by
+  funext nsorts shape
+  simp [CtorShape.toSig, CtorShape.toSigCached]
 
 def mentionsSort (sortIdx? : Name → Option (Fin nsorts)) : Export.Expr → Bool
   | .bvar _ | .sort _ | .natLit _ | .stringLit _ => false
@@ -160,9 +174,28 @@ def indSigOf (nlevels nparams nsorts : Nat) (sd : Fin nsorts → SortData nsorts
   nctors s := (sd s).shapes.length
   ctors s c := ((sd s).shapes[c.val]'c.isLt).toSig
 
-structure BlockResult (ζ : Sigs) where
+def indSigOfCached (nlevels nparams nsorts : Nat) (sd : Fin nsorts → SortData nsorts) : IndSig :=
+  let nindices := Array.ofFn fun s => (sd s).indicesRev.length
+  let ctors := Array.ofFn fun s => ((sd s).shapes.map CtorShape.toSig).toArray
+  { nlevels, nparams, nsorts
+    nindices := fun s => nindices[s.val]'(by simp [nindices])
+    nctors := fun s => (ctors[s.val]'(by simp [ctors])).size
+    ctors := fun s c => (ctors[s.val]'(by simp [ctors]))[c.val]'c.isLt }
+
+@[csimp] theorem indSigOf_eq_cached : @indSigOf = @indSigOfCached := by
+  funext nlevels nparams nsorts sd
+  simp! [indSigOf, indSigOfCached]
+  apply Function.hfunext rfl
+  intro s₁ s₂ hs
+  cases hs
+  apply Function.hfunext (by simp)
+  intro c₁ c₂ hc
+  have hc' : c₁.val = c₂.val := (Fin.heq_ext_iff (by simp)).mp hc
+  simp [hc']
+
+structure BlockResult (P : IndSig → Type) where
   ι : IndSig
-  pre : PreInductive ζ ι
+  pre : P ι
   sortNames : List Name
   ctorNames : List (List Name)
   metaOrders : List (List (List Nat))
@@ -224,9 +257,13 @@ def preCtorOf (nparams : Nat) (params : Ctx ζ lps.length 0 nparams)
   let targetIndices ← tupleOf (sd s).indicesRev.length tis
   pure { ordinary, recursive, targetIndices }
 
-def analyzeBlock (leanElim : Bool) (E : Env ζ) (table : Table) (project : Projector ζ) (types : List Export.InductiveType)
-    (ctors : List Export.Constructor) (recNames : List Name) (defs : Export.Definitions := ∅) :
-    Except Failure (BlockResult ζ) := do
+structure BlockShape (types : List Export.InductiveType) where
+  nonempty : 0 < types.length
+  paramsRev : List Export.Expr
+  sorts : Fin types.length → SortData types.length
+
+def shapeBlock (types : List Export.InductiveType) (ctors : List Export.Constructor)
+    (recNames : List Name) (defs : Export.Definitions := ∅) : Except Failure (BlockShape types) := do
   if hpos : 0 < types.length then
     let first := types[0]
     if types.any (·.isUnsafe) then throw (.decline .unsafe)
@@ -253,22 +290,29 @@ def analyzeBlock (leanElim : Bool) (E : Env ζ) (table : Table) (project : Proje
         let some c := ctors.find? (·.name == cname) | throw (.reject .shape)
         shapeCtor defs sortIdx? lps paramBindersRev.length ty.numIndices s c.type
       pure ({ indicesRev, level, shapes } : SortData types.length)
-    let levels ← Fin.mapM fun s : Fin types.length => translateLevel lps (sd s).level
-    let level := levels ⟨0, hpos⟩
-    if ∃ s, levels s ≠ level then throw (.reject .shape)
-    let params ← buildClosed leanElim E table lps project paramBindersRev
-    let indices ← Fin.mapM fun s : Fin types.length =>
-      buildFrom leanElim E table lps project params (Scope.id paramBindersRev.length) (sd s).indicesRev
-    let preCtors ← Fin.mapM fun s : Fin types.length =>
-      Fin.mapM fun c : Fin (sd s).shapes.length =>
-        preCtorOf leanElim E table lps project paramBindersRev.length params sd s ((sd s).shapes[c.val]'c.isLt)
-    pure {
-      ι := indSigOf lps.length paramBindersRev.length types.length sd
-      pre := { params, indices, level, ctors := preCtors }
-      sortNames := types.map (·.name)
-      ctorNames := types.map (·.ctors)
-      metaOrders := List.ofFn fun s : Fin types.length =>
-        (sd s).shapes.map fun shape => metaOrderOf shape }
+    pure ⟨hpos, paramBindersRev, sd⟩
   else throw (.reject .shape)
+
+def analyzeBlock (leanElim : Bool) (E : Env ζ) (table : Table) (project : Projector ζ) (types : List Export.InductiveType)
+    (ctors : List Export.Constructor) (recNames : List Name) (defs : Export.Definitions := ∅) :
+    Except Failure (BlockResult (PreInductive ζ)) := do
+  let ⟨hpos, paramBindersRev, sd⟩ ← shapeBlock types ctors recNames defs
+  let lps := types[0].levelParams
+  let levels ← Fin.mapM fun s : Fin types.length => translateLevel lps (sd s).level
+  let level := levels ⟨0, hpos⟩
+  if ∃ s, levels s ≠ level then throw (.reject .shape)
+  let params ← buildClosed leanElim E table lps project paramBindersRev
+  let indices ← Fin.mapM fun s : Fin types.length =>
+    buildFrom leanElim E table lps project params (Scope.id paramBindersRev.length) (sd s).indicesRev
+  let preCtors ← Fin.mapM fun s : Fin types.length =>
+    Fin.mapM fun c : Fin (sd s).shapes.length =>
+      preCtorOf leanElim E table lps project paramBindersRev.length params sd s ((sd s).shapes[c.val]'c.isLt)
+  pure {
+    ι := indSigOf lps.length paramBindersRev.length types.length sd
+    pre := { params, indices, level, ctors := preCtors }
+    sortNames := types.map (·.name)
+    ctorNames := types.map (·.ctors)
+    metaOrders := List.ofFn fun s : Fin types.length =>
+      (sd s).shapes.map fun shape => metaOrderOf shape }
 
 end Metalean.Frontend

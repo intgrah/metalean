@@ -28,18 +28,31 @@ structure FRecField where
   indices : Array FExpr
 deriving DecidableEq
 
-structure FCtor where
-  ordinary : Array FField
+structure FCtor (α : Type := FField) where
+  ordinary : Array α
   recursive : Array FRecField
   targetIndices : Array FExpr
 deriving DecidableEq
 
-structure FInductive where
+structure FInductive (α : Type := FField) where
   params : FCtx
   indices : Array FCtx
   level : FLevel
-  ctors : Array (Array FCtor)
+  ctors : Array (Array (FCtor α))
 deriving DecidableEq
+
+def FCtor.withLevels (pre : FCtor FExpr) (levels : Fin pre.ordinary.size → FLevel) : FCtor where
+  ordinary := Array.ofFn fun f => ⟨pre.ordinary[f], levels f⟩
+  recursive := pre.recursive
+  targetIndices := pre.targetIndices
+
+def FInductive.withLevels (pre : FInductive FExpr)
+    (levels : (s : Fin pre.ctors.size) → (c : Fin pre.ctors[s].size) →
+      Fin pre.ctors[s][c].ordinary.size → FLevel) : FInductive where
+  params := pre.params
+  indices := pre.indices
+  level := pre.level
+  ctors := Array.ofFn fun s => Array.ofFn fun c => pre.ctors[s][c].withLevels (levels s c)
 
 inductive FEntry where
   | axiom (nlevels : Nat) (ft : FExpr)
