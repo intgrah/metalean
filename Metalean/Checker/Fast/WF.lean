@@ -25,7 +25,7 @@ def WFSpec (ℓ n k : Nat) (fe : FExpr) : Prop :=
   ∃ e : Expr E.1 ℓ n, FExpr.Denotes E k fe e
 
 def ArrWF (ℓ n k : Nat) (es : FCtx) : Prop :=
-  ∀ i (h : i < es.size), WFSpec F ℓ n k es[i]
+  ∀ i : Fin es.size, WFSpec F ℓ n k es[i]
 
 def TeleWF (ℓ a : Nat) (ts : FCtx) : Prop :=
   ∀ ⦃E : Σ ζ, Env ζ⦄ ⦃b : Nat⦄,
@@ -65,8 +65,10 @@ theorem ArrWF.choose {ℓ n k m : Nat} {es : FCtx} (hes : es.size = m) {E : Σ �
     ArrWF F ℓ n k es →
     FEnv.Denotes F E.2 →
     ∃ es' : Fin m → Expr E.1 ℓ n,
-      ∀ i, FExpr.Denotes E k (es[i.val]'(hes.symm ▸ i.isLt)) (es' i) :=
-  fun h hE => Classical.axiomOfChoice fun i : Fin m => h i.val (hes.symm ▸ i.isLt) hE
+      ∀ i, FExpr.Denotes E k (es[i.val]'(hes.symm ▸ i.isLt)) (es' i) := by
+  intro h hE
+  choose es' hes' using fun i : Fin m => h ⟨i.val, hes.symm ▸ i.isLt⟩ hE
+  exact ⟨es', hes'⟩
 
 theorem ArrWF.chooseMinors {ℓ n k : Nat} {ι : IndSig} {es : FCtx}
     (hes : es.size = Fin.sum ι.nctors) {E : Σ ζ, Env ζ} :
@@ -78,10 +80,10 @@ theorem ArrWF.chooseMinors {ℓ n k : Nat} {ι : IndSig} {es : FCtx}
           (hes.symm ▸ (Fin.encodeSigma ι.nctors ⟨t, c⟩).isLt))
         (es' t c) :=
   fun h hE => Classical.axiomOfChoice fun t => Classical.axiomOfChoice fun c =>
-    h (Fin.encodeSigma ι.nctors ⟨t, c⟩).val _ hE
+    h ⟨(Fin.encodeSigma ι.nctors ⟨t, c⟩).val, by omega⟩ hE
 
 theorem TeleWF.of {ℓ a : Nat} {ts : FCtx} :
-    (∀ j (hj : j < ts.size), WFSpec F ℓ (a + j) 0 ts[j]) →
+    (∀ j : Fin ts.size, WFSpec F ℓ (a + j) 0 ts[j]) →
     TeleWF F ℓ a ts := by
   intro h E b hE hb
   subst hb
@@ -94,7 +96,7 @@ theorem TeleWF.of {ℓ a : Nat} {ts : FCtx} :
   | zero => exact ⟨.nil, by simpa using FCtx.Denotes.nil⟩
   | succ j ih =>
     have ⟨Δ, hΔ⟩ := ih (by omega)
-    have ⟨e, he'⟩ := h j (by omega) hE
+    have ⟨e, he'⟩ := h ⟨j, by omega⟩ hE
     refine ⟨Δ.snoc e, ?_⟩
     have hpush := Array.push_extract_getElem (as := ts) (i := 0) (show j < ts.size by omega)
     rw [Nat.zero_min] at hpush
@@ -124,43 +126,42 @@ theorem CtorWF.of {ι : IndSig} {s : Fin ι.nsorts} {c : Fin (ι.nctors s)} {fct
     (hord : fctor.ordinary.size = (ι.ctors s c).nfields)
     (hrec : fctor.recursive.size = (ι.ctors s c).nrecFields)
     (htarget : fctor.targetIndices.size = ι.nindices s) :
-    (∀ f (hf : f < fctor.ordinary.size), FieldWF F ι f fctor.ordinary[f]) →
-    (∀ r (hr : r < fctor.recursive.size),
-      RecFieldWF F ι (ι.ctors s c).nfields ((ι.ctors s c).recursiveArity ⟨r, hrec ▸ hr⟩)
-        ((ι.ctors s c).recursiveTarget ⟨r, hrec ▸ hr⟩) fctor.recursive[r]) →
+    (∀ f : Fin fctor.ordinary.size, FieldWF F ι f fctor.ordinary[f]) →
+    (∀ r : Fin fctor.recursive.size,
+      RecFieldWF F ι (ι.ctors s c).nfields ((ι.ctors s c).recursiveArity ⟨r.val, hrec ▸ r.isLt⟩)
+        ((ι.ctors s c).recursiveTarget ⟨r.val, hrec ▸ r.isLt⟩) fctor.recursive[r]) →
     ArrWF F ι.nlevels (ι.nparams + (ι.ctors s c).nfields) 0 fctor.targetIndices →
     CtorWF F ι s c fctor := by
   intro hord' hrec' htarget' _ hE
-  have ⟨ordinary, hordinary⟩ := Classical.axiomOfChoice fun f : Fin (ι.ctors s c).nfields =>
-    hord' f.val (hord.symm ▸ f.isLt) hE
-  have ⟨recursive, hrecursive⟩ := Classical.axiomOfChoice fun r : Fin (ι.ctors s c).nrecFields =>
-    hrec' r.val (hrec.symm ▸ r.isLt) hE
+  choose ordinary hordinary using fun f : Fin (ι.ctors s c).nfields =>
+    hord' ⟨f.val, hord.symm ▸ f.isLt⟩ hE
+  choose recursive hrecursive using fun r : Fin (ι.ctors s c).nrecFields =>
+    hrec' ⟨r.val, hrec.symm ▸ r.isLt⟩ hE
   have ⟨targetIndices, htargetIndices⟩ := htarget'.choose htarget hE
   exact ⟨⟨ordinary, recursive, targetIndices⟩, hord, hordinary, hrec, hrecursive, htarget,
     htargetIndices⟩
 
 theorem InductiveWF.of {ι : IndSig} {fI : FInductive} (hparams : fI.params.size = ι.nparams)
     (hindices : fI.indices.size = ι.nsorts)
-    (hrows : ∀ s (hs : s < fI.indices.size), fI.indices[s].size = ι.nindices ⟨s, hindices ▸ hs⟩)
+    (hrows : ∀ s : Fin fI.indices.size, fI.indices[s].size = ι.nindices ⟨s.val, hindices ▸ s.isLt⟩)
     (hctors : fI.ctors.size = ι.nsorts)
-    (hctorRows : ∀ s (hs : s < fI.ctors.size), fI.ctors[s].size = ι.nctors ⟨s, hctors ▸ hs⟩) :
+    (hctorRows : ∀ s : Fin fI.ctors.size, fI.ctors[s].size = ι.nctors ⟨s.val, hctors ▸ s.isLt⟩) :
     TeleWF F ι.nlevels 0 fI.params →
-    (∀ s (hs : s < fI.indices.size), TeleWF F ι.nlevels ι.nparams fI.indices[s]) →
+    (∀ s : Fin fI.indices.size, TeleWF F ι.nlevels ι.nparams fI.indices[s]) →
     LevelWF ι.nlevels fI.level →
-    (∀ s (hs : s < fI.ctors.size) c (hc : c < fI.ctors[s].size),
-      CtorWF F ι ⟨s, hctors ▸ hs⟩ ⟨c, hctorRows s hs ▸ hc⟩ fI.ctors[s][c]) →
+    (∀ (s : Fin fI.ctors.size) (c : Fin fI.ctors[s].size),
+      CtorWF F ι ⟨s.val, hctors ▸ s.isLt⟩ ⟨c.val, Nat.lt_of_lt_of_eq c.isLt (hctorRows s)⟩ fI.ctors[s][c]) →
     InductiveWF F ι fI := by
   intro hparams' hindices' ⟨l', hl'⟩ hctors' _ hE
   have ⟨params, hparams'⟩ := hparams' hE (b := ι.nparams) (by omega)
-  have ⟨indices, hindices'⟩ := Classical.axiomOfChoice fun s : Fin ι.nsorts =>
-    hindices' s.val (hindices.symm ▸ s.isLt) hE (b := ι.nparams + ι.nindices s)
-      (by rw [hrows s.val (hindices.symm ▸ s.isLt)])
-  have ⟨ctors, hctors'⟩ := Classical.axiomOfChoice fun s : Fin ι.nsorts =>
-    Classical.axiomOfChoice fun c : Fin (ι.nctors s) =>
-      hctors' s.val (hctors.symm ▸ s.isLt) c.val
-        ((hctorRows s.val (hctors.symm ▸ s.isLt)).symm ▸ c.isLt) hE
-  exact ⟨⟨params, indices, ⟦l'⟧, ctors⟩, hparams', hindices, hindices', ⟨l', hl', rfl⟩, hctors,
-    fun s => hctorRows s.val (hctors.symm ▸ s.isLt), hctors'⟩
+  choose indices hindicesD using fun s : Fin ι.nsorts =>
+    hindices' ⟨s.val, hindices.symm ▸ s.isLt⟩ hE (b := ι.nparams + ι.nindices s)
+      (by rw [hrows ⟨s.val, hindices.symm ▸ s.isLt⟩])
+  choose ctors hctorsD using fun (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) =>
+    hctors' ⟨s.val, hctors.symm ▸ s.isLt⟩
+      ⟨c.val, (hctorRows ⟨s.val, hctors.symm ▸ s.isLt⟩).symm ▸ c.isLt⟩ hE
+  exact ⟨⟨params, indices, ⟦l'⟧, ctors⟩, hparams', hindices, hindicesD, ⟨l', hl', rfl⟩, hctors,
+    fun s => hctorRows ⟨s.val, hctors.symm ▸ s.isLt⟩, hctorsD⟩
 
 theorem WFSpec.bvar {ℓ n k j : Nat} (hj : j < k) (hn : j < n) : WFSpec F ℓ n k (.bvar j) :=
   fun {_} _ => ⟨_, .bvar (i := n - j - 1) (by omega) hj⟩
@@ -176,7 +177,7 @@ theorem WFSpec.sort {ℓ n k : Nat} {l : FLevel} :
 theorem WFSpec.const {ℓ n k pos : Nat} {fe : FEntry} {kind : ConstKind} {nlevels : Nat}
     {ls : Array FLevel} (hfe : F[pos]? = some fe) (hsig : fe.sig = .const kind nlevels)
     (hls : ls.size = nlevels) :
-    (∀ i (h : i < ls.size), LevelWF ℓ ls[i]) →
+    (∀ i : Fin ls.size, LevelWF ℓ ls[i]) →
     WFSpec F ℓ n k (.const pos ls) := by
   intro hls' _ hE
   have ⟨_, hη⟩ := hE.lookup hfe hsig
@@ -186,7 +187,7 @@ theorem WFSpec.const {ℓ n k pos : Nat} {fe : FEntry} {kind : ConstKind} {nleve
 theorem WFSpec.ind {ℓ n k pos s : Nat} {ι : IndSig} {fI : FInductive} {ls : Array FLevel}
     {ps is : FCtx} (hfe : F[pos]? = some (.inductive ι fI)) (hs : s < ι.nsorts)
     (hls : ls.size = ι.nlevels) (hps : ps.size = ι.nparams) (his : is.size = ι.nindices ⟨s, hs⟩) :
-    (∀ i (h : i < ls.size), LevelWF ℓ ls[i]) →
+    (∀ i : Fin ls.size, LevelWF ℓ ls[i]) →
     ArrWF F ℓ n k ps →
     ArrWF F ℓ n k is →
     WFSpec F ℓ n k (.ind pos s ls ps is) := by
@@ -202,7 +203,7 @@ theorem WFSpec.ctor {ℓ n k pos s c : Nat} {ι : IndSig} {fI : FInductive} {ls 
     (hc : c < ι.nctors ⟨s, hs⟩) (hls : ls.size = ι.nlevels) (hps : ps.size = ι.nparams)
     (hfds : fds.size = (ι.ctors ⟨s, hs⟩ ⟨c, hc⟩).nfields)
     (hrecFds : recFds.size = (ι.ctors ⟨s, hs⟩ ⟨c, hc⟩).nrecFields) :
-    (∀ i (h : i < ls.size), LevelWF ℓ ls[i]) →
+    (∀ i : Fin ls.size, LevelWF ℓ ls[i]) →
     ArrWF F ℓ n k ps →
     ArrWF F ℓ n k fds →
     ArrWF F ℓ n k recFds →
@@ -221,7 +222,7 @@ theorem WFSpec.recr {ℓ n k pos s : Nat} {ι : IndSig} {fI : FInductive} {ls : 
     (hfe : F[pos]? = some (.inductive ι fI)) (hs : s < ι.nsorts) (hls : ls.size = ι.nlevels)
     (hps : ps.size = ι.nparams) (hms : ms.size = ι.nsorts) (hmins : mins.size = Fin.sum ι.nctors)
     (his : is.size = ι.nindices ⟨s, hs⟩) :
-    (∀ i (h : i < ls.size), LevelWF ℓ ls[i]) →
+    (∀ i : Fin ls.size, LevelWF ℓ ls[i]) →
     LevelWF ℓ l →
     ArrWF F ℓ n k ps →
     ArrWF F ℓ n k ms →
@@ -461,7 +462,7 @@ partial def FExpr.wfM (ℓ n k : Nat) (fe : FExpr) : WFM F ℓ (PLift (WFSpec F 
   pure h
 
 partial def FExpr.wfArrM (ℓ n k : Nat) (es : FCtx) : WFM F ℓ (PLift (ArrWF F ℓ n k es)) :=
-  Array.forallM es (fun i h => WFSpec F ℓ n k es[i]) fun i _ => FExpr.wfM ℓ n k es[i]
+  Fin.sequenceM fun i : Fin es.size => FExpr.wfM ℓ n k es[i]
 
 partial def FExpr.wfCore (ℓ n k : Nat) : (fe : FExpr) → WFM F ℓ (PLift (WFSpec F ℓ n k fe))
   | .bvar j => do
@@ -621,9 +622,8 @@ def FExpr.wfArr (ℓ n k : Nat) (es : FCtx) : Except Failure (PLift (ArrWF F ℓ
   (FExpr.wfArrM F ℓ n k es).run' ∅
 
 def FExpr.wfTele (ℓ a : Nat) (ts : FCtx) : Except Failure (PLift (TeleWF F ℓ a ts)) := do
-  let ⟨h⟩ ← Array.forallM ts (fun j h => WFSpec F ℓ (a + j) 0 (ts[j]'h)) fun j _ =>
-    FExpr.wf F ℓ (a + j) 0 ts[j]
-  pure ⟨TeleWF.of h⟩
+  let h ← Fin.sequenceM fun j : Fin ts.size => FExpr.wf F ℓ (a + j) 0 ts[j]
+  pure ⟨TeleWF.of h.down⟩
 
 def FField.wf (ι : IndSig) (nfields : Nat) (ffd : FField) :
     Except Failure (PLift (FieldWF F ι nfields ffd)) := do
@@ -641,41 +641,34 @@ def FRecField.wf (ι : IndSig) (nfields arity : Nat) (target : Fin ι.nsorts) (f
 
 def FCtor.wf (ι : IndSig) (s : Fin ι.nsorts) (c : Fin (ι.nctors s)) (fctor : FCtor) :
     Except Failure (PLift (CtorWF F ι s c fctor)) := do
-  let ⟨hord⟩ ← guardProofOr (fctor.ordinary.size = (ι.ctors s c).nfields) (.reject .arity)
-  let ⟨hord'⟩ ← Array.forallM fctor.ordinary (fun f h => FieldWF F ι f (fctor.ordinary[f]'h))
-    fun f _ => FField.wf F ι f fctor.ordinary[f]
-  let ⟨hrec⟩ ← guardProofOr (fctor.recursive.size = (ι.ctors s c).nrecFields) (.reject .arity)
-  let ⟨hrec'⟩ ← Array.forallM fctor.recursive
-    (fun r hr => RecFieldWF F ι (ι.ctors s c).nfields
-      ((ι.ctors s c).recursiveArity ⟨r, hrec ▸ hr⟩) ((ι.ctors s c).recursiveTarget ⟨r, hrec ▸ hr⟩)
-      (fctor.recursive[r]'hr))
-    fun r hr => FRecField.wf F ι (ι.ctors s c).nfields
-      ((ι.ctors s c).recursiveArity ⟨r, hrec ▸ hr⟩) ((ι.ctors s c).recursiveTarget ⟨r, hrec ▸ hr⟩)
-      fctor.recursive[r]
-  let ⟨htarget⟩ ← guardProofOr (fctor.targetIndices.size = ι.nindices s) (.reject .arity)
+  let ⟨hord⟩ ← guardProofOr (fctor.ordinary.size = (ι.ctors s c).nfields) (Failure.reject .arity)
+  let hord' ← Fin.sequenceM fun f : Fin fctor.ordinary.size =>
+    FField.wf F ι f fctor.ordinary[f]
+  let ⟨hrec⟩ ← guardProofOr (fctor.recursive.size = (ι.ctors s c).nrecFields) (Failure.reject .arity)
+  let hrec' ← Fin.sequenceM fun r : Fin fctor.recursive.size =>
+    FRecField.wf F ι (ι.ctors s c).nfields
+      ((ι.ctors s c).recursiveArity ⟨r.val, hrec ▸ r.isLt⟩)
+      ((ι.ctors s c).recursiveTarget ⟨r.val, hrec ▸ r.isLt⟩) fctor.recursive[r]
+  let ⟨htarget⟩ ← guardProofOr (fctor.targetIndices.size = ι.nindices s) (Failure.reject .arity)
   let ⟨htarget'⟩ ← FExpr.wfArr F ι.nlevels (ι.nparams + (ι.ctors s c).nfields) 0
     fctor.targetIndices
-  pure ⟨CtorWF.of hord hrec htarget hord' hrec' htarget'⟩
+  pure ⟨CtorWF.of hord hrec htarget hord'.down hrec'.down htarget'⟩
 
 def FInductive.wf (ι : IndSig) (fI : FInductive) : Except Failure (PLift (InductiveWF F ι fI)) := do
   let ⟨hparams⟩ ← guardProofOr (fI.params.size = ι.nparams) (Failure.reject .arity)
   let ⟨hparams'⟩ ← FExpr.wfTele F ι.nlevels 0 fI.params
   let ⟨hindices⟩ ← guardProofOr (fI.indices.size = ι.nsorts) (Failure.reject .arity)
-  let hrows ← Array.forallM fI.indices
-    (fun s hs => fI.indices[s].size = ι.nindices ⟨s, hindices ▸ hs⟩)
-    fun s hs => guardProofOr (fI.indices[s].size = ι.nindices ⟨s, hindices ▸ hs⟩) (Failure.reject .arity)
-  let hindices' ← Array.forallM fI.indices (fun s _ => TeleWF F ι.nlevels ι.nparams fI.indices[s])
-    fun s _ => FExpr.wfTele F ι.nlevels ι.nparams fI.indices[s]
+  let hrows ← Fin.sequenceM fun s : Fin fI.indices.size =>
+    guardProofOr (fI.indices[s].size = ι.nindices ⟨s.val, hindices ▸ s.isLt⟩) (Failure.reject .arity)
+  let hindices' ← Fin.sequenceM fun s : Fin fI.indices.size =>
+    FExpr.wfTele F ι.nlevels ι.nparams fI.indices[s]
   let ⟨_, hlevel⟩ ← checkLevel ι.nlevels fI.level
   let ⟨hctors⟩ ← guardProofOr (fI.ctors.size = ι.nsorts) (Failure.reject .arity)
-  let hctorRows ← Array.forallM fI.ctors (fun s hs => fI.ctors[s].size = ι.nctors ⟨s, hctors ▸ hs⟩)
-    fun s hs => guardProofOr (fI.ctors[s].size = ι.nctors ⟨s, hctors ▸ hs⟩) (Failure.reject .arity)
-  let hctors' ← Array.forallM fI.ctors
-    (fun s hs => ∀ c (hc : c < fI.ctors[s].size),
-      CtorWF F ι ⟨s, hctors ▸ hs⟩ ⟨c, hctorRows.down s hs ▸ hc⟩ fI.ctors[s][c])
-    fun s hs => Array.forallM fI.ctors[s]
-      (fun c hc => CtorWF F ι ⟨s, hctors ▸ hs⟩ ⟨c, hctorRows.down s hs ▸ hc⟩ fI.ctors[s][c])
-      fun c hc => FCtor.wf F ι ⟨s, hctors ▸ hs⟩ ⟨c, hctorRows.down s hs ▸ hc⟩ fI.ctors[s][c]
+  let hctorRows ← Fin.sequenceM fun s : Fin fI.ctors.size =>
+    guardProofOr (fI.ctors[s].size = ι.nctors ⟨s.val, hctors ▸ s.isLt⟩) (Failure.reject .arity)
+  let hctors' ← Fin.sequenceM fun s : Fin fI.ctors.size =>
+    Fin.sequenceM fun c : Fin fI.ctors[s].size =>
+      FCtor.wf F ι ⟨s.val, hctors ▸ s.isLt⟩ ⟨c.val, Nat.lt_of_lt_of_eq c.isLt (hctorRows.down s)⟩ fI.ctors[s][c]
   pure ⟨InductiveWF.of hparams hindices hrows.down hctors hctorRows.down hparams'
     hindices'.down ⟨_, hlevel⟩ hctors'.down⟩
 

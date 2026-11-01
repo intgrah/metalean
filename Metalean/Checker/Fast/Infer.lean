@@ -12,6 +12,7 @@ public import Metalean.Metatheory.Unique
 public import Metalean.Typing.Structure
 import Metalean.Meta.IfRfl
 import Metalean.Typing.Env
+import Std.Data.HashSet.Lemmas
 
 @[expose] public section
 
@@ -64,36 +65,34 @@ def KTarget.check (ι : IndSig) (I : FInductive) (s : Nat) : Option (PLift (KTar
   pure ⟨hl, hs, h₁, hc, hf, hr, hrow, hcol⟩
 
 def ancestorsOf (G : FCtx) : CheckM F ℓ (FCtx.Ancestors G) := do
-  if let some ⟨G₁, a⟩ := (← get).ancestors.get? G.addr then
-    if h : G₁ = G then return a.cast h
+  if let some a := (← get).ancestors.get? G then return a
   let a := FCtx.Ancestors.root G
-  modify fun c => { c with ancestors := c.ancestors.insert G.addr ⟨G, a⟩ }
+  modify fun c => { c with ancestors := c.ancestors.insert G a }
   return a
 
 def prefixFor (G : FCtx) (fe : FExpr) : CheckM F ℓ FCtx := do
   if fe.data.looseBVarRange.toNat = 0 ∧ fe.fvarRange < G.size then
-    if let some ⟨_, a⟩ := (← get).ancestors.get? G.addr then
+    if let some a := (← get).ancestors.get? G then
       if h : fe.fvarRange < a.arr.size then return a.arr[fe.fvarRange]
   return G
 
 def pushCtx (G : FCtx) (t : FExpr) : CheckM F ℓ {G' : FCtx // G' = G.push t} := do
-  let ⟨t', ht⟩ ← (do
-    if let some t' := (← get).intern.get? t then
-      if h : t' = t then return ⟨t', h⟩
-    modify fun c => { c with intern := c.intern.insert t t }
-    return ⟨t, rfl⟩ : CheckM F ℓ {t' : FExpr // t' = t})
-  let key := (G.addr, t'.addr)
-  if let some ⟨k, G', h⟩ := (← get).push.get? key then
-    if hk : k = (G, t') then
-      return ⟨G', by
-        subst hk ht
-        exact h⟩
-  let a ← ancestorsOf F ℓ G
-  let G' : {G' : FCtx // G' = G.push t'} := ⟨G.push t', rfl⟩
-  modify fun c =>
-    { c with
-      push := c.push.insert key ⟨(G, t'), G'⟩
-      ancestors := c.ancestors.insert G'.1.addr ⟨G'.1, a.push t' G'.1 G'.2⟩ }
+  let intern := (← get).intern
+  let ⟨t', ht⟩ ← (match h : intern.get? t with
+    | some t' => pure ⟨t', by simpa [h] using intern.get?_beq (k := t)⟩
+    | none => do
+      modify fun c => { c with intern := intern.insert t }
+      pure ⟨t, rfl⟩ : CheckM F ℓ {t' : FExpr // t' = t})
+  let G' : {G' : FCtx // G' = G.push t'} ← match (← get).push.get? (G, t') with
+    | some G' => pure G'
+    | none => do
+      let a ← ancestorsOf F ℓ G
+      let G' : {G' : FCtx // G' = G.push t'} := ⟨G.push t', rfl⟩
+      modify fun c =>
+        { c with
+          push := c.push.insert (G, t') G'
+          ancestors := c.ancestors.insert G'.1 (a.push t' G'.1 G'.2) }
+      pure G'
   return ⟨G'.1, by rw [G'.2, ht]⟩
 
 mutual
@@ -103,14 +102,13 @@ partial def prefixInfer (G : FCtx) (fe : FExpr) :
         InferSpec F ℓ G₀ fe ft)) := do
   if hc : fe.data.looseBVarRange.toNat = 0 then
     if fe.fvarRange < G.size then
-      if let some ⟨G₁, a⟩ := (← get).ancestors.get? G.addr then
-        if hG : G₁ = G then
-          if hi : fe.fvarRange < a.arr.size then
-            if (a.arr[fe.fvarRange]'hi).size < G.size then
-              match ← tryCatch (some <$> infer (a.arr[fe.fvarRange]'hi) fe) fun _ => pure none with
-              | some ⟨ft, h⟩ =>
-                return some ⟨a.arr[fe.fvarRange]'hi, ft, hG ▸ (a.spec _ hi).2, (a.spec _ hi).1, hc, h⟩
-              | none => pure ()
+      if let some a := (← get).ancestors.get? G then
+        if hi : fe.fvarRange < a.arr.size then
+          if (a.arr[fe.fvarRange]'hi).size < G.size then
+            match ← tryCatch (some <$> infer (a.arr[fe.fvarRange]'hi) fe) fun _ => pure none with
+            | some ⟨ft, h⟩ =>
+              return some ⟨a.arr[fe.fvarRange]'hi, ft, (a.spec _ hi).2, (a.spec _ hi).1, hc, h⟩
+            | none => pure ()
   return none
 
 partial def prefixDefEq (G : FCtx) (fe₁ fe₂ : FExpr) :
@@ -122,17 +120,16 @@ partial def prefixDefEq (G : FCtx) (fe₁ fe₂ : FExpr) :
   if hc₁ : fe₁.data.looseBVarRange.toNat = 0 then
     if hc₂ : fe₂.data.looseBVarRange.toNat = 0 then
       if k < G.size then
-        if let some ⟨G₁, a⟩ := (← get).ancestors.get? G.addr then
-          if hG : G₁ = G then
-            if hi : k < a.arr.size then
-              if (a.arr[k]'hi).size < G.size then
-                if let some ⟨ft₁, h₁⟩ ←
-                    tryCatch (some <$> infer (a.arr[k]'hi) fe₁) fun _ => pure none then
-                  if let some ⟨ft₂, h₂⟩ ←
-                      tryCatch (some <$> infer (a.arr[k]'hi) fe₂) fun _ => pure none then
-                    have hk := (a.spec k hi).1
-                    return some ⟨a.arr[k]'hi, ft₁, ft₂, hG ▸ (a.spec k hi).2,
-                      by omega, by omega, hc₁, hc₂, h₁, h₂⟩
+        if let some a := (← get).ancestors.get? G then
+          if hi : k < a.arr.size then
+            if (a.arr[k]'hi).size < G.size then
+              if let some ⟨ft₁, h₁⟩ ←
+                  tryCatch (some <$> infer (a.arr[k]'hi) fe₁) fun _ => pure none then
+                if let some ⟨ft₂, h₂⟩ ←
+                    tryCatch (some <$> infer (a.arr[k]'hi) fe₂) fun _ => pure none then
+                  have hk := (a.spec k hi).1
+                  return some ⟨a.arr[k]'hi, ft₁, ft₂, (a.spec k hi).2,
+                    by omega, by omega, hc₁, hc₂, h₁, h₂⟩
   return none
 
 partial def whnf (G : FCtx) (fe₁ : FExpr) :
@@ -313,12 +310,11 @@ partial def infer (G : FCtx) (fe : FExpr) :
     CheckM F ℓ {ft : FExpr // InferSpec F ℓ G fe ft} := do
   if hc : fe.data.looseBVarRange.toNat = 0 then
     if fe.fvarRange < G.size then
-      if let some ⟨G₁, a⟩ := (← get).ancestors.get? G.addr then
-        if hG : G₁ = G then
-          if hi : fe.fvarRange < a.arr.size then
-            if (a.arr[fe.fvarRange]'hi).size < G.size then
-              let ⟨ft, h⟩ ← infer (a.arr[fe.fvarRange]'hi) fe
-              return ⟨ft, h.extend (a.spec _ hi).1 hc (hG ▸ (a.spec _ hi).2)⟩
+      if let some a := (← get).ancestors.get? G then
+        if hi : fe.fvarRange < a.arr.size then
+          if (a.arr[fe.fvarRange]'hi).size < G.size then
+            let ⟨ft, h⟩ ← infer (a.arr[fe.fvarRange]'hi) fe
+            return ⟨ft, h.extend (a.spec _ hi).1 hc (a.spec _ hi).2⟩
   match (← get).infer.get? (G, fe) with
   | some r => return r
   | none => pure ()
@@ -360,36 +356,13 @@ partial def inferCore (G : FCtx) :
         let ⟨hidx⟩ ← guardProofOr (idx < ((I.ctors[s]'hsc)[0]'hcc).ordinary.size) (.reject .shape)
         pure ⟨((I.ctors[s]'hsc)[0]'hcc).projType pos s ls₂ ps₂ idx hidx e,
           fun {ζ E n Γ _} hS hden => by
-          have .proj (η := η) (s' := s') (c' := c') (f' := f') hstructD hη hs' hidx' hed := hden
+          have .proj _ _ _ _ hed := hden
           obtain ⟨rfl, rfl⟩ := hsame
-          subst hs' hidx'
           have ⟨_, _, hed', hted, hety⟩ := hte hS hed
           have ⟨_, hu⟩ := hety.regular
-          have hred : RedSpec F ℓ G te (.ind pos₂ s'.val ls₂ ps₂ is₂) := hq ▸ ht
-          have ⟨_, .ind (ls' := ls₂') (ps' := ps₂') (is' := isD) hls₂ hps₂ his₂ hη₂ hs₂ hls₂''
-            hps₂'' his₂', hc⟩ := hred hS hted hu
-          cases hη₂.symm.trans hη
-          obtain rfl := (Fin.ext hs₂).symm
-          have hmaj₂ := (TypeEq.ofDefEq hc).conv hety
-          have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
-          cases hη.symm.trans hη₀
-          have ⟨_, hindTy⟩ := hmaj₂.regular
-          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-          have hB := (hS.wf.entryWF η₀).block
-          have hind : E[Γ] ⊢ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
-              .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
-            .ofDefEq (Defeq.indDF (fun p => Inductive.paramType_conv hB p hpsw)
-              fun i => hstructD.no_indices.elim i)
-          have hmaj := hind.conv hmaj₂
-          have hty := hstructD.projTerm_hasType hB f' hS.ctxWF
-            (fun p => Inductive.paramType_conv hB p hpsw) hmaj
-          have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
-          have hc0 : c'.val = 0 := by
-            omega
-          obtain rfl : c' = ⟨0, hn1 ▸ Nat.zero_lt_one⟩ := Fin.ext hc0
-          have hd := (hI.ctors _ ⟨0, hn1 ▸ Nat.zero_lt_one⟩).projType hls₂ hls₂'' ⟨hps₂, hps₂''⟩
-            hη hstructD hed' f'
-          exact ⟨_, _, .proj (ls' := ls₂') (ps' := ps₂') hstructD hη rfl rfl hed', hd, hty⟩⟩
+          have hred : RedSpec F ℓ G te (.ind pos₂ s₂ ls₂ ps₂ is₂) := hq ▸ ht
+          have ⟨_, htype, hc⟩ := hred hS hted hu
+          exact hS.proj hfe hsc hcc hidx hden hed' htype ((TypeEq.ofDefEq hc).conv hety)⟩
       | _ => throw (.reject .shape)
     | _ => throw (.reject .shape)
   | .app f a => do
@@ -812,40 +785,20 @@ partial def inferOnlyCore (G : FCtx) :
         let ⟨hidx⟩ ← guardProofOr (idx < ((I.ctors[s]'hsc)[0]'hcc).ordinary.size) (.reject .shape)
         pure ⟨((I.ctors[s]'hsc)[0]'hcc).projType pos s ls₂ ps₂ idx hidx e,
           fun {ζ E n Γ _ _} hS hden he => by
-          have .proj (η := η) (s' := s') (c' := c') (f' := f') hstructD hη hs' hidx' hed := hden
+          have .proj (ls' := ls') (ps' := ps') hstruct hη hs hidx' hed := hden
           obtain ⟨rfl, rfl⟩ := hsame
-          subst hs' hidx'
           have he' := he
           rw [Inductive.IsStructure.projTerm_eq_recr] at he'
           have ⟨_, _, _, _, _, _, _, _, _, _, hmajw, _, _⟩ := he'.recr_inv
           have ⟨_, hted, hety⟩ := hte hS hed hmajw.right
           have ⟨_, hu⟩ := hety.regular
-          have hred : RedSpec F ℓ G te (.ind pos₂ s'.val ls₂ ps₂ is₂) := hq ▸ ht
-          have ⟨_, .ind (ls' := ls₂') (ps' := ps₂') (is' := isD) hls₂ hps₂ his₂ hη₂ hs₂ hls₂''
-            hps₂'' his₂', hc⟩ := hred hS hted hu
-          cases hη₂.symm.trans hη
-          obtain rfl := (Fin.ext hs₂).symm
-          have hmaj₂ := (TypeEq.ofDefEq hc).conv hety
-          have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
-          cases hη.symm.trans hη₀
-          have ⟨_, hindTy⟩ := hmaj₂.regular
-          have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
-          have hB := (hS.wf.entryWF η₀).block
-          have hind : E[Γ] ⊢ .ind η₀ s' (⟦ls₂' ·⟧) ps₂' isD ≡
-              .ind η₀ s' (⟦ls₂' ·⟧) ps₂' hstructD.indices typ :=
-            .ofDefEq (Defeq.indDF (fun p => Inductive.paramType_conv hB p hpsw)
-              fun i => hstructD.no_indices.elim i)
-          have hty₂ := hstructD.projTerm_hasType hB f' hS.ctxWF
-            (fun p => Inductive.paramType_conv hB p hpsw) (hind.conv hmaj₂)
-          have hP := Inductive.IsStructure.projTerm_congr_defeq hstructD hstructD
-            f' f' rfl hS.wf hS.ctxWF he hty₂ fun ht₁ _ => ht₁
-          have hn1 := Fin.eq_one_of_unique c' hstructD.ctor_unique
-          have hc0 : c'.val = 0 := by
-            omega
-          obtain rfl : c' = ⟨0, hn1 ▸ Nat.zero_lt_one⟩ := Fin.ext hc0
-          have hd := (hI.ctors _ ⟨0, hn1 ▸ Nat.zero_lt_one⟩).projType hls₂ hls₂'' ⟨hps₂, hps₂''⟩
-            hη hstructD hed f'
-          exact ⟨_, hd, (Defeq.retype hS.wf hS.ctxWF hP.symm hty₂).right⟩⟩
+          have hred : RedSpec F ℓ G te (.ind pos₂ s₂ ls₂ ps₂ is₂) := hq ▸ ht
+          have ⟨_, htype, hc⟩ := hred hS hted hu
+          have ⟨_, _, hproj, htd, hty⟩ :=
+            hS.proj hfe hsc hcc hidx hden hed htype ((TypeEq.ofDefEq hc).conv hety)
+          have hden' := FExpr.Denotes.proj (ls' := ls') (ps' := ps') hstruct hη hs hidx' hed
+          have hco := hden'.defeq hS.wf hS.ctxWF hproj he hty
+          exact ⟨_, htd, (Defeq.retype hS.wf hS.ctxWF hco.symm hty).right⟩⟩
       | _ => throw (.reject .shape)
     | _ => throw (.reject .shape)
   | fe => do

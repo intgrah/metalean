@@ -41,6 +41,10 @@ instance : InstLevel (Array FLevel) FLevel FLevel := ⟨inst⟩
 @[simp] theorem inst_param (us : Array FLevel) (p : Nat) :
     (param p){us} = us[p]?.getD (param p) := rfl
 
+theorem inst_of_not_hasParam (us : Array FLevel) {l : FLevel} (h : l.hasParam = false) :
+    l{us} = l := by
+  induction l <;> simp_all [hasParam, InstLevel.inst, inst]
+
 def toRaw (ℓ : Nat) : FLevel → Option (RawLevel ℓ)
   | .zero => some .zero
   | .succ l => (l.toRaw ℓ).map .succ
@@ -72,17 +76,37 @@ judgement Denotes : FLevel → RawLevel ℓ → Prop where
   ──────────────────── param {p : Nat} (h : p < ℓ)
   Denotes (.param p) (.param ⟨p, h⟩)
 
+theorem denotes_exists (l : RawLevel ℓ) : ∃ fl : FLevel, Denotes fl l := by
+  induction l with
+  | zero => exact ⟨.zero, .zero⟩
+  | succ l ih => obtain ⟨fl, h⟩ := ih; exact ⟨.succ fl, .succ h⟩
+  | max l₁ l₂ ih₁ ih₂ =>
+    obtain ⟨fl₁, h₁⟩ := ih₁
+    obtain ⟨fl₂, h₂⟩ := ih₂
+    exact ⟨.max fl₁ fl₂, .max h₁ h₂⟩
+  | imax l₁ l₂ ih₁ ih₂ =>
+    obtain ⟨fl₁, h₁⟩ := ih₁
+    obtain ⟨fl₂, h₂⟩ := ih₂
+    exact ⟨.imax fl₁ fl₂, .imax h₁ h₂⟩
+  | param p => exact ⟨.param p, .param p.isLt⟩
+
 variable {ℓ' : Nat}
+
+theorem toRaw_eq_some_iff {l : FLevel} {l' : RawLevel ℓ} :
+    toRaw ℓ l = some l' ↔ Denotes l l' := by
+  induction l generalizing l' <;> simp_all [toRaw, Option.bind_eq_some_iff]
+  all_goals
+    constructor
+    · aesop (add safe constructors Denotes)
+    · intro h
+      cases h; aesop
 
 theorem Denotes.unique {l : FLevel} {l₁ l₂ : RawLevel ℓ} :
     Denotes l l₁ →
     Denotes l l₂ →
-    l₁ = l₂
-  | .zero, .zero => rfl
-  | .succ h, .succ h' => by rw [h.unique h']
-  | .max h₁ h₂, .max h₁' h₂' => by rw [h₁.unique h₁', h₂.unique h₂']
-  | .imax h₁ h₂, .imax h₁' h₂' => by rw [h₁.unique h₁', h₂.unique h₂']
-  | .param _, .param _ => rfl
+    l₁ = l₂ := by
+  intro h₁ h₂
+  exact Option.some.inj ((toRaw_eq_some_iff.mpr h₁).symm.trans (toRaw_eq_some_iff.mpr h₂))
 
 theorem Denotes.inst {us : Array FLevel} {σ : Param ℓ → RawLevel ℓ'} (hus : us.size = ℓ)
     {l : FLevel} {l' : RawLevel ℓ}
@@ -100,25 +124,9 @@ theorem Denotes.inst_of_hasParam_eq_false {l : FLevel} {l' : RawLevel ℓ}
     Denotes l l' →
     Denotes l l'{σ} := by
   intro h
-  induction h with
-  | zero => exact .zero
-  | succ _ ih => exact .succ (ih hp)
-  | max _ _ ih₁ ih₂ =>
-    simp only [hasParam, Bool.or_eq_false_iff] at hp
-    exact .max (ih₁ hp.1) (ih₂ hp.2)
-  | imax _ _ ih₁ ih₂ =>
-    simp only [hasParam, Bool.or_eq_false_iff] at hp
-    exact .imax (ih₁ hp.1) (ih₂ hp.2)
-  | param => cases hp
-
-theorem toRaw_eq_of_denotes {ℓ : Nat} {l : FLevel} {l' : RawLevel ℓ} :
-    Denotes l l' →
-    toRaw ℓ l = some l'
-  | .zero => rfl
-  | .succ h => by simp! [toRaw_eq_of_denotes h]
-  | .max h₁ h₂ => by simp! [toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
-  | .imax h₁ h₂ => by simp! [toRaw_eq_of_denotes h₁, toRaw_eq_of_denotes h₂]
-  | .param h => by simp! [h]
+  choose fl hfl using fun p => denotes_exists (σ p)
+  have hi := h.inst (us := Array.ofFn fl) (by simp) (fun p => by simpa using hfl p)
+  simpa [inst_of_not_hasParam _ hp] using hi
 
 def isNotZero : FLevel → Bool
   | zero => false
@@ -201,8 +209,10 @@ def LevelWF (ℓ : Nat) (l : FLevel) : Prop :=
   ∃ l' : RawLevel ℓ, FLevel.Denotes l l'
 
 theorem LevelWF.choose {ℓ m : Nat} {ls : Array FLevel} (hls : ls.size = m) :
-    (∀ i (hi : i < ls.size), LevelWF ℓ ls[i]) →
-    ∃ ls' : Fin m → RawLevel ℓ, ∀ i, FLevel.Denotes (ls[i.val]'(hls.symm ▸ i.isLt)) (ls' i) :=
-  fun h => Classical.axiomOfChoice fun i : Fin m => h i.val (hls.symm ▸ i.isLt)
+    (∀ i : Fin ls.size, LevelWF ℓ ls[i]) →
+    ∃ ls' : Fin m → RawLevel ℓ, ∀ i, FLevel.Denotes (ls[i.val]'(hls.symm ▸ i.isLt)) (ls' i) := by
+  intro h
+  choose ls' hls' using fun i : Fin m => h ⟨i.val, hls.symm ▸ i.isLt⟩
+  exact ⟨ls', hls'⟩
 
 end Metalean.Checker.Fast

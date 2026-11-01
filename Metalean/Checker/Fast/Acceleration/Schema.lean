@@ -173,21 +173,17 @@ structure Schema.Spec (s : Schema) : Prop where
   wfRhs : WFSpec F 0 s.ctx.size 0 s.rhs
   defeq : DefEqAtSpec F 0 s.ctx s.ty s.lhs s.rhs
 
-def FExpr.checkLevelFree (fe : FExpr) : Except Failure (PLift (fe.data.hasLevelParam = false)) :=
-  if h : fe.data.hasLevelParam = false then pure ⟨h⟩ else throw .internal
-
 def Schema.check (s : Schema) : EIO Failure (PLift (s.Spec F)) := do
   let ⟨hctx⟩ ← checkCtx F hints s.ctx
-  let ⟨hnpCtx⟩ ← Array.forallM s.ctx (fun i hi => (s.ctx[i]'hi).NoProj)
-    fun i hi => guardProofOr (s.ctx[i]'hi).NoProj .internal
-  let ⟨hlfCtx⟩ ← Array.forallM s.ctx (fun i hi => (s.ctx[i]'hi).data.hasLevelParam = false)
-    fun i hi => FExpr.checkLevelFree (s.ctx[i]'hi)
-  let ⟨hnpTy⟩ ← guardProofOr s.ty.NoProj .internal
-  let ⟨hnpLhs⟩ ← guardProofOr s.lhs.NoProj .internal
-  let ⟨hnpRhs⟩ ← guardProofOr s.rhs.NoProj .internal
-  let ⟨hlfTy⟩ ← FExpr.checkLevelFree s.ty
-  let ⟨hlfLhs⟩ ← FExpr.checkLevelFree s.lhs
-  let ⟨hlfRhs⟩ ← FExpr.checkLevelFree s.rhs
+  let hnpCtx ← Fin.sequenceM fun i : Fin s.ctx.size => guardProofOr s.ctx[i].NoProj Failure.internal
+  let hlfCtx ← Fin.sequenceM fun i : Fin s.ctx.size =>
+    guardProofOr (s.ctx[i].data.hasLevelParam = false) Failure.internal
+  let ⟨hnpTy⟩ ← guardProofOr s.ty.NoProj Failure.internal
+  let ⟨hnpLhs⟩ ← guardProofOr s.lhs.NoProj Failure.internal
+  let ⟨hnpRhs⟩ ← guardProofOr s.rhs.NoProj Failure.internal
+  let ⟨hlfTy⟩ ← guardProofOr (s.ty.data.hasLevelParam = false) Failure.internal
+  let ⟨hlfLhs⟩ ← guardProofOr (s.lhs.data.hasLevelParam = false) Failure.internal
+  let ⟨hlfRhs⟩ ← guardProofOr (s.rhs.data.hasLevelParam = false) Failure.internal
   let ⟨hwfTy⟩ ← FExpr.wf F 0 s.ctx.size 0 s.ty
   let ⟨hwfLhs⟩ ← FExpr.wf F 0 s.ctx.size 0 s.lhs
   let ⟨hwfRhs⟩ ← FExpr.wf F 0 s.ctx.size 0 s.rhs
@@ -196,10 +192,10 @@ def Schema.check (s : Schema) : EIO Failure (PLift (s.Spec F)) := do
     ctx := hctx
     noProjCtx := fun _ ht =>
       have ⟨i, hi, hti⟩ := Array.mem_iff_getElem.mp ht
-      hti ▸ hnpCtx i hi
+      hti ▸ hnpCtx.down ⟨i, hi⟩
     levelFreeCtx := fun _ ht =>
       have ⟨i, hi, hti⟩ := Array.mem_iff_getElem.mp ht
-      hti ▸ hlfCtx i hi
+      hti ▸ hlfCtx.down ⟨i, hi⟩
     noProjTy := hnpTy
     noProjLhs := hnpLhs
     noProjRhs := hnpRhs

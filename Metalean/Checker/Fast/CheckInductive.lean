@@ -23,25 +23,22 @@ variable {ζ : Sigs} (F : FEnv) (ℓ : Nat) (hints : PArray Export.Hints)
   (accel : Accel F)
 
 def TeleWFSpec (G : FCtx) (P : Level ℓ → Prop) (ts : FCtx) : Prop :=
-  ∀ ⦃ζ : Sigs⦄ ⦃E : Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx ζ ℓ 0 n⦄ ⦃b : Nat⦄ ⦃Δ₀ : Ctx ζ ℓ n b⦄,
-  Sem F G E Γ →
-  FCtx.Denotes ⟨ζ, E⟩ ts Δ₀ →
-  ∃ Δ : Ctx ζ ℓ n b, FCtx.Denotes ⟨ζ, E⟩ ts Δ ∧ Metalean.TeleWF E P Γ Δ
+  ∀ ⦃E : Σ ζ, Env ζ⦄ ⦃n : Nat⦄ ⦃Γ : Ctx E.1 ℓ 0 n⦄ ⦃b : Nat⦄ ⦃Δ₀ : Ctx E.1 ℓ n b⦄,
+  Sem F G E.2 Γ →
+  FCtx.Denotes E ts Δ₀ →
+  ∃ Δ : Ctx E.1 ℓ n b, FCtx.Denotes E ts Δ ∧ Metalean.TeleWF E.2 P Γ Δ
 
 def TeleEntriesSpec (G : FCtx) (Q : FLevel → Bool) (ts : FCtx) : Prop :=
-  ∀ j (hj : j < ts.size),
+  ∀ j : Fin ts.size,
   ∃ l, SortedAtSpec F ℓ (G ++ ts.extract 0 j) ts[j] l ∧ Q l = true
 
 variable {F ℓ hints accel}
 
-theorem TeleWFSpec.ofSigma {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → Bool}
+theorem TeleWFSpec.of {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → Bool}
     {ts : FCtx}
     (hQ : ∀ {l : FLevel} {l' : RawLevel ℓ}, FLevel.Denotes l l' → Q l = true → P ⟦l'⟧) :
     TeleEntriesSpec F ℓ G Q ts →
-    ∀ {E : Σ ζ, Env ζ} {n : Nat} {Γ : Ctx E.1 ℓ 0 n} {b : Nat} {Δ₀ : Ctx E.1 ℓ n b},
-    Sem F G E.2 Γ →
-    FCtx.Denotes E ts Δ₀ →
-    ∃ Δ : Ctx E.1 ℓ n b, FCtx.Denotes E ts Δ ∧ Metalean.TeleWF E.2 P Γ Δ := by
+    TeleWFSpec F ℓ G P ts := by
   intro h E _ _ _ _ hS hΔ₀
   induction hΔ₀ with
   | nil => exact ⟨.nil, .nil, .nil⟩
@@ -50,35 +47,24 @@ theorem TeleWFSpec.ofSigma {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → B
       intro j hj
       rw [Array.extract_push_of_le hj]
     have h₀ : TeleEntriesSpec F ℓ G Q ts₀ := by
-      intro j hj
-      have ⟨l, hl, hQl⟩ := h j (by simp; omega)
-      rw [hpre j (by omega)] at hl
-      have hidx : (ts₀.push ft)[j]'(by simp; omega) = ts₀[j] := Array.getElem_push_lt hj
-      rw [hidx] at hl
-      exact ⟨l, hl, hQl⟩
+      intro j
+      have ⟨l, hl, hQl⟩ := h ⟨j.val, by simp; omega⟩
+      rw [hpre j.val j.isLt.le] at hl
+      exact ⟨l, by simpa [Array.getElem_push_lt j.isLt] using hl, hQl⟩
     have ⟨Δ, hΔ, hwf⟩ := ih h₀
-    have ⟨l, hl, hQl⟩ := h ts₀.size (by simp)
+    have ⟨l, hl, hQl⟩ := h ⟨ts₀.size, by simp⟩
     rw [hpre ts₀.size le_rfl, Array.extract_size] at hl
     have ⟨t', l', ht', hl', hty⟩ := hl (hS.append hΔ hwf) (by simpa using ht)
     exact ⟨Δ.snoc t', hΔ.snoc (by simpa using ht'), .snoc hwf ⟨⟦l'⟧, hQ hl' hQl, hty⟩⟩
-
-theorem TeleWFSpec.of {G : FCtx} {P : Level ℓ → Prop} {Q : FLevel → Bool}
-    {ts : FCtx}
-    (hQ : ∀ {l : FLevel} {l' : RawLevel ℓ}, FLevel.Denotes l l' → Q l = true → P ⟦l'⟧) :
-    TeleEntriesSpec F ℓ G Q ts →
-    TeleWFSpec F ℓ G P ts := fun h {ζ E} _ _ _ _ hS hΔ =>
-  TeleWFSpec.ofSigma hQ h (E := ⟨ζ, E⟩) hS hΔ
 
 variable (F ℓ hints accel)
 
 def checkTeleEntries (G : FCtx) (Q : FLevel → Bool) (ts : FCtx) :
     CheckM F ℓ (PLift (TeleEntriesSpec F ℓ G Q ts)) :=
-  Array.forallM ts
-    (fun j hj => ∃ l, SortedAtSpec F ℓ (G ++ ts.extract 0 j) ts[j] l ∧ Q l = true)
-    fun j hj => do
-      let r ← inferSortedLevel F ℓ hints accel (G ++ ts.extract 0 j) ts[j]
-      let hQ ← guardProofOr (Q r.1 = true) (Failure.reject .fieldLevel)
-      pure ⟨r.1, r.2.down, hQ.down⟩
+  Fin.sequenceM fun j : Fin ts.size => do
+    let r ← inferSortedLevel F ℓ hints accel (G ++ ts.extract 0 j) ts[j]
+    let hQ ← guardProofOr (Q r.1 = true) (Failure.reject .fieldLevel)
+    pure ⟨r.1, r.2.down, hQ.down⟩
 
 def checkTele (G : FCtx) (P : Level ℓ → Prop) (Q : FLevel → Bool)
     (hQ : ∀ {l : FLevel} {l' : RawLevel ℓ}, FLevel.Denotes l l' → Q l = true → P ⟦l'⟧)
@@ -132,7 +118,7 @@ theorem levelOK_of_levelOKB {E : Env ζ} {ι : IndSig} {fI : FInductive}
   intro hI hl
   have ⟨lv, hlv, hlv'⟩ := hI.level
   unfold levelOKB at h
-  simp only [FLevel.toRaw_eq_of_denotes hl, FLevel.toRaw_eq_of_denotes hlv, decide_eq_true_eq] at h
+  simp only [FLevel.toRaw_eq_some_iff.mpr hl, FLevel.toRaw_eq_some_iff.mpr hlv, decide_eq_true_eq] at h
   change Level.imax ⟦l'⟧ I.level ≤ I.level
   rw [← hlv']
   exact h
@@ -304,7 +290,7 @@ def checkRecField (ι : IndSig) (fI : FInductive) (s : Fin ι.nsorts) (c : Fin (
     have hfd := hc.recursive r
     have hS₀ := hS.append (hc.ordinaryTele (ι.ctors s c).nfields le_rfl) hwf
     have ⟨Δ, hΔ, hΔwf⟩ :=
-      TeleWFSpec.of (fun hl hQ => levelOK_of_levelOKB hQ hI hl) htele hS₀ hfd.tele
+      TeleWFSpec.of (E := ⟨_, E⟩) (fun hl hQ => levelOK_of_levelOKB hQ hI hl) htele hS₀ hfd.tele
     have hσ (p : Fin ι.nparams) :
         E[I.params ++ ctor.ordinaryTele ++ Δ] ⊢ (.var ⟨p.val, by omega⟩ : Expr _ ι.nlevels _) :
           I.paramType Level.param (fun q => .var ⟨q.val, by omega⟩) p := by
@@ -407,10 +393,10 @@ def checkInductive (ι : IndSig) (fI : FInductive) :
         hindicesLt hindexLt
   pure ⟨fun {ζ E I₀} hF hE hI₀ => by
     have hSnil := Sem.nil (ℓ := ι.nlevels) hF hE
-    have ⟨Δp, hΔp, hwfp⟩ := hparams hSnil hI₀.params
+    have ⟨Δp, hΔp, hwfp⟩ := hparams (E := ⟨ζ, E⟩) hSnil hI₀.params
     have hSp : Sem F fI.params E Δp := by
       simpa using hSnil.append hΔp hwfp
-    have hidx := fun t => hindices t hSp (hI₀.indices t)
+    have hidx := fun t => hindices t (E := ⟨ζ, E⟩) hSp (hI₀.indices t)
     choose Δi hΔi hwfi using hidx
     have hI₁ : FInductive.Denotes ⟨ζ, E⟩ fI { I₀ with params := Δp, indices := Δi } :=
       ⟨hΔp, hI₀.indicesSize, hΔi, hI₀.level, hI₀.ctorsSize, hI₀.ctorsRow, hI₀.ctors⟩

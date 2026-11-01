@@ -20,6 +20,7 @@ import Metalean.Metatheory.Unique
 public import Metalean.Checker.Fast.Coherence
 import Metalean.Typing.Env
 import Metalean.Typing.Telescope
+import Metalean.Typing.Structure
 
 @[expose] public section
 
@@ -185,10 +186,10 @@ structure Caches where
   failure : Std.HashSet (FExpr × FExpr) := ∅
   unfold : Std.DHashMap (Nat × Array FLevel)
     (fun ⟨pos, ls⟩ => {v : FExpr // UnfoldsTo F pos ls v}) := ∅
-  intern : Std.HashMap FExpr FExpr := ∅
-  ancestors : Std.HashMap USize ((G : FCtx) × FCtx.Ancestors G) := ∅
-  push : Std.HashMap (USize × USize)
-    ((k : FCtx × FExpr) × {G : FCtx // G = k.1.push k.2}) := ∅
+  intern : Std.HashSet FExpr := ∅
+  ancestors : Std.DHashMap FCtx FCtx.Ancestors := ∅
+  push : Std.DHashMap (FCtx × FExpr)
+    (fun ⟨G, t⟩ => {G' : FCtx // G' = G.push t}) := ∅
 
 abbrev CheckM := StateRefT (Caches F ℓ) (EIO Failure)
 
@@ -214,6 +215,41 @@ theorem Sem.snoc {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
     (ht : FExpr.Denotes ⟨ζ, E⟩ 0 ft t) (hty : E[Γ] ⊢ t : .sort l) :
     Sem F (G.push ft) E (Γ.snoc t) :=
   ⟨hS.env, hS.wf, hS.ctx.snoc ht, hS.ctxWF.snoc ⟨l, hty⟩⟩
+
+theorem Sem.proj {G : FCtx} {E : Env ζ} {n : Nat} {Γ : Ctx ζ ℓ 0 n}
+    (hS : Sem F G E Γ) {pos s idx : Nat} {ι : IndSig} {I : FInductive}
+    {ls : Array FLevel} {ps is : FCtx} {fe : FExpr} {e₀ e T : Expr ζ ℓ n}
+    (hfe : F[pos]? = some (.inductive ι I)) (hsc : s < I.ctors.size)
+    (hcc : 0 < (I.ctors[s]'hsc).size)
+    (hidx : idx < ((I.ctors[s]'hsc)[0]'hcc).ordinary.size) :
+    FExpr.Denotes ⟨ζ, E⟩ 0 (.proj pos s idx fe) e₀ →
+    FExpr.Denotes ⟨ζ, E⟩ 0 fe e →
+    FExpr.Denotes ⟨ζ, E⟩ 0 (.ind pos s ls ps is) T →
+    E[Γ] ⊢ e : T →
+    ∃ e' t, FExpr.Denotes ⟨ζ, E⟩ 0 (.proj pos s idx fe) e' ∧
+      FExpr.Denotes ⟨ζ, E⟩ 0
+        (((I.ctors[s]'hsc)[0]'hcc).projType pos s ls ps idx hidx fe) t ∧ E[Γ] ⊢ e' : t := by
+  intro hproj he ht hety
+  have .proj (η := η) (s' := s') (c' := c') (f' := f') hstruct hη hs hidx' _ := hproj
+  subst hs hidx'
+  have .ind (ls' := ls') (ps' := ps') (is' := is') hls hps his hη' hs' hls' hps' his' := ht
+  cases hη'.symm.trans hη
+  obtain rfl := (Fin.ext hs').symm
+  have ⟨η₀, hη₀, hI⟩ := hS.env.inductive hfe
+  cases hη.symm.trans hη₀
+  have ⟨_, hindTy⟩ := hety.regular
+  have ⟨_, _, hpsw, _, _⟩ := hindTy.ind_inv
+  have hB := (hS.wf.entryWF η₀).block
+  have hpsT := fun p => Inductive.paramType_conv hB p hpsw
+  have hind : E[Γ] ⊢ .ind η₀ s' (⟦ls' ·⟧) ps' is' ≡
+      .ind η₀ s' (⟦ls' ·⟧) ps' hstruct.indices typ :=
+    .ofDefEq (Defeq.indDF hpsT hstruct.no_indices.elim)
+  have hty := hstruct.projTerm_hasType hB f' hS.ctxWF hpsT (hind.conv hety)
+  have hn := Fin.eq_one_of_unique c' hstruct.ctor_unique
+  obtain rfl : c' = ⟨0, hn ▸ Nat.zero_lt_one⟩ := Fin.ext (by omega)
+  have hd := (hI.ctors _ ⟨0, hn ▸ Nat.zero_lt_one⟩).projType hls hls' ⟨hps, hps'⟩
+    hη hstruct he f'
+  exact ⟨_, _, .proj (ls' := ls') (ps' := ps') hstruct hη rfl rfl he, hd, hty⟩
 
 theorem InferSpec.push {G : FCtx} {fe ft : FExpr} (t : FExpr)
     (hr : fe.fvarRange ≤ G.size) (hc : fe.data.looseBVarRange.toNat = 0) :

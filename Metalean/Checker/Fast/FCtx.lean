@@ -56,9 +56,6 @@ structure FCtx.Ancestors (G : FCtx) where
   size_le : arr.size ≤ G.size + 1
   spec : ∀ i (h : i < arr.size), i ≤ arr[i].size ∧ FCtx.Extends arr[i] G
 
-def FCtx.Ancestors.cast {G₁ G₂ : FCtx} (h : G₁ = G₂) (a : FCtx.Ancestors G₁) : FCtx.Ancestors G₂ :=
-  h ▸ a
-
 def FCtx.Ancestors.root (G : FCtx) : FCtx.Ancestors G where
   arr := Array.replicate (G.size + 1) G
   size_le := by simp

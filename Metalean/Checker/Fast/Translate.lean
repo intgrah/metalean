@@ -38,12 +38,12 @@ def translateLevel (lps : List Name) :
     | none => throw (.reject .unknownLevelParam)
 
 def translateLevels (lps : List Name) (us : List Export.Level) :
-    Except Failure {ls : Array FLevel // ∀ i (h : i < ls.size), LevelWF lps.length ls[i]} := do
+    Except Failure {ls : Array FLevel // ∀ i : Fin ls.size, LevelWF lps.length ls[i]} := do
   let rs ← us.mapM (translateLevel lps)
   pure ⟨(rs.map Subtype.val).toArray, by
-    intro i hi
+    intro i
     have hmem : (rs.map Subtype.val).toArray[i] ∈ rs.map Subtype.val :=
-      List.getElem_mem _
+      List.getElem_mem (by simpa using i.isLt)
     have ⟨r, hr, hval⟩ := List.mem_map.mp hmem
     exact hval ▸ r.2⟩
 
@@ -227,23 +227,23 @@ theorem teleWF_push {ℓ n : Nat} {Δ : Array FExpr} {t : FExpr}
     exact ht
 
 theorem arrWF_extract {ℓ n k : Nat} {a : Array FExpr}
-    (h : ∀ i (hi : i < a.size), WFSpec F ℓ n k a[i]) (lo hi : Nat) :
+    (h : ArrWF F ℓ n k a) (lo hi : Nat) :
     ArrWF F ℓ n k (a.extract lo hi) := by
-  intro i hi'
-  rw [Array.getElem_extract]
-  exact h _ _
+  intro i
+  rw [Fin.getElem_fin, Array.getElem_extract]
+  exact h ⟨_, by have := i.isLt; simp at this; omega⟩
 
 theorem arrWF_ofFn {ℓ n k m : Nat} {f : Fin m → Witnessed F ℓ n k} :
     ArrWF F ℓ n k (Array.ofFn fun i => (f i).val) := by
-  intro i hi
-  rw [Array.getElem_ofFn]
+  intro i
+  rw [Fin.getElem_fin, Array.getElem_ofFn]
   exact (f _).2
 
 theorem arrWF_witnessed {ℓ n k : Nat} (a : Array (Witnessed F ℓ n k)) :
-    ∀ i (hi : i < (a.map Subtype.val).size), WFSpec F ℓ n k (a.map Subtype.val)[i] := by
-  intro i hi
-  rw [Array.getElem_map]
-  exact (a[i]'(by simpa using hi)).2
+    ArrWF F ℓ n k (a.map Subtype.val) := by
+  intro i
+  rw [Fin.getElem_fin, Array.getElem_map]
+  exact (a[i.val]'(by simpa using i.isLt)).2
 
 def natPos (t : Table) : Except Failure Nat :=
   (t.ind ``Nat).mapError fun _ => .decline .literal
@@ -716,7 +716,7 @@ def preRecField {nsorts : Nat} (nparams : Nat) (sd : Fin nsorts → Frontend.Sor
     (Failure.reject .arity)
   pure ⟨⟨tele, (is.map Subtype.val).toArray⟩,
     hteleSize, hteleWF, by simpa using hisSize,
-    fun i hi => mem_witnessed F (List.getElem_mem _)⟩
+    fun i => mem_witnessed F (List.getElem_mem (by simpa using i.isLt))⟩
 
 def ordinaryFields {nsorts : Nat} (nparams : Nat) (params : Array FExpr)
     (shape : Frontend.CtorShape nsorts) :

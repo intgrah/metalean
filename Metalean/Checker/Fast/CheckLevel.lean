@@ -29,22 +29,11 @@ def LevelEqSpec (l₁ l₂ : FLevel) : Prop :=
 
 end
 
-def checkLevel (ℓ : Nat) :
-    (l : FLevel) → Except Failure {l' : RawLevel ℓ // FLevel.Denotes l l'}
-  | .zero => pure ⟨.zero, .zero⟩
-  | .succ l => do
-    let ⟨l', h⟩ ← checkLevel ℓ l
-    pure ⟨.succ l', .succ h⟩
-  | .max l₁ l₂ => do
-    let ⟨l₁', h₁⟩ ← checkLevel ℓ l₁
-    let ⟨l₂', h₂⟩ ← checkLevel ℓ l₂
-    pure ⟨.max l₁' l₂', .max h₁ h₂⟩
-  | .imax l₁ l₂ => do
-    let ⟨l₁', h₁⟩ ← checkLevel ℓ l₁
-    let ⟨l₂', h₂⟩ ← checkLevel ℓ l₂
-    pure ⟨.imax l₁' l₂', .imax h₁ h₂⟩
-  | .param p =>
-    if h : p < ℓ then pure ⟨.param ⟨p, h⟩, .param h⟩ else throw (.reject .unknownLevelParam)
+def checkLevel (ℓ : Nat) (l : FLevel) :
+    Except Failure {l' : RawLevel ℓ // FLevel.Denotes l l'} :=
+  match h : l.toRaw ℓ with
+  | some l' => pure ⟨l', FLevel.toRaw_eq_some_iff.mp h⟩
+  | none => throw (.reject .unknownLevelParam)
 
 def FLevel.isZero (ℓ : Nat) (l : FLevel) : Except Failure Bool :=
   match l.toRaw ℓ with
@@ -52,10 +41,10 @@ def FLevel.isZero (ℓ : Nat) (l : FLevel) : Except Failure Bool :=
   | none => throw (.reject .unknownLevelParam)
 
 def checkLevels (ℓ : Nat) (ls : Array FLevel) :
-    Except Failure (PLift (∀ i (h : i < ls.size), LevelWF ℓ ls[i])) :=
-  Array.forallM ls (fun i h => LevelWF ℓ ls[i]) fun i h => do
-    let ⟨_, hl⟩ ← checkLevel ℓ (ls[i]'h)
-    pure ⟨_, hl⟩
+    Except Failure (PLift (∀ i : Fin ls.size, LevelWF ℓ ls[i])) :=
+  Fin.sequenceM fun i : Fin ls.size => do
+    let r ← checkLevel ℓ ls[i]
+    pure ⟨r.val, r.property⟩
 
 def isDefEqLevel (ℓ : Nat) (l₁ l₂ : FLevel) : Except Failure (PLift (LevelEqSpec ℓ l₁ l₂)) := do
   if h : l₁ = l₂ then

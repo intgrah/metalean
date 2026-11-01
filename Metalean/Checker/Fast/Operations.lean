@@ -261,11 +261,10 @@ def instAt (fa : FExpr) (d : Nat) (fe : FExpr) : FExpr :=
   rewrite Nat.succ (instAtStep fa) id d fe
 
 def abstractAtStep (x d : Nat) (fe : FExpr) : Option FExpr :=
-  if fe.data.hasFVar then
-    match fe with
+  if fe.fvarRange ≤ x then some fe
+  else match fe with
     | .fvar i => some (if i = x then .bvar d else fe)
     | _ => none
-  else some fe
 
 @[implemented_by abstractAtShared]
 def abstractAt (x d : Nat) (fe : FExpr) : FExpr :=
@@ -351,9 +350,13 @@ end
 unsafe def instLShared (us : Array FLevel) (fe : FExpr) : FExpr :=
   (instLCached us fe).run' ∅
 
+def instLStep (_ : Unit) : FExpr → Option FExpr
+  | fe@(.bvar _) | fe@(.fvar _) => some fe
+  | _ => none
+
 @[implemented_by instLShared]
 def instL (us : Array FLevel) (fe : FExpr) : FExpr :=
-  rewrite id (fun (_ : Unit) fe => if fe.data.hasLevelParam then none else some fe) (·{us}) () fe
+  rewrite id instLStep (·{us}) () fe
 
 
 instance : InstLevel (Array FLevel) FExpr FExpr := ⟨FExpr.instL⟩
@@ -502,12 +505,29 @@ theorem LamBody.instAt {m : Nat} {f b : FExpr} (a : FExpr) (d : Nat) :
 
 theorem abstractAt_of_not_hasFVar (x d : Nat) {fe : FExpr} (h : fe.data.hasFVar = false) :
     abstractAt x d fe = fe := by
-  simp [abstractAt, rewrite, abstractAtStep, h]
+  simp [abstractAt, rewrite, abstractAtStep, (hasFVar_eq_false_iff fe).mp h]
 
 theorem instL_of_not_hasLevelParam (us : Array FLevel) {fe : FExpr}
     (h : fe.data.hasLevelParam = false) :
     instL us fe = fe := by
-  simp [instL, rewrite, h]
+  induction fe using FExpr.rec
+      (motive_2 := fun es => ∀ e ∈ es, e.data.hasLevelParam = false → instL us e = e)
+      (motive_3 := fun es => ∀ e ∈ es, e.data.hasLevelParam = false → instL us e = e)
+  case mk es ih e he hp => exact ih e (Array.mem_def.mp he) hp
+  case nil e he hp => cases he
+  case cons head tail ih₁ ih₂ e he hp =>
+    rcases List.mem_cons.mp he with rfl | he
+    · exact ih₁ hp
+    · exact ih₂ e he hp
+  all_goals simp only [instL] at *
+  all_goals rw [rewrite]
+  all_goals simp_all [instLStep, rewriteCore, Data.hasLevelParam_mk,
+    Data.hasLevelParam_mkApp, Data.hasLevelParam_mkBinder, Data.hasLevelParam_mkLet,
+    Data.hasLevelParam_mkArr_eq_false, FLevel.inst_of_not_hasParam, or_imp, forall_and]
+  all_goals repeat' apply And.intro
+  all_goals apply Array.ext (by simp)
+  all_goals intro i hi hi'
+  all_goals simp_all [FLevel.inst_of_not_hasParam, Array.getElem_mem]
 
 unsafe def instFVarsShared (args : Array FExpr) (fe : FExpr) : FExpr :=
   replaceShared (fun _ fe =>
@@ -573,12 +593,6 @@ unsafe def ReplaceCache.instFVarsShared (args : Array FExpr) (fe : FExpr) (c : R
 def ReplaceCache.instFVars (args : Array FExpr) (fe : FExpr) (c : ReplaceCache) :
     FExpr × ReplaceCache :=
   (fe.instFVars args, c)
-
-unsafe def addrImpl (fe : FExpr) : USize :=
-  ptrAddrUnsafe fe
-
-@[implemented_by addrImpl]
-opaque addr (fe : FExpr) : USize
 
 def peelLams : (max : Nat) → (f : FExpr) → (m : Nat) × {b : FExpr // LamBody m f b ∧ m ≤ max}
   | max + 1, .lam _ f =>

@@ -173,42 +173,27 @@ theorem looseBVarRange_le_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : 
   · exact UInt32.le_trans (ih i hi hlt) (looseBVarRange_le_mkApp_left _ _)
   · exact looseBVarRange_le_mkApp_right _ _
 
-theorem hasFVar_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : Data} (hd : d ∈ ds)
-    (hf : d.hasFVar = true) :
-    (mkArr h lp ds).hasFVar = true := by
-  obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hd
-  refine Array.foldl_induction
-    (motive := fun j (acc : Data) => ∀ i (hi : i < ds.size), i < j → ds[i].hasFVar = true →
-      acc.hasFVar = true)
-    (fun _ _ h => absurd h (Nat.not_lt_zero _))
-    (fun j acc ih i hi hij hf => ?_)
-    i hi hi hf
-  rw [hasFVar_mkApp]
-  rcases Nat.lt_succ_iff_lt_or_eq.mp hij with hlt | rfl
-  · simp [ih i hi hlt hf]
-  · simp [hf]
+theorem hasFVar_mkArr_eq_false (h : UInt64) (lp : Bool) (ds : Array Data) :
+    (mkArr h lp ds).hasFVar = false ↔ ∀ d ∈ ds, d.hasFVar = false := by
+  rcases ds with ⟨ds⟩
+  have hfold (init : Data) :
+      (ds.foldl mkApp init).hasFVar = false ↔
+        init.hasFVar = false ∧ ∀ d ∈ ds, d.hasFVar = false := by
+    induction ds generalizing init with
+    | nil => simp
+    | cons d ds ih => simp [List.foldl, ih, hasFVar_mkApp, and_assoc]
+  simpa [mkArr, ← Array.foldl_toList, hasFVar_mk] using hfold (mk h 0 0 false lp)
 
-theorem hasLevelParam_mkArr_init (h : UInt64) (ds : Array Data) :
-    (mkArr h true ds).hasLevelParam = true := by
-  refine Array.foldl_induction (motive := fun _ (acc : Data) => acc.hasLevelParam = true)
-    (hasLevelParam_mk ..) fun _ acc ih => ?_
-  rw [hasLevelParam_mkApp, ih]
-  rfl
-
-theorem hasLevelParam_mkArr (h : UInt64) (lp : Bool) (ds : Array Data) {d : Data} (hd : d ∈ ds)
-    (hp : d.hasLevelParam = true) :
-    (mkArr h lp ds).hasLevelParam = true := by
-  obtain ⟨i, hi, rfl⟩ := Array.mem_iff_getElem.mp hd
-  refine Array.foldl_induction
-    (motive := fun j (acc : Data) => ∀ i (hi : i < ds.size), i < j → ds[i].hasLevelParam = true →
-      acc.hasLevelParam = true)
-    (fun _ _ h => absurd h (Nat.not_lt_zero _))
-    (fun j acc ih i hi hij hp => ?_)
-    i hi hi hp
-  rw [hasLevelParam_mkApp]
-  rcases Nat.lt_succ_iff_lt_or_eq.mp hij with hlt | rfl
-  · simp [ih i hi hlt hp]
-  · simp [hp]
+theorem hasLevelParam_mkArr_eq_false (h : UInt64) (lp : Bool) (ds : Array Data) :
+    (mkArr h lp ds).hasLevelParam = false ↔ lp = false ∧ ∀ d ∈ ds, d.hasLevelParam = false := by
+  rcases ds with ⟨ds⟩
+  have hfold (init : Data) :
+      (ds.foldl mkApp init).hasLevelParam = false ↔
+        init.hasLevelParam = false ∧ ∀ d ∈ ds, d.hasLevelParam = false := by
+    induction ds generalizing init with
+    | nil => simp
+    | cons d ds ih => simp [List.foldl, ih, hasLevelParam_mkApp, and_assoc]
+  simpa [mkArr, ← Array.foldl_toList, hasLevelParam_mk] using hfold (mk h 0 0 false lp)
 
 theorem closed_of_mem {h : UInt64} {lp : Bool} {ds : Array Data} {d : Data} {k : Nat}
     (hle : (mkArr h lp ds).looseBVarRange.toNat ≤ k)
@@ -256,30 +241,6 @@ theorem closed_of_mkLet {t v b : Data} {k : Nat} (hle : (mkLet t v b).looseBVarR
   have ⟨htv, hb⟩ := closed_of_binderRange hle hlt
   exact ⟨closed_of_mkApp_left htv.1 htv.2, closed_of_mkApp_right htv.1 htv.2, hb⟩
 
-theorem hasFVar_eq_false_of_mem {h : UInt64} {lp : Bool} {ds : Array Data} {d : Data}
-    (hf : (mkArr h lp ds).hasFVar = false) (hd : d ∈ ds) :
-    d.hasFVar = false := by
-  cases hd' : d.hasFVar
-  · rfl
-  · rw [hasFVar_mkArr h lp ds hd hd'] at hf
-    cases hf
-
-theorem hasLevelParam_eq_false_of_mem {h : UInt64} {lp : Bool} {ds : Array Data} {d : Data}
-    (hp : (mkArr h lp ds).hasLevelParam = false) (hd : d ∈ ds) :
-    d.hasLevelParam = false := by
-  cases hd' : d.hasLevelParam
-  · rfl
-  · rw [hasLevelParam_mkArr h lp ds hd hd'] at hp
-    cases hp
-
-theorem hasLevelParam_eq_false_init {h : UInt64} {lp : Bool} {ds : Array Data}
-    (hp : (mkArr h lp ds).hasLevelParam = false) :
-    lp = false := by
-  cases lp
-  · rfl
-  · rw [hasLevelParam_mkArr_init] at hp
-    cases hp
-
 def maxArr (xs : Array Nat) : Nat :=
   xs.foldl max 0
 
@@ -298,10 +259,14 @@ theorem maxArr_le {xs : Array Nat} {b : Nat} (h : ∀ x ∈ xs, x ≤ b) : maxAr
   Array.foldl_induction (motive := fun _ (acc : Nat) => acc ≤ b) (Nat.zero_le _)
     (fun _ _ ih => Nat.max_le.mpr ⟨ih, h _ (Array.getElem_mem _)⟩)
 
-theorem maxArr_bound {xs : Array Nat} {x d m : Nat} (h : maxArr xs + d + 1 ≤ m) (hx : x ∈ xs) :
-    x + d + 1 ≤ m := by
-  have := le_maxArr hx
-  omega
+@[simp] theorem maxArr_eq_zero {xs : Array Nat} :
+    maxArr xs = 0 ↔ ∀ x ∈ xs, x = 0 := by
+  constructor
+  · intro h x hx
+    have := le_maxArr hx
+    omega
+  · intro h
+    exact Nat.eq_zero_of_le_zero (maxArr_le fun x hx => (h x hx).le)
 
 end Data
 
@@ -593,6 +558,19 @@ theorem fvarRange_mem_map {xs : Array FExpr} {i : Nat} (h : i < xs.size) :
 theorem data_mem_map {xs : Array FExpr} {i : Nat} (h : i < xs.size) :
     xs[i].data ∈ xs.map data :=
   Array.mem_map.mpr ⟨_, Array.getElem_mem h, rfl⟩
+
+theorem hasFVar_eq_false_iff (fe : FExpr) :
+    fe.data.hasFVar = false ↔ fe.fvarRange = 0 := by
+  induction fe using FExpr.rec
+      (motive_2 := fun es => ∀ e ∈ es, e.data.hasFVar = false ↔ e.fvarRange = 0)
+      (motive_3 := fun es => ∀ e ∈ es, e.data.hasFVar = false ↔ e.fvarRange = 0) <;>
+    simp_all [Data.hasFVar_mk, Data.hasFVar_mkApp, Data.hasFVar_mkBinder,
+      Data.hasFVar_mkLet, Data.hasFVar_mkArr_eq_false, or_imp, forall_and, and_assoc]
+  case strLit => simp [data, Data.hasFVar_mk]
+  case cons head tail ih₁ ih₂ e he =>
+    rcases he with rfl | he
+    · exact ih₁
+    · exact ih₂ e he
 
 def listDecEqOf {α : Type _} : (xs ys : List α) → (∀ x ∈ xs, ∀ y, Decidable (x = y)) →
     Decidable (xs = ys)

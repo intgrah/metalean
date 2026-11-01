@@ -247,10 +247,10 @@ def check (leanElim : Bool) (ds : Declarations) :
         if logNow then ds.log d start
         front ← settle st.pending front
     let pending := st.pending
-    let ⟨h⟩ ← pending.forallM (fun i hi => (pending[i]'hi).P) fun i hi => (pending[i]'hi).result
+    let h ← Fin.sequenceM fun i : Fin pending.size => pending[i].result
     pure ⟨st.F, st.denotes fun _ ho =>
       have ⟨i, hi, hio⟩ := Array.mem_iff_getElem.mp ho
-      hio ▸ h i hi⟩)
+      hio ▸ h.down ⟨i, hi⟩⟩)
     ds.pool.shutdown
 
 end Metalean.Checker.Fast

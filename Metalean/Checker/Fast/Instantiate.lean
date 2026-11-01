@@ -358,185 +358,6 @@ theorem Ren.Shifts.lift {m n k : Nat} {ρ : Ren m n} (h : Ren.Shifts k ρ) :
 
 variable {E : Σ ζ, Env ζ} 
 
-theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k' : Nat}
-    (ρ : Ren m n) (hk : k ≤ k') (hmn : m + k' ≤ n + k) (hρ : Ren.Shifts k ρ) :
-    FExpr.Denotes E k fe e →
-    FExpr.Denotes E k' fe (e.rename ρ) := by
-  intro h
-  induction h generalizing n k' with
-  | @bvar m k i j hi hj =>
-    have hv := hρ.bound ⟨i, by omega⟩ (by simp; omega)
-    have : ρ ⟨i, by omega⟩ = ⟨n - 1 - j, by omega⟩ := Fin.ext (by simp at hv ⊢; omega)
-    simpa [this] using .bvar (by omega) (by omega)
-  | @fvar m k i hi =>
-    have hv := hρ.free ⟨i, by omega⟩ (by simp; omega)
-    have : ρ ⟨i, by omega⟩ = ⟨i, by omega⟩ := Fin.ext hv
-    simpa [this] using .fvar (by omega)
-  | sort hl => exact .sort hl
-  | const hls hη hls' => exact .const hls hη hls'
-  | ind hls hps his hη hs hls' _ _ ihps ihis =>
-    exact .ind hls hps his hη hs hls'
-      (fun p => ihps p ρ hk hmn hρ)
-      (fun i => ihis i ρ hk hmn hρ)
-  | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
-    exact .ctor hls hps hfds hrecFds hη hs hc hls'
-      (fun p => ihps p ρ hk hmn hρ)
-      (fun f => ihfds f ρ hk hmn hρ)
-      (fun f => ihrecFds f ρ hk hmn hρ)
-  | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
-    exact .recr hls hps hms hmins his hη hs hls' hl
-      (fun p => ihps p ρ hk hmn hρ)
-      (fun fe => ihms fe ρ hk hmn hρ)
-      (fun fe c => ihmins fe c ρ hk hmn hρ)
-      (fun i => ihis i ρ hk hmn hρ)
-      (ihmaj ρ hk hmn hρ)
-  | quot hη hl _ _ ihα ihr => exact .quot hη hl (ihα ρ hk hmn hρ) (ihr ρ hk hmn hρ)
-  | quotMk hη hl _ _ _ ihα ihr iha =>
-    exact .quotMk hη hl (ihα ρ hk hmn hρ) (ihr ρ hk hmn hρ) (iha ρ hk hmn hρ)
-  | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    exact .quotLift hη hl₁ hl₂
-      (ihα ρ hk hmn hρ)
-      (ihr ρ hk hmn hρ)
-      (ihβ ρ hk hmn hρ)
-      (ihf ρ hk hmn hρ)
-      (ihh ρ hk hmn hρ)
-      (iha ρ hk hmn hρ)
-  | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
-    exact .quotInd hη hl
-      (ihα ρ hk hmn hρ)
-      (ihr ρ hk hmn hρ)
-      (ihβ ρ hk hmn hρ)
-      (ihf ρ hk hmn hρ)
-      (iha ρ hk hmn hρ)
-  | proj hstruct hη hs hidx _ ihe =>
-    rw [← Expr.subst_vars, Inductive.IsStructure.projTerm_subst]
-    simpa using .proj hstruct hη hs hidx (ihe ρ hk hmn hρ)
-  | app _ _ ihf iha => exact .app (ihf ρ hk hmn hρ) (iha ρ hk hmn hρ)
-  | lam _ _ iht ihb => exact .lam (iht ρ hk hmn hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
-  | forallE _ _ iht ihb =>
-    exact .forallE (iht ρ hk hmn hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
-  | letE _ _ _ iht ihv ihb =>
-    exact .letE (iht ρ hk hmn hρ) (ihv ρ hk hmn hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
-  | natLit hNat =>
-    rw [← Expr.subst_vars, Expr.natLit_subst]
-    exact .natLit hNat
-  | strLit hNat hList hChar hOfNat hString =>
-    simpa using .strLit hNat hList hChar hOfNat hString
-
-theorem FExpr.Denotes.wkOpen {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
-    FExpr.Denotes E 0 fe e →
-    FExpr.Denotes E 1 fe e.wk := fun h =>
-  h.rename _ (Nat.zero_le 1) (by omega) ⟨fun v _ => by simp, fun v hv => by omega⟩
-
-theorem FExpr.Denotes.wk {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
-    FExpr.Denotes E 0 fe e →
-    FExpr.Denotes E 0 fe e.wk := fun h =>
-  h.rename _ le_rfl (by omega) ⟨fun v hv => by simp, fun v hv => by omega⟩
-
-theorem FExpr.Denotes.wkClosed {fe : FExpr} {e : Expr E.1 ℓ 0}
-    (h : FExpr.Denotes E 0 fe e) :
-    (n : Nat) →
-    FExpr.Denotes E 0 fe (e.wkClosed (n := n))
-  | 0 => h
-  | n + 1 => (h.wkClosed n).wk
-
-section
-
-variable {n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n}
-
-theorem FExpr.Denotes.wkN (h : FExpr.Denotes E 0 ft e) :
-    (k : Nat) →
-    FExpr.Denotes E 0 ft (e.wkN k)
-  | 0 => h
-  | k + 1 => (h.wkN k).wk
-
-theorem FExpr.Denotes.wkNOpen (k : Nat) :
-    FExpr.Denotes E 0 ft e →
-    FExpr.Denotes E k ft (e.wkN k) := by
-  intro h
-  rw [Expr.wkN_eq_rename]
-  exact h.rename _ (Nat.zero_le k) (by omega)
-    ⟨fun v _ => rfl, fun v hv => absurd v.isLt (by omega)⟩
-
-end
-
-theorem FExpr.Denotes.noFVar {m d : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
-    (hf : fe.data.hasFVar = false) :
-    FExpr.Denotes E d fe e →
-    FExpr.Denotes E (d + 1) fe e := by
-  intro h
-  induction h with
-  | bvar hi hj => exact .bvar hi (by omega)
-  | fvar hi =>
-    rw [FExpr.data_fvar, Data.hasFVar_mk] at hf
-    cases hf
-  | sort hl => exact .sort hl
-  | const hls hη hls' => exact .const hls hη hls'
-  | ind hls hps his hη hs hls' _ _ ihps ihis =>
-    rw [FExpr.data_ind] at hf
-    exact .ind hls hps his hη hs hls'
-      (fun p => ihps p (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun i => ihis i (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-  | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
-    rw [FExpr.data_ctor] at hf
-    exact .ctor hls hps hfds hrecFds hη hs hc hls'
-      (fun p => ihps p (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun f => ihfds f (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun f => ihrecFds f (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-  | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
-    rw [FExpr.data_recr] at hf
-    exact .recr hls hps hms hmins his hη hs hls' hl
-      (fun p => ihps p (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun fe => ihms fe (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun fe c => ihmins fe c (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (fun i => ihis i (Data.hasFVar_eq_false_of_mem hf (by simp [FExpr.data_mem_map])))
-      (ihmaj (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | quot hη hl _ _ ihα ihr =>
-    rw [FExpr.data_quot] at hf
-    exact .quot hη hl
-      (ihα (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihr (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | quotMk hη hl _ _ _ ihα ihr iha =>
-    rw [FExpr.data_quotMk] at hf
-    exact .quotMk hη hl
-      (ihα (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihr (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (iha (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    rw [FExpr.data_quotLift] at hf
-    exact .quotLift hη hl₁ hl₂
-      (ihα (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihr (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihβ (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihf (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihh (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (iha (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
-    rw [FExpr.data_quotInd] at hf
-    exact .quotInd hη hl
-      (ihα (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihr (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihβ (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (ihf (Data.hasFVar_eq_false_of_mem hf (by simp)))
-      (iha (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | proj hstruct hη hs hidx _ ihe =>
-    rw [FExpr.data_proj] at hf
-    exact .proj hstruct hη hs hidx (ihe (Data.hasFVar_eq_false_of_mem hf (by simp)))
-  | app _ _ ihf iha =>
-    rw [FExpr.data_app, Data.hasFVar_mkApp, Bool.or_eq_false_iff] at hf
-    exact .app (ihf hf.1) (iha hf.2)
-  | lam _ _ iht ihb =>
-    rw [FExpr.data_lam, Data.hasFVar_mkBinder, Bool.or_eq_false_iff] at hf
-    exact .lam (iht hf.1) (ihb hf.2)
-  | forallE _ _ iht ihb =>
-    rw [FExpr.data_forallE, Data.hasFVar_mkBinder, Bool.or_eq_false_iff] at hf
-    exact .forallE (iht hf.1) (ihb hf.2)
-  | letE _ _ _ iht ihv ihb =>
-    rw [FExpr.data_letE, Data.hasFVar_mkLet, Bool.or_eq_false_iff, Bool.or_eq_false_iff] at hf
-    exact .letE (iht hf.1.1) (ihv hf.1.2) (ihb hf.2)
-  | natLit hNat => exact .natLit hNat
-  | strLit hNat hList hChar hOfNat hString => exact .strLit hNat hList hChar hOfNat hString
-
 theorem FExpr.Denotes.fvarRange_le {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} :
     FExpr.Denotes E k fe e →
     fe.fvarRange ≤ m - k := by
@@ -630,188 +451,144 @@ theorem FExpr.Denotes.fvarRange_le {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
   | natLit hNat => simp
   | strLit hNat hList hChar hOfNat hString => simp
 
-theorem FExpr.Denotes.bindUnused {m d : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
-    (hr : fe.fvarRange + d + 1 ≤ m) :
-    FExpr.Denotes E d fe e →
-    FExpr.Denotes E (d + 1) fe e := by
+theorem FExpr.Denotes.rename {m k : Nat} {fe : FExpr} {e : Expr E.1 ℓ m} {n k' : Nat}
+    (ρ : Ren m n) (hk : k ≤ k') (hr : fe.fvarRange ≤ n - k') (hρ : Ren.Shifts k ρ) :
+    FExpr.Denotes E k fe e →
+    FExpr.Denotes E k' fe (e.rename ρ) := by
   intro h
-  induction h with
-  | bvar hi hj => exact .bvar hi (by omega)
-  | fvar hi =>
+  induction h generalizing n k' with
+  | @bvar m k i j hi hj =>
+    have hv := hρ.bound ⟨i, by omega⟩ (by simp; omega)
+    simp at hv
+    have : ρ ⟨i, by omega⟩ = ⟨n - 1 - j, by omega⟩ := Fin.ext (by simp at hv ⊢; omega)
+    simpa [this] using .bvar (by omega) (by omega)
+  | @fvar m k i hi =>
     rw [FExpr.fvarRange_fvar] at hr
-    exact .fvar (by omega)
+    have hv := hρ.free ⟨i, by omega⟩ (by simp; omega)
+    have : ρ ⟨i, by omega⟩ = ⟨i, by omega⟩ := Fin.ext hv
+    simpa [this] using .fvar (by omega)
   | sort hl => exact .sort hl
   | const hls hη hls' => exact .const hls hη hls'
   | ind hls hps his hη hs hls' _ _ ihps ihis =>
     rw [FExpr.fvarRange_ind] at hr
     exact .ind hls hps his hη hs hls'
-      (fun p => ihps p (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun i => ihis i (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
+      (fun p => ihps p ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun i => ihis i ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
   | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
     rw [FExpr.fvarRange_ctor] at hr
     exact .ctor hls hps hfds hrecFds hη hs hc hls'
-      (fun p => ihps p (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun f => ihfds f (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun f => ihrecFds f (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
+      (fun p => ihps p ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun f => ihfds f ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun f => ihrecFds f ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
   | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
     rw [FExpr.fvarRange_recr] at hr
     exact .recr hls hps hms hmins his hη hs hls' hl
-      (fun p => ihps p (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun fe => ihms fe (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun fe c => ihmins fe c (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (fun i => ihis i (Data.maxArr_bound hr (by simp [FExpr.fvarRange_mem_map])))
-      (ihmaj (Data.maxArr_bound hr (by simp)))
+      (fun p => ihps p ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun fe => ihms fe ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun fe c => ihmins fe c ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (fun i => ihis i ρ hk ((Data.le_maxArr (by simp [FExpr.fvarRange_mem_map])).trans hr) hρ)
+      (ihmaj ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | quot hη hl _ _ ihα ihr =>
     rw [FExpr.fvarRange_quot] at hr
     exact .quot hη hl
-      (ihα (Data.maxArr_bound hr (by simp)))
-      (ihr (Data.maxArr_bound hr (by simp)))
+      (ihα ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihr ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | quotMk hη hl _ _ _ ihα ihr iha =>
     rw [FExpr.fvarRange_quotMk] at hr
     exact .quotMk hη hl
-      (ihα (Data.maxArr_bound hr (by simp)))
-      (ihr (Data.maxArr_bound hr (by simp)))
-      (iha (Data.maxArr_bound hr (by simp)))
+      (ihα ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihr ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (iha ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
     rw [FExpr.fvarRange_quotLift] at hr
     exact .quotLift hη hl₁ hl₂
-      (ihα (Data.maxArr_bound hr (by simp)))
-      (ihr (Data.maxArr_bound hr (by simp)))
-      (ihβ (Data.maxArr_bound hr (by simp)))
-      (ihf (Data.maxArr_bound hr (by simp)))
-      (ihh (Data.maxArr_bound hr (by simp)))
-      (iha (Data.maxArr_bound hr (by simp)))
+      (ihα ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihr ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihβ ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihf ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihh ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (iha ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
     rw [FExpr.fvarRange_quotInd] at hr
     exact .quotInd hη hl
-      (ihα (Data.maxArr_bound hr (by simp)))
-      (ihr (Data.maxArr_bound hr (by simp)))
-      (ihβ (Data.maxArr_bound hr (by simp)))
-      (ihf (Data.maxArr_bound hr (by simp)))
-      (iha (Data.maxArr_bound hr (by simp)))
+      (ihα ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihr ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihβ ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (ihf ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
+      (iha ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | proj hstruct hη hs hidx _ ihe =>
     rw [FExpr.fvarRange_proj] at hr
-    exact .proj hstruct hη hs hidx (ihe (Data.maxArr_bound hr (by simp)))
+    rw [← Expr.subst_vars, Inductive.IsStructure.projTerm_subst]
+    simpa using .proj hstruct hη hs hidx (ihe ρ hk ((Data.le_maxArr (by simp)).trans hr) hρ)
   | app _ _ ihf iha =>
     rw [FExpr.fvarRange_app] at hr
-    exact .app (ihf (by omega)) (iha (by omega))
+    exact .app (ihf ρ hk (by omega) hρ) (iha ρ hk (by omega) hρ)
   | lam _ _ iht ihb =>
     rw [FExpr.fvarRange_lam] at hr
-    exact .lam (iht (by omega)) (ihb (by omega))
+    exact .lam (iht ρ hk (by omega) hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
   | forallE _ _ iht ihb =>
     rw [FExpr.fvarRange_forallE] at hr
-    exact .forallE (iht (by omega)) (ihb (by omega))
+    exact .forallE (iht ρ hk (by omega) hρ) (ihb ρ.lift (by omega) (by omega) hρ.lift)
   | letE _ _ _ iht ihv ihb =>
     rw [FExpr.fvarRange_letE] at hr
-    exact .letE (iht (by omega)) (ihv (by omega)) (ihb (by omega))
-  | natLit hNat => exact .natLit hNat
-  | strLit hNat hList hChar hOfNat hString => exact .strLit hNat hList hChar hOfNat hString
-
-theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
-    (hp : fe.data.hasLevelParam = false) (σ : Param ℓ → RawLevel ℓ') :
-    FExpr.Denotes E k fe e →
-    FExpr.Denotes E k fe e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} := by
-  intro h
-  induction h with
-  | bvar hi hj => exact .bvar hi hj
-  | fvar hi => exact .fvar hi
-  | sort hl =>
-    rw [FExpr.data_sort, Data.hasLevelParam_mk] at hp
-    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .sort (hl.inst_of_hasParam_eq_false hp σ)
-  | const hls hη hls' =>
-    rw [FExpr.data_const, Data.hasLevelParam_mk, Array.any_eq_false] at hp
-    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .const hls hη (fun i =>
-      (hls' i).inst_of_hasParam_eq_false (by simpa using hp _ (hls.symm ▸ i.isLt)) σ)
-  | ind hls hps his hη hs hls' _ _ ihps ihis =>
-    rw [FExpr.data_ind] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    rw [Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .ind hls hps his hη hs
-      (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
-      (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun i => ihis i (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-  | ctor hls hps hfds hrecFds hη hs hc hls' _ _ _ ihps ihfds ihrecFds =>
-    rw [FExpr.data_ctor] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    rw [Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .ctor hls hps hfds hrecFds hη hs hc
-      (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp _ (hls.symm ▸ i.isLt)) σ)
-      (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun f => ihfds f (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun f => ihrecFds f (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-  | recr hls hps hms hmins his hη hs hls' hl _ _ _ _ _ ihps ihms ihmins ihis ihmaj =>
-    rw [FExpr.data_recr] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    rw [Bool.or_eq_false_iff, Array.any_eq_false] at hlp
-    simpa! [← Level.mk_inst, InstLevel.inst_tuple] using .recr hls hps hms hmins his hη hs
-      (fun i => (hls' i).inst_of_hasParam_eq_false (by simpa using hlp.1 _ (hls.symm ▸ i.isLt)) σ)
-      (hl.inst_of_hasParam_eq_false hlp.2 σ)
-      (fun p => ihps p (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun fe => ihms fe (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun fe c => ihmins fe c (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (fun i => ihis i (Data.hasLevelParam_eq_false_of_mem hp (by simp [FExpr.data_mem_map])))
-      (ihmaj (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | quot hη hl _ _ ihα ihr =>
-    rw [FExpr.data_quot] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    simpa! [← Level.mk_inst] using .quot hη
-      (hl.inst_of_hasParam_eq_false hlp σ)
-      (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | quotMk hη hl _ _ _ ihα ihr iha =>
-    rw [FExpr.data_quotMk] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    simpa! [← Level.mk_inst] using .quotMk hη
-      (hl.inst_of_hasParam_eq_false hlp σ)
-      (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (iha (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | quotLift hη hl₁ hl₂ _ _ _ _ _ _ ihα ihr ihβ ihf ihh iha =>
-    rw [FExpr.data_quotLift] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    rw [Bool.or_eq_false_iff] at hlp
-    simpa! [← Level.mk_inst] using .quotLift hη
-      (hl₁.inst_of_hasParam_eq_false hlp.1 σ)
-      (hl₂.inst_of_hasParam_eq_false hlp.2 σ)
-      (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihβ (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihf (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihh (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (iha (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | quotInd hη hl _ _ _ _ _ ihα ihr ihβ ihf iha =>
-    rw [FExpr.data_quotInd] at hp
-    have hlp := Data.hasLevelParam_eq_false_init hp
-    simpa! [← Level.mk_inst] using .quotInd hη
-      (hl.inst_of_hasParam_eq_false hlp σ)
-      (ihα (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihr (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihβ (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (ihf (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-      (iha (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | proj hstruct hη hs hidx _ ihe =>
-    rw [FExpr.data_proj] at hp
-    rw [Inductive.IsStructure.projTerm_instL]
-    simpa [← Level.mk_inst, InstLevel.inst_tuple] using
-      .proj hstruct hη hs hidx (ihe (Data.hasLevelParam_eq_false_of_mem hp (by simp)))
-  | app _ _ ihf iha =>
-    rw [FExpr.data_app, Data.hasLevelParam_mkApp, Bool.or_eq_false_iff] at hp
-    exact .app (ihf hp.1) (iha hp.2)
-  | lam _ _ iht ihb =>
-    rw [FExpr.data_lam, Data.hasLevelParam_mkBinder, Bool.or_eq_false_iff] at hp
-    exact .lam (iht hp.1) (ihb hp.2)
-  | forallE _ _ iht ihb =>
-    rw [FExpr.data_forallE, Data.hasLevelParam_mkBinder, Bool.or_eq_false_iff] at hp
-    exact .forallE (iht hp.1) (ihb hp.2)
-  | letE _ _ _ iht ihv ihb =>
-    rw [FExpr.data_letE, Data.hasLevelParam_mkLet, Bool.or_eq_false_iff,
-      Bool.or_eq_false_iff] at hp
-    exact .letE (iht hp.1.1) (ihv hp.1.2) (ihb hp.2)
+    exact .letE (iht ρ hk (by omega) hρ) (ihv ρ hk (by omega) hρ)
+      (ihb ρ.lift (by omega) (by omega) hρ.lift)
   | natLit hNat =>
-    rw [Expr.natLit_instL]
+    rw [← Expr.subst_vars, Expr.natLit_subst]
     exact .natLit hNat
   | strLit hNat hList hChar hOfNat hString =>
     simpa using .strLit hNat hList hChar hOfNat hString
+
+theorem FExpr.Denotes.wkOpen {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
+    FExpr.Denotes E 0 fe e →
+    FExpr.Denotes E 1 fe e.wk := fun h =>
+  h.rename _ (Nat.zero_le 1) (by have := h.fvarRange_le; omega) ⟨fun v _ => by simp, fun v hv => by omega⟩
+
+theorem FExpr.Denotes.wk {n : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} :
+    FExpr.Denotes E 0 fe e →
+    FExpr.Denotes E 0 fe e.wk := fun h =>
+  h.rename _ le_rfl (by have := h.fvarRange_le; omega) ⟨fun v hv => by simp, fun v hv => by omega⟩
+
+theorem FExpr.Denotes.wkClosed {fe : FExpr} {e : Expr E.1 ℓ 0}
+    (h : FExpr.Denotes E 0 fe e) :
+    (n : Nat) →
+    FExpr.Denotes E 0 fe (e.wkClosed (n := n))
+  | 0 => h
+  | n + 1 => (h.wkClosed n).wk
+
+section
+
+variable {n : Nat} {ft : FExpr} {e : Expr E.1 ℓ n}
+
+theorem FExpr.Denotes.wkN (h : FExpr.Denotes E 0 ft e) :
+    (k : Nat) →
+    FExpr.Denotes E 0 ft (e.wkN k)
+  | 0 => h
+  | k + 1 => (h.wkN k).wk
+
+theorem FExpr.Denotes.wkNOpen (k : Nat) :
+    FExpr.Denotes E 0 ft e →
+    FExpr.Denotes E k ft (e.wkN k) := by
+  intro h
+  rw [Expr.wkN_eq_rename]
+  exact h.rename _ (Nat.zero_le k) (by have := h.fvarRange_le; omega)
+    ⟨fun v _ => rfl, fun v hv => absurd v.isLt (by omega)⟩
+
+end
+
+theorem FExpr.Denotes.bindUnused {m d : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
+    (hr : fe.fvarRange ≤ m - (d + 1)) :
+    FExpr.Denotes E d fe e →
+    FExpr.Denotes E (d + 1) fe e := by
+  intro h
+  simpa using h.rename Ren.id (Nat.le_succ d) hr ⟨fun _ _ => rfl, fun _ _ => by simp [Ren.id]⟩
+
+theorem FExpr.Denotes.noFVar {m d : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
+    (hf : fe.data.hasFVar = false) :
+    FExpr.Denotes E d fe e →
+    FExpr.Denotes E (d + 1) fe e := by
+  intro h
+  exact h.bindUnused (by rw [(FExpr.hasFVar_eq_false_iff fe).mp hf]; omega)
 
 structure Subst.Instantiates {m n q : Nat} (p d : Nat) (a' : Expr E.1 ℓ q) (σ : Subst E.1 ℓ m n) :
     Prop where
@@ -977,7 +754,7 @@ theorem FExpr.Denotes.instAt {q m k : Nat} {fa fb : FExpr} {a : Expr E.1 ℓ q}
         · have hjd' : j = d := by omega
           simp [hjd', hσ.here ⟨i, by omega⟩ (by simp; omega)]
           have := hσ.le
-          exact ha.rename (Fin.castLE (by omega)) (Nat.zero_le d) (by omega)
+          exact ha.rename (Fin.castLE (by omega)) (Nat.zero_le d) (by have := ha.fvarRange_le; omega)
             ⟨fun v _ => rfl, fun v hv => absurd v.isLt (by omega)⟩
       | @fvar m k i hi =>
         cases hp
@@ -1046,6 +823,8 @@ theorem FExpr.Denotes.abstractAt {m d x : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
     subst k k₂
     unfold FExpr.abstractAtStep at hp
     split at hp
+    · cases hp
+      exact h.bindUnused (by omega)
     · cases h with
       | @fvar m d i hi =>
         cases hp
@@ -1055,15 +834,13 @@ theorem FExpr.Denotes.abstractAt {m d x : Nat} {fe : FExpr} {e : Expr E.1 ℓ m}
         · simp [hix]
           exact .fvar (by omega)
       | _ => simp at hp
-    · cases hp
-      exact h.noFVar (by simpa using ‹¬fe.data.hasFVar = true›)
   simpa only [FExpr.abstractAt, show (fun p : Param ℓ => (⟦RawLevel.param p⟧ : Level ℓ)) = Level.param from rfl,
     Expr.instL_param] using h.rewrite_sameScope (under := Nat.succ) (pre := FExpr.abstractAtStep x) (level := id)
     (υ := RawLevel.param)
     (Q := fun m k k₂ d => x + d + 1 = m ∧ k = d ∧ k₂ = d + 1)
     (by rintro m k k₂ d ⟨hx, rfl, rfl⟩; exact ⟨by omega, rfl, rfl⟩)
     (fun h => by simpa using h)
-    (by intro d i; simp [FExpr.abstractAtStep, Data.hasFVar_mk])
+    (by intro d i; constructor <;> simp [FExpr.abstractAtStep]; split <;> simp)
     (fun hQ h hp => by
       change FExpr.Denotes E _ _ ((_ : Expr E.1 ℓ _){Level.param})
       simpa using hpre hQ h hp) ⟨hx, rfl, rfl⟩
@@ -1078,15 +855,25 @@ theorem FExpr.Denotes.instL {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n} {us : 
     (Q := fun _ k k₂ (_ : Unit) => k = k₂)
     (fun h => congrArg (· + 1) h)
     (fun h => h.inst hus hus')
-    (by intro d i; simp [Data.hasLevelParam_mk])
+    (by intro d i; simp [FExpr.instLStep])
     (by
       rintro m k k₂ d fe r e hk h hp
       subst k₂
-      split at hp
-      · contradiction
-      · cases hp
-        exact h.instL_skip (by simpa using ‹¬fe.data.hasLevelParam = true›) σ)
+      cases h <;> simp only [FExpr.instLStep] at hp
+      case bvar => cases hp; exact .bvar (by assumption) (by assumption)
+      case fvar => cases hp; exact .fvar (by assumption)
+      all_goals contradiction)
     rfl
+
+theorem FExpr.Denotes.instL_skip {n k : Nat} {fe : FExpr} {e : Expr E.1 ℓ n}
+    (hp : fe.data.hasLevelParam = false) (σ : Param ℓ → RawLevel ℓ') :
+    FExpr.Denotes E k fe e →
+    FExpr.Denotes E k fe e{fun p : Param ℓ => (⟦σ p⟧ : Level ℓ')} := by
+  intro h
+  choose fl hfl using fun p => FLevel.denotes_exists (σ p)
+  have hi := h.instL (us := Array.ofFn fl) (by simp) (fun p => by simpa using hfl p)
+  change FExpr.Denotes E k (FExpr.instL (Array.ofFn fl) fe) _ at hi
+  simpa [FExpr.instL_of_not_hasLevelParam _ hp] using hi
 
 structure Subst.InstFVars {m n q : Nat} (k : Nat) (args : Array FExpr)
     (σ : Subst E.1 ℓ m n) : Prop where
@@ -1211,7 +998,7 @@ theorem instFVarsAux {m n q k : Nat} {ft : FExpr} {e : Expr E.1 ℓ m} {args : A
       have ⟨a', ha', hσ'⟩ := hσ.free ⟨i, by omega⟩ (by simp; omega)
       simpa! [show i < args.size by omega, hσ'] using
         ha'.rename (m := q) (n := n) (k := 0) (k' := k)
-          (Fin.castLE (by omega)) (Nat.zero_le k) (by simpa using hσ.le)
+          (Fin.castLE (by omega)) (Nat.zero_le k) (by have := ha'.fvarRange_le; omega)
           ⟨fun v _ => rfl, fun v hv => absurd v.isLt (by omega)⟩
     | _ => simp [FExpr.instFVarsStep] at hp
   simpa only [FExpr.instFVars, show (fun p : Param ℓ => (⟦RawLevel.param p⟧ : Level ℓ)) = Level.param from rfl,

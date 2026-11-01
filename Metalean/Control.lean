@@ -20,27 +20,6 @@ If the proposition `p` is true, does nothing, returning a proof of `p`, else fai
     [MonadExcept ε m] (p : Prop) [Decidable p] (e : ε) : m (PLift p) :=
   if h : p then pure ⟨h⟩ else throw e
 
-namespace Array
-
-def forallM {m : Type → Type v} [Monad m] {α : Type} (xs : Array α)
-    (P : (i : Nat) → i < xs.size → Prop)
-    (check : (i : Nat) → (h : i < xs.size) → m (PLift (P i h))) :
-    m (PLift (∀ i (h : i < xs.size), P i h)) :=
-  go 0 ⟨fun i _ hi => absurd hi (Nat.not_lt_zero i)⟩
-where
-  go (j : Nat) (acc : PLift (∀ i (h : i < xs.size), i < j → P i h)) :
-      m (PLift (∀ i (h : i < xs.size), P i h)) :=
-    if hj : j < xs.size then do
-      let ⟨h⟩ ← check j hj
-      go (j + 1) ⟨fun i hi hij => by
-        by_cases hij' : i < j
-        · exact acc.down i hi hij'
-        · obtain rfl : i = j := by omega
-          exact h⟩
-    else pure ⟨fun i hi => acc.down i hi (by omega)⟩
-
-end Array
-
 namespace Fin
 
 def mapM {m : Type u → Type v} [Applicative m] {k : Nat} {α : Fin k → Type u}
